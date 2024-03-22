@@ -25,7 +25,6 @@ import {
   screen,
 } from './data'
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
-import { IFileHandler, IIPFSData } from '@scom/scom-storage';
 const Theme = Styles.Theme.ThemeVars
 
 enum TABS {
@@ -42,6 +41,21 @@ declare global {
       ['i-scom-designer']: ScomDesignerElement
     }
   }
+}
+
+interface IFileHandler {
+  openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
+}
+
+interface IIPFSData {
+  cid: string;
+  name?: string;
+  size?: number;
+  type?: string | 'dir' | 'file';
+  links?: IIPFSData[];
+  path?: string;
+  sort?: 'asc' | 'desc';
+  root?: boolean;
 }
 
 @customElements('i-scom-designer')

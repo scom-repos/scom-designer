@@ -592,7 +592,6 @@ declare module "@scom/scom-designer/data.ts" {
 declare module "@scom/scom-designer" {
     import { Module, ControlElement, Container, Control } from '@ijstech/components';
     import { IComponentPicker } from "@scom/scom-designer/interface.ts";
-    import { IFileHandler, IIPFSData } from '@scom/scom-storage';
     interface ScomDesignerElement extends ControlElement {
     }
     global {
@@ -601,6 +600,19 @@ declare module "@scom/scom-designer" {
                 ['i-scom-designer']: ScomDesignerElement;
             }
         }
+    }
+    interface IFileHandler {
+        openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
+    }
+    interface IIPFSData {
+        cid: string;
+        name?: string;
+        size?: number;
+        type?: string | 'dir' | 'file';
+        links?: IIPFSData[];
+        path?: string;
+        sort?: 'asc' | 'desc';
+        root?: boolean;
     }
     export class ScomDesigner extends Module implements IFileHandler {
         private designerScreens;
