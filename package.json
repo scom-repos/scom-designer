@@ -19,8 +19,5 @@
         "@ijstech/compiler": "^0.1.18",
         "@ijstech/components": "^0.1.38",
         "@types/node": "18.11.9"
-    },
-    "dependencies": {
-        "@scom/scom-storage": "https://github.com/scom-repos/scom-storage"
     }
 }
