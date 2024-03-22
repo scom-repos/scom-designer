@@ -4,12 +4,24 @@ import {
   ControlElement,
   customElements,
   IconName,
-  HStack
+  HStack,
+  Container
 } from '@ijstech/components'
 import assets from '../assets';
 import { customIconTabActiveStyled, customIconTabStyled, customTabStyled } from '../index.css';
-import { IComponentItem } from '../interface';
-import { borderRadiusLeft, borderRadiusRight } from '../tools/index';
+import { IControl } from '../interface';
+import {
+  DesignerToolStylesheet,
+  borderRadiusLeft,
+  borderRadiusRight,
+  DesignerToolLayout,
+  DesignerToolBackground,
+  DesignerToolSize,
+  DesignerToolMarginsAndPadding,
+  DesignerToolPosition,
+  DesignerToolBorders,
+  DesignerToolEffects
+} from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
 const Theme = Styles.Theme.ThemeVars;
@@ -96,7 +108,7 @@ const breakpoints: { caption: string, icon: IconName, value: BREAKPOINTS, classe
 ]
 
 interface DesignerPropertiesElement extends ControlElement {
-
+  component?: IControl;
 }
 
 declare global {
@@ -110,34 +122,75 @@ declare global {
 @customElements('designer-properties')
 export default class DesignerProperties extends Module {
   private hStackInfo: HStack;
+  private designerStylesheet: DesignerToolStylesheet;
+  private designerLayout: DesignerToolLayout;
+  private designerBackground: DesignerToolBackground;
+  private designerSize: DesignerToolSize;
+  private designerMarginsAndPaddings: DesignerToolMarginsAndPadding;
+  private designerPosition: DesignerToolPosition;
+  private designerBorders: DesignerToolBorders;
+  private designerEffects: DesignerToolEffects;
 
-  private _component: IComponentItem;
+  private _component: IControl;
+
+  constructor(parent?: Container, options?: any) {
+    super(parent, options)
+    this.onPropChanged = this.onPropChanged.bind(this);
+  }
+
+  static async create(options?: DesignerPropertiesElement, parent?: Container) {
+    let self = new this(parent, options)
+    await self.ready()
+    return self
+  }
 
   get component() {
     return this._component;
   }
 
-  set component(value: IComponentItem) {
+  set component(value: IControl) {
     this._component = value;
+    this.renderUI();
+  }
+
+  private renderUI() {
     this.updateInfo();
+    this.updateProps();
   }
 
   private updateInfo() {
-    if (!this.component || !this.hStackInfo) return;
-    const { caption, image, iconName, category } = this.component;
+    if (!this.hStackInfo) return;
+    const { name, image, iconName, category } = this.component;
     this.hStackInfo.clearInnerHTML();
     this.hStackInfo.appendChild(
       <i-hstack gap={8} verticalAlignment="center" width="100%">
         {iconName ? <i-icon name={iconName} width={24} height={24} /> : <i-image url={image} width={24} height={24} />}
-        <i-label caption={caption} font={{ size: '1rem', bold: true }} />
+        <i-label caption={name} font={{ size: '1rem', bold: true }} />
         <i-label caption={category || ''} opacity={0.6} font={{ size: '0.625rem' }} margin={{ left: 'auto' }} display="flex" />
       </i-hstack>
     )
   }
 
+  private updateProps() {
+    // const elm = this.component.control._getCustomProperties();
+    // const props = elm.props || {};
+    this.designerBackground.setData({ color: this.component.control?.background?.color || '' })
+    this.designerSize.setData({ width: this.component.control?.width || 0, height: this.component.control?.height || 0 })
+  }
+
+  private onPropChanged(prop: string, value: any) {
+    if (!this.component) return;
+    if (prop === 'background') {
+      this.component.control._setDesignPropValue(prop, JSON.stringify({color: value}));
+    } else {
+      this.component.control._setDesignPropValue(prop, value);
+    }
+  }
 
   init() {
     super.init();
+    const component = this.getAttribute('component', true);
+    if (component) this.component = component;
   }
 
   render() {
@@ -226,14 +279,14 @@ export default class DesignerProperties extends Module {
         >
           <i-tab icon={{ name: 'paint-brush', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
-              <designer-tool-stylesheet display="block" />
-              <designer-tool-layout display="block" />
-              <designer-tool-background display="block" />
-              <designer-tool-size display="block" />
-              <designer-tool-margins-padding display="block" />
-              <designer-tool-position display="block" />
-              <designer-tool-borders display="block" />
-              <designer-tool-effects display="block" />
+              <designer-tool-stylesheet id="designerStylesheet" display="block" />
+              <designer-tool-layout id='designerLayout' display="block" />
+              <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-size id="designerSize" display="block" />
+              <designer-tool-margins-padding id="designerSpacing" display="block" />
+              <designer-tool-position id="designerPosition" display="block" />
+              <designer-tool-borders id="designerBorders" display="block" />
+              <designer-tool-effects id="designerEffects" display="block" />
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

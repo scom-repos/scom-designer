@@ -15,7 +15,8 @@
   "dependencies": {
     "@scom/dapp": "*",
     "@scom/scom-designer": "*",
-    "@scom/scom-storage": "*"
+    "@scom/scom-storage": "*",
+    "@ijstech/compiler": "*"
   },
   "packages": [
   ],

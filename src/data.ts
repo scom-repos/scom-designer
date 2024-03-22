@@ -9,12 +9,12 @@ export const recentComponents: IComponentPicker[] = [
     items: [
       {
         path: '',
-        caption: 'Text',
+        name: 'Text',
         image: assets.fullPath('img/designer/Text.svg')
       },
       {
         path: '',
-        caption: 'View',
+        name: 'View',
         image: assets.fullPath('img/designer/View.svg')
       }
     ]
@@ -25,7 +25,7 @@ export const recentComponents: IComponentPicker[] = [
     items: [
       {
         path: '',
-        caption: 'Button',
+        name: 'Button',
         image: assets.fullPath('img/designer/Button.svg')
       }
     ]
@@ -39,17 +39,17 @@ export const pickerComponents: IComponentPicker[] = [
     items: [
       {
         path: '',
-        caption: 'Icon',
+        name: 'Icon',
         image: assets.fullPath('img/designer/Icon.svg')
       },
       {
         path: '',
-        caption: 'Text',
+        name: 'Text',
         image: assets.fullPath('img/designer/Text.svg')
       },
       {
         path: '',
-        caption: 'View',
+        name: 'View',
         image: assets.fullPath('img/designer/View.svg')
       }
     ]
@@ -60,12 +60,12 @@ export const pickerComponents: IComponentPicker[] = [
     items: [
       {
         path: '',
-        caption: 'Button',
+        name: 'Button',
         image: assets.fullPath('img/designer/Button.svg')
       },
       {
         path: '',
-        caption: 'Link',
+        name: 'Link',
         image: assets.fullPath('img/designer/Link.svg')
       }
     ]
@@ -93,33 +93,33 @@ export const screen: IScreen = {
   name: 'First Screen',
   elements: [
     {
-      path: '',
-      caption: 'View',
+      path: 'root',
+      name: 'View',
       image: assets.fullPath('img/designer/View.svg'),
-      children: [
+      items: [
         {
-          path: '',
-          caption: 'Text',
+          path: 'root/text',
+          name: 'Text',
           image: assets.fullPath('img/designer/Text.svg')
         },
         {
-          path: '',
-          caption: 'Button',
+          path: 'root/button',
+          name: 'Button',
           image: assets.fullPath('img/designer/Button.svg')
         },
         {
-          path: '',
-          caption: 'View',
+          path: 'root/view',
+          name: 'View',
           image: assets.fullPath('img/designer/View.svg'),
-          children: [
+          items: [
             {
-              path: '',
-              caption: 'Text',
+              path: 'root/view/text',
+              name: 'Text',
               image: assets.fullPath('img/designer/Text.svg')
             },
             {
-              path: '',
-              caption: 'Text 2',
+              path: 'root/view/text-2',
+              name: 'Text 2',
               image: assets.fullPath('img/designer/Text.svg')
             }
           ]

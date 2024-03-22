@@ -1,4 +1,5 @@
-import { IconName } from "@ijstech/components";
+import { Parser } from "@ijstech/compiler";
+import { Control, IconName } from "@ijstech/components";
 
 export interface IScreen {
   id: string;
@@ -14,16 +15,16 @@ export interface IComponentPicker {
   items: IComponentItem[];
 }
 
-export interface IComponentItem {
+export interface IComponentItem extends Parser.IComponent {
   path: string;
-  caption: string; // name
+  name: string;
   image?: string;
   iconName?: IconName;
   category?: string;
 }
 
 export interface IComponent extends IComponentItem {
-  children?: IComponent[]
+  items?: IComponent[];
 }
 
 export interface IBlock {
@@ -32,3 +33,9 @@ export interface IBlock {
   caption: string;
   image: string;
 }
+
+export interface IControl extends IComponent {
+  control: Control;
+}
+
+export type onChangedCallback = (prop: string, value: string) => void;
