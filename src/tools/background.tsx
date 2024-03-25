@@ -3,7 +3,6 @@ import {
   ControlElement,
   customElements,
   Container,
-  Styles,
   VStack,
   ComboBox,
   IComboItem,

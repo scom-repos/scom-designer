@@ -1262,11 +1262,11 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
             mdWrapper.style.paddingInline = '0px';
             const onUnitChanged = (value) => {
                 this.currentLabel.caption = value;
-                this.unit = value === 'pt' ? 'px' : value;
+                this.unit = value;
                 this.mdUnits.visible = false;
             };
             const itemUnits = new components_10.VStack(undefined, { gap: 8, border: { radius: 8 } });
-            itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "pt", font: { size: '0.625rem' }, onClick: () => onUnitChanged('pt') }));
+            itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "pt", font: { size: '0.625rem' }, onClick: () => onUnitChanged('px') }));
             itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "%", font: { size: '0.625rem' }, onClick: () => onUnitChanged('%') }));
             this.mdUnits.item = itemUnits;
             document.body.appendChild(this.mdUnits);
@@ -1305,35 +1305,50 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
     let DesignerToolModalSpacing = class DesignerToolModalSpacing extends components_11.Module {
         constructor(parent, options) {
             super(parent, options);
+            this.unit = 'px';
+            this.spacing = {};
+            this.config = {};
         }
         async initModal() {
             this.modal = await components_11.Modal.create({
                 visible: false,
                 showBackdrop: false,
-                minWidth: '256px',
+                minWidth: '16rem',
                 height: 'auto',
                 popupPlacement: 'bottom'
             });
             const onShowUnits = () => {
                 this.vStackIndUnits.visible = true;
+                this.vStackIndUnits.display = 'flex';
             };
             const onUnitChanged = (value) => {
                 this.lbIndUnit.caption = value;
+                if (this.unit !== value) {
+                    const { type, position } = this.spacing;
+                    if (this.onChanged)
+                        this.onChanged(type, position, `${value}${this.unit}`);
+                }
+                this.unit = value;
                 this.vStackIndUnits.visible = false;
             };
-            const onValueChanged = () => {
+            const onValueChanged = (target) => {
+                const value = target.value;
+                const { type, position } = this.spacing;
+                if (this.onChanged)
+                    this.onChanged(type, position, `${value}${this.unit}`);
             };
             const item = new components_11.VStack(undefined, { gap: 8, border: { radius: 8 } });
+            const { breakpointText, iconName } = this.config;
             item.appendChild(this.$render("i-vstack", { gap: 12 },
                 this.$render("i-hstack", { gap: 8, verticalAlignment: "center" },
-                    this.$render("i-icon", { id: "iconTitle", name: this.iconName, width: 12, height: 12 }),
-                    this.$render("i-label", { id: "lbTitle", caption: this.title, font: { size: '0.875rem', bold: true } })),
-                this.$render("i-label", { id: "lbBreakpoint", caption: this.breakpointText, font: { size: '0.75rem' }, opacity: 0.8 }),
+                    this.$render("i-icon", { id: "iconTitle", name: iconName, width: 12, height: 12 }),
+                    this.$render("i-label", { id: "lbTitle", caption: this.title, font: { size: '0.875rem', bold: true, transform: 'capitalize' } })),
+                this.$render("i-label", { id: "lbBreakpoint", caption: breakpointText, font: { size: '0.75rem' }, opacity: 0.8 }),
                 this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
                 this.$render("i-grid-layout", { position: "relative", templateColumns: ['100px', 'auto'], verticalAlignment: "center" },
                     this.$render("i-label", { caption: "Static Value:", font: { size: '0.75rem' } }),
                     this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                        this.$render("i-input", { inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_6.textInputRight} ${index_css_6.bgInputTransparent}`, onChanged: onValueChanged, onClick: () => { this.vStackIndUnits.visible = false; } }),
+                        this.$render("i-input", { id: "inputValue", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_6.textInputRight} ${index_css_6.bgInputTransparent}`, onChanged: onValueChanged, onClick: () => { this.vStackIndUnits.visible = false; } }),
                         this.$render("i-label", { id: "lbIndUnit", caption: "pt", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
                                 left: {
                                     width: 1,
@@ -1341,8 +1356,8 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
                                     color: Theme.action.focus
                                 }
                             }, class: `text-center ${index_css_6.unitStyled}`, onClick: () => onShowUnits() })),
-                    this.$render("i-vstack", { id: "vStackIndUnits", gap: 8, position: "absolute", width: 24, top: 24, left: 156, background: { color: Theme.background.modal } },
-                        this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "pt", font: { size: '0.625rem' }, padding: { top: 4, bottom: 4 }, onClick: () => onUnitChanged('pt') }),
+                    this.$render("i-vstack", { id: "vStackIndUnits", gap: 8, position: "absolute", width: 24, top: 24, left: 156, zIndex: 100, background: { color: Theme.background.modal } },
+                        this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "pt", font: { size: '0.625rem' }, padding: { top: 4, bottom: 4 }, onClick: () => onUnitChanged('px') }),
                         this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "%", font: { size: '0.625rem' }, padding: { top: 4, bottom: 4 }, onClick: () => onUnitChanged('%') }))),
                 this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
                 this.$render("i-grid-layout", { templateColumns: ['100px', 'auto'], verticalAlignment: "center" },
@@ -1353,15 +1368,31 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
             document.body.appendChild(this.modal);
         }
         updateHeader() {
-            this.lbTitle.caption = this.titleSpacing;
-            this.lbBreakpoint.caption = this.breakpointText;
-            this.iconTitle.name = this.iconName;
+            const { value } = this.spacing;
+            const { breakpointText, iconName, title } = this.config;
+            this.lbTitle.caption = title;
+            this.lbBreakpoint.caption = breakpointText;
+            this.iconTitle.name = iconName;
+            this.updateValue(value);
         }
-        onShowModal(target, title, iconName, breakpointText) {
-            this.vStackIndUnits.visible = false;
-            this.titleSpacing = title;
-            this.iconName = iconName;
-            this.breakpointText = breakpointText;
+        updateValue(value) {
+            if (typeof value === 'number') {
+                this.inputValue.value = value;
+                this.lbIndUnit.caption = 'px';
+            }
+            else {
+                const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
+                const number = value.replace(unit, '');
+                this.inputValue.value = number;
+                this.lbIndUnit.caption = unit || 'px';
+            }
+        }
+        ;
+        onShowModal(target, value, config) {
+            if (this.vStackIndUnits)
+                this.vStackIndUnits.visible = false;
+            this.config = config || {};
+            this.spacing = value || {};
             this.updateHeader();
             const rect = target.getBoundingClientRect();
             const { x, y } = rect;
@@ -1380,9 +1411,9 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
         }
         init() {
             super.init();
-            this.titleSpacing = this.getAttribute('titleSpacing', true, '');
-            this.iconName = this.getAttribute('iconName', true, '');
-            this.breakpointText = this.getAttribute('breakpointText', true, '');
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.spacing = this.getAttribute('data', true, {});
+            this.config = this.getAttribute('config', true, {});
             this.initModal();
         }
         render() {
@@ -1401,11 +1432,45 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
     let DesignerToolMarginsAndPadding = class DesignerToolMarginsAndPadding extends components_12.Module {
         constructor(parent, options) {
             super(parent, options);
+            this._data = {};
+            this._unit = 'px';
+            this.onSpacingChanged = this.onSpacingChanged.bind(this);
+        }
+        setData(data) {
+            this._data = data;
+            this.renderUI();
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
         renderUI() {
+            this.marginInput.value = '';
+            this.paddingInput.value = '';
+            this.updateButtons();
+        }
+        updateButtons() {
+            const buttons = this.vStackIndividual.querySelectorAll('i-button');
+            for (let i = 0; i < buttons.length; i++) {
+                const button = buttons[i];
+                const id = button.id || '';
+                const match = /^(margin|padding)(.*)/.exec(id);
+                if (match?.length) {
+                    const position = (match[2] || '').toLowerCase();
+                    button.caption = this._data[match[1]]?.[position] ?? 'auto';
+                }
+            }
+        }
+        onOverallChanged(target, prop) {
+            const value = (target.value || 0) + this._unit;
+            this._data[prop] = {
+                top: value,
+                right: value,
+                bottom: value,
+                left: value
+            };
+            this.updateButtons();
+            if (this.onChanged)
+                this.onChanged(prop, this._data[prop]);
         }
         onShowUnitsModal(target) {
             this.currentLabel = target;
@@ -1420,30 +1485,48 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             this.mdUnits = await components_12.Modal.create({
                 visible: false,
                 showBackdrop: false,
-                minWidth: '24px',
+                minWidth: '1.5rem',
                 height: 'auto',
                 popupPlacement: 'bottom'
             });
             const mdWrapper = this.mdUnits.querySelector('.modal-wrapper');
-            mdWrapper.style.width = '24px';
+            mdWrapper.style.width = '1.5rem';
             mdWrapper.style.paddingInline = '0px';
             const onUnitChanged = (value) => {
                 this.currentLabel.caption = value;
+                this._unit = value;
                 this.mdUnits.visible = false;
             };
             const itemUnits = new components_12.VStack(undefined, { gap: 8, border: { radius: 8 } });
-            itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "pt", font: { size: '0.625rem' }, onClick: () => onUnitChanged('pt') }));
+            itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "pt", font: { size: '0.625rem' }, onClick: () => onUnitChanged('px') }));
             itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "%", font: { size: '0.625rem' }, onClick: () => onUnitChanged('%') }));
             this.mdUnits.item = itemUnits;
             document.body.appendChild(this.mdUnits);
         }
-        onShowSpacingModal(target, title) {
-            this.currentButton = target;
-            this.mdSpacing.onShowModal(target, title, 'mobile-alt', 'Configure a value for Mobile screen sizes or larger');
+        onShowSpacingModal(target, type, position) {
+            const spacing = {
+                type,
+                position,
+                value: this._data[type]?.[position] || ''
+            };
+            const config = {
+                title: `${type} ${position}`,
+                icon: 'mobile-alt',
+                breakpointText: 'Configure a value for Mobile screen sizes or larger'
+            };
+            this.mdSpacing.onShowModal(target, spacing, config);
+        }
+        onSpacingChanged(type, position, value) {
+            if (!this._data[type])
+                this._data[type] = {};
+            this._data[type][position] = value;
+            this.updateButtons();
+            if (this.onChanged)
+                this.onChanged(type, this._data[type]);
         }
         init() {
             super.init();
-            this.renderUI();
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             this.initModalUnits();
         }
         render() {
@@ -1456,8 +1539,8 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Margin", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}` }),
-                                    this.$render("i-label", { caption: "pt", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
+                                    this.$render("i-input", { id: "marginInput", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, onChanged: (target) => this.onOverallChanged(target, 'margin'), class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}` }),
+                                    this.$render("i-label", { caption: "pt", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "1.5rem", opacity: 1, border: {
                                             left: {
                                                 width: 1,
                                                 style: 'solid',
@@ -1467,8 +1550,8 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Padding", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}` }),
-                                    this.$render("i-label", { caption: "pt", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
+                                    this.$render("i-input", { id: "paddingInput", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, onChanged: (target) => this.onOverallChanged(target, 'padding'), class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}` }),
+                                    this.$render("i-label", { caption: "pt", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "1.5rem", opacity: 1, border: {
                                             left: {
                                                 width: 1,
                                                 style: 'solid',
@@ -1476,25 +1559,25 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                                             }
                                         }, class: `text-center ${index_css_7.unitStyled}`, onClick: (target) => this.onShowUnitsModal(target) }))))),
                     this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
-                    this.$render("i-vstack", { gap: 8 },
+                    this.$render("i-vstack", { id: "vStackIndividual", gap: 8 },
                         this.$render("i-label", { caption: "INDIVIDUAL", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 8, width: "100%", horizontalAlignment: "center" },
                             this.$render("i-hstack", { position: "relative", width: "100%", horizontalAlignment: "center" },
                                 this.$render("i-label", { caption: "Margin", font: { size: '0.75rem' }, position: "absolute", top: 0, left: 0 }),
-                                this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Margin Top') })),
+                                this.$render("i-button", { id: "marginTop", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'top') })),
                             this.$render("i-hstack", { width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Margin Left') }),
+                                this.$render("i-button", { id: "marginLeft", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'left') }),
                                 this.$render("i-panel", { position: "relative", width: 200, padding: { top: 10, bottom: 10, left: 10, right: 10 }, border: { width: 4, style: 'solid', color: Theme.action.selectedBackground } },
                                     this.$render("i-label", { caption: "Padding", font: { size: '0.75rem' }, position: "absolute", top: 10, left: 10 }),
                                     this.$render("i-vstack", { horizontalAlignment: "center" },
-                                        this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Padding Top') }),
+                                        this.$render("i-button", { id: "paddingTop", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'top') }),
                                         this.$render("i-hstack", { width: "100%", horizontalAlignment: "space-between" },
-                                            this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Padding Left') }),
-                                            this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Padding Right') })),
-                                        this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Padding Bottom') }))),
-                                this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Margin Right') })),
-                            this.$render("i-button", { caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Margin Bottom') })))),
-                this.$render("designer-tool-modal-spacing", { id: "mdSpacing" })));
+                                            this.$render("i-button", { id: "paddingLeft", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'left') }),
+                                            this.$render("i-button", { id: "paddingRight", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'right') })),
+                                        this.$render("i-button", { id: "paddingBottom", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'bottom') }))),
+                                this.$render("i-button", { id: "marginRight", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'right') })),
+                            this.$render("i-button", { id: "marginBottom", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'bottom') })))),
+                this.$render("designer-tool-modal-spacing", { id: "mdSpacing", onChanged: this.onSpacingChanged })));
         }
     };
     DesignerToolMarginsAndPadding = __decorate([
@@ -1509,18 +1592,79 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
     let DesignerToolPosition = class DesignerToolPosition extends components_13.Module {
         constructor(parent, options) {
             super(parent, options);
+            this._data = {};
+            this.onSpacingChanged = this.onSpacingChanged.bind(this);
+        }
+        setData(data) {
+            this._data = data;
+            this.renderUI();
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
         renderUI() {
+            const { zIndex, position, overflow } = this._data;
+            if (zIndex !== undefined)
+                this.zIndexInput.value = `${zIndex}`;
+            if (position) {
+                const positionEl = this.vStackContent.querySelector(`#lb${position.charAt(0).toUpperCase() + position.slice(1)}`);
+                if (positionEl)
+                    positionEl.classList.add(index_css_8.customIconLayoutActiveStyled);
+            }
+            if (overflow) {
+                const overflowEl = this.vStackContent.querySelector(`#lb${overflow.charAt(0).toUpperCase() + overflow.slice(1)}`);
+                if (overflowEl)
+                    overflowEl.classList.add(index_css_8.customIconLayoutActiveStyled);
+            }
+            this.updateButtons();
         }
-        onShowModal(target, title) {
-            this.mdSpacing.onShowModal(target, title, 'mobile-alt', 'Configure a value for Mobile screen sizes or larger');
+        updateButtons() {
+            const buttons = this.pnlPosition.querySelectorAll('i-button');
+            for (let i = 0; i < buttons.length; i++) {
+                const button = buttons[i];
+                const id = button.id || '';
+                const value = typeof this._data[id] === 'number' ? `${this._data[id]}px` : this._data[id];
+                button.caption = value ?? 'auto';
+            }
+        }
+        onShowModal(target, position) {
+            const spacing = {
+                type: '',
+                position,
+                value: this._data[position] || ''
+            };
+            const config = {
+                title: `${position}`,
+                icon: 'mobile-alt',
+                breakpointText: 'Configure a value for Mobile screen sizes or larger'
+            };
+            this.mdSpacing.onShowModal(target, spacing, config);
+        }
+        onZIndexChanged(input, prop) {
+            const value = input.value;
+            this._data[prop] = value;
+            if (this.onChanged)
+                this.onChanged(prop, value);
+        }
+        onActiveChanged(target, type, value) {
+            const children = target.parentElement?.children || [];
+            for (let el of children) {
+                el.classList.remove(index_css_8.customIconLayoutActiveStyled);
+            }
+            target.classList.add(index_css_8.customIconLayoutActiveStyled);
+            this._data[type] = value;
+            if (this.onChanged)
+                this.onChanged(type, value);
+        }
+        onSpacingChanged(type, position, value) {
+            this._data[position] = value;
+            this.updateButtons();
+            if (this.onChanged)
+                this.onChanged(position, value);
         }
         init() {
             super.init();
-            this.renderUI();
+            this.position = 'relative';
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
@@ -1530,27 +1674,27 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                         this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Position", font: { size: '0.75rem' } }),
                             this.$render("i-grid-layout", { gap: { column: 1 }, templateColumns: ['1fr', '1fr'], verticalAlignment: "center" },
-                                this.$render("i-label", { caption: "Relative", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusLeft} ${index_css_8.customIconLayoutActiveStyled}`, padding: { top: 4, bottom: 4 } }),
-                                this.$render("i-label", { caption: "Absolute", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusRight}`, padding: { top: 4, bottom: 4 } }))),
+                                this.$render("i-label", { id: "lbRelative", caption: "Relative", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusLeft}`, padding: { top: 4, bottom: 4 }, onClick: (target) => this.onActiveChanged(target, 'position', 'relative') }),
+                                this.$render("i-label", { id: "lbAbsolute", caption: "Absolute", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusRight}`, padding: { top: 4, bottom: 4 }, onClick: (target) => this.onActiveChanged(target, 'position', 'absolute') }))),
                         this.$render("i-panel", { width: 320, padding: { top: 10, bottom: 10, left: 20, right: 20 }, border: { radius: 8, width: 1, style: 'solid', color: Theme.action.selectedBackground } },
-                            this.$render("i-vstack", { gap: 4, horizontalAlignment: "center" },
-                                this.$render("i-button", { caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'Top') }),
+                            this.$render("i-vstack", { id: "pnlPosition", gap: 4, horizontalAlignment: "center" },
+                                this.$render("i-button", { id: "top", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'top') }),
                                 this.$render("i-hstack", { width: "100%", horizontalAlignment: "space-between" },
-                                    this.$render("i-button", { caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'Left') }),
-                                    this.$render("i-button", { caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'Right') })),
-                                this.$render("i-button", { caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'Bottom') }))),
+                                    this.$render("i-button", { id: "left", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'left') }),
+                                    this.$render("i-button", { id: "right", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'right') })),
+                                this.$render("i-button", { id: "bottom", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'bottom') }))),
                         this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Z-Index", font: { size: '0.75rem' } }),
-                            this.$render("i-input", { id: "inputZIndex", inputType: "number", placeholder: "auto", width: "100%", height: 24, border: {
+                            this.$render("i-input", { id: "zIndexInput", inputType: "number", placeholder: "auto", width: "100%", height: 24, border: {
                                     radius: 8,
                                     width: 0
-                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_8.textInputRight })),
+                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onChanged: (target) => this.onZIndexChanged(target, 'zIndex'), class: index_css_8.textInputRight })),
                         this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Overflow", font: { size: '0.75rem' } }),
                             this.$render("i-grid-layout", { gap: { column: 1 }, templateColumns: ['1fr', '1fr'], verticalAlignment: "center" },
-                                this.$render("i-label", { caption: "Visible", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusLeft} ${index_css_8.customIconLayoutActiveStyled}`, padding: { top: 4, bottom: 4 } }),
-                                this.$render("i-label", { caption: "Hidden", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusRight}`, padding: { top: 4, bottom: 4 } }))))),
-                this.$render("designer-tool-modal-spacing", { id: "mdSpacing" })));
+                                this.$render("i-label", { id: "lbAuto", caption: "Visible", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusLeft}`, padding: { top: 4, bottom: 4 }, onClick: (target) => this.onActiveChanged(target, 'overflow', 'auto') }),
+                                this.$render("i-label", { id: "lbHidden", caption: "Hidden", class: `text-center ${index_css_8.customIconLayoutStyled} ${index_css_8.borderRadiusRight}`, padding: { top: 4, bottom: 4 }, onClick: (target) => this.onActiveChanged(target, 'overflow', 'hidden') }))))),
+                this.$render("designer-tool-modal-spacing", { id: "mdSpacing", onChanged: this.onSpacingChanged })));
         }
     };
     DesignerToolPosition = __decorate([
@@ -1558,7 +1702,7 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
     ], DesignerToolPosition);
     exports.default = DesignerToolPosition;
 });
-define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts"], function (require, exports, components_14, index_css_9, assets_2) {
+define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_14, index_css_9, assets_2, utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_14.Styles.Theme.ThemeVars;
@@ -1585,19 +1729,136 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
     let DesignerToolBorders = class DesignerToolBorders extends components_14.Module {
         constructor(parent, options) {
             super(parent, options);
+            this.currentStyle = null;
+            this._data = {};
+            this.radiusObj = {
+                topLeft: '',
+                topRight: '',
+                bottomLeft: '',
+                bottomRight: ''
+            };
+            this.onSpacingChanged = this.onSpacingChanged.bind(this);
+            this.onColorChanged = this.onColorChanged.bind(this);
+        }
+        setData(value) {
+            this._data = value;
+            this.renderUI();
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
         renderUI() {
+            const { border } = this._data;
+            this.inputRadius.value = border?.radius ?? '';
+            this.inputWidth.value = border?.width ?? '';
+            const radius = this._data.border?.radius;
+            if (radius !== undefined) {
+                const radiusStr = typeof radius === 'number' ? `${radius}px` : radius;
+                this.setRadiusByPosition(radiusStr);
+            }
+            this.updateButtons();
+            this.currentStyle = this.pnlBorderStyles?.children?.[0];
+            border.style = border?.style || 'solid';
         }
-        onShowSpacingModal(target, title) {
-            this.currentButton = target;
-            this.mdSpacing.onShowModal(target, title, 'mobile-alt', 'Configure a value for Mobile screen sizes or larger');
+        updateButtons() {
+            const buttons = this.pnlIndividual.querySelectorAll('i-button');
+            for (let i = 0; i < buttons.length; i++) {
+                const button = buttons[i];
+                const id = button.id || '';
+                const result = /(.*)(Radius|Width)$/.exec(id);
+                if (!result)
+                    continue;
+                const type = result[2];
+                const position = result[1];
+                const value = type === 'width' ? this._data.border?.[position]?.[type] : this.radiusObj[position];
+                button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
+            }
+        }
+        onShowSpacingModal(target, type, position) {
+            let value = '';
+            if (type === 'width') {
+                value = this._data.border?.[position]?.width ?? '';
+            }
+            else {
+                value = this.radiusObj[position];
+            }
+            const spacing = {
+                value,
+                type,
+                position
+            };
+            const config = {
+                title: `Border ${position} ${type}`,
+                icon: 'mobile-alt',
+                breakpointText: 'Configure a value for Mobile screen sizes or larger'
+            };
+            this.mdSpacing.onShowModal(target, spacing, config);
+        }
+        setRadiusByPosition(radius) {
+            const arr = radius.split(' ');
+            if (arr?.length) {
+                let [topLeft, topRight, bottomRight, bottomLeft] = arr;
+                if (topRight === undefined)
+                    topRight = topLeft;
+                if (bottomLeft === undefined)
+                    bottomLeft = topRight;
+                if (bottomRight === undefined)
+                    bottomRight = bottomLeft;
+                this.radiusObj.topLeft = topLeft;
+                this.radiusObj.topRight = topRight;
+                this.radiusObj.bottomRight = bottomRight;
+                this.radiusObj.bottomLeft = bottomLeft;
+            }
+        }
+        onPropChanged(target, prop) {
+            const value = target.value;
+            const border = {
+                ...(this._data.border || {}),
+                [prop]: `${value}px`
+            };
+            this._data.border = border;
+            if (this.onChanged)
+                this.onChanged('border', border);
+            // TODO: update individiual buttons
+        }
+        onSpacingChanged(type, position, value) {
+            if (type === 'width') {
+                if (!this._data.border[position])
+                    this._data.border[position] = {};
+                this._data.border[position].width = value;
+            }
+            else {
+                this.radiusObj[position] = value;
+                const radiusText = `${this.radiusObj.topLeft} ${this.radiusObj.topRight} ${this.radiusObj.bottomRight} ${this.radiusObj.bottomLeft}`;
+                this._data.border.radius = radiusText;
+            }
+            this.updateButtons();
+            if (this.onChanged)
+                this.onChanged('border', this._data.border);
+        }
+        onColorChanged(target) {
+            const color = target.value;
+            this._data.border.color = color;
+            if (this.onChanged)
+                this.onChanged('border', this._data.border);
+        }
+        onStyleChanged(target, value) {
+            if (this.currentStyle)
+                this.currentStyle.classList.remove(index_css_9.customIconLayoutStyled);
+            target.classList.add(index_css_9.customIconLayoutActiveStyled);
+            this.currentStyle = target;
+            const border = {
+                ...(this._data.border || {}),
+                style: value.value
+            };
+            this._data.border = border;
+            if (this.onChanged)
+                this.onChanged('border', border);
         }
         init() {
             super.init();
-            this.renderUI();
+            this.onChanged = this.getAttribute('onChanged', true);
+            this.position = 'relative';
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
@@ -1609,56 +1870,43 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Width", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}` }))),
+                                    this.$render("i-input", { id: "inputWidth", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}`, onChanged: (target) => this.onPropChanged(target, 'width') }))),
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Radius", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}` }))))),
+                                    this.$render("i-input", { id: "inputRadius", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}`, onChanged: (target) => this.onPropChanged(target, 'radius') }))))),
                     this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
-                    this.$render("i-vstack", { gap: 8 },
+                    this.$render("i-vstack", { id: "pnlIndividual", gap: 8 },
                         this.$render("i-label", { caption: "INDIVIDUAL EDGES", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 8, width: "100%", horizontalAlignment: "center" },
                             this.$render("i-hstack", { position: "relative", width: "100%", horizontalAlignment: "center" },
                                 this.$render("i-label", { caption: "Width", font: { size: '0.75rem' }, position: "absolute", top: 0, left: 0 }),
-                                this.$render("i-button", { caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Top Width') })),
+                                this.$render("i-button", { id: "topWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'top') })),
                             this.$render("i-hstack", { width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                this.$render("i-button", { caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Left Width') }),
+                                this.$render("i-button", { id: "leftWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'left') }),
                                 this.$render("i-vstack", { verticalAlignment: "space-between", width: 200, height: 100, padding: { top: 4, bottom: 4, left: 4, right: 4 }, border: { width: 4, style: 'solid', color: Theme.action.selectedBackground } },
                                     this.$render("i-hstack", { width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                        this.$render("i-button", { caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Top Left Radius') }),
+                                        this.$render("i-button", { id: "topLeftRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'topLeft') }),
                                         this.$render("i-label", { caption: "Radius", font: { size: '0.75rem' } }),
-                                        this.$render("i-button", { caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Top Right Radius') })),
+                                        this.$render("i-button", { id: "topRightRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'topRight') })),
                                     this.$render("i-hstack", { width: "100%", horizontalAlignment: "space-between" },
-                                        this.$render("i-button", { caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Bottom Left Radius') }),
-                                        this.$render("i-button", { caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Bottom Left Radius') }))),
-                                this.$render("i-button", { caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Right Width') })),
-                            this.$render("i-button", { caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'Border Bottom Width') }))),
+                                        this.$render("i-button", { id: "bottomLeftRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'bottomLeft') }),
+                                        this.$render("i-button", { id: "bottomRightRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'bottomRight') }))),
+                                this.$render("i-button", { id: "rightWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'right') })),
+                            this.$render("i-button", { id: "bottomWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'bottom') }))),
                     this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
                     this.$render("i-vstack", { gap: 8 },
                         this.$render("i-label", { caption: "DECORATION", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Color", font: { size: '0.75rem' } }),
                             this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
-                                this.$render("i-color", { class: index_css_9.customColorStyled }),
-                                this.$render("i-combo-box", { width: "calc(100% - 28px)", items: [
-                                        {
-                                            value: 'primary',
-                                            label: 'Primary'
-                                        },
-                                        {
-                                            value: 'secondary',
-                                            label: 'Secondary'
-                                        },
-                                        {
-                                            value: 'background',
-                                            label: 'Background'
-                                        }
-                                    ], placeholder: "Type or select a color..." }))),
+                                this.$render("i-color", { id: "bgColor", onChanged: this.onColorChanged, class: index_css_9.customColorStyled }),
+                                this.$render("i-combo-box", { width: "calc(100% - 28px)", items: utils_2.backgroundOptions, placeholder: "Type or select a color..." }))),
                         this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Style", font: { size: '0.75rem' } }),
-                            this.$render("i-hstack", { gap: 1, verticalAlignment: "center", class: `${index_css_9.borderRadiusLeft} ${index_css_9.borderRadiusRight}` }, borderStyles.map(v => this.$render("i-panel", { display: "flex", tooltip: { content: v.caption }, class: `${index_css_9.customIconLayoutStyled} ${v.classes || ''} ${v.isActive ? index_css_9.customIconLayoutActiveStyled : ''}`, padding: { top: 4, bottom: 4, left: 34, right: 34 } },
+                            this.$render("i-hstack", { id: "pnlBorderStyles", gap: 1, verticalAlignment: "center", class: `${index_css_9.borderRadiusLeft} ${index_css_9.borderRadiusRight}` }, borderStyles.map(v => this.$render("i-panel", { display: "flex", tooltip: { content: v.caption }, class: `${index_css_9.customIconLayoutStyled} ${v.classes || ''} ${v.isActive ? index_css_9.customIconLayoutActiveStyled : ''}`, padding: { top: 4, bottom: 4, left: 34, right: 34 }, onClick: (target) => this.onStyleChanged(target, v) },
                                 this.$render("i-image", { display: "flex", url: v.img, width: 16, height: 16 }))))))),
-                this.$render("designer-tool-modal-spacing", { id: "mdSpacing" })));
+                this.$render("designer-tool-modal-spacing", { id: "mdSpacing", onChanged: this.onSpacingChanged })));
         }
     };
     DesignerToolBorders = __decorate([
@@ -1673,22 +1921,35 @@ define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech
     let DesignerToolEffects = class DesignerToolEffects extends components_15.Module {
         constructor(parent, options) {
             super(parent, options);
+            this._data = {};
+        }
+        setData(value) {
+            this._data = value;
+            this.renderUI();
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
         renderUI() {
-            this.inputEffect.value = this.rangeEffect.value = 100;
+            const { opacity = 1 } = this._data;
+            this.inputEffect.value = this.rangeEffect.value = Number(opacity) * 100;
         }
         onInputEffectChanged() {
             this.rangeEffect.value = this.inputEffect.value;
+            this._data.opacity = this.rangeEffect.value / 100;
+            if (this.onChanged)
+                this.onChanged('opacity', `${this._data.opacity}`);
         }
         onRangeChanged() {
             this.inputEffect.value = this.rangeEffect.value;
+            this._data.opacity = this.rangeEffect.value / 100;
+            if (this.onChanged)
+                this.onChanged('opacity', `${this._data.opacity}`);
         }
         init() {
             super.init();
-            this.renderUI();
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.inputEffect.value = this.rangeEffect.value = 100;
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
@@ -1951,16 +2212,36 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 this.$render("i-label", { caption: category || '', opacity: 0.6, font: { size: '0.625rem' }, margin: { left: 'auto' }, display: "flex" })));
         }
         updateProps() {
-            // const elm = this.component.control._getCustomProperties();
-            // const props = elm.props || {};
-            this.designerBackground.setData({ color: this.component.control?.background?.color || '' });
-            this.designerSize.setData({ width: this.component.control?.width || 0, height: this.component.control?.height || 0 });
+            const { margin, padding, background, width, height, opacity, position, zIndex, border, top, right, bottom, left, overflow } = this.component.control;
+            this.designerBackground.setData({ color: background?.color || '' });
+            this.designerSize.setData({ width: width || 0, height: height || 0 });
+            this.designerEffects.setData({ opacity });
+            this.designerSpacing.setData({
+                ...(margin ? { margin: { top: margin.top, bottom: margin.bottom, left: margin.left, right: margin.right } } : {}),
+                ...(padding ? { padding: { top: padding.top, bottom: padding.bottom, left: padding.left, right: padding.right } } : {}),
+            });
+            let overflowValue = (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto';
+            this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow: overflowValue });
+            this.designerBorders.setData({
+                ...(border ? {
+                    border: {
+                        top: border.top,
+                        right: border.right,
+                        bottom: border.bottom,
+                        left: border.left,
+                        radius: border.radius,
+                        width: border.width,
+                        style: border.style,
+                        color: border.color
+                    }
+                } : {})
+            });
         }
         onPropChanged(prop, value) {
             if (!this.component)
                 return;
             if (prop === 'background') {
-                this.component.control._setDesignPropValue(prop, JSON.stringify({ color: value }));
+                this.component.control._setDesignPropValue(prop, { color: value });
             }
             else {
                 this.component.control._setDesignPropValue(prop, value);
@@ -1993,11 +2274,11 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                             this.$render("designer-tool-stylesheet", { id: "designerStylesheet", display: "block" }),
                             this.$render("designer-tool-layout", { id: 'designerLayout', display: "block" }),
                             this.$render("designer-tool-background", { id: "designerBackground", display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-size", { id: "designerSize", display: "block" }),
-                            this.$render("designer-tool-margins-padding", { id: "designerSpacing", display: "block" }),
-                            this.$render("designer-tool-position", { id: "designerPosition", display: "block" }),
-                            this.$render("designer-tool-borders", { id: "designerBorders", display: "block" }),
-                            this.$render("designer-tool-effects", { id: "designerEffects", display: "block" }))),
+                            this.$render("designer-tool-size", { id: "designerSize", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-margins-padding", { id: "designerSpacing", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-position", { id: "designerPosition", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-borders", { id: "designerBorders", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-effects", { id: "designerEffects", display: "block", onChanged: this.onPropChanged }))),
                     this.$render("i-tab", { icon: { name: 'sliders-h', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
                             this.$render("designer-settings-basic", { display: "block" }),
@@ -14118,12 +14399,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             super(parent, options);
             this.currentTab = TABS.BITS;
             this.pathMapping = new Map();
+            this.tag = {};
         }
         static async create(options, parent) {
             let self = new this(parent, options);
             await self.ready();
             return self;
         }
+        setData() { }
+        getData() { }
         get pickerComponentsFiltered() {
             let components;
             if (this.currentTab === TABS.RECENT) {
@@ -14349,8 +14633,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     props: {
                         width: '20%',
                         height: '50px',
-                        top: '10px',
-                        left: '220px',
+                        opacity: '0.5',
                         caption: 'Button',
                         background: {
                             color: '#0000ff'
@@ -14360,7 +14643,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
         }
         initDesignerProperties() {
-            // TODO
             if (this.selectedControl)
                 this.designerProperties.component = this.selectedControl;
         }
@@ -14369,6 +14651,150 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.initBlockPicker();
             this.initComponentScreen();
             this.initDesignerProperties();
+        }
+        updateTag(type, value) {
+            this.tag[type] = this.tag[type] ?? {};
+            for (let prop in value) {
+                if (value.hasOwnProperty(prop))
+                    this.tag[type][prop] = value[prop];
+            }
+        }
+        async setTag(value) {
+            const newValue = value || {};
+            for (let prop in newValue) {
+                if (newValue.hasOwnProperty(prop)) {
+                    if (prop === 'light' || prop === 'dark')
+                        this.updateTag(prop, newValue[prop]);
+                    else
+                        this.tag[prop] = newValue[prop];
+                }
+            }
+            this.updateTheme();
+        }
+        updateStyle(name, value) {
+            value ? this.style.setProperty(name, value) : this.style.removeProperty(name);
+        }
+        updateTheme() {
+            const themeVar = document.body.style.getPropertyValue('--theme') ?? 'dark';
+            this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
+            this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
+        }
+        getTag() {
+            return this.tag;
+        }
+        getConfigurators() {
+            return [
+                {
+                    name: 'Builder Configurator',
+                    target: 'Builders',
+                    getActions: () => {
+                        return this._getActions();
+                    },
+                    getData: this.getData.bind(this),
+                    setData: this.setData.bind(this),
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this),
+                },
+                {
+                    name: 'Emdedder Configurator',
+                    target: 'Embedders',
+                    getData: this.getData.bind(this),
+                    setData: this.setData.bind(this),
+                    getTag: this.getTag.bind(this),
+                    setTag: this.setTag.bind(this),
+                },
+            ];
+        }
+        _getActions() {
+            const actions = [
+                {
+                    name: 'Widget Settings',
+                    icon: 'edit',
+                    ...this.getWidgetSchemas(),
+                },
+            ];
+            return actions;
+        }
+        getWidgetSchemas() {
+            const propertiesSchema = {
+                type: 'object',
+                properties: {
+                    pt: {
+                        title: 'Top',
+                        type: 'number',
+                    },
+                    pb: {
+                        title: 'Bottom',
+                        type: 'number',
+                    },
+                    pl: {
+                        title: 'Left',
+                        type: 'number',
+                    },
+                    pr: {
+                        title: 'Right',
+                        type: 'number',
+                    },
+                    align: {
+                        type: 'string',
+                        title: 'Alignment',
+                        enum: ['left', 'center', 'right'],
+                    },
+                    maxWidth: {
+                        type: 'number',
+                    },
+                    link: {
+                        title: 'URL',
+                        type: 'string',
+                    },
+                },
+            };
+            const themesSchema = {
+                type: 'VerticalLayout',
+                elements: [
+                    {
+                        type: 'HorizontalLayout',
+                        elements: [
+                            {
+                                type: 'Group',
+                                label: 'Padding (px)',
+                                elements: [
+                                    {
+                                        type: 'VerticalLayout',
+                                        elements: [
+                                            {
+                                                type: 'HorizontalLayout',
+                                                elements: [
+                                                    {
+                                                        type: 'Control',
+                                                        scope: '#/properties/pt',
+                                                    },
+                                                    {
+                                                        type: 'Control',
+                                                        scope: '#/properties/pb',
+                                                    },
+                                                    {
+                                                        type: 'Control',
+                                                        scope: '#/properties/pl',
+                                                    },
+                                                    {
+                                                        type: 'Control',
+                                                        scope: '#/properties/pr',
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            };
+            return {
+                userInputDataSchema: propertiesSchema,
+                userInputUISchema: themesSchema,
+            };
         }
         init() {
             super.init();

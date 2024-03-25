@@ -5,7 +5,7 @@ import {
   customElements,
   IconName,
   HStack,
-  Container
+  Container,
 } from '@ijstech/components'
 import assets from '../assets';
 import { customIconTabActiveStyled, customIconTabStyled, customTabStyled } from '../index.css';
@@ -126,7 +126,7 @@ export default class DesignerProperties extends Module {
   private designerLayout: DesignerToolLayout;
   private designerBackground: DesignerToolBackground;
   private designerSize: DesignerToolSize;
-  private designerMarginsAndPaddings: DesignerToolMarginsAndPadding;
+  private designerSpacing: DesignerToolMarginsAndPadding;
   private designerPosition: DesignerToolPosition;
   private designerBorders: DesignerToolBorders;
   private designerEffects: DesignerToolEffects;
@@ -172,16 +172,50 @@ export default class DesignerProperties extends Module {
   }
 
   private updateProps() {
-    // const elm = this.component.control._getCustomProperties();
-    // const props = elm.props || {};
-    this.designerBackground.setData({ color: this.component.control?.background?.color || '' })
-    this.designerSize.setData({ width: this.component.control?.width || 0, height: this.component.control?.height || 0 })
+    const {
+      margin,
+      padding,
+      background,
+      width,
+      height,
+      opacity,
+      position,
+      zIndex,
+      border,
+      top,
+      right,
+      bottom,
+      left,
+      overflow
+    } = this.component.control;
+    this.designerBackground.setData({ color: background?.color || '' })
+    this.designerSize.setData({ width: width || 0, height: height || 0 })
+    this.designerEffects.setData({ opacity })
+    this.designerSpacing.setData({
+      ...(margin ? { margin: { top: margin.top, bottom: margin.bottom, left: margin.left, right: margin.right }} : {}),
+      ...(padding ? { padding: { top: padding.top, bottom: padding.bottom, left: padding.left, right: padding.right }} : {}),
+    });
+    let overflowValue = (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto' ;
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow: overflowValue })
+    this.designerBorders.setData({
+      ...(border ? {
+        border: {
+          top: border.top,
+          right: border.right,
+          bottom: border.bottom,
+          left: border.left,
+          radius: border.radius,
+          width: border.width,
+          style: border.style,
+          color: border.color
+        }} : {})
+    })
   }
 
   private onPropChanged(prop: string, value: any) {
     if (!this.component) return;
     if (prop === 'background') {
-      this.component.control._setDesignPropValue(prop, JSON.stringify({color: value}));
+      this.component.control._setDesignPropValue(prop, {color: value});
     } else {
       this.component.control._setDesignPropValue(prop, value);
     }
@@ -282,11 +316,11 @@ export default class DesignerProperties extends Module {
               <designer-tool-stylesheet id="designerStylesheet" display="block" />
               <designer-tool-layout id='designerLayout' display="block" />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-size id="designerSize" display="block" />
-              <designer-tool-margins-padding id="designerSpacing" display="block" />
-              <designer-tool-position id="designerPosition" display="block" />
-              <designer-tool-borders id="designerBorders" display="block" />
-              <designer-tool-effects id="designerEffects" display="block" />
+              <designer-tool-size id="designerSize" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-margins-padding id="designerSpacing" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>
@@ -296,6 +330,7 @@ export default class DesignerProperties extends Module {
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'database', width: '1.5rem', height: '1.5rem' }}>
+            {/* TODO: update new components */}
             <i-label caption="Database" />
           </i-tab>
           <i-tab icon={{ name: 'magic', width: '1.5rem', height: '1.5rem' }}>

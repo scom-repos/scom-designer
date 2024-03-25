@@ -140,13 +140,13 @@ export default class DesignerToolSize extends Module {
     const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
     mdWrapper.style.width = '1.5rem';
     mdWrapper.style.paddingInline = '0px';
-    const onUnitChanged = (value: 'pt' | '%') => {
+    const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
-      this.unit = value === 'pt' ? 'px' : value;
+      this.unit = value;
       this.mdUnits.visible = false;
     }
     const itemUnits = new VStack(undefined, { gap: 8, border: { radius: 8 } });
-    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('pt')} />);
+    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('px')} />);
     itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="%" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('%')} />);
     this.mdUnits.item = itemUnits;
     document.body.appendChild(this.mdUnits);

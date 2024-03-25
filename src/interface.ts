@@ -38,4 +38,4 @@ export interface IControl extends IComponent {
   control: Control;
 }
 
-export type onChangedCallback = (prop: string, value: string) => void;
+export type onChangedCallback = (prop: string, value: string|number|boolean|object) => void;

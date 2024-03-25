@@ -46,7 +46,7 @@ declare module "@scom/scom-designer/interface.ts" {
     export interface IControl extends IComponent {
         control: Control;
     }
-    export type onChangedCallback = (prop: string, value: string) => void;
+    export type onChangedCallback = (prop: string, value: string | number | boolean | object) => void;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" {
@@ -289,10 +289,21 @@ declare module "@scom/scom-designer/tools/size.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/modal-spacing.tsx" />
 declare module "@scom/scom-designer/tools/modal-spacing.tsx" {
     import { Module, ControlElement, Container, IconName, Button } from '@ijstech/components';
+    type onChangedCallback = (type: string, position: string, value: string) => void;
     interface DesignerToolModalSpacingElement extends ControlElement {
-        titleSpacing?: string;
-        iconName?: IconName;
+        config?: IConfig;
+        data?: ISpacing;
+        onChanged?: onChangedCallback;
+    }
+    interface ISpacing {
+        value?: string | number;
+        type?: string;
+        position?: string;
+    }
+    interface IConfig {
+        title?: string;
         breakpointText?: string;
+        iconName?: IconName;
     }
     global {
         namespace JSX {
@@ -302,19 +313,22 @@ declare module "@scom/scom-designer/tools/modal-spacing.tsx" {
         }
     }
     export default class DesignerToolModalSpacing extends Module {
-        private titleSpacing;
-        private iconName;
-        private breakpointText;
+        private unit;
+        private spacing;
+        private config;
         private modal;
         private vStackIndUnits;
         private lbIndUnit;
         private lbTitle;
         private lbBreakpoint;
         private iconTitle;
+        private inputValue;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolModalSpacingElement);
         private initModal;
         private updateHeader;
-        onShowModal(target: Button, title: string, iconName: IconName, breakpointText: string): void;
+        private updateValue;
+        onShowModal(target: Button, value: ISpacing, config: IConfig): void;
         init(): void;
         render(): any;
     }
@@ -322,7 +336,23 @@ declare module "@scom/scom-designer/tools/modal-spacing.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/margins-padding.tsx" />
 declare module "@scom/scom-designer/tools/margins-padding.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolMarginsAndPaddingElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerSpacing {
+        margin?: {
+            top?: string | number;
+            right?: string | number;
+            bottom?: string | number;
+            left?: string | number;
+        };
+        padding?: {
+            top?: string | number;
+            right?: string | number;
+            bottom?: string | number;
+            left?: string | number;
+        };
     }
     global {
         namespace JSX {
@@ -336,13 +366,22 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
         private mdUnits;
         private mdSpacing;
         private currentLabel;
-        private currentButton;
+        private marginInput;
+        private paddingInput;
+        private vStackIndividual;
+        private _data;
+        private _unit;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolMarginsAndPaddingElement);
+        setData(data: IDesignerSpacing): void;
         private onCollapse;
         private renderUI;
+        private updateButtons;
+        private onOverallChanged;
         private onShowUnitsModal;
         private initModalUnits;
         private onShowSpacingModal;
+        private onSpacingChanged;
         init(): void;
         render(): any;
     }
@@ -350,7 +389,18 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/position.tsx" />
 declare module "@scom/scom-designer/tools/position.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolPositionElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerPosition {
+        position?: string;
+        top?: number | string;
+        right?: number | string;
+        bottom?: number | string;
+        left?: number | string;
+        overflow?: string;
+        zIndex?: string;
     }
     global {
         namespace JSX {
@@ -362,18 +412,32 @@ declare module "@scom/scom-designer/tools/position.tsx" {
     export default class DesignerToolPosition extends Module {
         private vStackContent;
         private mdSpacing;
+        private zIndexInput;
+        private pnlPosition;
+        private _data;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolPositionElement);
+        setData(data: IDesignerPosition): void;
         private onCollapse;
         private renderUI;
+        private updateButtons;
         private onShowModal;
+        private onZIndexChanged;
+        private onActiveChanged;
+        private onSpacingChanged;
         init(): void;
         render(): any;
     }
 }
 /// <amd-module name="@scom/scom-designer/tools/borders.tsx" />
 declare module "@scom/scom-designer/tools/borders.tsx" {
-    import { Module, ControlElement, Container } from '@ijstech/components';
+    import { Module, ControlElement, Container, IBorder } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolBordersElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerBorder {
+        border?: IBorder;
     }
     global {
         namespace JSX {
@@ -385,11 +449,25 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
     export default class DesignerToolBorders extends Module {
         private vStackContent;
         private mdSpacing;
-        private currentButton;
+        private inputRadius;
+        private inputWidth;
+        private pnlIndividual;
+        private currentStyle;
+        private pnlBorderStyles;
+        private _data;
+        private radiusObj;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolBordersElement);
+        setData(value: IDesignerBorder): void;
         private onCollapse;
         private renderUI;
+        private updateButtons;
         private onShowSpacingModal;
+        private setRadiusByPosition;
+        private onPropChanged;
+        private onSpacingChanged;
+        private onColorChanged;
+        private onStyleChanged;
         init(): void;
         render(): any;
     }
@@ -397,7 +475,12 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/effects.tsx" />
 declare module "@scom/scom-designer/tools/effects.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolEffectsElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerEffect {
+        opacity?: number | string;
     }
     global {
         namespace JSX {
@@ -410,7 +493,10 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
         private vStackContent;
         private inputEffect;
         private rangeEffect;
+        private _data;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolEffectsElement);
+        setData(value: IDesignerEffect): void;
         private onCollapse;
         private renderUI;
         private onInputEffectChanged;
@@ -530,7 +616,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private designerLayout;
         private designerBackground;
         private designerSize;
-        private designerMarginsAndPaddings;
+        private designerSpacing;
         private designerPosition;
         private designerBorders;
         private designerEffects;
@@ -722,8 +808,11 @@ declare module "@scom/scom-designer" {
         private _rootComponent;
         private compiler;
         private pathMapping;
+        tag: any;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerElement, parent?: Container): Promise<ScomDesigner>;
+        private setData;
+        private getData;
         get pickerComponentsFiltered(): IComponentPicker[];
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
         clear(): void;
@@ -747,6 +836,30 @@ declare module "@scom/scom-designer" {
         private getParserComponent;
         private initDesignerProperties;
         private renderUI;
+        private updateTag;
+        private setTag;
+        private updateStyle;
+        private updateTheme;
+        private getTag;
+        getConfigurators(): ({
+            name: string;
+            target: string;
+            getActions: () => any[];
+            getData: any;
+            setData: any;
+            getTag: any;
+            setTag: any;
+        } | {
+            name: string;
+            target: string;
+            getData: any;
+            setData: any;
+            getTag: any;
+            setTag: any;
+            getActions?: undefined;
+        })[];
+        private _getActions;
+        private getWidgetSchemas;
         init(): void;
         openFile(file: IIPFSData, endpoint: string, parentCid: string, parent: Control): Promise<void>;
         render(): any;

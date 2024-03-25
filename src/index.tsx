@@ -7,7 +7,9 @@ import {
   Input,
   ControlElement,
   Container,
-  Control
+  Control,
+  IUISchema,
+  IDataSchema
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -120,6 +122,8 @@ export class ScomDesigner extends Module implements IFileHandler {
   private compiler: Compiler;
   private pathMapping: Map<string, IControl> = new Map();
 
+  tag: any = {};
+
   constructor(parent?: Container, options?: any) {
     super(parent, options)
   }
@@ -129,6 +133,10 @@ export class ScomDesigner extends Module implements IFileHandler {
     await self.ready()
     return self
   }
+
+  private setData() {}
+
+  private getData() {}
 
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
@@ -367,8 +375,7 @@ export class ScomDesigner extends Module implements IFileHandler {
         props: {
           width: '20%',
           height: '50px',
-          top: '10px',
-          left: '220px',
+          opacity: '0.5',
           caption: 'Button',
           background: {
             color: '#0000ff'
@@ -379,7 +386,6 @@ export class ScomDesigner extends Module implements IFileHandler {
   }
 
   private initDesignerProperties() {
-    // TODO
     if (this.selectedControl)
       this.designerProperties.component = this.selectedControl;
   }
@@ -389,6 +395,155 @@ export class ScomDesigner extends Module implements IFileHandler {
     this.initBlockPicker()
     this.initComponentScreen()
     this.initDesignerProperties()
+  }
+
+  private updateTag(type: 'light' | 'dark', value: any) {
+    this.tag[type] = this.tag[type] ?? {};
+    for (let prop in value) {
+      if (value.hasOwnProperty(prop)) this.tag[type][prop] = value[prop];
+    }
+  }
+
+  private async setTag(value: any) {
+    const newValue = value || {};
+    for (let prop in newValue) {
+      if (newValue.hasOwnProperty(prop)) {
+        if (prop === 'light' || prop === 'dark') this.updateTag(prop, newValue[prop]);
+        else this.tag[prop] = newValue[prop];
+      }
+    }
+    this.updateTheme();
+  }
+
+  private updateStyle(name: string, value: any) {
+    value ? this.style.setProperty(name, value) : this.style.removeProperty(name);
+  }
+
+  private updateTheme() {
+    const themeVar = document.body.style.getPropertyValue('--theme') ?? 'dark';
+    this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
+    this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
+  }
+
+  private getTag() {
+    return this.tag;
+  }
+
+  getConfigurators() {
+    return [
+      {
+        name: 'Builder Configurator',
+        target: 'Builders',
+        getActions: () => {
+          return this._getActions();
+        },
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this),
+      },
+      {
+        name: 'Emdedder Configurator',
+        target: 'Embedders',
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this),
+      },
+    ];
+  }
+
+  private _getActions() {
+    const actions = [
+      {
+        name: 'Widget Settings',
+        icon: 'edit',
+        ...this.getWidgetSchemas(),
+      },
+    ];
+    return actions;
+  }
+
+  private getWidgetSchemas(): any {
+    const propertiesSchema: IDataSchema = {
+      type: 'object',
+      properties: {
+        pt: {
+          title: 'Top',
+          type: 'number',
+        },
+        pb: {
+          title: 'Bottom',
+          type: 'number',
+        },
+        pl: {
+          title: 'Left',
+          type: 'number',
+        },
+        pr: {
+          title: 'Right',
+          type: 'number',
+        },
+        align: {
+          type: 'string',
+          title: 'Alignment',
+          enum: ['left', 'center', 'right'],
+        },
+        maxWidth: {
+          type: 'number',
+        },
+        link: {
+          title: 'URL',
+          type: 'string',
+        },
+      },
+    };
+    const themesSchema: IUISchema = {
+      type: 'VerticalLayout',
+      elements: [
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            {
+              type: 'Group',
+              label: 'Padding (px)',
+              elements: [
+                {
+                  type: 'VerticalLayout',
+                  elements: [
+                    {
+                      type: 'HorizontalLayout',
+                      elements: [
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pt',
+                        },
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pb',
+                        },
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pl',
+                        },
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pr',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    return {
+      userInputDataSchema: propertiesSchema,
+      userInputUISchema: themesSchema,
+    };
   }
 
   init() {
