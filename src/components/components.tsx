@@ -21,6 +21,7 @@ const Theme = Styles.Theme.ThemeVars;
 interface DesignerComponentsElement extends ControlElement {
   onShowComponentPicker: () => void;
   onSelect?: (component: IComponent) => void;
+  onVisible?: (component: IComponent, visible: boolean) => void;
   screen?: IScreen;
 }
 
@@ -41,6 +42,7 @@ export default class DesignerComponents extends Module {
 
   public onShowComponentPicker: () => void;
   onSelect: (component: IComponent) => void;
+  onVisible: (component: IComponent, visible: boolean) => void;
 
   get screen() {
     return this._screen;
@@ -107,14 +109,27 @@ export default class DesignerComponents extends Module {
         this.onShowActions(pageY + 5, x);
       }
 
-      hStackActions.appendChild(<i-icon name="ellipsis-h" width={14} height={14} opacity={0} cursor="pointer" onClick={onShowActions} />);
-      hStackActions.appendChild(<i-icon name="eye" width={14} height={14} opacity={0} cursor="pointer" onClick={(icon: Icon) => this.onHideComponent(icon)} />);
+      hStackActions.appendChild(
+        <i-icon
+          name="ellipsis-h"
+          width={'0.875rem'} height={'0.875rem'}
+          opacity={0} cursor="pointer"
+          onClick={onShowActions}
+        />
+      );
+      hStackActions.appendChild(
+        <i-icon
+          name="eye"
+          width={'0.875rem'} height={'0.875rem'}
+          opacity={0} cursor="pointer"
+          onClick={(icon: Icon) => this.onHideComponent(icon, elm)}
+        />
+      );
 
       hStack.onClick = () => {
         const currentElm = this.vStackComponents.querySelector(`.${rowItemActiveStyled}`);
         if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
         hStack.classList.add(rowItemActiveStyled);
-        // TODO - change prop UI
         if (this.onSelect) this.onSelect(elm);
       }
       hStack.onDblClick = () => {
@@ -137,9 +152,9 @@ export default class DesignerComponents extends Module {
     }
   }
 
-  private onHideComponent(icon: Icon) {
+  private onHideComponent(icon: Icon, component: IComponent) {
     icon.name = icon.name === 'eye' ? 'eye-slash' : 'eye';
-    // TODO - update list
+    if (this.onVisible) this.onVisible(component, icon.name === 'eye-slash');
   }
 
   private onShowActions(top: number, left: number) {
@@ -168,6 +183,7 @@ export default class DesignerComponents extends Module {
   init() {
     super.init();
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
+    this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
     this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
     this.initModalActions();
     this.screen = this.getAttribute('screen', true);
@@ -190,7 +206,7 @@ export default class DesignerComponents extends Module {
           padding={{ top: 4, bottom: 4, left: 8 }}
           background={{ color: '#26324b' }}
         >
-          <i-label caption="Components" font={{ bold: true, size: '0.75rem' }} />
+          <i-label caption="Structure" font={{ bold: true, size: '0.75rem' }} />
           <i-hstack verticalAlignment="center" margin={{ left: 'auto' }}>
             <i-icon
               name="history"

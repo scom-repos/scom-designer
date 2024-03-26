@@ -127,3 +127,18 @@ export const customTabStyled = Styles.style({
     },
   }
 })
+
+
+export const codeTabsStyle = Styles.style({
+  $nest: {
+      "> .tabs-nav-wrap": {
+          background: "#181818",
+      },
+  },
+});
+
+export const blockStyle = Styles.style({
+  display: 'block',
+  width: '100%',
+  height: '100%'
+})

@@ -7,123 +7,27 @@ import {
   Styles,
   VStack,
   GridLayout,
-  Input
+  Input,
+  Switch
 } from '@ijstech/components'
 import { borderRadiusLeft, borderRadiusRight, customIconLayoutActiveStyled, customIconLayoutStyled, textInputRight } from './index.css';
 import assets from '../assets';
+import { onChangedCallback } from '../interface';
+import { alignContentProps, getAlignProps, justifyProps } from '../utils';
 const Theme = Styles.Theme.ThemeVars;
 
-const alignProps = [
-  {
-    caption: 'Flex Start',
-    value: 'flex-start',
-    img: assets.fullPath('img/designer/layout/align-start.svg'),
-    classes: borderRadiusLeft
-  },
-  {
-    caption: 'Center',
-    value: 'center',
-    img: assets.fullPath('img/designer/layout/align-center.svg')
-  },
-  {
-    caption: 'Flex End',
-    value: 'flex-end',
-    img: assets.fullPath('img/designer/layout/align-start.svg'),
-    rotate: 180
-  },
-  {
-    caption: 'Stretch',
-    value: 'stretch',
-    img: assets.fullPath('img/designer/layout/align-stretch.svg'),
-    isActive: true
-  },
-  {
-    caption: 'Baseline',
-    value: 'baseline',
-    img: assets.fullPath('img/designer/layout/align-base-line.svg'),
-    classes: borderRadiusRight
-  }
-]
-
-const justifyProps = [
-  {
-    caption: 'Flex Start',
-    value: 'flex-start',
-    img: assets.fullPath('img/designer/layout/justify-start.svg'),
-    isActive: true,
-    classes: borderRadiusLeft
-  },
-  {
-    caption: 'Center',
-    value: 'center',
-    img: assets.fullPath('img/designer/layout/justify-center.svg')
-  },
-  {
-    caption: 'Flex End',
-    value: 'flex-end',
-    img: assets.fullPath('img/designer/layout/justify-start.svg'),
-    rotate: 180
-  },
-  {
-    caption: 'Space Between',
-    value: 'space-between',
-    img: assets.fullPath('img/designer/layout/justify-between.svg')
-  },
-  {
-    caption: 'Space Around',
-    value: 'space-around',
-    img: assets.fullPath('img/designer/layout/justify-around.svg')
-  },
-  {
-    caption: 'Space Evenly',
-    placement: 'left',
-    value: 'space-evenly',
-    img: assets.fullPath('img/designer/layout/justify-evenly.svg'),
-    classes: borderRadiusRight
-  }
-]
-
-const alignContentProps = [
-  {
-    caption: 'Flex Start',
-    value: 'flex-start',
-    img: assets.fullPath('img/designer/layout/align-start.svg'),
-    isActive: true,
-    classes: borderRadiusLeft
-  },
-  {
-    caption: 'Center',
-    value: 'center',
-    img: assets.fullPath('img/designer/layout/align-center.svg')
-  },
-  {
-    caption: 'Flex End',
-    value: 'flex-end',
-    img: assets.fullPath('img/designer/layout/align-start.svg'),
-    rotate: 180
-  },
-  {
-    caption: 'Space Between',
-    value: 'space-between',
-    img: assets.fullPath('img/designer/layout/justify-between.svg'),
-    rotate: 90
-  },
-  {
-    caption: 'Space Around',
-    value: 'space-around',
-    img: assets.fullPath('img/designer/layout/justify-around.svg'),
-    rotate: 90
-  },
-  {
-    caption: 'Stretch',
-    value: 'stretch',
-    img: assets.fullPath('img/designer/layout/align-stretch.svg'),
-    classes: borderRadiusRight
-  }
-]
+interface IDesignerLayout {
+  wrap?: string;
+  direction?: string;
+  alignItems?: string;
+  justifyContent?: string;
+  alignSelf?: string;
+  alignContent?: string;
+  flexFlow?: string;
+}
 
 interface DesignerToolLayoutElement extends ControlElement {
-
+  onChanged?: onChangedCallback;
 }
 
 declare global {
@@ -142,8 +46,22 @@ export default class DesignerToolLayout extends Module {
   private inputBasicFlex: Input;
   private wrapperAdvancedFlex: GridLayout;
 
+  private _data: IDesignerLayout = {};
+  onChanged: onChangedCallback;
+
   constructor(parent?: Container, options?: DesignerToolLayoutElement) {
     super(parent, options);
+    this.onSelectChanged = this.onSelectChanged.bind(this);
+    this.onReverseSwitch = this.onReverseSwitch.bind(this);
+  }
+
+  setData(data: IDesignerLayout) {
+    this._data = data;
+    this.renderUI();
+  }
+
+  private renderUI() {
+    // TODO: fill data
   }
 
   private onCollapse(isShown: boolean) {
@@ -157,13 +75,22 @@ export default class DesignerToolLayout extends Module {
     this.wrapperAdvancedFlex.visible = !this.isBasicFlex;
   }
 
-  private renderUI() {
+  private onSelectChanged(type: string, value: string) {
+    this._data[type] = value;
+    // console.log('type', type, ' value', value)
+    if (this.onChanged) this.onChanged(type, value);
+  }
 
+  private onReverseSwitch(target: Switch) {
+    const checked = target.checked;
+    const type = this._data.direction === 'horizontal' ? 'row' : 'column';
+    this._data.flexFlow = checked ? `${type}-reverse` : type;
+    if (this.onChanged) this.onChanged('flexFlow', this._data.flexFlow);
   }
 
   init() {
     super.init();
-    this.renderUI();
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
   }
 
   render() {
@@ -179,122 +106,42 @@ export default class DesignerToolLayout extends Module {
           <i-vstack gap={8}>
             <i-label caption="FLEX ITEMS" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={12}>
-              <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Direction" font={{ size: '0.75rem' }} />
-                <i-hstack gap={12} verticalAlignment="center">
-                  <i-hstack gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-                    <i-panel
-                      display="flex"
-                      tooltip={{ content: 'Column' }}
-                      class={`${borderRadiusLeft} ${customIconLayoutStyled} ${customIconLayoutActiveStyled}`}
-                      padding={{ top: 4, bottom: 4, left: 8, right: 8 }}
-                    >
-                      <i-image
-                        display="flex"
-                        url={assets.fullPath('img/designer/layout/column.svg')}
-                        width={16}
-                        height={16}
-                      />
-                    </i-panel>
-                    <i-panel
-                      display="flex"
-                      tooltip={{ content: 'Row' }}
-                      class={`${borderRadiusRight} ${customIconLayoutStyled}`}
-                      padding={{ top: 4, bottom: 4, left: 8, right: 8 }}
-                    >
-                      <i-image
-                        display="flex"
-                        url={assets.fullPath('img/designer/layout/column.svg')}
-                        width={16}
-                        height={16}
-                        rotate={180}
-                      />
-                    </i-panel>
-                  </i-hstack>
-                  <i-hstack gap={4} verticalAlignment="center">
-                    <i-switch />
-                    <i-label caption="Reverse" font={{ size: '0.875rem' }} />
-                  </i-hstack>
+              <i-hstack verticalAlignment='center' gap="5px">
+                <designer-selector
+                  title="Direction"
+                  stack={{grow: '1', shrink: '1'}}
+                  items={[
+                    { value: 'column', tooltip: 'Column', type: 'direction', isActive: true, icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
+                    { value: 'row', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
+                  ]}
+                  onChanged={this.onSelectChanged}
+                />
+                <i-hstack gap={4} verticalAlignment="center" stack={{grow: '1', shrink: '1'}}>
+                  <i-switch id="reverseSwitch" onChanged={this.onReverseSwitch} />
+                  <i-label caption="Reverse" font={{ size: '0.875rem' }} />
                 </i-hstack>
-              </i-grid-layout>
-              <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Align" font={{ size: '0.75rem' }} />
-                <i-hstack gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-                  {alignProps.map(v => <i-panel
-                    display="flex"
-                    tooltip={{ content: v.caption }}
-                    class={`${customIconLayoutStyled} ${v.classes || ''} ${v.isActive ? customIconLayoutActiveStyled : ''}`}
-                    padding={{ top: 4, bottom: 4, left: 17, right: 17 }}
-                  >
-                    <i-image
-                      display="flex"
-                      url={v.img}
-                      width={16}
-                      height={16}
-                      rotate={v.rotate || 0}
-                    />
-                  </i-panel>
-                  )}
-                </i-hstack>
-              </i-grid-layout>
-              <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Justify" font={{ size: '0.75rem' }} />
-                <i-hstack gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-                  {justifyProps.map(v => <i-panel
-                    display="flex"
-                    tooltip={{ content: v.caption, placement: v.placement as 'left' }}
-                    class={`${customIconLayoutStyled} ${v.classes || ''} ${v.isActive ? customIconLayoutActiveStyled : ''}`}
-                    padding={{ top: 4, bottom: 4, left: 12.75, right: 12.75 }}
-                  >
-                    <i-image
-                      display="flex"
-                      url={v.img}
-                      width={16}
-                      height={16}
-                      rotate={v.rotate || 0}
-                    />
-                  </i-panel>
-                  )}
-                </i-hstack>
-              </i-grid-layout>
+              </i-hstack>
+              <designer-selector
+                title="Align"
+                items={getAlignProps('alignItems')}
+                onChanged={this.onSelectChanged}
+              />
+              <designer-selector
+                title="Justify"
+                items={justifyProps}
+                onChanged={this.onSelectChanged}
+              />
             </i-vstack>
           </i-vstack>
           <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
           <i-vstack gap={8}>
             <i-label caption="SELECTED ITEM" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={12}>
-              <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Align" font={{ size: '0.75rem' }} />
-                <i-hstack gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-                  <i-panel
-                    display="flex"
-                    tooltip={{ content: 'Auto' }}
-                    class={`${customIconLayoutStyled} ${borderRadiusLeft} ${customIconLayoutActiveStyled}`}
-                    padding={{ top: 4, bottom: 4, left: 12.75, right: 12.75 }}
-                  >
-                    <i-icon
-                      display="flex"
-                      name={'times'}
-                      width={16}
-                      height={16}
-                    />
-                  </i-panel>
-                  {alignProps.map((v, idx) => <i-panel
-                    display="flex"
-                    tooltip={{ content: v.caption }}
-                    class={`${customIconLayoutStyled} ${idx === alignProps.length - 1 ? v.classes : ''}`}
-                    padding={{ top: 4, bottom: 4, left: 12.75, right: 12.75 }}
-                  >
-                    <i-image
-                      display="flex"
-                      url={v.img}
-                      width={16}
-                      height={16}
-                    />
-                  </i-panel>
-                  )}
-                </i-hstack>
-              </i-grid-layout>
+              <designer-selector
+                title="Align"
+                items={getAlignProps('alignSelf')}
+                onChanged={this.onSelectChanged}
+              />
               <i-grid-layout templateColumns={['70px', 'auto']}>
                 <i-vstack gap={8}>
                   <i-label caption="Flex" font={{ size: '0.75rem' }} lineHeight="24px" />
@@ -376,46 +223,20 @@ export default class DesignerToolLayout extends Module {
           <i-vstack gap={8}>
             <i-label caption="CONTENT" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={12}>
-              <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Wrap" font={{ size: '0.75rem' }} />
-                <i-grid-layout gap={{ column: 1 }} templateColumns={['1fr', '1fr', '1fr']} verticalAlignment="center">
-                  <i-label
-                    caption="None"
-                    class={`text-center ${customIconLayoutStyled} ${borderRadiusLeft} ${customIconLayoutActiveStyled}`}
-                    padding={{ top: 4, bottom: 4 }}
-                  />
-                  <i-label
-                    caption="Wrap"
-                    class={`text-center ${customIconLayoutStyled}`}
-                    padding={{ top: 4, bottom: 4 }}
-                  />
-                  <i-label
-                    caption="Reverse"
-                    class={`text-center ${customIconLayoutStyled} ${borderRadiusRight}`}
-                    padding={{ top: 4, bottom: 4 }}
-                  />
-                </i-grid-layout>
-              </i-grid-layout>
-              <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Align" font={{ size: '0.75rem' }} />
-                <i-hstack gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-                  {alignContentProps.map(v => <i-panel
-                    display="flex"
-                    tooltip={{ content: v.caption }}
-                    class={`${customIconLayoutStyled} ${v.classes || ''} ${v.isActive ? customIconLayoutActiveStyled : ''}`}
-                    padding={{ top: 4, bottom: 4, left: 12.75, right: 12.75 }}
-                  >
-                    <i-image
-                      display="flex"
-                      url={v.img}
-                      width={16}
-                      height={16}
-                      rotate={v.rotate || 0}
-                    />
-                  </i-panel>
-                  )}
-                </i-hstack>
-              </i-grid-layout>
+              <designer-selector
+                title="Wrap"
+                items={[
+                  { value: 'nowrap', caption: 'None', type: 'wrap', isActive: true },
+                  { value: 'wrap', caption: 'Wrap', type: 'wrap' },
+                  { value: 'wrap-reverse', caption: 'Reverse', type: 'wrap' }
+                ]}
+                onChanged={this.onSelectChanged}
+              />
+              <designer-selector
+                title="Align"
+                items={alignContentProps}
+                onChanged={this.onSelectChanged}
+              />
             </i-vstack>
           </i-vstack>
         </i-vstack>

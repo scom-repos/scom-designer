@@ -7,6 +7,7 @@ import DesignerToolPosition from "./position";
 import DesignerToolBorders from "./borders";
 import DesignerToolEffects from "./effects";
 import DesignerToolHeader from "./header";
+import DesignerSelector from './selector';
 
 export * from "./index.css";
 
@@ -19,5 +20,6 @@ export {
   DesignerToolPosition,
   DesignerToolBorders,
   DesignerToolEffects,
-  DesignerToolHeader
+  DesignerToolHeader,
+  DesignerSelector
 }

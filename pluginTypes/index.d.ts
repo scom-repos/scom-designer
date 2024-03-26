@@ -10,6 +10,8 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customIconTabStyled: string;
     export const customIconTabActiveStyled: string;
     export const customTabStyled: string;
+    export const codeTabsStyle: string;
+    export const blockStyle: string;
 }
 /// <amd-module name="@scom/scom-designer/interface.ts" />
 declare module "@scom/scom-designer/interface.ts" {
@@ -47,6 +49,19 @@ declare module "@scom/scom-designer/interface.ts" {
         control: Control;
     }
     export type onChangedCallback = (prop: string, value: string | number | boolean | object) => void;
+    export interface IFileHandler {
+        openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
+    }
+    export interface IIPFSData {
+        cid: string;
+        name?: string;
+        size?: number;
+        type?: string | 'dir' | 'file';
+        links?: IIPFSData[];
+        path?: string;
+        sort?: 'asc' | 'desc';
+        root?: boolean;
+    }
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" {
@@ -67,6 +82,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
     interface DesignerComponentsElement extends ControlElement {
         onShowComponentPicker: () => void;
         onSelect?: (component: IComponent) => void;
+        onVisible?: (component: IComponent, visible: boolean) => void;
         screen?: IScreen;
     }
     global {
@@ -83,6 +99,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private mdAlert;
         onShowComponentPicker: () => void;
         onSelect: (component: IComponent) => void;
+        onVisible: (component: IComponent, visible: boolean) => void;
         get screen(): IScreen;
         set screen(value: IScreen);
         private renderUI;
@@ -166,10 +183,115 @@ declare module "@scom/scom-designer/tools/stylesheet.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/utils.ts" />
+declare module "@scom/scom-designer/utils.ts" {
+    export const backgroundOptions: {
+        value: string;
+        label: string;
+    }[];
+    export function getAlignProps(type: string): any;
+    export const justifyProps: ({
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        isActive: boolean;
+        rotate?: undefined;
+        placement?: undefined;
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        isActive?: undefined;
+        rotate?: undefined;
+        placement?: undefined;
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate: number;
+        isActive?: undefined;
+        placement?: undefined;
+    } | {
+        tooltip: string;
+        placement: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        isActive?: undefined;
+        rotate?: undefined;
+    })[];
+    export const alignContentProps: ({
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        isActive: boolean;
+        rotate?: undefined;
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        isActive?: undefined;
+        rotate?: undefined;
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate: number;
+        isActive?: undefined;
+    })[];
+    export const getFileContent: (url: string) => Promise<string>;
+    export const extractFileName: (path: string) => string;
+    export const parsePropValue: (value: string) => any;
+}
 /// <amd-module name="@scom/scom-designer/tools/layout.tsx" />
 declare module "@scom/scom-designer/tools/layout.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    interface IDesignerLayout {
+        wrap?: string;
+        direction?: string;
+        alignItems?: string;
+        justifyContent?: string;
+        alignSelf?: string;
+        alignContent?: string;
+        flexFlow?: string;
+    }
     interface DesignerToolLayoutElement extends ControlElement {
+        onChanged?: onChangedCallback;
     }
     global {
         namespace JSX {
@@ -184,20 +306,18 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         private lbTypeFlex;
         private inputBasicFlex;
         private wrapperAdvancedFlex;
+        private _data;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolLayoutElement);
+        setData(data: IDesignerLayout): void;
+        private renderUI;
         private onCollapse;
         private onFlexChanged;
-        private renderUI;
+        private onSelectChanged;
+        private onReverseSwitch;
         init(): void;
         render(): any;
     }
-}
-/// <amd-module name="@scom/scom-designer/utils.ts" />
-declare module "@scom/scom-designer/utils.ts" {
-    export const backgroundOptions: {
-        value: string;
-        label: string;
-    }[];
 }
 /// <amd-module name="@scom/scom-designer/tools/background.tsx" />
 declare module "@scom/scom-designer/tools/background.tsx" {
@@ -423,7 +543,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private updateButtons;
         private onShowModal;
         private onZIndexChanged;
-        private onActiveChanged;
+        private onSelectChanged;
         private onSpacingChanged;
         init(): void;
         render(): any;
@@ -452,8 +572,6 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private inputRadius;
         private inputWidth;
         private pnlIndividual;
-        private currentStyle;
-        private pnlBorderStyles;
         private _data;
         private radiusObj;
         onChanged: onChangedCallback;
@@ -466,7 +584,6 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private setRadiusByPosition;
         private onPropChanged;
         private onSpacingChanged;
-        private onColorChanged;
         private onStyleChanged;
         init(): void;
         render(): any;
@@ -505,6 +622,52 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/tools/selector.tsx" />
+declare module "@scom/scom-designer/tools/selector.tsx" {
+    import { ControlElement, Module } from "@ijstech/components";
+    interface DesignerSelectorElement extends ControlElement {
+        items?: IItem[];
+        title?: string;
+        onChanged?: (type: string, value: string) => void;
+    }
+    interface IItem {
+        caption?: string;
+        tooltip?: string;
+        value: string;
+        type: string;
+        icon?: any;
+        placement?: string;
+        rotate?: number;
+        isActive?: boolean;
+    }
+    interface ISelector {
+        items: IItem[];
+        title?: string;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                'designer-selector': DesignerSelectorElement;
+            }
+        }
+    }
+    export default class DesignerSelector extends Module {
+        private pnlList;
+        private lblTitle;
+        private currentTarget;
+        onChanged: (type: string, value: string) => void;
+        private _data;
+        get items(): IItem[];
+        set items(value: IItem[]);
+        get title(): string;
+        set title(value: string);
+        setData(value: ISelector): void;
+        private renderUI;
+        private onActiveChanged;
+        init(): void;
+        render(): void;
+    }
+}
 /// <amd-module name="@scom/scom-designer/tools/index.ts" />
 declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolStylesheet from "@scom/scom-designer/tools/stylesheet.tsx";
@@ -516,8 +679,9 @@ declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolBorders from "@scom/scom-designer/tools/borders.tsx";
     import DesignerToolEffects from "@scom/scom-designer/tools/effects.tsx";
     import DesignerToolHeader from "@scom/scom-designer/tools/header.tsx";
+    import DesignerSelector from "@scom/scom-designer/tools/selector.tsx";
     export * from "@scom/scom-designer/tools/index.css.ts";
-    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader };
+    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector };
 }
 /// <amd-module name="@scom/scom-designer/settings/basic.tsx" />
 declare module "@scom/scom-designer/settings/basic.tsx" {
@@ -655,7 +819,6 @@ declare module "@scom/scom-designer/components/screens.tsx" {
         private wrapperDeletedScreens;
         private vStackScreens;
         private vStackDeletedScreens;
-        private lbScreens;
         private lbDeletedScreens;
         private mdActions;
         private mdAlert;
@@ -765,34 +928,22 @@ declare module "@scom/scom-designer/types/index.ts" {
     import components from "@scom/scom-designer/types/components.ts";
     export { components };
 }
-/// <amd-module name="@scom/scom-designer" />
-declare module "@scom/scom-designer" {
+/// <amd-module name="@scom/scom-designer/designer.tsx" />
+declare module "@scom/scom-designer/designer.tsx" {
     import { Module, ControlElement, Container, Control } from '@ijstech/components';
-    import { IComponentPicker } from "@scom/scom-designer/interface.ts";
+    import { IComponent, IComponentPicker, IControl } from "@scom/scom-designer/interface.ts";
+    import { Parser } from "@ijstech/compiler";
     export function createControl(parent: Control, name: string, options?: any): Control;
-    interface ScomDesignerElement extends ControlElement {
+    interface ScomDesignerFormElement extends ControlElement {
     }
     global {
         namespace JSX {
             interface IntrinsicElements {
-                ['i-scom-designer']: ScomDesignerElement;
+                ['i-scom-designer--form']: ScomDesignerFormElement;
             }
         }
     }
-    interface IFileHandler {
-        openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
-    }
-    interface IIPFSData {
-        cid: string;
-        name?: string;
-        size?: number;
-        type?: string | 'dir' | 'file';
-        links?: IIPFSData[];
-        path?: string;
-        sort?: 'asc' | 'desc';
-        root?: boolean;
-    }
-    export class ScomDesigner extends Module implements IFileHandler {
+    export class ScomDesignerForm extends Module {
         private designerScreens;
         private designerComponents;
         private designerProperties;
@@ -804,17 +955,17 @@ declare module "@scom/scom-designer" {
         private currentTab;
         private pnlFormDesigner;
         private selectedDesignComponent;
-        private selectedControl;
         private _rootComponent;
         private compiler;
         private pathMapping;
-        tag: any;
+        selectedControl: IControl;
+        modified: boolean;
         constructor(parent?: Container, options?: any);
-        static create(options?: ScomDesignerElement, parent?: Container): Promise<ScomDesigner>;
-        private setData;
-        private getData;
+        static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
+        setData(): void;
         get pickerComponentsFiltered(): IComponentPicker[];
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
+        get rootComponent(): IComponent;
         clear(): void;
         private onScreenChanged;
         private onScreenHistoryShown;
@@ -822,6 +973,7 @@ declare module "@scom/scom-designer" {
         private onFilterComponent;
         private onShowComponentPicker;
         private onSelectComponent;
+        private onVisibleComponent;
         private renderComponent;
         private bindControlEvents;
         private handleSelectControl;
@@ -831,11 +983,60 @@ declare module "@scom/scom-designer" {
         private initComponentPicker;
         private initBlockPicker;
         private initComponentScreen;
-        private get parseScreen();
-        private parseComponents;
-        private getParserComponent;
         private initDesignerProperties;
+        renderUI(root: Parser.IComponent): void;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer" />
+declare module "@scom/scom-designer" {
+    import { Container, Control, ControlElement, Module } from '@ijstech/components';
+    import { IFileHandler, IIPFSData } from "@scom/scom-designer/interface.ts";
+    import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
+    type onSaveCallback = (path: string, content: string) => void;
+    interface ScomDesignerElement extends ControlElement {
+        url?: string;
+        onSave?: onSaveCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-designer']: ScomDesignerElement;
+            }
+        }
+    }
+    export class ScomDesigner extends Module implements IFileHandler {
+        private formDesigner;
+        private codeEditor;
+        private pnlMessage;
+        private fileTabs;
+        private compiler;
+        private contentChangeTimer;
+        private _data;
+        onSave: onSaveCallback;
+        tag: any;
+        addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
+        locateMethod(designer: ScomDesignerForm, funcName: string): void;
+        removeComponent(designer: ScomDesignerForm): void;
+        renameComponent(designer: ScomDesignerForm, oldId: string, newId: string): boolean;
+        renameEventHandler(designer: ScomDesignerForm, funcName: string, newFuncName: string): boolean;
+        constructor(parent?: Container, options?: any);
+        static create(options?: ScomDesignerElement, parent?: Container): Promise<ScomDesigner>;
+        get url(): string;
+        set url(value: string);
+        get fileName(): string;
+        private setData;
+        private getData;
+        setValue(value: string): void;
         private renderUI;
+        private addLib;
+        private handleTabChanged;
+        private handleCodeEditorChange;
+        private updateDesignerCode;
+        handleGetChangedFiles(): Promise<void>;
+        openFile(file: IIPFSData, endpoint: string, parentCid: string, parent: Control): Promise<void>;
+        init(): void;
         private updateTag;
         private setTag;
         private updateStyle;
@@ -860,8 +1061,6 @@ declare module "@scom/scom-designer" {
         })[];
         private _getActions;
         private getWidgetSchemas;
-        init(): void;
-        openFile(file: IIPFSData, endpoint: string, parentCid: string, parent: Control): Promise<void>;
         render(): any;
     }
 }

@@ -116,7 +116,7 @@ export default class DesignerToolModalSpacing extends Module {
           />
           <i-label
             id="lbIndUnit"
-            caption="pt"
+            caption="px"
             font={{ size: '0.675rem' }}
             cursor="pointer"
             width={24}
@@ -137,7 +137,7 @@ export default class DesignerToolModalSpacing extends Module {
         <i-vstack id="vStackIndUnits" gap={8} position="absolute" width={24} top={24} left={156} zIndex={100} background={{ color: Theme.background.modal }}>
           <i-button
             background={{ color: 'transparent' }}
-            boxShadow="none" caption="pt"
+            boxShadow="none" caption="px"
             font={{ size: '0.625rem' }}
             padding={{ top: 4, bottom: 4 }}
             onClick={() => onUnitChanged('px')}

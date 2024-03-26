@@ -10,7 +10,7 @@ import {
   Control,
   Panel
 } from '@ijstech/components'
-import { borderRadiusLeft, borderRadiusRight, buttonAutoStyled, customIconLayoutActiveStyled, customIconLayoutStyled, textInputRight } from './index.css';
+import { buttonAutoStyled, customIconLayoutActiveStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
 const Theme = Styles.Theme.ThemeVars;
@@ -51,6 +51,7 @@ export default class DesignerToolPosition extends Module {
   constructor(parent?: Container, options?: DesignerToolPositionElement) {
     super(parent, options);
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
+    this.onSelectChanged = this.onSelectChanged.bind(this);
   }
 
   setData(data: IDesignerPosition) {
@@ -106,12 +107,7 @@ export default class DesignerToolPosition extends Module {
     if (this.onChanged) this.onChanged(prop, value);
   }
 
-  private onActiveChanged(target: Control, type: string, value: string) {
-    const children = target.parentElement?.children || [];
-    for (let el of children) {
-      el.classList.remove(customIconLayoutActiveStyled);
-    }
-    target.classList.add(customIconLayoutActiveStyled);
+  private onSelectChanged(type: string, value: string) {
     this._data[type] = value;
     if (this.onChanged) this.onChanged(type, value);
   }
@@ -138,25 +134,15 @@ export default class DesignerToolPosition extends Module {
         <designer-tool-header name="Position" tooltipText="Define a relative or absolute position from the parent element." onCollapse={this.onCollapse} />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
           <i-vstack gap={8}>
-            <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption="Position" font={{ size: '0.75rem' }} />
-              <i-grid-layout gap={{ column: 1 }} templateColumns={['1fr', '1fr']} verticalAlignment="center">
-                <i-label
-                  id="lbRelative"
-                  caption="Relative"
-                  class={`text-center ${customIconLayoutStyled} ${borderRadiusLeft}`}
-                  padding={{ top: 4, bottom: 4 }}
-                  onClick={(target: Control) => this.onActiveChanged(target, 'position', 'relative')}
-                />
-                <i-label
-                  id="lbAbsolute"
-                  caption="Absolute"
-                  class={`text-center ${customIconLayoutStyled} ${borderRadiusRight}`}
-                  padding={{ top: 4, bottom: 4 }}
-                  onClick={(target: Control) => this.onActiveChanged(target, 'position', 'absolute')}
-                />
-              </i-grid-layout>
-            </i-grid-layout>
+            <designer-selector
+              id="posSelector"
+              title="Position"
+              items={[
+                { value: 'relative', caption: 'Relative', type: 'position' },
+                { value: 'absolute', caption: 'Absolute', type: 'position' },
+              ]}
+              onChanged={this.onSelectChanged}
+            />
             <i-panel width={320} padding={{ top: 10, bottom: 10, left: 20, right: 20 }} border={{ radius: 8, width: 1, style: 'solid', color: Theme.action.selectedBackground }}>
               <i-vstack id="pnlPosition" gap={4} horizontalAlignment="center">
                 <i-button id="top" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowModal(target, 'top')} />
@@ -185,25 +171,15 @@ export default class DesignerToolPosition extends Module {
                 class={textInputRight}
               />
             </i-grid-layout>
-            <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption="Overflow" font={{ size: '0.75rem' }} />
-              <i-grid-layout gap={{ column: 1 }} templateColumns={['1fr', '1fr']} verticalAlignment="center">
-                <i-label
-                  id="lbAuto"
-                  caption="Visible"
-                  class={`text-center ${customIconLayoutStyled} ${borderRadiusLeft}`}
-                  padding={{ top: 4, bottom: 4 }}
-                  onClick={(target: Control) => this.onActiveChanged(target, 'overflow', 'auto')}
-                />
-                <i-label
-                  id="lbHidden"
-                  caption="Hidden"
-                  class={`text-center ${customIconLayoutStyled} ${borderRadiusRight}`}
-                  padding={{ top: 4, bottom: 4 }}
-                  onClick={(target: Control) => this.onActiveChanged(target, 'overflow', 'hidden')}
-                />
-              </i-grid-layout>
-            </i-grid-layout>
+            <designer-selector
+              id="overflowSelector"
+              title="Overflow"
+              items={[
+                { value: 'auto', caption: 'Visible', type: 'overflow' },
+                { value: 'hidden', caption: 'Hidden', type: 'overflow' },
+              ]}
+              onChanged={this.onSelectChanged}
+            />
           </i-vstack>
         </i-vstack>
         <designer-tool-modal-spacing id="mdSpacing" onChanged={this.onSpacingChanged} />

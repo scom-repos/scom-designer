@@ -129,7 +129,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
       this.mdUnits.visible = false;
     }
     const itemUnits = new VStack(undefined, { gap: 8, border: { radius: 8 } });
-    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('px')} />);
+    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="px" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('px')} />);
     itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="%" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('%')} />);
     this.mdUnits.item = itemUnits;
     document.body.appendChild(this.mdUnits);
@@ -192,7 +192,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                     class={`${textInputRight} ${bgInputTransparent}`}
                   />
                   <i-label
-                    caption="pt"
+                    caption="px"
                     font={{ size: '0.675rem' }}
                     cursor="pointer"
                     width={24}
@@ -228,7 +228,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                     class={`${textInputRight} ${bgInputTransparent}`}
                   />
                   <i-label
-                    caption="pt"
+                    caption="px"
                     font={{ size: '0.675rem' }}
                     cursor="pointer"
                     width={24}
