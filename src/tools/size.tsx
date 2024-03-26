@@ -6,46 +6,63 @@ import {
   Styles,
   VStack,
   Modal,
-  Label
+  Label,
+  Input
 } from '@ijstech/components'
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
+import { onChangedCallback } from '../interface';
 const Theme = Styles.Theme.ThemeVars;
 
 const sizes = [
   [
     {
       id: 'inputWidth',
-      caption: 'Width'
+      caption: 'Width',
+      prop: 'width'
     },
     {
       id: 'inputHeight',
-      caption: 'Height'
+      caption: 'Height',
+      prop: 'height'
     }
   ],
   [
     {
       id: 'inputMinWidth',
-      caption: 'Min W'
+      caption: 'Min W',
+      prop: 'minWidth'
     },
     {
       id: 'inputMinHeight',
-      caption: 'Min H'
+      caption: 'Min H',
+      prop: 'minHeight'
     }
   ],
   [
     {
       id: 'inputMaxWidth',
-      caption: 'Max W'
+      caption: 'Max W',
+      prop: 'maxWidth'
     },
     {
       id: 'inputMaxHeight',
-      caption: 'Max H'
+      caption: 'Max H',
+      prop: 'maxHeight'
     }
   ]
 ]
 
 interface DesignerToolSizeElement extends ControlElement {
+  onChanged?: onChangedCallback;
+}
 
+interface IDesignerSize {
+  width?: number|string;
+  height?: number|string;
+  minWidth?: number|string;
+  minHeight?: number|string;
+  maxWidth?: number|string;
+  maxHeight?: number|string;
 }
 
 declare global {
@@ -61,9 +78,25 @@ export default class DesignerToolSize extends Module {
   private vStackContent: VStack;
   private mdUnits: Modal;
   private currentLabel: Label;
+  private inputWidth: Input;
+  private inputHeight: Input;
+  private inputMinWidth: Input;
+  private inputMinHeight: Input;
+  private inputMaxWidth: Input;
+  private inputMaxHeight: Input;
+
+  private _data: IDesignerSize = {};
+  private unit: string = 'px';
+
+  onChanged: onChangedCallback;
 
   constructor(parent?: Container, options?: DesignerToolSizeElement) {
     super(parent, options);
+  }
+
+  setData(value: IDesignerSize) {
+    this._data = value;
+    this.renderUI();
   }
 
   private onCollapse(isShown: boolean) {
@@ -71,7 +104,19 @@ export default class DesignerToolSize extends Module {
   }
 
   private renderUI() {
+    const { width, height, minWidth, minHeight, maxWidth, maxHeight } = this._data;
+    if (width !== undefined) this.inputWidth.value = width;
+    if (height !== undefined) this.inputHeight.value = height;
+    if (minWidth !== undefined) this.inputMinWidth.value = minWidth;
+    if (minHeight !== undefined) this.inputMinHeight.value = minHeight;
+    if (maxWidth !== undefined) this.inputMaxWidth.value = maxWidth;
+    if (maxHeight !== undefined) this.inputMaxHeight.value = maxHeight;
+  }
 
+  private onValueChanged(target: Input, prop: string) {
+    const newValue = target.value;
+    this._data[prop] = `${newValue}${this.unit}`;
+    if (this.onChanged) this.onChanged(prop, this._data[prop]);
   }
 
   private onShowUnits(target: Label, event: MouseEvent) {
@@ -88,19 +133,20 @@ export default class DesignerToolSize extends Module {
     this.mdUnits = await Modal.create({
       visible: false,
       showBackdrop: false,
-      minWidth: '24px',
+      minWidth: '1.5rem',
       height: 'auto',
       popupPlacement: 'bottom'
     });
     const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
-    mdWrapper.style.width = '24px';
+    mdWrapper.style.width = '1.5rem';
     mdWrapper.style.paddingInline = '0px';
-    const onUnitChanged = (value: 'pt' | '%') => {
+    const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
+      this.unit = value;
       this.mdUnits.visible = false;
     }
     const itemUnits = new VStack(undefined, { gap: 8, border: { radius: 8 } });
-    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('pt')} />);
+    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('px')} />);
     itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="%" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('%')} />);
     this.mdUnits.item = itemUnits;
     document.body.appendChild(this.mdUnits);
@@ -108,8 +154,8 @@ export default class DesignerToolSize extends Module {
 
   init() {
     super.init();
-    this.renderUI();
     this.initModalUnits();
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
   }
 
   render() {
@@ -134,12 +180,13 @@ export default class DesignerToolSize extends Module {
                         inputType="number"
                         placeholder="auto"
                         background={{ color: 'transparent' }}
-                        width="calc(100% - 24px)"
+                        width="calc(100% - 1.5rem)"
                         height={24}
                         border={{ width: 0 }}
                         padding={{ left: 4, right: 2 }}
                         font={{ size: '0.675rem' }}
                         class={`${textInputRight} ${bgInputTransparent}`}
+                        onChanged={(target: Input) => this.onValueChanged(target, v.prop)}
                       />
                       <i-label
                         caption="pt"
@@ -147,7 +194,7 @@ export default class DesignerToolSize extends Module {
                         cursor="pointer"
                         width={24}
                         height={24}
-                        lineHeight="24px"
+                        lineHeight="1.5rem"
                         opacity={1}
                         border={{
                           left: {

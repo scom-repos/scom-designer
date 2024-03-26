@@ -7,14 +7,31 @@ import {
   VStack,
   Modal,
   Label,
-  Button
+  Button,
+  Input
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
+import { onChangedCallback } from '../interface';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {
+  onChanged?: onChangedCallback;
+}
 
+interface IDesignerSpacing {
+  margin?: {
+    top?: string|number;
+    right?: string|number;
+    bottom?: string|number;
+    left?: string|number;
+  };
+  padding?: {
+    top?: string|number;
+    right?: string|number;
+    bottom?: string|number;
+    left?: string|number;
+  };
 }
 
 declare global {
@@ -31,10 +48,23 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private mdUnits: Modal;
   private mdSpacing: DesignerToolModalSpacing;
   private currentLabel: Label;
-  private currentButton: Button;
+  private marginInput: Input;
+  private paddingInput: Input;
+  private vStackIndividual: VStack;
+
+  private _data: IDesignerSpacing = {};
+  private _unit: string = 'px';
+
+  onChanged: onChangedCallback;
 
   constructor(parent?: Container, options?: DesignerToolMarginsAndPaddingElement) {
     super(parent, options);
+    this.onSpacingChanged = this.onSpacingChanged.bind(this);
+  }
+
+  setData(data: IDesignerSpacing) {
+    this._data = data;
+    this.renderUI();
   }
 
   private onCollapse(isShown: boolean) {
@@ -42,7 +72,34 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private renderUI() {
+    this.marginInput.value = '';
+    this.paddingInput.value = '';
+    this.updateButtons();
+  }
 
+  private updateButtons() {
+    const buttons = this.vStackIndividual.querySelectorAll('i-button');
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i] as Button;
+      const id = button.id || '';
+      const match = /^(margin|padding)(.*)/.exec(id);
+      if (match?.length) {
+        const position = (match[2] || '').toLowerCase();
+        button.caption = this._data[match[1]]?.[position] ?? 'auto';
+      }
+    }
+  }
+
+  private onOverallChanged(target: Input, prop: 'padding' | 'margin') {
+    const value = (target.value || 0) + this._unit;
+    this._data[prop] = {
+      top: value,
+      right: value,
+      bottom: value,
+      left: value
+    }
+    this.updateButtons();
+    if (this.onChanged) this.onChanged(prop, this._data[prop]);
   }
 
   private onShowUnitsModal(target: Label) {
@@ -59,32 +116,49 @@ export default class DesignerToolMarginsAndPadding extends Module {
     this.mdUnits = await Modal.create({
       visible: false,
       showBackdrop: false,
-      minWidth: '24px',
+      minWidth: '1.5rem',
       height: 'auto',
       popupPlacement: 'bottom'
     });
     const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
-    mdWrapper.style.width = '24px';
+    mdWrapper.style.width = '1.5rem';
     mdWrapper.style.paddingInline = '0px';
-    const onUnitChanged = (value: 'pt' | '%') => {
+    const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
+      this._unit = value;
       this.mdUnits.visible = false;
     }
     const itemUnits = new VStack(undefined, { gap: 8, border: { radius: 8 } });
-    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('pt')} />);
+    itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('px')} />);
     itemUnits.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" caption="%" font={{ size: '0.625rem' }} onClick={() => onUnitChanged('%')} />);
     this.mdUnits.item = itemUnits;
     document.body.appendChild(this.mdUnits);
   }
 
-  private onShowSpacingModal(target: Button, title: string) {
-    this.currentButton = target;
-    this.mdSpacing.onShowModal(target, title, 'mobile-alt', 'Configure a value for Mobile screen sizes or larger');
+  private onShowSpacingModal(target: Button, type: 'margin'|'padding', position: 'left' | 'right' | 'top' | 'bottom') {
+    const spacing = {
+      type,
+      position,
+      value: this._data[type]?.[position] || ''
+    }
+    const config = {
+      title: `${type} ${position}`,
+      icon: 'mobile-alt',
+      breakpointText: 'Configure a value for Mobile screen sizes or larger'
+    }
+    this.mdSpacing.onShowModal(target, spacing, config);
+  }
+
+  private onSpacingChanged(type: string, position: string, value: string) {
+    if (!this._data[type]) this._data[type] = {};
+    this._data[type][position] = value;
+    this.updateButtons();
+    if (this.onChanged) this.onChanged(type, this._data[type]);
   }
 
   init() {
     super.init();
-    this.renderUI();
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.initModalUnits();
   }
 
@@ -105,14 +179,16 @@ export default class DesignerToolMarginsAndPadding extends Module {
                 <i-label caption="Margin" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
+                    id="marginInput"
                     inputType="number"
                     placeholder="auto"
                     background={{ color: 'transparent' }}
-                    width="calc(100% - 24px)"
+                    width="calc(100% - 1.5rem)"
                     height={24}
                     border={{ width: 0 }}
                     padding={{ left: 4, right: 2 }}
                     font={{ size: '0.675rem' }}
+                    onChanged={(target: Input) => this.onOverallChanged(target, 'margin')}
                     class={`${textInputRight} ${bgInputTransparent}`}
                   />
                   <i-label
@@ -121,7 +197,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                     cursor="pointer"
                     width={24}
                     height={24}
-                    lineHeight="24px"
+                    lineHeight="1.5rem"
                     opacity={1}
                     border={{
                       left: {
@@ -139,14 +215,16 @@ export default class DesignerToolMarginsAndPadding extends Module {
                 <i-label caption="Padding" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
+                    id="paddingInput"
                     inputType="number"
                     placeholder="auto"
                     background={{ color: 'transparent' }}
-                    width="calc(100% - 24px)"
+                    width="calc(100% - 1.5rem)"
                     height={24}
                     border={{ width: 0 }}
                     padding={{ left: 4, right: 2 }}
                     font={{ size: '0.675rem' }}
+                    onChanged={(target: Input) => this.onOverallChanged(target, 'padding')}
                     class={`${textInputRight} ${bgInputTransparent}`}
                   />
                   <i-label
@@ -155,7 +233,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                     cursor="pointer"
                     width={24}
                     height={24}
-                    lineHeight="24px"
+                    lineHeight="1.5rem"
                     opacity={1}
                     border={{
                       left: {
@@ -172,33 +250,33 @@ export default class DesignerToolMarginsAndPadding extends Module {
             </i-hstack>
           </i-vstack>
           <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
-          <i-vstack gap={8}>
+          <i-vstack id="vStackIndividual" gap={8}>
             <i-label caption="INDIVIDUAL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={8} width="100%" horizontalAlignment="center">
               <i-hstack position="relative" width="100%" horizontalAlignment="center">
                 <i-label caption="Margin" font={{ size: '0.75rem' }} position="absolute" top={0} left={0} />
-                <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Margin Top')} />
+                <i-button id="marginTop" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'margin', 'top')} />
               </i-hstack>
               <i-hstack width="100%" verticalAlignment="center" horizontalAlignment="space-between">
-                <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Margin Left')} />
+                <i-button id="marginLeft" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'margin', 'left')} />
                 <i-panel position="relative" width={200} padding={{ top: 10, bottom: 10, left: 10, right: 10 }} border={{ width: 4, style: 'solid', color: Theme.action.selectedBackground }}>
                   <i-label caption="Padding" font={{ size: '0.75rem' }} position="absolute" top={10} left={10} />
                   <i-vstack horizontalAlignment="center">
-                    <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Padding Top')} />
+                    <i-button id="paddingTop" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'padding', 'top')} />
                     <i-hstack width="100%" horizontalAlignment="space-between">
-                      <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Padding Left')} />
-                      <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Padding Right')} />
+                      <i-button id="paddingLeft" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'padding', 'left')} />
+                      <i-button id="paddingRight" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'padding', 'right')} />
                     </i-hstack>
-                    <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Padding Bottom')} />
+                    <i-button id="paddingBottom" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'padding', 'bottom')} />
                   </i-vstack>
                 </i-panel>
-                <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Margin Right')} />
+                <i-button id="marginRight" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'margin', 'right')} />
               </i-hstack>
-              <i-button caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'Margin Bottom')} />
+              <i-button id="marginBottom" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'margin', 'bottom')} />
             </i-vstack>
           </i-vstack>
         </i-vstack>
-        <designer-tool-modal-spacing id="mdSpacing" />
+        <designer-tool-modal-spacing id="mdSpacing" onChanged={this.onSpacingChanged} />
       </i-vstack>
     )
   }

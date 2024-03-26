@@ -7,7 +7,9 @@ import {
   Input,
   ControlElement,
   Container,
-  Control
+  Control,
+  IUISchema,
+  IDataSchema
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -16,7 +18,7 @@ import {
   DesignerPickerComponents,
   DesignerPickerBlocks
 } from './components/index'
-import { IComponentPicker, IScreen } from './interface'
+import { IComponent, IComponentPicker, IControl, IScreen } from './interface'
 import { customLabelTabStyled, labelActiveStyled } from './index.css'
 import {
   blockComponents,
@@ -25,12 +27,55 @@ import {
   screen,
 } from './data'
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
+import { Compiler } from "@ijstech/compiler";
+import * as Dts from "./types/index";
+
 const Theme = Styles.Theme.ThemeVars
 
 enum TABS {
   RECENT,
   BITS,
   BLOCKS,
+}
+
+export function createControl(parent: Control, name: string, options?: any): Control {
+  const controlConstructor: any = window.customElements.get(name);
+  const control: Control = new controlConstructor(parent, options);
+  if (options) {
+    control._setDesignProps(options);
+  }
+  return control;
+}
+
+class ControlResizer {
+  private _control: Control;
+  private resizers: HTMLElement[] = [];
+  constructor(control: Control) {
+    this._control = control;
+  }
+  addResizer(className: string) {
+    let resizer = document.createElement("div");
+    this._control.appendChild(resizer);
+    this.resizers.push(resizer);
+    resizer.className = className;
+    resizer.className = "i-resizer " + className;
+  }
+  hideResizers() {
+    this.resizers.forEach(resizer => this._control.removeChild(resizer));
+    this.resizers = [];
+  }
+  showResizers() {
+    if (this.resizers.length == 0) {
+      this.addResizer("tl");
+      this.addResizer("tm");
+      this.addResizer("tr");
+      this.addResizer("ml");
+      this.addResizer("mr");
+      this.addResizer("bl");
+      this.addResizer("bm");
+      this.addResizer("br");
+    }
+  }
 }
 
 interface ScomDesignerElement extends ControlElement {}
@@ -69,6 +114,15 @@ export class ScomDesigner extends Module implements IFileHandler {
   private wrapperTab: GridLayout
   private inputSearch: Input
   private currentTab = TABS.BITS
+  private pnlFormDesigner: Panel
+  private selectedDesignComponent: IControl
+  private selectedControl: IControl
+  private _rootComponent: IComponent
+
+  private compiler: Compiler;
+  private pathMapping: Map<string, IControl> = new Map();
+
+  tag: any = {};
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -79,6 +133,10 @@ export class ScomDesigner extends Module implements IFileHandler {
     await self.ready()
     return self
   }
+
+  private setData() {}
+
+  private getData() {}
 
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
@@ -92,7 +150,7 @@ export class ScomDesigner extends Module implements IFileHandler {
       components = components
         .map((component) => {
           const filteredItems = component.items.filter((item) =>
-            item.caption.toLowerCase().includes(val)
+            item.name.toLowerCase().includes(val)
           )
           return {
             ...component,
@@ -111,6 +169,10 @@ export class ScomDesigner extends Module implements IFileHandler {
       )
     }
     return blockComponents
+  }
+
+  clear() {
+    this.pathMapping = new Map();
   }
 
   private onScreenChanged(screen: IScreen) {}
@@ -152,8 +214,94 @@ export class ScomDesigner extends Module implements IFileHandler {
     this.wrapperComponentPicker.visible = true
   }
 
+  private onSelectComponent(component: IComponent) {
+    const path = component.path;
+    if (path) {
+      const control = this.pathMapping.get(path);
+      if (control) this.handleSelectControl(control);
+    }
+  }
+
+  private renderComponent(parent: Control, component: IControl, select?: boolean) {
+    if (!component?.name) return;
+    let control = createControl(parent, component.name, component.props);
+    if (!control.style.position) control.style.position = "relative";
+
+    (component as IControl).control = control;
+    this.bindControlEvents(component as IControl);
+    control.tag = new ControlResizer(control);
+    component.items?.forEach(item => this.renderComponent(control, {...item, control: null}));
+    this.pathMapping.set(component.path, {...component});
+    if (select) this.handleSelectControl(component);
+  }
+
+  private bindControlEvents(control: IControl) {
+    control.control.onclick = event => {
+      if (control.control instanceof Container) {
+        let com = this.handleAddControl(event, control.control);
+        if (com) {
+          control.items = control.items || [];
+          control.items.push(com);
+        }
+      }
+    };
+    control.control.onMouseDown = () => this.handleSelectControl(control);
+    control.control.onDblClick = (target, event) => {
+      event?.stopPropagation();
+      let id = control.control.id;
+      if (id) {
+        // let name = control.control._getDesignPropValue("onClick");
+        // if (!name) {
+        //   this.modified = true;
+        //   control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
+        //   this.studio.addEventHandler(this, "onClick", `${id}Click`);
+        // } else if (name.startsWith("{this."))
+        //   this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
+      }
+    };
+  }
+
+  private handleSelectControl(target: IControl) {
+    if (this.selectedControl) this.selectedControl.control.tag.hideResizers();
+    this.selectedControl = target;
+    this.selectedControl.control.tag.showResizers();
+    this.showDesignProperties();
+  }
+
+  private showDesignProperties() {
+    if (!this.selectedControl) return;
+    this.designerProperties.component = this.selectedControl;
+  }
+
   private onCloseComponentPicker() {
     this.wrapperComponentPicker.visible = false
+  }
+
+  private handleAddControl(event: MouseEvent, parent?: Control) {
+    event.stopPropagation();
+    let pos = { x: event.offsetX, y: event.offsetY };
+    if (this.selectedDesignComponent) {
+      let com: IControl = {
+        name: this.selectedDesignComponent.name,
+        path: '',
+        props: {
+          left: `{${pos.x}}`,
+          top: `{${pos.y}}`,
+          width: `{${40}}`,
+          height: `{${20}}`,
+        },
+        control: null
+      };
+      if (parent) {
+        this.renderComponent(parent, com, true);
+      } else {
+        this.renderComponent(this.pnlFormDesigner, com, true);
+        this._rootComponent.items.push(com);
+      }
+      this.selectedDesignComponent.control.classList.remove("selected");
+      this.selectedDesignComponent = null;
+      return com;
+    }
   }
 
   private initComponentPicker() {
@@ -179,16 +327,67 @@ export class ScomDesigner extends Module implements IFileHandler {
   }
 
   private initComponentScreen() {
-    this.designerComponents.screen = screen
+    const newScreen = this.parseScreen;
+    this.designerComponents.screen = newScreen
+    this._rootComponent = newScreen?.elements[0];
+    if (this._rootComponent) {
+      this.renderComponent(this.pnlFormDesigner, {
+        ...this._rootComponent,
+        control: null
+      });
+    }
+  }
+
+  private get parseScreen() {
+    const clonedScreen = JSON.parse(JSON.stringify(screen));
+    if (clonedScreen?.elements?.length) {
+      clonedScreen.elements = this.parseComponents(clonedScreen.elements)
+    }
+    return clonedScreen;
+  }
+
+  private parseComponents(elements: IComponent[]) {
+    return elements.map(element => {
+      const parserComp = this.getParserComponent(element)
+      element = {...element, ...parserComp}
+      if (element.items?.length) {
+        element.items = this.parseComponents(element.items)
+      }
+      return element
+    })
+  }
+
+  private getParserComponent(component: IComponent) {
+    if (component.name === 'View') {
+      return {
+        name: "i-panel",
+        props: {
+          width: '500px',
+          height: '600px',
+          background: {
+            color: '#ffffff'
+          }
+        }
+      }
+    } else {
+      return {
+        name: "i-button",
+        props: {
+          width: '20%',
+          height: '50px',
+          opacity: '0.5',
+          caption: 'Button',
+          background: {
+            color: '#0000ff'
+          }
+        }
+      }
+    }
   }
 
   private initDesignerProperties() {
-    this.designerProperties.component = {
-      path: '',
-      caption: 'First Screen',
-      iconName: 'mobile-alt',
-      category: 'Screen',
-    }
+    if (this.selectedControl)
+      this.designerProperties.component = this.selectedControl;
   }
 
   private renderUI() {
@@ -198,9 +397,160 @@ export class ScomDesigner extends Module implements IFileHandler {
     this.initDesignerProperties()
   }
 
+  private updateTag(type: 'light' | 'dark', value: any) {
+    this.tag[type] = this.tag[type] ?? {};
+    for (let prop in value) {
+      if (value.hasOwnProperty(prop)) this.tag[type][prop] = value[prop];
+    }
+  }
+
+  private async setTag(value: any) {
+    const newValue = value || {};
+    for (let prop in newValue) {
+      if (newValue.hasOwnProperty(prop)) {
+        if (prop === 'light' || prop === 'dark') this.updateTag(prop, newValue[prop]);
+        else this.tag[prop] = newValue[prop];
+      }
+    }
+    this.updateTheme();
+  }
+
+  private updateStyle(name: string, value: any) {
+    value ? this.style.setProperty(name, value) : this.style.removeProperty(name);
+  }
+
+  private updateTheme() {
+    const themeVar = document.body.style.getPropertyValue('--theme') ?? 'dark';
+    this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
+    this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
+  }
+
+  private getTag() {
+    return this.tag;
+  }
+
+  getConfigurators() {
+    return [
+      {
+        name: 'Builder Configurator',
+        target: 'Builders',
+        getActions: () => {
+          return this._getActions();
+        },
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this),
+      },
+      {
+        name: 'Emdedder Configurator',
+        target: 'Embedders',
+        getData: this.getData.bind(this),
+        setData: this.setData.bind(this),
+        getTag: this.getTag.bind(this),
+        setTag: this.setTag.bind(this),
+      },
+    ];
+  }
+
+  private _getActions() {
+    const actions = [
+      {
+        name: 'Widget Settings',
+        icon: 'edit',
+        ...this.getWidgetSchemas(),
+      },
+    ];
+    return actions;
+  }
+
+  private getWidgetSchemas(): any {
+    const propertiesSchema: IDataSchema = {
+      type: 'object',
+      properties: {
+        pt: {
+          title: 'Top',
+          type: 'number',
+        },
+        pb: {
+          title: 'Bottom',
+          type: 'number',
+        },
+        pl: {
+          title: 'Left',
+          type: 'number',
+        },
+        pr: {
+          title: 'Right',
+          type: 'number',
+        },
+        align: {
+          type: 'string',
+          title: 'Alignment',
+          enum: ['left', 'center', 'right'],
+        },
+        maxWidth: {
+          type: 'number',
+        },
+        link: {
+          title: 'URL',
+          type: 'string',
+        },
+      },
+    };
+    const themesSchema: IUISchema = {
+      type: 'VerticalLayout',
+      elements: [
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            {
+              type: 'Group',
+              label: 'Padding (px)',
+              elements: [
+                {
+                  type: 'VerticalLayout',
+                  elements: [
+                    {
+                      type: 'HorizontalLayout',
+                      elements: [
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pt',
+                        },
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pb',
+                        },
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pl',
+                        },
+                        {
+                          type: 'Control',
+                          scope: '#/properties/pr',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    return {
+      userInputDataSchema: propertiesSchema,
+      userInputUISchema: themesSchema,
+    };
+  }
+
   init() {
     super.init()
     this.wrapperComponentPicker.style.borderBottom = 'none'
+    if (!this.compiler) this.compiler = new Compiler();
+    this.compiler.addPackage("@ijstech/components", { dts: {'index.d.ts': Dts.components} });
     this.renderUI()
   }
 
@@ -242,6 +592,7 @@ export class ScomDesigner extends Module implements IFileHandler {
               height='60%'
               minHeight={200}
               onShowComponentPicker={this.onShowComponentPicker}
+              onSelect={this.onSelectComponent}
             />
           </i-vstack>
           <i-vstack
@@ -327,9 +678,13 @@ export class ScomDesigner extends Module implements IFileHandler {
             <i-panel id='pnlComponentPicker' width='100%' />
             <i-panel id='pnlBlockPicker' width='100%' visible={false} />
           </i-vstack>
+          <i-panel
+            id="pnlFormDesigner"
+            stack={{grow: '1'}}
+            background={{ color: "gray" }}
+          ></i-panel>
           <designer-properties
             id='designerProperties'
-            margin={{ left: 'auto' }}
             display='flex'
           />
         </i-hstack>

@@ -9,15 +9,29 @@ import {
   Modal,
   Styles,
   IconName,
-  Button
+  Button,
+  Input
 } from '@ijstech/components';
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
 const Theme = Styles.Theme.ThemeVars;
 
+type onChangedCallback = (type: string, position: string, value: string) => void;
 interface DesignerToolModalSpacingElement extends ControlElement {
-  titleSpacing?: string;
-  iconName?: IconName;
+  config?: IConfig;
+  data?: ISpacing;
+  onChanged?: onChangedCallback;
+}
+
+interface ISpacing {
+  value?: string|number;
+  type?: string;
+  position?: string;
+}
+
+interface IConfig {
+  title?: string;
   breakpointText?: string;
+  iconName?: IconName;
 }
 
 declare global {
@@ -30,9 +44,9 @@ declare global {
 
 @customElements('designer-tool-modal-spacing')
 export default class DesignerToolModalSpacing extends Module {
-  private titleSpacing: string;
-  private iconName: IconName;
-  private breakpointText: string;
+  private unit: string = 'px';
+  private spacing: ISpacing = {};
+  private config: IConfig = {};
 
   private modal: Modal;
   private vStackIndUnits: VStack;
@@ -40,6 +54,9 @@ export default class DesignerToolModalSpacing extends Module {
   private lbTitle: Label;
   private lbBreakpoint: Label;
   private iconTitle: Icon;
+  private inputValue: Input;
+
+  onChanged: onChangedCallback;
 
   constructor(parent?: Container, options?: DesignerToolModalSpacingElement) {
     super(parent, options);
@@ -49,32 +66,42 @@ export default class DesignerToolModalSpacing extends Module {
     this.modal = await Modal.create({
       visible: false,
       showBackdrop: false,
-      minWidth: '256px',
+      minWidth: '16rem',
       height: 'auto',
       popupPlacement: 'bottom'
     });
     const onShowUnits = () => {
       this.vStackIndUnits.visible = true;
+      this.vStackIndUnits.display = 'flex';
     }
-    const onUnitChanged = (value: 'pt' | '%') => {
+    const onUnitChanged = (value: 'px' | '%') => {
       this.lbIndUnit.caption = value;
+      if (this.unit !== value) {
+        const { type, position } = this.spacing;
+        if (this.onChanged) this.onChanged(type, position, `${value}${this.unit}`);
+      }
+      this.unit = value;
       this.vStackIndUnits.visible = false;
     }
-    const onValueChanged = () => {
-
+    const onValueChanged = (target: Input) => {
+      const value = target.value;
+      const { type, position } = this.spacing;
+      if (this.onChanged) this.onChanged(type, position, `${value}${this.unit}`);
     }
     const item = new VStack(undefined, { gap: 8, border: { radius: 8 } });
+    const { breakpointText, iconName } = this.config;
     item.appendChild(<i-vstack gap={12}>
       <i-hstack gap={8} verticalAlignment="center">
-        <i-icon id="iconTitle" name={this.iconName} width={12} height={12} />
-        <i-label id="lbTitle" caption={this.title} font={{ size: '0.875rem', bold: true }} />
+        <i-icon id="iconTitle" name={iconName} width={12} height={12} />
+        <i-label id="lbTitle" caption={this.title} font={{ size: '0.875rem', bold: true, transform: 'capitalize' }} />
       </i-hstack>
-      <i-label id="lbBreakpoint" caption={this.breakpointText} font={{ size: '0.75rem' }} opacity={0.8} />
+      <i-label id="lbBreakpoint" caption={breakpointText} font={{ size: '0.75rem' }} opacity={0.8} />
       <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
       <i-grid-layout position="relative" templateColumns={['100px', 'auto']} verticalAlignment="center">
         <i-label caption="Static Value:" font={{ size: '0.75rem' }} />
         <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
           <i-input
+            id="inputValue"
             inputType="number"
             placeholder="auto"
             background={{ color: 'transparent' }}
@@ -107,14 +134,27 @@ export default class DesignerToolModalSpacing extends Module {
             onClick={() => onShowUnits()}
           />
         </i-hstack>
-        <i-vstack id="vStackIndUnits" gap={8} position="absolute" width={24} top={24} left={156} background={{ color: Theme.background.modal }}>
-          <i-button background={{ color: 'transparent' }} boxShadow="none" caption="pt" font={{ size: '0.625rem' }} padding={{ top: 4, bottom: 4 }} onClick={() => onUnitChanged('pt')} />
-          <i-button background={{ color: 'transparent' }} boxShadow="none" caption="%" font={{ size: '0.625rem' }} padding={{ top: 4, bottom: 4 }} onClick={() => onUnitChanged('%')} />
+        <i-vstack id="vStackIndUnits" gap={8} position="absolute" width={24} top={24} left={156} zIndex={100} background={{ color: Theme.background.modal }}>
+          <i-button
+            background={{ color: 'transparent' }}
+            boxShadow="none" caption="pt"
+            font={{ size: '0.625rem' }}
+            padding={{ top: 4, bottom: 4 }}
+            onClick={() => onUnitChanged('px')}
+          />
+          <i-button
+            background={{ color: 'transparent' }}
+            boxShadow="none" caption="%"
+            font={{ size: '0.625rem' }}
+            padding={{ top: 4, bottom: 4 }}
+            onClick={() => onUnitChanged('%')}
+          />
         </i-vstack>
       </i-grid-layout>
       <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
       <i-grid-layout templateColumns={['100px', 'auto']} verticalAlignment="center">
         <i-label caption="Dynamic Value" font={{ size: '0.75rem' }} />
+        {/* TODO: get options */}
         <i-combo-box items={[]} placeholder="Select..." onClick={() => { this.vStackIndUnits.visible = false }} />
       </i-grid-layout>
       <i-label id="lbNote" caption="If configured, will be applied to Mobile or larger breakpoints. If you configure a static style value, it will be used as a fallback if the data evaluates to undefined." font={{ size: '0.675rem' }} opacity={0.8} />
@@ -124,16 +164,30 @@ export default class DesignerToolModalSpacing extends Module {
   }
 
   private updateHeader() {
-    this.lbTitle.caption = this.titleSpacing;
-    this.lbBreakpoint.caption = this.breakpointText;
-    this.iconTitle.name = this.iconName;
+    const { value } = this.spacing;
+    const { breakpointText, iconName, title } = this.config;
+    this.lbTitle.caption = title;
+    this.lbBreakpoint.caption = breakpointText;
+    this.iconTitle.name = iconName;
+    this.updateValue(value);
   }
 
-  onShowModal(target: Button, title: string, iconName: IconName, breakpointText: string) {
-    this.vStackIndUnits.visible = false;
-    this.titleSpacing = title;
-    this.iconName = iconName;
-    this.breakpointText = breakpointText;
+  private updateValue(value: string | number) {
+    if (typeof value === 'number') {
+      this.inputValue.value = value;
+      this.lbIndUnit.caption = 'px';
+    } else {
+      const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
+      const number = value.replace(unit, '');
+      this.inputValue.value = number;
+      this.lbIndUnit.caption = unit || 'px';
+    }
+  };
+
+  onShowModal(target: Button, value: ISpacing, config: IConfig) {
+    if (this.vStackIndUnits) this.vStackIndUnits.visible = false;
+    this.config = config || {};
+    this.spacing = value || {};
     this.updateHeader();
 
     const rect = target.getBoundingClientRect();
@@ -156,9 +210,9 @@ export default class DesignerToolModalSpacing extends Module {
 
   init() {
     super.init();
-    this.titleSpacing = this.getAttribute('titleSpacing', true, '');
-    this.iconName = this.getAttribute('iconName', true, '');
-    this.breakpointText = this.getAttribute('breakpointText', true, '');
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.spacing = this.getAttribute('data', true, {});
+    this.config = this.getAttribute('config', true, {});
     this.initModal();
   }
 

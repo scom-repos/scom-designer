@@ -51,12 +51,12 @@ export default class DesignerPickerComponents extends Module {
 
     const nodeItems: HTMLElement[] = [];
     for (const item of this.items) {
-      const { caption, path, image, category } = item;
+      const { name, path, image, category } = item;
       const block = new Panel(undefined, { width: 'calc(50% - 0.5px)', height: 80, background: { color: Theme.background.main } });
       block.appendChild(
         <i-vstack gap={8} width="100%" height="100%" verticalAlignment="center" horizontalAlignment="center">
           <i-image url={image} width={32} height={32} />
-          <i-label caption={caption} font={{ size: '0.75rem' }} />
+          <i-label caption={name} font={{ size: '0.75rem' }} />
         </i-vstack>
       );
       block.classList.add(blockItemHoverStyled);

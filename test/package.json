@@ -11,8 +11,7 @@
         "@ijstech/cli": "^0.1.28",
         "@ijstech/compiler": "^0.1.22",
         "@scom/dapp": "^0.1.11",
-        "@scom/scom-designer": "file:./ref",
-        "@scom/scom-storage": "https://github.com/scom-repos/scom-storage"
+        "@scom/scom-designer": "file:./ref"
     },
     "scripts": {
         "cp:libs": "rm -rf ref && mkdir ref && cp ../package.json ref/package.json && cp -r ../dist ref/dist && cp -r ../pluginTypes ref/pluginTypes && cp -r ../pluginTypes ref/types",

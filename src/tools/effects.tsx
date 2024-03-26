@@ -9,10 +9,16 @@ import {
   Range
 } from '@ijstech/components'
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
+import { onChangedCallback } from '../interface';
+
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolEffectsElement extends ControlElement {
+  onChanged?: onChangedCallback;
+}
 
+interface IDesignerEffect {
+  opacity?: number|string;
 }
 
 declare global {
@@ -29,8 +35,17 @@ export default class DesignerToolEffects extends Module {
   private inputEffect: Input;
   private rangeEffect: Range;
 
+  private _data: IDesignerEffect = {};
+
+  onChanged: onChangedCallback;
+
   constructor(parent?: Container, options?: DesignerToolEffectsElement) {
     super(parent, options);
+  }
+
+  setData(value: IDesignerEffect) {
+    this._data = value;
+    this.renderUI();
   }
 
   private onCollapse(isShown: boolean) {
@@ -38,20 +53,26 @@ export default class DesignerToolEffects extends Module {
   }
 
   private renderUI() {
-    this.inputEffect.value = this.rangeEffect.value = 100;
+    const { opacity = 1 } = this._data;
+    this.inputEffect.value = this.rangeEffect.value = Number(opacity) * 100;
   }
 
   private onInputEffectChanged() {
     this.rangeEffect.value = this.inputEffect.value;
+    this._data.opacity = this.rangeEffect.value / 100;
+    if (this.onChanged) this.onChanged('opacity', `${this._data.opacity}`);
   }
 
   private onRangeChanged() {
     this.inputEffect.value = this.rangeEffect.value;
+    this._data.opacity = this.rangeEffect.value / 100;
+    if (this.onChanged) this.onChanged('opacity', `${this._data.opacity}`);
   }
 
   init() {
     super.init();
-    this.renderUI();
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.inputEffect.value = this.rangeEffect.value = 100;
   }
 
   render() {

@@ -1,11 +1,8 @@
 import {
   Module,
-  customModule,
   Styles,
   Control,
-  Button,
   Input,
-  GridLayout,
   VStack,
   customElements,
   ControlElement,
@@ -18,10 +15,12 @@ import {
 } from '@ijstech/components'
 import { hoverFullOpacity, iconButtonStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
+import './index.css';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerComponentsElement extends ControlElement {
   onShowComponentPicker: () => void;
+  onSelect?: (component: IComponent) => void;
   screen?: IScreen;
 }
 
@@ -41,6 +40,7 @@ export default class DesignerComponents extends Module {
   private mdAlert: Alert;
 
   public onShowComponentPicker: () => void;
+  onSelect: (component: IComponent) => void;
 
   get screen() {
     return this._screen;
@@ -61,9 +61,6 @@ export default class DesignerComponents extends Module {
       </i-hstack>
     );
     this.renderTreeItems(this.screen.elements, this.vStackComponents, 0);
-    // this.vStackComponents.appendChild(
-    //   <i-tree-view data={this.screen.elements} />
-    // );
   }
 
   private renderTreeItems(elements: IComponent[], parentElm: VStack, parentPl: number) {
@@ -77,7 +74,7 @@ export default class DesignerComponents extends Module {
       });
       hStack.classList.add(rowItemHoverStyled, hoverFullOpacity);
       let icon: Icon;
-      if (elm.children?.length) {
+      if (elm.items?.length) {
         let isShown = true;
         icon = new Icon(hStack, { name: 'caret-down', width: 12, height: 12, margin: { right: 2 }, cursor: 'pointer' });
         icon.onClick = () => {
@@ -86,11 +83,11 @@ export default class DesignerComponents extends Module {
           vStack2.visible = isShown;
         }
         const vStack2 = new VStack(vStack1);
-        this.renderTreeItems(elm.children, vStack2, parentPl + 12);
+        this.renderTreeItems(elm.items, vStack2, parentPl + 12);
       }
       const image = new Image(hStack, { url: elm.image, width: 14, height: 14, display: 'flex' });
-      const label = new Label(hStack, { caption: elm.caption, font: { size: '0.75rem' }, lineHeight: 1, opacity: 0.8 });
-      const input = new Input(hStack, { value: elm.caption, visible: false, font: { size: '0.75rem' }, border: 'none' });
+      const label = new Label(hStack, { caption: elm.name, font: { size: '0.75rem' }, lineHeight: 1, opacity: 0.8 });
+      const input = new Input(hStack, { value: elm.name, visible: false, font: { size: '0.75rem' }, border: 'none' });
 
       const hStackActions = new HStack(hStack, {
         gap: 8,
@@ -118,6 +115,7 @@ export default class DesignerComponents extends Module {
         if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
         hStack.classList.add(rowItemActiveStyled);
         // TODO - change prop UI
+        if (this.onSelect) this.onSelect(elm);
       }
       hStack.onDblClick = () => {
         label.visible = image.visible = hStackActions.visible = false;
@@ -169,6 +167,8 @@ export default class DesignerComponents extends Module {
 
   init() {
     super.init();
+    this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
+    this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
     this.initModalActions();
     this.screen = this.getAttribute('screen', true);
   }
