@@ -17,8 +17,8 @@ export default class Module1 extends Module {
         this.scomDesigner.onShow();
     }
 
-    onSave(path: string, content: string) {
-        console.log('content: ', content)
+    onChanged(value: string) {
+        console.log('content: ', value)
     }
 
     render() {
@@ -27,7 +27,7 @@ export default class Module1 extends Module {
                 <i-scom-designer
                     display='block' width="100%" height="100%"
                     url="https://storage.decom.app/ipfs/bafybeiekmzv3mmjgmfclcqe2gwpkzpptloolm4merj3cwnvb7d7pdv4v2m/demo.tsx"
-                    onSave={this.onSave.bind(this)}
+                    onChanged={this.onChanged.bind(this)}
                 ></i-scom-designer>
             </i-panel>
         )

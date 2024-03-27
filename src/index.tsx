@@ -23,6 +23,7 @@ type onSaveCallback = (path: string, content: string) => void;
 interface ScomDesignerElement extends ControlElement {
   url?: string;
   onSave?: onSaveCallback;
+  onChanged?: (value: string) => void;
 }
 
 declare global {
@@ -61,6 +62,7 @@ export class ScomDesigner extends Module implements IFileHandler {
   }
 
   onSave: onSaveCallback
+  onChanged?: (value: string) => void
   tag: any = {}
 
   addEventHandler(
@@ -168,6 +170,10 @@ export class ScomDesigner extends Module implements IFileHandler {
     return name || 'File name'
   }
 
+  get value() {
+    return this.codeEditor?.value || ''
+  }
+
   private async setData(value: IDesigner) {
     this._data = value;
     await this.renderUI();
@@ -177,7 +183,8 @@ export class ScomDesigner extends Module implements IFileHandler {
     return this._data
   }
 
-  setValue(value: string) {
+  setValue(url: string) {
+    this.setData({ url })
   }
 
   private async renderUI() {
@@ -185,29 +192,32 @@ export class ScomDesigner extends Module implements IFileHandler {
     const content = url ? await getFileContent(url) : ''
     const fileName = this.fileName
     await this.codeEditor.loadContent(content, 'typescript', fileName)
-    this.pnlMessage.visible = true;
+    this.pnlMessage.visible = true
   }
 
   private addLib() {
-    CodeEditor.addLib('@ijstech/components', Dts.components)
-    if (!this.compiler) this.compiler = new Compiler()
-    this.compiler.addPackage('@ijstech/components', {
-      dts: { 'index.d.ts': Dts.components },
-    })
+    try {
+      CodeEditor.addLib('@ijstech/components', Dts.components)
+      if (!this.compiler) this.compiler = new Compiler()
+      this.compiler.addPackage('@ijstech/components', {
+        dts: { 'index.d.ts': Dts.components },
+      })
+    } catch {}
   }
 
   private handleTabChanged(target: Tabs, tab: Tab) {
-    this.pnlMessage.visible = tab.caption === 'Code';
+    this.pnlMessage.visible = tab.id === 'codeTab';
     const fileName = this.fileName
-    if (tab.caption === 'Design') {
+    if (tab.id === 'designTab') {
       const code = this.codeEditor.value
       try {
         this.compiler.addFile(fileName, code)
         const ui = this.compiler.parseUI(fileName)
-        console.log(ui, code, fileName)
         this.formDesigner.renderUI(ui)
-      } catch {}
-    } else if (tab.caption === 'Code') {
+      } catch(error) {
+        console.log(error)
+      }
+    } else if (tab.id === 'codeTab') {
       this.updateDesignerCode(fileName)
     }
   }
@@ -217,6 +227,7 @@ export class ScomDesigner extends Module implements IFileHandler {
     this.contentChangeTimer = setTimeout(async () => {
       this.handleGetChangedFiles()
     }, 500)
+    if (this.onChanged) this.onChanged(this.codeEditor.value)
   }
 
   private updateDesignerCode(fileName: string, modified?: boolean): string {
@@ -259,6 +270,7 @@ export class ScomDesigner extends Module implements IFileHandler {
   init() {
     super.init()
     this.onSave = this.getAttribute('onSave', true) || this.onSave
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged
     const url = this.getAttribute('url', true)
     if (url) this.setData({ url })
     this.addLib()
@@ -417,11 +429,14 @@ export class ScomDesigner extends Module implements IFileHandler {
 
   render() {
     return (
-      <i-vstack width={'100%'} height={'100%'} overflow={'hidden'} background={{ color: '#202020' }}>
+      <i-panel
+        width={'100%'} height={'100%'}
+        overflow={'hidden'}
+        background={{ color: '#202020' }}
+      >
         <i-tabs
           class={codeTabsStyle}
-          width={`100%`}
-          stack={{grow: '1', shrink: '1'}}
+          dock='fill'
           draggable={false}
           closable={false}
           onChanged={this.handleTabChanged}
@@ -463,7 +478,7 @@ export class ScomDesigner extends Module implements IFileHandler {
         >
           <i-code-editor dock='fill'></i-code-editor>
         </i-panel>
-      </i-vstack>
+      </i-panel>
     )
   }
 }

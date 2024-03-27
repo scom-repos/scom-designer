@@ -998,6 +998,7 @@ declare module "@scom/scom-designer" {
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         onSave?: onSaveCallback;
+        onChanged?: (value: string) => void;
     }
     global {
         namespace JSX {
@@ -1015,6 +1016,7 @@ declare module "@scom/scom-designer" {
         private contentChangeTimer;
         private _data;
         onSave: onSaveCallback;
+        onChanged?: (value: string) => void;
         tag: any;
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         locateMethod(designer: ScomDesignerForm, funcName: string): void;
@@ -1026,9 +1028,10 @@ declare module "@scom/scom-designer" {
         get url(): string;
         set url(value: string);
         get fileName(): string;
+        get value(): string;
         private setData;
         private getData;
-        setValue(value: string): void;
+        setValue(url: string): void;
         private renderUI;
         private addLib;
         private handleTabChanged;
