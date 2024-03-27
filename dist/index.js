@@ -1101,8 +1101,12 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
     const parsePropValue = (value) => {
         if (value.startsWith('{') && value.endsWith('}')) {
             value = value.substring(1, value.length - 1);
-            if (value.startsWith('{') && value.endsWith('}'))
-                return JSON.parse(value);
+            if (value.startsWith('{') && value.endsWith('}')) {
+                const parsedObject = JSON.parse(value
+                    .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
+                    .replace(/'/g, '"'));
+                return parsedObject;
+            }
         }
         else if (value.startsWith('"') && value.endsWith('"')) {
             value = value.substring(1, value.length - 1);
@@ -15044,6 +15048,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const name = this.url ? (0, utils_5.extractFileName)(this.url) : '';
             return name || 'File name';
         }
+        get value() {
+            return this.codeEditor?.value || '';
+        }
         async setData(value) {
             this._data = value;
             await this.renderUI();
@@ -15051,7 +15058,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         getData() {
             return this._data;
         }
-        setValue(value) {
+        setValue(url) {
+            this.setData({ url });
         }
         async renderUI() {
             const { url } = this._data;
@@ -15061,27 +15069,31 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.pnlMessage.visible = true;
         }
         addLib() {
-            components_27.CodeEditor.addLib('@ijstech/components', Dts.components);
-            if (!this.compiler)
-                this.compiler = new compiler_2.Compiler();
-            this.compiler.addPackage('@ijstech/components', {
-                dts: { 'index.d.ts': Dts.components },
-            });
+            try {
+                components_27.CodeEditor.addLib('@ijstech/components', Dts.components);
+                if (!this.compiler)
+                    this.compiler = new compiler_2.Compiler();
+                this.compiler.addPackage('@ijstech/components', {
+                    dts: { 'index.d.ts': Dts.components },
+                });
+            }
+            catch { }
         }
         handleTabChanged(target, tab) {
-            this.pnlMessage.visible = tab.caption === 'Code';
+            this.pnlMessage.visible = tab.id === 'codeTab';
             const fileName = this.fileName;
-            if (tab.caption === 'Design') {
+            if (tab.id === 'designTab') {
                 const code = this.codeEditor.value;
                 try {
                     this.compiler.addFile(fileName, code);
                     const ui = this.compiler.parseUI(fileName);
-                    console.log(ui, code, fileName);
                     this.formDesigner.renderUI(ui);
                 }
-                catch { }
+                catch (error) {
+                    console.log(error);
+                }
             }
-            else if (tab.caption === 'Code') {
+            else if (tab.id === 'codeTab') {
                 this.updateDesignerCode(fileName);
             }
         }
@@ -15091,6 +15103,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.contentChangeTimer = setTimeout(async () => {
                 this.handleGetChangedFiles();
             }, 500);
+            if (this.onChanged)
+                this.onChanged(this.codeEditor.value);
         }
         updateDesignerCode(fileName, modified) {
             if (modified || this.formDesigner?.modified) {
@@ -15120,6 +15134,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         init() {
             super.init();
             this.onSave = this.getAttribute('onSave', true) || this.onSave;
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             const url = this.getAttribute('url', true);
             if (url)
                 this.setData({ url });
@@ -15272,8 +15287,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             };
         }
         render() {
-            return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', background: { color: '#202020' } },
-                this.$render("i-tabs", { class: index_css_18.codeTabsStyle, width: `100%`, stack: { grow: '1', shrink: '1' }, draggable: false, closable: false, onChanged: this.handleTabChanged },
+            return (this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden', background: { color: '#202020' } },
+                this.$render("i-tabs", { class: index_css_18.codeTabsStyle, dock: 'fill', draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
                         this.$render("i-code-editor", { id: "codeEditor", dock: 'fill', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
