@@ -9,10 +9,9 @@ import {
   IBorder,
   Input,
   ColorPicker,
-  Control,
   Panel
 } from '@ijstech/components'
-import { bgInputTransparent, borderRadiusLeft, borderRadiusRight, buttonAutoStyled, customColorStyled, customIconLayoutActiveStyled, customIconLayoutStyled, textInputRight, unitStyled } from './index.css';
+import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import assets from '../assets';
 import { onChangedCallback } from '../interface';
@@ -21,22 +20,35 @@ const Theme = Styles.Theme.ThemeVars;
 
 const borderStyles = [
   {
-    caption: 'Solid',
+    tooltip: 'Solid',
     value: 'solid',
-    img: assets.fullPath('img/designer/border/solid.svg'),
-    isActive: true,
-    classes: borderRadiusLeft
+    type: 'style',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/border/solid.svg')
+      }
+    },
+    isActive: true
   },
   {
-    caption: 'Dotted',
+    tooltip: 'Dotted',
     value: 'dotted',
-    img: assets.fullPath('img/designer/border/dotted.svg')
+    type: 'style',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/border/dotted.svg')
+      }
+    }
   },
   {
-    caption: 'Dashed',
+    tooltip: 'Dashed',
     value: 'dashed',
-    img: assets.fullPath('img/designer/border/dashed.svg'),
-    classes: borderRadiusRight
+    type: 'style',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/border/dashed.svg')
+      }
+    }
   },
 ]
 
@@ -63,8 +75,6 @@ export default class DesignerToolBorders extends Module {
   private inputRadius: Input;
   private inputWidth: Input;
   private pnlIndividual: VStack;
-  private currentStyle: Panel|null = null;
-  private pnlBorderStyles: Panel;
 
   private _data: IDesignerBorder = {};
   private radiusObj = {
@@ -79,7 +89,6 @@ export default class DesignerToolBorders extends Module {
   constructor(parent?: Container, options?: DesignerToolBordersElement) {
     super(parent, options);
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
-    this.onColorChanged = this.onColorChanged.bind(this);
   }
 
   setData(value: IDesignerBorder) {
@@ -101,7 +110,6 @@ export default class DesignerToolBorders extends Module {
       this.setRadiusByPosition(radiusStr);
     }
     this.updateButtons();
-    this.currentStyle = this.pnlBorderStyles?.children?.[0] as Panel;
     border.style = border?.style || 'solid';
   }
 
@@ -155,12 +163,8 @@ export default class DesignerToolBorders extends Module {
 
   private onPropChanged(target: Input, prop: string) {
     const value = target.value;
-    const border = {
-      ...(this._data.border || {}),
-      [prop]: `${value}px`
-    }
-    this._data.border = border;
-    if (this.onChanged) this.onChanged('border', border);
+    this._data.border[prop] = `${value}px`;
+    if (this.onChanged) this.onChanged('border', this._data.border);
     // TODO: update individiual buttons
   }
 
@@ -177,19 +181,10 @@ export default class DesignerToolBorders extends Module {
     if (this.onChanged) this.onChanged('border', this._data.border);
   }
 
-  private onColorChanged(target: ColorPicker) {
-    const color = target.value;
-    this._data.border.color = color;
-    if (this.onChanged) this.onChanged('border', this._data.border);
-  }
-
-  private onStyleChanged(target: Panel, value: any) {
-    if (this.currentStyle) this.currentStyle.classList.remove(customIconLayoutStyled);
-    target.classList.add(customIconLayoutActiveStyled);
-    this.currentStyle = target;
+  private onStyleChanged(type: string, value: string) {
     const border = {
       ...(this._data.border || {}),
-      style: value.value
+      [type]: value
     }
     this._data.border = border;
     if (this.onChanged) this.onChanged('border', border);
@@ -286,7 +281,7 @@ export default class DesignerToolBorders extends Module {
               <i-hstack gap={4} width="100%" verticalAlignment="center">
                 <i-color
                   id="bgColor"
-                  onChanged={this.onColorChanged}
+                  onChanged={(target: ColorPicker) => this.onStyleChanged('color', target.value)}
                   class={customColorStyled}
                 />
                 <i-combo-box
@@ -296,26 +291,12 @@ export default class DesignerToolBorders extends Module {
                 />
               </i-hstack>
             </i-grid-layout>
-            <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption="Style" font={{ size: '0.75rem' }} />
-              <i-hstack id="pnlBorderStyles" gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-                {borderStyles.map(v => <i-panel
-                  display="flex"
-                  tooltip={{ content: v.caption }}
-                  class={`${customIconLayoutStyled} ${v.classes || ''} ${v.isActive ? customIconLayoutActiveStyled : ''}`}
-                  padding={{ top: 4, bottom: 4, left: 34, right: 34 }}
-                  onClick={(target: Panel) => this.onStyleChanged(target, v)}
-                >
-                  <i-image
-                    display="flex"
-                    url={v.img}
-                    width={16}
-                    height={16}
-                  />
-                </i-panel>
-                )}
-              </i-hstack>
-            </i-grid-layout>
+            <designer-selector
+              id="styleSelector"
+              title="Style"
+              items={borderStyles}
+              onChanged={this.onStyleChanged}
+            />
           </i-vstack>
         </i-vstack>
         <designer-tool-modal-spacing id="mdSpacing" onChanged={this.onSpacingChanged} />

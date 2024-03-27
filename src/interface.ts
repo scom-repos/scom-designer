@@ -39,3 +39,18 @@ export interface IControl extends IComponent {
 }
 
 export type onChangedCallback = (prop: string, value: string|number|boolean|object) => void;
+
+export interface IFileHandler {
+  openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
+}
+
+export interface IIPFSData {
+  cid: string;
+  name?: string;
+  size?: number;
+  type?: string | 'dir' | 'file';
+  links?: IIPFSData[];
+  path?: string;
+  sort?: 'asc' | 'desc';
+  root?: boolean;
+}

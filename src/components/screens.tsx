@@ -40,7 +40,7 @@ export default class DesignerScreens extends Module {
   private wrapperDeletedScreens: VStack;
   private vStackScreens: VStack;
   private vStackDeletedScreens: VStack;
-  private lbScreens: Label;
+  // private lbScreens: Label;
   private lbDeletedScreens: Label;
   private mdActions: Modal;
   private mdAlert: Alert;
@@ -83,7 +83,7 @@ export default class DesignerScreens extends Module {
     const screenElm = this.vStackScreens.querySelector(`#screen-${id}`);
     this.vStackScreens.removeChild(screenElm);
     this.mdActions.visible = false;
-    this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
+    // this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
     this.lbDeletedScreens.caption = `Deleted Screens (${this.listScreen.filter(v => v.isDeleted).length})`;
 
     const onRestore = () => {
@@ -212,7 +212,7 @@ export default class DesignerScreens extends Module {
       </i-hstack>
     );
     this.vStackScreens.appendChild(pnl);
-    this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
+    // this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
   }
 
   private onShowActions(top: number, left: number) {
@@ -270,7 +270,7 @@ export default class DesignerScreens extends Module {
             background={{ color: '#26324b' }}
           >
             <i-hstack gap={8} verticalAlignment="center" wrap="wrap">
-              <i-label id="lbScreens" caption="Screens (1)" font={{ bold: true, size: '0.75rem' }} />
+              <i-label id="lbScreens" caption="Components" font={{ bold: true, size: '0.75rem' }} />
               <i-label caption="Last Updated" font={{ bold: true, size: '0.75rem' }} opacity={0.8} />
             </i-hstack>
             <i-hstack verticalAlignment="center" margin={{ left: 'auto' }}>
