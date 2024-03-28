@@ -79,7 +79,8 @@ export const unitStyled = Styles.style({
 })
 
 export const buttonAutoStyled = Styles.style({
-  width: 40,
+  minWidth: 40,
+  padding: '0 0.25rem',
   height: 28,
   opacity: 0.8,
   background: 'transparent',

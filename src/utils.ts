@@ -19,7 +19,7 @@ export function getAlignProps(type: string) {
   const alignProps: any = [
     {
       tooltip: 'Flex Start',
-      value: 'flex-start',
+      value: 'start',
       type,
       icon: {
         image: {
@@ -39,7 +39,7 @@ export function getAlignProps(type: string) {
     },
     {
       tooltip: 'Flex End',
-      value: 'flex-end',
+      value: 'end',
       type,
       icon: {
         image: {
@@ -84,7 +84,7 @@ export function getAlignProps(type: string) {
 export const justifyProps = [
   {
     tooltip: 'Flex Start',
-    value: 'flex-start',
+    value: 'start',
     type: 'justifyContent',
     icon: {
       image: {
@@ -105,7 +105,7 @@ export const justifyProps = [
   },
   {
     tooltip: 'Flex End',
-    value: 'flex-end',
+    value: 'end',
     type: 'justifyContent',
     icon: {
       image: {
@@ -150,7 +150,7 @@ export const justifyProps = [
 export const alignContentProps = [
   {
     tooltip: 'Flex Start',
-    value: 'flex-start',
+    value: 'start',
     type: 'alignContent',
     icon: {
       image: {
@@ -171,7 +171,7 @@ export const alignContentProps = [
   },
   {
     tooltip: 'Flex End',
-    value: 'flex-end',
+    value: 'end',
     type: 'alignContent',
     icon: {
       image: {
@@ -214,6 +214,40 @@ export const alignContentProps = [
   }
 ]
 
+export const borderStyles = [
+  {
+    tooltip: 'Solid',
+    value: 'solid',
+    type: 'style',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/border/solid.svg')
+      }
+    },
+    isActive: true
+  },
+  {
+    tooltip: 'Dotted',
+    value: 'dotted',
+    type: 'style',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/border/dotted.svg')
+      }
+    }
+  },
+  {
+    tooltip: 'Dashed',
+    value: 'dashed',
+    type: 'style',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/border/dashed.svg')
+      }
+    }
+  },
+]
+
 export const getFileContent = async (url: string) => {
   let result = '';
   if (url) {
@@ -251,4 +285,22 @@ export const parsePropValue = (value: string) => {
     value = value.substring(1, value.length - 1);
   }
   return value;
+};
+
+export const parseNumberValue = (value: string | number) => {
+  let result = {
+    value: undefined,
+    unit: 'px'
+  }
+  if (typeof value === 'number') {
+    result.value = value
+  } else if (value === 'auto' || !value) {
+    result.value = ''
+  } else {
+    const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
+    const number = value.replace(unit, '');
+    result.value = Number(number);
+    result.unit = unit || 'px';
+  }
+  return result;
 };

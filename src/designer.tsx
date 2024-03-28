@@ -8,7 +8,9 @@ import {
   ControlElement,
   Container,
   Control,
-  IdUtils
+  IdUtils,
+  getCustomElements,
+  IconName
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -17,16 +19,13 @@ import {
   DesignerPickerComponents,
   DesignerPickerBlocks
 } from './components/index'
-import { IComponent, IComponentPicker, IControl, IScreen } from './interface'
+import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio } from './interface'
 import { customLabelTabStyled, labelActiveStyled } from './index.css'
 import {
-  blockComponents,
-  pickerComponents,
-  recentComponents,
+  blockComponents
 } from './data'
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
-import { Compiler, Parser } from "@ijstech/compiler";
-import * as Dts from "./types/index";
+import { Parser } from "@ijstech/compiler";
 import { parsePropValue } from './utils'
 
 const Theme = Styles.Theme.ThemeVars
@@ -41,7 +40,8 @@ export function createControl(parent: Control, name: string, options?: any): Con
   const newObj = {};
   if (options) {
     for (let key in options) {
-      newObj[key] = parsePropValue(options[key]);
+      const value = options[key];
+      newObj[key] = typeof value === "string" ? parsePropValue(options[key]) : value;
     }
   }
   const controlConstructor: any = window.customElements.get(name);
@@ -103,17 +103,23 @@ export class ScomDesignerForm extends Module {
   private inputSearch: Input
   private currentTab = TABS.BITS
   private pnlFormDesigner: Panel
-  private selectedDesignComponent: IControl
-  private _rootComponent: IComponent
 
-  private compiler: Compiler;
   private pathMapping: Map<string, IControl> = new Map();
+  private mouseDown: boolean = false;
+  private resizing: boolean = false;
+  private resizerPos: string = "";
+  private mouseDownPos: { x: number; y: number };
+  private recentComponents: IComponent[] = [];
+  private _rootComponent: IComponent
+  private selectedComponent: IControl
 
   selectedControl: IControl
   modified: boolean;
+  studio: IStudio;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
+    this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -127,9 +133,17 @@ export class ScomDesignerForm extends Module {
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
     if (this.currentTab === TABS.RECENT) {
-      components = recentComponents
+      components = [{
+        name: 'Frequently Used',
+        tooltipText: 'Components that you use most frequently',
+        items: [...this.recentComponents]
+      }]
     } else {
-      components = pickerComponents
+      components = [{
+        name: 'Basic',
+        tooltipText: 'The most simple & essential components to build a screen',
+        items: this.getComponents()
+      }]
     }
     if (this.inputSearch.value) {
       const val = this.inputSearch.value.toLowerCase()
@@ -148,6 +162,25 @@ export class ScomDesignerForm extends Module {
     return components
   }
 
+  private getComponents() {
+    let result: IComponentItem[] = [];
+    let components = getCustomElements();
+    for (let name in components) {
+      const component = components[name];
+      const icon: any = component?.icon as IconName;
+      const className = component?.className;
+      if (icon && className) {
+        result.push({
+          ...component,
+          icon,
+          path: '',
+          name: component.tagName
+        })
+      }
+    }
+    return result;
+  }
+
   get pickerBlocksFiltered() {
     if (this.inputSearch.value) {
       return blockComponents.filter((v) =>
@@ -157,8 +190,16 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
-  get rootComponent() {
-    return this._rootComponent
+  private updateDesignProps(component: Parser.IComponent) {
+    // TODO: update control
+    let control = component as IControl;
+    component.props = control.control._getDesignProps();
+    component.items?.forEach(item => {
+      this.updateDesignProps(item);
+    });
+  }
+  get rootComponent(): Parser.IComponent {
+    return this._rootComponent;
   }
 
   clear() {
@@ -281,15 +322,15 @@ export class ScomDesignerForm extends Module {
   private handleAddControl(event: MouseEvent, parent?: Control) {
     event.stopPropagation();
     let pos = { x: event.offsetX, y: event.offsetY };
-    if (this.selectedDesignComponent) {
+    if (this.selectedComponent) {
       let com: IControl = {
-        name: this.selectedDesignComponent.name,
-        path: '',
+        name: this.selectedComponent.name,
+        path: IdUtils.generateUUID(),
         props: {
-          left: pos.x,
-          top: pos.y,
-          width: 40,
-          height: 20,
+          left: `{${pos.x}}`,
+          top: `{${pos.y}}`,
+          width: `{${100}}`,
+          height: `{${30}}`,
         },
         control: null
       };
@@ -298,9 +339,13 @@ export class ScomDesignerForm extends Module {
       } else {
         this.renderComponent(this.pnlFormDesigner, com, true);
         this._rootComponent.items.push(com);
+        this.designerComponents.screen = {
+          ...this.designerComponents.screen,
+          elements: [this._rootComponent]
+        }
       }
-      this.selectedDesignComponent.control.classList.remove("selected");
-      this.selectedDesignComponent = null;
+      this.selectedComponent.control.classList.remove("selected");
+      this.selectedComponent = null;
       return com;
     }
   }
@@ -312,6 +357,16 @@ export class ScomDesignerForm extends Module {
         ...picker,
         display: 'block',
         margin: { bottom: 1 },
+        onSelect: (target: Control, component: IComponentItem) => {
+          if (this.selectedComponent?.control)
+            this.selectedComponent.control.classList.remove("selected");
+          this.selectedComponent = { ...component, control: target } as any;
+          this.selectedComponent.control.classList.add("selected");
+          const finded = this.recentComponents.find(x => x.name === this.selectedComponent.name);
+          if (!finded) {
+            this.recentComponents.push(this.selectedComponent);
+          }
+        }
       })
       nodeItems.push(pickerElm)
     }
@@ -339,65 +394,47 @@ export class ScomDesignerForm extends Module {
     // }
   }
 
-  // private get parseScreen() {
-  //   const clonedScreen = JSON.parse(JSON.stringify(screen));
-  //   if (clonedScreen?.elements?.length) {
-  //     clonedScreen.elements = this.parseComponents(clonedScreen.elements)
-  //   }
-  //   return clonedScreen;
-  // }
-
-  // private parseComponents(elements: IComponent[]) {
-  //   return elements.map(element => {
-  //     const parserComp = this.getParserComponent(element)
-  //     element = {...element, ...parserComp}
-  //     if (element.items?.length) {
-  //       element.items = this.parseComponents(element.items)
-  //     }
-  //     return element
-  //   })
-  // }
-
-  // private getParserComponent(component: IComponent) {
-  //   if (component.name === 'View') {
-  //     return {
-  //       name: "i-panel",
-  //       props: {
-  //         width: '500px',
-  //         height: '600px',
-  //         background: {
-  //           color: '#ffffff'
-  //         }
-  //       }
-  //     }
-  //   } else {
-  //     return {
-  //       name: "i-button",
-  //       props: {
-  //         width: '20%',
-  //         height: '50px',
-  //         opacity: '0.5',
-  //         caption: 'Button',
-  //         background: {
-  //           color: '#0000ff'
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
   private initDesignerProperties() {
     if (this.selectedControl)
       this.designerProperties.component = this.selectedControl;
   }
 
+  private onPropertiesChanged(prop: string, value: any) {
+    this.modified = true;
+    this.selectedControl.control._setDesignPropValue(prop, value);
+    let props = this.selectedControl.control._getCustomProperties();
+    let property = props.props[prop];
+    let valueStr = '';
+    if (property) {
+      switch (property.type) {
+        case "number": {
+          valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
+          break;
+        }
+        case "string": {
+          valueStr = "'" + value + "'";
+          break;
+        }
+        case "boolean": {
+          valueStr = "{" + value + "}";
+          break;
+        }
+        case "object": {
+          valueStr = `{${JSON.stringify(value)}}`;
+          break;
+        }
+      }
+      this.selectedControl.props[prop] = valueStr;
+    }
+  }
+
   renderUI(root: Parser.IComponent) {
-    if (root.items?.length) {
+    if (root?.items?.length) {
       root.items = [...root.items].map(item => {
-        return {...item, path: item.name}
+        return {...item, path: IdUtils.generateUUID()}
       })
     }
-    this._rootComponent = {...root, path: root.name} as IComponent;
+    this._rootComponent = {...root, path: IdUtils.generateUUID()} as IComponent;
     this.pnlFormDesigner.clearInnerHTML();
     if (this._rootComponent) {
       this.designerComponents.screen = {
@@ -412,15 +449,112 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  private handleControlMouseMove(event: MouseEvent) {
+    if (this.mouseDown) {
+      let mouseMovePos = { x: event.clientX, y: event.clientY };
+      let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
+      this.mouseDownPos = mouseMovePos;
+      const currentControl = this.selectedControl?.control;
+      if (!currentControl) return;
+      if (this.resizing) {
+        this.modified = true;
+        switch (this.resizerPos) {
+          case "tl": {
+            let left = (currentControl.left as number) + mouseMoveDelta.x;
+            let top = (currentControl.top as number) + mouseMoveDelta.y;
+            let width = (currentControl.width as number) - mouseMoveDelta.x;
+            let height = (currentControl.height as number) - mouseMoveDelta.y;
+            this.updatePosition({ left, top, width, height })
+            break;
+          }
+          case "tm": {
+            let top = (currentControl.top as number) + mouseMoveDelta.y;
+            let height = (currentControl.height as number) - mouseMoveDelta.y;
+            currentControl._setDesignPropValue("top", top);
+            currentControl._setDesignPropValue("height", height);
+            this.updatePosition({ top, height })
+            break;
+          }
+          case "tr": {
+            let top = (currentControl.top as number) + mouseMoveDelta.y;
+            let width = (currentControl.width as number) + mouseMoveDelta.x;
+            let height = (currentControl.height as number) - mouseMoveDelta.y;
+            this.updatePosition({ top, width, height })
+            break;
+          }
+          case "ml": {
+            let left = (currentControl.left as number) + mouseMoveDelta.x;
+            let width = (currentControl.width as number) - mouseMoveDelta.x;
+            this.updatePosition({ left, width })
+            break;
+          }
+          case "mr": {
+            let width = (currentControl.width as number) + mouseMoveDelta.x;
+            this.updatePosition({ width })
+            break;
+          }
+          case "bl": {
+            let left = (currentControl.left as number) + mouseMoveDelta.x;
+            let width = (currentControl.width as number) - mouseMoveDelta.x;
+            let height = (currentControl.height as number) + mouseMoveDelta.y;
+            this.updatePosition({ left, width, height })
+            break;
+          }
+          case "bm": {
+            let height = (currentControl.height as number) + mouseMoveDelta.y;
+            this.updatePosition({ height })
+            break;
+          }
+          case "br": {
+            let width = (currentControl.width as number) + mouseMoveDelta.x;
+            let height = (currentControl.height as number) + mouseMoveDelta.y;
+            this.updatePosition({ width, height })
+            break;
+          }
+        }
+      } else {
+        let left = (currentControl.left as number) + mouseMoveDelta.x;
+        let top = (currentControl.top as number) + mouseMoveDelta.y;
+        this.updatePosition({ left, top })
+      }
+      this.showDesignProperties();
+    }
+  }
+
+  private updatePosition(value: any) {
+    for (let prop in value) {
+      if (value.hasOwnProperty(prop)) {
+        this.onPropertiesChanged(prop, value[prop]);
+      }
+    }
+  }
+
+  private initEvents() {
+    this.pnlFormDesigner.onmouseleave = event => {
+      this.mouseDown = false;
+    };
+    this.pnlFormDesigner.onmousedown = event => {
+      this.mouseDown = true;
+      this.mouseDownPos = { x: event.clientX, y: event.clientY };
+      let elm = event.target as HTMLElement;
+      this.resizing = elm.classList.contains("i-resizer");
+      this.resizerPos = elm.className.split(" ")[1];
+    };
+    this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
+    this.pnlFormDesigner.onmouseup = event => {
+      this.mouseDown = false;
+    };
+    this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
+  }
+
   init() {
     super.init()
     this.wrapperComponentPicker.style.borderBottom = 'none'
-    if (!this.compiler) this.compiler = new Compiler();
-    this.compiler.addPackage("@ijstech/components", { dts: {'index.d.ts': Dts.components} });
     this.initComponentPicker()
     this.initBlockPicker()
     this.initComponentScreen()
     this.initDesignerProperties()
+    this.initEvents()
   }
 
   render() {
@@ -443,14 +577,14 @@ export class ScomDesignerForm extends Module {
           >
             <designer-screens
               id='designerScreens'
-              height='40%'
               minHeight={160}
               onScreenChanged={this.onScreenChanged}
               onScreenHistoryShown={this.onScreenHistoryShown}
+              visible={false}
             />
             <designer-components
               id='designerComponents'
-              height='60%'
+              height='100%'
               minHeight={200}
               onShowComponentPicker={this.onShowComponentPicker}
               onSelect={this.onSelectComponent}
@@ -549,6 +683,7 @@ export class ScomDesignerForm extends Module {
           <designer-properties
             id='designerProperties'
             display='flex'
+            onChanged={this.onPropertiesChanged}
           />
         </i-hstack>
       </i-vstack>

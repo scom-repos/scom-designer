@@ -40,7 +40,7 @@ export default class DesignerScreens extends Module {
   private wrapperDeletedScreens: VStack;
   private vStackScreens: VStack;
   private vStackDeletedScreens: VStack;
-  // private lbScreens: Label;
+  private lbScreens: Label;
   private lbDeletedScreens: Label;
   private mdActions: Modal;
   private mdAlert: Alert;
@@ -83,7 +83,7 @@ export default class DesignerScreens extends Module {
     const screenElm = this.vStackScreens.querySelector(`#screen-${id}`);
     this.vStackScreens.removeChild(screenElm);
     this.mdActions.visible = false;
-    // this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
+    this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
     this.lbDeletedScreens.caption = `Deleted Screens (${this.listScreen.filter(v => v.isDeleted).length})`;
 
     const onRestore = () => {
@@ -212,7 +212,7 @@ export default class DesignerScreens extends Module {
       </i-hstack>
     );
     this.vStackScreens.appendChild(pnl);
-    // this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
+    this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
   }
 
   private onShowActions(top: number, left: number) {

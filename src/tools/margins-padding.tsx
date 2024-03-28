@@ -54,6 +54,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private _data: IDesignerSpacing = {};
   private _unit: string = 'px';
+  private currentProp: string = '';
 
   onChanged: onChangedCallback;
 
@@ -91,7 +92,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private onOverallChanged(target: Input, prop: 'padding' | 'margin') {
-    const value = (target.value || 0) + this._unit;
+    const value = target.value !== '' ? `${target.value}${this._unit}` : '';
     this._data[prop] = {
       top: value,
       right: value,
@@ -102,8 +103,9 @@ export default class DesignerToolMarginsAndPadding extends Module {
     if (this.onChanged) this.onChanged(prop, this._data[prop]);
   }
 
-  private onShowUnitsModal(target: Label) {
+  private onShowUnitsModal(target: Label, prop: string) {
     this.currentLabel = target as Label;
+    this.currentProp = prop;
     const rect = target.getBoundingClientRect();
     const { x, y } = rect;
     const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
@@ -125,6 +127,12 @@ export default class DesignerToolMarginsAndPadding extends Module {
     mdWrapper.style.paddingInline = '0px';
     const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
+      if (value !== this._unit) {
+        const num = this._data[this.currentProp]
+        const valueStr = num !== '' ? `${num}${this._unit}` : '';
+        this._data[this.currentProp] = valueStr;
+        if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
+      }
       this._unit = value;
       this.mdUnits.visible = false;
     }
@@ -207,7 +215,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                       }
                     }}
                     class={`text-center ${unitStyled}`}
-                    onClick={(target: Label) => this.onShowUnitsModal(target)}
+                    onClick={(target: Label) => this.onShowUnitsModal(target, 'margin')}
                   />
                 </i-hstack>
               </i-grid-layout>
@@ -243,7 +251,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                       }
                     }}
                     class={`text-center ${unitStyled}`}
-                    onClick={(target: Label) => this.onShowUnitsModal(target)}
+                    onClick={(target: Label) => this.onShowUnitsModal(target, 'padding')}
                   />
                 </i-hstack>
               </i-grid-layout>

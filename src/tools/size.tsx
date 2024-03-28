@@ -7,49 +7,45 @@ import {
   VStack,
   Modal,
   Label,
-  Input
+  Input,
+  GridLayout
 } from '@ijstech/components'
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
 import { onChangedCallback } from '../interface';
+import { parseNumberValue } from '../utils';
 const Theme = Styles.Theme.ThemeVars;
 
 const sizes = [
-  [
-    {
-      id: 'inputWidth',
-      caption: 'Width',
-      prop: 'width'
-    },
-    {
-      id: 'inputHeight',
-      caption: 'Height',
-      prop: 'height'
-    }
-  ],
-  [
-    {
-      id: 'inputMinWidth',
-      caption: 'Min W',
-      prop: 'minWidth'
-    },
-    {
-      id: 'inputMinHeight',
-      caption: 'Min H',
-      prop: 'minHeight'
-    }
-  ],
-  [
-    {
-      id: 'inputMaxWidth',
-      caption: 'Max W',
-      prop: 'maxWidth'
-    },
-    {
-      id: 'inputMaxHeight',
-      caption: 'Max H',
-      prop: 'maxHeight'
-    }
-  ]
+  {
+    id: 'inputWidth',
+    caption: 'Width',
+    prop: 'width'
+  },
+  {
+    id: 'inputHeight',
+    caption: 'Height',
+    prop: 'height'
+  },
+  {
+    id: 'inputMinWidth',
+    caption: 'Min W',
+    prop: 'minWidth'
+  },
+  {
+    id: 'inputMinHeight',
+    caption: 'Min H',
+    prop: 'minHeight'
+  },
+  {
+    id: 'inputMaxWidth',
+    caption: 'Max W',
+    prop: 'maxWidth'
+  },
+  {
+    id: 'inputMaxHeight',
+    caption: 'Max H',
+    prop: 'maxHeight'
+  }
 ]
 
 interface DesignerToolSizeElement extends ControlElement {
@@ -78,15 +74,11 @@ export default class DesignerToolSize extends Module {
   private vStackContent: VStack;
   private mdUnits: Modal;
   private currentLabel: Label;
-  private inputWidth: Input;
-  private inputHeight: Input;
-  private inputMinWidth: Input;
-  private inputMinHeight: Input;
-  private inputMaxWidth: Input;
-  private inputMaxHeight: Input;
+  private pnlSizes: GridLayout;
 
   private _data: IDesignerSize = {};
   private unit: string = 'px';
+  private currentProp: string = '';
 
   onChanged: onChangedCallback;
 
@@ -104,23 +96,63 @@ export default class DesignerToolSize extends Module {
   }
 
   private renderUI() {
-    const { width, height, minWidth, minHeight, maxWidth, maxHeight } = this._data;
-    if (width !== undefined) this.inputWidth.value = width;
-    if (height !== undefined) this.inputHeight.value = height;
-    if (minWidth !== undefined) this.inputMinWidth.value = minWidth;
-    if (minHeight !== undefined) this.inputMinHeight.value = minHeight;
-    if (maxWidth !== undefined) this.inputMaxWidth.value = maxWidth;
-    if (maxHeight !== undefined) this.inputMaxHeight.value = maxHeight;
+    this.pnlSizes.clearInnerHTML()
+    for (let size of sizes) {
+      const parsedValue = parseNumberValue(this._data[size.prop]);
+      const elm = (
+        <i-hstack verticalAlignment="center">
+          <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
+            <i-label caption={size.caption} font={{ size: '0.75rem' }} />
+            <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
+              <i-input
+                inputType="number"
+                placeholder="auto"
+                background={{ color: 'transparent' }}
+                width="calc(100% - 1.5rem)"
+                height={24}
+                border={{ width: 0 }}
+                padding={{ left: 4, right: 2 }}
+                font={{ size: '0.675rem' }}
+                class={`${textInputRight} ${bgInputTransparent}`}
+                value={parsedValue.value}
+                onChanged={(target: Input) => this.onValueChanged(target, size.prop)}
+              />
+              <i-label
+                caption={parsedValue.unit}
+                font={{ size: '0.675rem' }}
+                cursor="pointer"
+                width={24}
+                height={24}
+                lineHeight="1.5rem"
+                opacity={1}
+                border={{
+                  left: {
+                    width: 1,
+                    style: 'solid',
+                    color: Theme.action.focus
+                  }
+                }}
+                class={`text-center ${unitStyled}`}
+                onClick={(target: Label, event: MouseEvent) => this.onShowUnits(target, event, size.prop)}
+              />
+            </i-hstack>
+          </i-grid-layout>
+        </i-hstack>
+      )
+      this.pnlSizes.append(elm)
+    }
   }
 
   private onValueChanged(target: Input, prop: string) {
     const newValue = target.value;
-    this._data[prop] = `${newValue}${this.unit}`;
+    const valueStr = newValue !== '' ? `${newValue}${this.unit}` : '';
+    this._data[prop] = valueStr;
     if (this.onChanged) this.onChanged(prop, this._data[prop]);
   }
 
-  private onShowUnits(target: Label, event: MouseEvent) {
+  private onShowUnits(target: Label, event: MouseEvent, prop: string) {
     this.currentLabel = target;
+    this.currentProp = prop;
     const rect = target.getBoundingClientRect();
     const { x, y } = rect;
     const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
@@ -142,6 +174,12 @@ export default class DesignerToolSize extends Module {
     mdWrapper.style.paddingInline = '0px';
     const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
+      if (value !== this.unit) {
+        const num = this._data[this.currentProp]
+        const valueStr = num !== '' ? `${num}${this.unit}` : '';
+        this._data[this.currentProp] = valueStr;
+        if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
+      }
       this.unit = value;
       this.mdUnits.visible = false;
     }
@@ -168,50 +206,7 @@ export default class DesignerToolSize extends Module {
       >
         <designer-tool-header name="Size" tooltipText="Specify minimum, maximum, or specifically set heights and widths for the element." onCollapse={this.onCollapse} />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
-          <i-vstack gap={8}>
-            {sizes.map(size =>
-              <i-hstack gap={16} verticalAlignment="center">
-                {size.map(v =>
-                  <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                    <i-label caption={v.caption} font={{ size: '0.75rem' }} />
-                    <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
-                      <i-input
-                        id={v.id}
-                        inputType="number"
-                        placeholder="auto"
-                        background={{ color: 'transparent' }}
-                        width="calc(100% - 1.5rem)"
-                        height={24}
-                        border={{ width: 0 }}
-                        padding={{ left: 4, right: 2 }}
-                        font={{ size: '0.675rem' }}
-                        class={`${textInputRight} ${bgInputTransparent}`}
-                        onChanged={(target: Input) => this.onValueChanged(target, v.prop)}
-                      />
-                      <i-label
-                        caption="px"
-                        font={{ size: '0.675rem' }}
-                        cursor="pointer"
-                        width={24}
-                        height={24}
-                        lineHeight="1.5rem"
-                        opacity={1}
-                        border={{
-                          left: {
-                            width: 1,
-                            style: 'solid',
-                            color: Theme.action.focus
-                          }
-                        }}
-                        class={`text-center ${unitStyled}`}
-                        onClick={(target: Label, event: MouseEvent) => this.onShowUnits(target, event)}
-                      />
-                    </i-hstack>
-                  </i-grid-layout>
-                )}
-              </i-hstack>
-            )}
-          </i-vstack>
+          <i-grid-layout id="pnlSizes" gap={{column: '1rem', row: '0.5rem'}} columnsPerRow={2}></i-grid-layout>
         </i-vstack>
       </i-vstack>
     )

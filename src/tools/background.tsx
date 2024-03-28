@@ -85,13 +85,13 @@ export default class DesignerToolBackground extends Module {
   private onTypeChanged(target: ComboBox) {
     const selectedValue = (target.selectedItem as IComboItem).value;
     this.type = selectedValue;
-    if (this.onChanged) this.onChanged('background', this.color);
+    if (this.onChanged) this.onChanged('background', { color: this.color });
   }
 
   private onColorChanged(target: ColorPicker) {
     const color = target.value;
     this.color = color;
-    if (this.onChanged) this.onChanged('background', this.color);
+    if (this.onChanged) this.onChanged('background', { color: this.color });
   }
 
   init() {

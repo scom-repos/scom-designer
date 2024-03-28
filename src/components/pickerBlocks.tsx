@@ -50,7 +50,7 @@ export default class DesignerPickerBlocks extends Module {
       block.appendChild(
         <i-hstack gap={8} width="100%" height="100%" verticalAlignment="center" horizontalAlignment="space-between">
           <i-hstack gap={8} verticalAlignment="center" wrap="wrap">
-            <i-image url={image} width={24} height={24} />
+            { image ? <i-image url={image} width={24} height={24} /> : [] }
             <i-label caption={caption} font={{ size: '0.75rem' }} />
           </i-hstack>
           <i-icon name="trash" width={16} height={16} cursor="pointer" tooltip={{ content: 'Delete Custom Block' }} onClick={() => this.onDeleteCustomBlock(id)} />
