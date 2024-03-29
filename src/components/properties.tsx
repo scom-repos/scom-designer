@@ -7,6 +7,7 @@ import {
   HStack,
   Container,
   StackLayout,
+  IDataSchema,
 } from '@ijstech/components'
 import assets from '../assets';
 import { customIconTabActiveStyled, customIconTabStyled, customTabStyled } from '../index.css';
@@ -22,11 +23,13 @@ import {
   DesignerToolPosition,
   DesignerToolBorders,
   DesignerToolEffects,
-  DesignerToolContent
+  DesignerToolContent,
+  DesignerToolGroup
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
+import { captionElements } from '../config';
 const Theme = Styles.Theme.ThemeVars;
 
 const enum BREAKPOINTS {
@@ -137,6 +140,7 @@ export default class DesignerProperties extends Module {
   private designerBorders: DesignerToolBorders;
   private designerEffects: DesignerToolEffects;
   private designerContent: DesignerToolContent;
+  private menuGroup: DesignerToolGroup;
 
   private _component: IControl;
 
@@ -165,8 +169,86 @@ export default class DesignerProperties extends Module {
   private renderUI() {
     this.updateInfo();
     this.updateProps();
-    const arr = ['i-label', 'i-button']
-    this.designerContent.visible = this.component?.name && arr.includes(this.component.name);
+    this.designerContent.visible = this.component?.name && captionElements.includes(this.component.name);
+    this.renderMenuGroup();
+  }
+
+  private renderMenuGroup() {
+    const isMenu = this.component?.name === 'i-menu-item';
+    this.menuGroup.visible = isMenu;
+    if (isMenu) {
+      const designProps = this.component?.control._getDesignProps();
+      // const schema: IDataSchema = {
+      //   type: 'object',
+      //   required: ['data'],
+      //   properties: {
+      //     mode: {
+      //       type: 'string',
+      //       enum: ['horizontal', 'vertical', 'inline'],
+      //       default: 'horizontal'
+      //     },
+      //     data: {
+      //       type: 'array',
+      //       items: {
+      //         type: 'object',
+      //         properties: {
+      //           to: {
+      //             type: 'string',
+      //           },
+      //           title: {
+      //             type: 'string'
+      //           },
+      //           icon: {
+      //             type: 'object',
+      //             required: ['name'],
+      //             properties: {
+      //               name: {
+      //                 type: 'string'
+      //               }
+      //             }
+      //           }
+      //         }
+      //       }
+      //     },
+      //   }
+      // }
+      const schema: IDataSchema = {
+        type: 'object',
+        properties: {
+          link: {
+            type: 'object',
+            required: ['href'],
+            properties: {
+              href: {
+                type: 'string'
+              },
+              target: {
+                type: 'string'
+              }
+            },
+          },
+          title: {
+            type: 'string'
+          },
+          icon: {
+            type: 'object',
+            required: ['name'],
+            properties: {
+              name: {
+                type: 'string'
+              }
+            }
+          }
+        }
+      }
+      this.menuGroup.setData({
+        title: 'Menu',
+        tooltip: 'Set custom properties for menu',
+        uiSchema: null,
+        dataSchema: schema,
+        props: {...designProps}
+      })
+    }
   }
 
   private updateInfo() {
@@ -282,6 +364,12 @@ export default class DesignerProperties extends Module {
     if (this.onChanged) this.onChanged(prop, value);
   }
 
+  private onGroupChanged(data: any) {
+    for (let prop in data) {
+      this.onPropChanged(prop, data[prop]);
+    }
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -384,6 +472,7 @@ export default class DesignerProperties extends Module {
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
               <designer-tool-content id="designerContent" visible={false} display="block" onChanged={this.onPropChanged} />
+              <designer-tool-group id="menuGroup" display='block' onChanged={this.onGroupChanged}/>
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

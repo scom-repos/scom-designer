@@ -86,3 +86,11 @@ export const buttonAutoStyled = Styles.style({
   background: 'transparent',
   border: `1px solid ${Theme.action.selectedBackground}`
 })
+
+export const customFormStyle = Styles.style({
+  $nest: {
+    'i-input': {
+      height: '24px !important'
+    }
+  }
+})

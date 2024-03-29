@@ -9,6 +9,8 @@ import DesignerToolEffects from "./effects";
 import DesignerToolHeader from "./header";
 import DesignerSelector from './selector';
 import DesignerToolContent from './content';
+import DesignerToolGroup from './group';
+import DesignerToolInput from './numberInput';
 
 export * from "./index.css";
 
@@ -23,5 +25,7 @@ export {
   DesignerToolEffects,
   DesignerToolHeader,
   DesignerSelector,
-  DesignerToolContent
+  DesignerToolContent,
+  DesignerToolGroup,
+  DesignerToolInput
 }

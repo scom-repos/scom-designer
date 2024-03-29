@@ -10,7 +10,10 @@ import {
   Control,
   IdUtils,
   getCustomElements,
-  IconName
+  IconName,
+  Link,
+  Menu,
+  Icon
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -269,7 +272,9 @@ export class ScomDesignerForm extends Module {
     if (!component?.name) return;
     let control = createControl(parent, component.name, component.props);
     if (!control.style.position) control.style.position = "relative";
-
+    if (component?.name === 'i-menu-item') {
+      control.linkTo = parent;
+    }
     (component as IControl).control = control;
     this.bindControlEvents(component as IControl);
     control.tag = new ControlResizer(control);
@@ -280,7 +285,7 @@ export class ScomDesignerForm extends Module {
 
   private bindControlEvents(control: IControl) {
     control.control.onclick = event => {
-      if (control.control instanceof Container) {
+      if (control.control instanceof Container || control.control instanceof Menu) {
         let com = this.handleAddControl(event, control.control);
         if (com) {
           control.items = control.items || [];
@@ -329,7 +334,7 @@ export class ScomDesignerForm extends Module {
         path: IdUtils.generateUUID(),
         props: {
           width: `{${100}}`,
-          height: `{${30}}`,
+          height: `{${30}}`
         },
         control: null
       };
@@ -405,7 +410,8 @@ export class ScomDesignerForm extends Module {
 
   private onPropertiesChanged(prop: string, value: any) {
     this.modified = true;
-    this.selectedControl.control._setDesignPropValue(prop, value);
+    const propVal = prop === 'link' ? new Link(this.selectedControl.control, value) : prop === 'icon' ? new Icon(this.selectedControl.control, value) : value;
+    this.selectedControl.control._setDesignPropValue(prop, propVal);
     let props = this.selectedControl.control._getCustomProperties();
     let property = props.props[prop];
     let valueStr = '';

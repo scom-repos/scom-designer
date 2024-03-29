@@ -81,6 +81,7 @@ declare module "@scom/scom-designer/tools/index.css.ts" {
     export const customColorStyled: string;
     export const unitStyled: string;
     export const buttonAutoStyled: string;
+    export const customFormStyle: string;
 }
 /// <amd-module name="@scom/scom-designer/tools/stylesheet.tsx" />
 declare module "@scom/scom-designer/tools/stylesheet.tsx" {
@@ -672,14 +673,18 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         }
     }
     export default class DesignerToolHeader extends Module {
-        private name;
-        private tooltipText;
+        private _name;
+        private _tooltipText;
         private isShown;
         private lbName;
         private iconArrow;
         private iconTooltip;
         onCollapse: (isShown: boolean) => void;
         constructor(parent?: Container, options?: DesignerToolHeaderElement);
+        get name(): string;
+        set name(value: string);
+        get tooltipText(): string;
+        set tooltipText(value: string);
         private renderUI;
         private _onCollapse;
         init(): void;
@@ -721,6 +726,77 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/tools/group.tsx" />
+declare module "@scom/scom-designer/tools/group.tsx" {
+    import { Module, ControlElement, Container, IDataSchema, IUISchema } from '@ijstech/components';
+    interface DesignerToolGroupElement extends ControlElement {
+        title?: string;
+        tooltip?: string;
+        uiSchema?: IUISchema;
+        dataSchema?: IDataSchema;
+        props?: any;
+        customControls?: any;
+        onChanged?: (data: any) => void;
+    }
+    interface IDesignerGroup {
+        title?: string;
+        tooltip?: string;
+        uiSchema?: IUISchema;
+        dataSchema?: IDataSchema;
+        props?: any;
+        customControls?: any;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-group']: DesignerToolGroupElement;
+            }
+        }
+    }
+    export default class DesignerToolGroup extends Module {
+        private vStackContent;
+        private designerHeader;
+        private form;
+        private _data;
+        onChanged: (data: any) => void;
+        constructor(parent?: Container, options?: DesignerToolGroupElement);
+        setData(value: IDesignerGroup): void;
+        private onCollapse;
+        private renderUI;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/tools/numberInput.tsx" />
+declare module "@scom/scom-designer/tools/numberInput.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    interface DesignerToolInputElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerInput {
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-input']: DesignerToolInputElement;
+            }
+        }
+    }
+    export default class DesignerToolInput extends Module {
+        private inputEl;
+        private lblUnit;
+        private mdUnit;
+        private _data;
+        onChanged: onChangedCallback;
+        constructor(parent?: Container, options?: DesignerToolInputElement);
+        setData(value: IDesignerInput): void;
+        private renderUI;
+        private onInputChanged;
+        init(): void;
+        render(): any;
+    }
+}
 /// <amd-module name="@scom/scom-designer/tools/index.ts" />
 declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolStylesheet from "@scom/scom-designer/tools/stylesheet.tsx";
@@ -734,8 +810,10 @@ declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolHeader from "@scom/scom-designer/tools/header.tsx";
     import DesignerSelector from "@scom/scom-designer/tools/selector.tsx";
     import DesignerToolContent from "@scom/scom-designer/tools/content.tsx";
+    import DesignerToolGroup from "@scom/scom-designer/tools/group.tsx";
+    import DesignerToolInput from "@scom/scom-designer/tools/numberInput.tsx";
     export * from "@scom/scom-designer/tools/index.css.ts";
-    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector, DesignerToolContent };
+    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector, DesignerToolContent, DesignerToolGroup, DesignerToolInput };
 }
 /// <amd-module name="@scom/scom-designer/settings/basic.tsx" />
 declare module "@scom/scom-designer/settings/basic.tsx" {
@@ -860,6 +938,11 @@ declare module "@scom/scom-designer/setting-data/index.tsx" {
     import DesignerDataLinking from "@scom/scom-designer/setting-data/linking.tsx";
     export { DesignerDataParams, DesignerDataLinking };
 }
+/// <amd-module name="@scom/scom-designer/config.ts" />
+declare module "@scom/scom-designer/config.ts" {
+    const captionElements: string[];
+    export { captionElements };
+}
 /// <amd-module name="@scom/scom-designer/components/properties.tsx" />
 declare module "@scom/scom-designer/components/properties.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
@@ -890,6 +973,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private designerBorders;
         private designerEffects;
         private designerContent;
+        private menuGroup;
         private _component;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: any);
@@ -897,9 +981,11 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         get component(): IControl;
         set component(value: IControl);
         private renderUI;
+        private renderMenuGroup;
         private updateInfo;
         private updateProps;
         private onPropChanged;
+        private onGroupChanged;
         init(): void;
         render(): any;
     }
