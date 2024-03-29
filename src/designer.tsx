@@ -260,6 +260,7 @@ export class ScomDesignerForm extends Module {
       if (control?.control) {
         control.control.visible = visible;
         control.control._setDesignPropValue("visible", visible);
+        control.props.visible = `{${visible}}`;
       }
     }
   }
@@ -292,13 +293,13 @@ export class ScomDesignerForm extends Module {
       event?.stopPropagation();
       let id = control.control.id;
       if (id) {
-        // let name = control.control._getDesignPropValue("onClick");
-        // if (!name) {
-        //   this.modified = true;
-        //   control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
-        //   this.studio.addEventHandler(this, "onClick", `${id}Click`);
-        // } else if (name.startsWith("{this."))
-        //   this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
+        let name = control.control._getDesignPropValue("onClick") as string;
+        if (!name) {
+          this.modified = true;
+          control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
+          this.studio.addEventHandler(this, "onClick", `${id}Click`);
+        } else if (name.startsWith("{this."))
+          this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
       }
     };
   }
@@ -327,8 +328,6 @@ export class ScomDesignerForm extends Module {
         name: this.selectedComponent.name,
         path: IdUtils.generateUUID(),
         props: {
-          left: `{${pos.x}}`,
-          top: `{${pos.y}}`,
           width: `{${100}}`,
           height: `{${30}}`,
         },
@@ -337,6 +336,11 @@ export class ScomDesignerForm extends Module {
       if (parent) {
         this.renderComponent(parent, com, true);
       } else {
+        com.props = {
+          ...com.props,
+          left: `{${pos.x}}`,
+          top: `{${pos.y}}`,
+        }
         this.renderComponent(this.pnlFormDesigner, com, true);
         this._rootComponent.items.push(com);
         this.designerComponents.screen = {
@@ -470,8 +474,7 @@ export class ScomDesignerForm extends Module {
           case "tm": {
             let top = (currentControl.top as number) + mouseMoveDelta.y;
             let height = (currentControl.height as number) - mouseMoveDelta.y;
-            currentControl._setDesignPropValue("top", top);
-            currentControl._setDesignPropValue("height", height);
+            this.updatePosition({ top, height })
             this.updatePosition({ top, height })
             break;
           }
@@ -537,8 +540,23 @@ export class ScomDesignerForm extends Module {
       this.mouseDown = true;
       this.mouseDownPos = { x: event.clientX, y: event.clientY };
       let elm = event.target as HTMLElement;
-      this.resizing = elm.classList.contains("i-resizer");
-      this.resizerPos = elm.className.split(" ")[1];
+      const resizers = elm.querySelectorAll('.i-resizer');
+      let currentResizer = null;
+      for (let i = 0; i < resizers.length; i++) {
+        const resizer = resizers[i] as HTMLElement;
+        const resizerRect = resizer.getBoundingClientRect();
+        if (resizerRect.left <= event.clientX && event.clientX <= resizerRect.right && resizerRect.top <= event.clientY && event.clientY <= resizerRect.bottom) {
+          currentResizer = resizer;
+          break;
+        }
+      }
+      if (currentResizer) {
+        this.resizing = currentResizer.classList?.contains("i-resizer");
+        this.resizerPos = currentResizer.className?.split(" ")[1];
+      } else {
+        this.resizing = false;
+        this.resizerPos = '';
+      }
     };
     this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
     this.pnlFormDesigner.onmouseup = event => {

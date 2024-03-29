@@ -3525,6 +3525,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 if (control?.control) {
                     control.control.visible = visible;
                     control.control._setDesignPropValue("visible", visible);
+                    control.props.visible = `{${visible}}`;
                 }
             }
         }
@@ -3557,13 +3558,14 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 event?.stopPropagation();
                 let id = control.control.id;
                 if (id) {
-                    // let name = control.control._getDesignPropValue("onClick");
-                    // if (!name) {
-                    //   this.modified = true;
-                    //   control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
-                    //   this.studio.addEventHandler(this, "onClick", `${id}Click`);
-                    // } else if (name.startsWith("{this."))
-                    //   this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
+                    let name = control.control._getDesignPropValue("onClick");
+                    if (!name) {
+                        this.modified = true;
+                        control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
+                        this.studio.addEventHandler(this, "onClick", `${id}Click`);
+                    }
+                    else if (name.startsWith("{this."))
+                        this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
                 }
             };
         }
@@ -3590,8 +3592,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     name: this.selectedComponent.name,
                     path: components_28.IdUtils.generateUUID(),
                     props: {
-                        left: `{${pos.x}}`,
-                        top: `{${pos.y}}`,
                         width: `{${100}}`,
                         height: `{${30}}`,
                     },
@@ -3601,6 +3601,11 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     this.renderComponent(parent, com, true);
                 }
                 else {
+                    com.props = {
+                        ...com.props,
+                        left: `{${pos.x}}`,
+                        top: `{${pos.y}}`,
+                    };
                     this.renderComponent(this.pnlFormDesigner, com, true);
                     this._rootComponent.items.push(com);
                     this.designerComponents.screen = {
@@ -3728,8 +3733,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         case "tm": {
                             let top = currentControl.top + mouseMoveDelta.y;
                             let height = currentControl.height - mouseMoveDelta.y;
-                            currentControl._setDesignPropValue("top", top);
-                            currentControl._setDesignPropValue("height", height);
+                            this.updatePosition({ top, height });
                             this.updatePosition({ top, height });
                             break;
                         }
@@ -3794,8 +3798,24 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.mouseDown = true;
                 this.mouseDownPos = { x: event.clientX, y: event.clientY };
                 let elm = event.target;
-                this.resizing = elm.classList.contains("i-resizer");
-                this.resizerPos = elm.className.split(" ")[1];
+                const resizers = elm.querySelectorAll('.i-resizer');
+                let currentResizer = null;
+                for (let i = 0; i < resizers.length; i++) {
+                    const resizer = resizers[i];
+                    const resizerRect = resizer.getBoundingClientRect();
+                    if (resizerRect.left <= event.clientX && event.clientX <= resizerRect.right && resizerRect.top <= event.clientY && event.clientY <= resizerRect.bottom) {
+                        currentResizer = resizer;
+                        break;
+                    }
+                }
+                if (currentResizer) {
+                    this.resizing = currentResizer.classList?.contains("i-resizer");
+                    this.resizerPos = currentResizer.className?.split(" ")[1];
+                }
+                else {
+                    this.resizing = false;
+                    this.resizerPos = '';
+                }
             };
             this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
             this.pnlFormDesigner.onmouseup = event => {
