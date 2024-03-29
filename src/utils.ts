@@ -293,13 +293,13 @@ export const parseNumberValue = (value: string | number) => {
     unit: 'px'
   }
   if (typeof value === 'number') {
-    result.value = value
+    result.value = Number.isInteger(value) ? value : value.toFixed(2)
   } else if (value === 'auto' || !value) {
     result.value = ''
   } else {
     const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
-    const number = value.replace(unit, '');
-    result.value = Number(number);
+    const numVal = +(value.replace(unit, ''));
+    result.value = Number.isInteger(numVal) ? numVal : numVal.toFixed(2)
     result.unit = unit || 'px';
   }
   return result;

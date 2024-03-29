@@ -77,12 +77,10 @@ export default class DesignerToolModalSpacing extends Module {
     }
     const onUnitChanged = (value: 'px' | '%') => {
       this.lbIndUnit.caption = value;
-      if (this.unit !== value) {
-        const { type, position } = this.spacing;
-        const valStr = this.inputValue.value !== '' ? `${this.inputValue.value}${this.unit}` : 'auto';
-        if (this.onChanged) this.onChanged(type, position, `${valStr}${this.unit}`);
-      }
       this.unit = value;
+      const { type, position } = this.spacing;
+      const valStr = this.inputValue.value !== '' ? `${this.inputValue.value}${this.unit}` : '';
+      if (this.onChanged) this.onChanged(type, position, valStr);
       this.vStackIndUnits.visible = false;
     }
     const onValueChanged = (target: Input) => {
@@ -179,6 +177,11 @@ export default class DesignerToolModalSpacing extends Module {
 
   onShowModal(target: Button, value: ISpacing, config: IConfig) {
     if (this.vStackIndUnits) this.vStackIndUnits.visible = false;
+    const parseValue = parseNumberValue(value.value);
+    const unit = parseValue?.unit || 'px';
+    this.unit = unit;
+    this.inputValue.value = parseValue?.value || '';
+    this.lbIndUnit.caption = unit;
     this.config = config || {};
     this.spacing = value || {};
     this.updateHeader();

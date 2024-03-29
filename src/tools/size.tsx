@@ -174,9 +174,10 @@ export default class DesignerToolSize extends Module {
     mdWrapper.style.paddingInline = '0px';
     const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
+      const input = this.currentLabel.previousSibling as Input;
       if (value !== this.unit) {
-        const num = this._data[this.currentProp]
-        const valueStr = num !== '' ? `${num}${this.unit}` : '';
+        const num = input?.value ?? parseNumberValue(this._data[this.currentProp])?.value;
+        const valueStr = num !== '' ? `${num}${value}` : '';
         this._data[this.currentProp] = valueStr;
         if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
       }

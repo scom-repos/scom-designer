@@ -13,6 +13,7 @@ import {
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
+import { parseNumberValue } from '../utils';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {
@@ -86,7 +87,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
       const match = /^(margin|padding)(.*)/.exec(id);
       if (match?.length) {
         const position = (match[2] || '').toLowerCase();
-        button.caption = this._data[match[1]]?.[position] ?? 'auto';
+        const parseData = parseNumberValue(this._data[match[1]]?.[position]);
+        button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
       }
     }
   }
@@ -128,10 +130,16 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
       if (value !== this._unit) {
-        const num = this._data[this.currentProp]
-        const valueStr = num !== '' ? `${num}${this._unit}` : '';
-        this._data[this.currentProp] = valueStr;
-        if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
+        const valueObj = this._data[this.currentProp]
+        if (valueObj) {
+          for (let prop in valueObj) {
+            const numValue = parseNumberValue(valueObj[prop])?.value;
+            const valueStr = numValue !== '' ? `${numValue}${value}` : '';
+            this._data[this.currentProp][prop] = valueStr
+          }
+          this.updateButtons()
+          if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
+        }
       }
       this._unit = value;
       this.mdUnits.visible = false;

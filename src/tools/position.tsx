@@ -13,6 +13,7 @@ import {
 import { buttonAutoStyled, customIconLayoutActiveStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
+import { parseNumberValue } from '../utils';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {
@@ -82,8 +83,8 @@ export default class DesignerToolPosition extends Module {
     for (let i = 0; i < buttons.length; i++) {
       const button = buttons[i] as Button;
       const id = button.id || '';
-      const value = typeof this._data[id] === 'number' ? `${this._data[id]}px` : this._data[id]
-      button.caption = value ?? 'auto';
+      const parseData = parseNumberValue(this._data[id]);
+      button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
     }
   }
 

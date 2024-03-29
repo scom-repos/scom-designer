@@ -82,40 +82,14 @@ declare module "@scom/scom-designer/tools/index.css.ts" {
     export const unitStyled: string;
     export const buttonAutoStyled: string;
 }
-/// <amd-module name="@scom/scom-designer/tools/header.tsx" />
-declare module "@scom/scom-designer/tools/header.tsx" {
-    import { Module, ControlElement, Container } from '@ijstech/components';
-    interface DesignerToolHeaderElement extends ControlElement {
-        name: string;
-        tooltipText?: string;
-        onCollapse: (isShown: boolean) => void;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['designer-tool-header']: DesignerToolHeaderElement;
-            }
-        }
-    }
-    export default class DesignerToolHeader extends Module {
-        private name;
-        private tooltipText;
-        private isShown;
-        private lbName;
-        private iconArrow;
-        private iconTooltip;
-        onCollapse: (isShown: boolean) => void;
-        constructor(parent?: Container, options?: DesignerToolHeaderElement);
-        private renderUI;
-        private _onCollapse;
-        init(): void;
-        render(): any;
-    }
-}
 /// <amd-module name="@scom/scom-designer/tools/stylesheet.tsx" />
 declare module "@scom/scom-designer/tools/stylesheet.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolStylesheetElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerStylesheet {
     }
     global {
         namespace JSX {
@@ -126,9 +100,18 @@ declare module "@scom/scom-designer/tools/stylesheet.tsx" {
     }
     export default class DesignerToolStylesheet extends Module {
         private vStackContent;
+        private stylesSelect;
+        private lblStats;
+        private _data;
+        onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolStylesheetElement);
         private onCollapse;
+        setData(value: IDesignerStylesheet): void;
         private renderUI;
+        private getStylesOptions;
+        private handleEdit;
+        private handleCopy;
+        private handleMove;
         init(): void;
         render(): any;
     }
@@ -669,6 +652,36 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
         private renderUI;
         private onInputEffectChanged;
         private onRangeChanged;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/tools/header.tsx" />
+declare module "@scom/scom-designer/tools/header.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    interface DesignerToolHeaderElement extends ControlElement {
+        name: string;
+        tooltipText?: string;
+        onCollapse: (isShown: boolean) => void;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-header']: DesignerToolHeaderElement;
+            }
+        }
+    }
+    export default class DesignerToolHeader extends Module {
+        private name;
+        private tooltipText;
+        private isShown;
+        private lbName;
+        private iconArrow;
+        private iconTooltip;
+        onCollapse: (isShown: boolean) => void;
+        constructor(parent?: Container, options?: DesignerToolHeaderElement);
+        private renderUI;
+        private _onCollapse;
         init(): void;
         render(): any;
     }

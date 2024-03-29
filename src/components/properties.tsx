@@ -375,7 +375,7 @@ export default class DesignerProperties extends Module {
         >
           <i-tab icon={{ name: 'paint-brush', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
-              <designer-tool-stylesheet id="designerStylesheet" display="block" />
+              <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
               <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} />
               <designer-tool-size id="designerSize" display="block" onChanged={this.onPropChanged} />
