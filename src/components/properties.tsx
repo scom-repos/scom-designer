@@ -26,6 +26,7 @@ import {
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
+import '../setting-data/index';
 const Theme = Styles.Theme.ThemeVars;
 
 const enum BREAKPOINTS {
@@ -392,8 +393,10 @@ export default class DesignerProperties extends Module {
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'database', width: '1.5rem', height: '1.5rem' }}>
-            {/* TODO: update new components */}
-            <i-label caption="Database" />
+            <i-vstack gap={1} width="100%">
+              <designer-data-params display="block" />
+              <designer-data-linking display="block" />
+            </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'magic', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">

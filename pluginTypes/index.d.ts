@@ -799,12 +799,61 @@ declare module "@scom/scom-designer/triggers/index.ts" {
     import DesignerTrigger from "@scom/scom-designer/triggers/trigger.tsx";
     export { DesignerTrigger };
 }
+/// <amd-module name="@scom/scom-designer/setting-data/params.tsx" />
+declare module "@scom/scom-designer/setting-data/params.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    interface DesignerDataParamsElement extends ControlElement {
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-data-params']: DesignerDataParamsElement;
+            }
+        }
+    }
+    export default class DesignerDataParams extends Module {
+        private vStackContent;
+        constructor(parent?: Container, options?: DesignerDataParamsElement);
+        private onCollapse;
+        private renderUI;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/setting-data/linking.tsx" />
+declare module "@scom/scom-designer/setting-data/linking.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    interface DesignerDataLinkingElement extends ControlElement {
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-data-linking']: DesignerDataLinkingElement;
+            }
+        }
+    }
+    export default class DesignerDataLinking extends Module {
+        private vStackContent;
+        constructor(parent?: Container, options?: DesignerDataLinkingElement);
+        private onCollapse;
+        private renderUI;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/setting-data/index.tsx" />
+declare module "@scom/scom-designer/setting-data/index.tsx" {
+    import DesignerDataParams from "@scom/scom-designer/setting-data/params.tsx";
+    import DesignerDataLinking from "@scom/scom-designer/setting-data/linking.tsx";
+    export { DesignerDataParams, DesignerDataLinking };
+}
 /// <amd-module name="@scom/scom-designer/components/properties.tsx" />
 declare module "@scom/scom-designer/components/properties.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
     import { IControl } from "@scom/scom-designer/interface.ts";
     import "@scom/scom-designer/settings/index.ts";
     import "@scom/scom-designer/triggers/index.ts";
+    import "@scom/scom-designer/setting-data/index.tsx";
     type onChangedCallback = (prop: string, value: any) => void;
     interface DesignerPropertiesElement extends ControlElement {
         component?: IControl;
