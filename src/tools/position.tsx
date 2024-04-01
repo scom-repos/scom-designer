@@ -13,7 +13,7 @@ import {
 import { buttonAutoStyled, customIconLayoutActiveStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
-import { parseNumberValue } from '../utils';
+import { parseNumberValue } from '../helpers/utils';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {

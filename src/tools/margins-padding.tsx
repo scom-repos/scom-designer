@@ -13,7 +13,7 @@ import {
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
-import { parseNumberValue } from '../utils';
+import { parseNumberValue } from '../helpers/utils';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {

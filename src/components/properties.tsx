@@ -3,13 +3,11 @@ import {
   Styles,
   ControlElement,
   customElements,
-  IconName,
   HStack,
   Container,
-  StackLayout,
+  StackLayout
 } from '@ijstech/components'
-import assets from '../assets';
-import { customIconTabActiveStyled, customIconTabStyled, customTabStyled } from '../index.css';
+import { customTabStyled } from '../index.css';
 import { IControl } from '../interface';
 import {
   DesignerToolStylesheet,
@@ -22,93 +20,15 @@ import {
   DesignerToolPosition,
   DesignerToolBorders,
   DesignerToolEffects,
-  DesignerToolContent
+  DesignerToolContent,
+  DesignerToolGroup,
+  DesignerSelector
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
+import { breakpoints, previews } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
-
-const enum BREAKPOINTS {
-  MOBILE,
-  TABLET,
-  LAPTOP,
-  DESKTOP,
-  BIG_SCREEN
-}
-
-const enum PREVIEWS {
-  DRAFT,
-  WEB,
-  IOS,
-  ANDROID
-}
-
-type IPreview = {
-  caption: string,
-  icon?: IconName,
-  url?: string,
-  value: PREVIEWS,
-  classes?: string,
-  isActive?: boolean
-}
-
-const previews: IPreview[] = [
-  {
-    caption: 'Draft View',
-    icon: 'edit',
-    value: PREVIEWS.DRAFT,
-    classes: borderRadiusLeft,
-    isActive: true
-  },
-  {
-    caption: 'Web Preview',
-    icon: 'globe',
-    value: PREVIEWS.WEB
-  },
-  {
-    caption: 'iOS Preview',
-    url: assets.fullPath('img/designer/iOS.svg'),
-    value: PREVIEWS.IOS
-  },
-  {
-    caption: 'Android Preview',
-    url: assets.fullPath('img/designer/Android.svg'),
-    value: PREVIEWS.ANDROID,
-    classes: borderRadiusRight
-  }
-]
-
-const breakpoints: { caption: string, icon: IconName, value: BREAKPOINTS, classes?: string, isActive?: boolean }[] = [
-  {
-    caption: 'Mobile',
-    icon: 'mobile-alt',
-    value: BREAKPOINTS.MOBILE,
-    classes: borderRadiusLeft,
-    isActive: true
-  },
-  {
-    caption: 'Tablet',
-    icon: 'tablet-alt',
-    value: BREAKPOINTS.TABLET
-  },
-  {
-    caption: 'Laptop',
-    icon: 'laptop',
-    value: BREAKPOINTS.LAPTOP
-  },
-  {
-    caption: 'Desktop',
-    icon: 'desktop',
-    value: BREAKPOINTS.DESKTOP
-  },
-  {
-    caption: 'Big Screen',
-    icon: 'tv',
-    value: BREAKPOINTS.BIG_SCREEN,
-    classes: borderRadiusRight
-  }
-]
 
 type onChangedCallback = (prop: string, value: any) => void
 
@@ -137,6 +57,9 @@ export default class DesignerProperties extends Module {
   private designerBorders: DesignerToolBorders;
   private designerEffects: DesignerToolEffects;
   private designerContent: DesignerToolContent;
+  private customGroup: DesignerToolGroup;
+  private breakpointSelector: DesignerSelector;
+  private previewSelector: DesignerSelector;
 
   private _component: IControl;
 
@@ -165,8 +88,20 @@ export default class DesignerProperties extends Module {
   private renderUI() {
     this.updateInfo();
     this.updateProps();
-    const arr = ['i-label', 'i-button']
-    this.designerContent.visible = this.component?.name && arr.includes(this.component.name);
+    this.renderCustomGroup();
+  }
+
+  private renderCustomGroup() {
+    const designProps = this.component?.control._getDesignProps();
+    const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema || null;
+
+    this.customGroup.setData({
+      title: 'Custom Properties',
+      tooltip: 'Set custom properties for component',
+      uiSchema: null,
+      dataSchema: dataSchema,
+      props: {...designProps}
+    })
   }
 
   private updateInfo() {
@@ -272,14 +207,26 @@ export default class DesignerProperties extends Module {
       direction: (control as StackLayout).direction
     })
     this.designerContent.setData({
-      caption: (control as any).caption,
       font
     })
   }
 
   private onPropChanged(prop: string, value: any) {
-    if (!this.component) return;
     if (this.onChanged) this.onChanged(prop, value);
+  }
+
+  private onGroupChanged(data: any) {
+    for (let prop in data) {
+      this.onPropChanged(prop, data[prop]);
+    }
+  }
+
+  private onBreakpointClick(type: string, value: any) {
+    console.log('break point  clicked', type, value)
+  }
+
+  private onPreviewClick(type: string, value: any) {
+    console.log('preview clicked', type, value)
   }
 
   init() {
@@ -287,6 +234,8 @@ export default class DesignerProperties extends Module {
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     const component = this.getAttribute('component', true);
     if (component) this.component = component;
+    this.breakpointSelector.activeItem = breakpoints[0].value;
+    this.previewSelector.activeItem = previews[0].value;
   }
 
   render() {
@@ -309,41 +258,20 @@ export default class DesignerProperties extends Module {
           background={{ color: '#26324b' }}
           stack={{shrink: '0'}}
         >
-          <i-vstack gap={'0.5rem'}>
-            <i-label caption="BREAKPOINT" letterSpacing="0.1rem" font={{ size: '0.675rem' }} />
-            <i-hstack gap={1} verticalAlignment="center" class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-              {breakpoints.map(v => <i-icon
-                name={v.icon}
-                width={'1.5rem'}
-                height={'1.5rem'}
-                tooltip={{ content: v.caption }}
-                class={`${customIconTabStyled} ${v.classes || ''} ${v.isActive ? customIconTabActiveStyled : ''}`}
-                padding={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              />)}
-            </i-hstack>
-          </i-vstack>
-          <i-vstack gap={'0.5rem'}>
-            <i-label caption="PREVIEW" letterSpacing="0.1rem" font={{ size: '0.675rem' }} />
-            <i-hstack gap={1} verticalAlignment="center" background={{ color: Theme.action.hoverBackground }} class={`${borderRadiusLeft} ${borderRadiusRight}`}>
-              {previews.map(v => v.icon ? <i-icon
-                name={v.icon}
-                width={'1.5rem'}
-                height={'1.5rem'}
-                tooltip={{ content: v.caption }}
-                class={`${customIconTabStyled} ${v.classes || ''} ${v.isActive ? customIconTabActiveStyled : ''}`}
-                padding={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              /> : (v.url ? <i-image
-                url={v.url}
-                width={'1.5rem'}
-                height={'1.5rem'}
-                display="flex"
-                tooltip={{ content: v.caption }}
-                class={`${customIconTabStyled} ${v.classes || ''} ${v.isActive ? customIconTabActiveStyled : ''}`}
-                padding={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              /> : [])
-              )}
-            </i-hstack>
-          </i-vstack>
+          <designer-selector
+            id="breakpointSelector"
+            title='BREAKPOINT'
+            items={breakpoints}
+            direction='vertical'
+            onChanged={this.onBreakpointClick.bind(this)}
+          />
+          <designer-selector
+            id="previewSelector"
+            title='PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
+            items={previews}
+            direction='vertical'
+            onChanged={this.onPreviewClick.bind(this)}
+          />
           <i-vstack gap={'0.5rem'}>
             <i-hstack gap={4} verticalAlignment="center">
               <i-label caption="ENV" letterSpacing="0.1rem" font={{ size: '0.675rem' }} />
@@ -383,7 +311,8 @@ export default class DesignerProperties extends Module {
               <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-content id="designerContent" visible={false} display="block" onChanged={this.onPropChanged} />
+              <designer-tool-content id="designerContent" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

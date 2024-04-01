@@ -23,8 +23,8 @@ declare global {
 
 @customElements('designer-tool-header')
 export default class DesignerToolHeader extends Module {
-  private name: string;
-  private tooltipText: string;
+  private _name: string = '';
+  private _tooltipText: string;
   private isShown = true;
 
   private lbName: Label;
@@ -34,6 +34,23 @@ export default class DesignerToolHeader extends Module {
 
   constructor(parent?: Container, options?: DesignerToolHeaderElement) {
     super(parent, options);
+  }
+
+  get name() {
+    return this._name ?? '';
+  }
+  set name(value: string) {
+    this._name = value ?? '';
+    this.lbName.caption = this.name;
+  }
+
+  get tooltipText() {
+    return this._tooltipText ?? '';
+  }
+  set tooltipText(value: string) {
+    this._tooltipText = value ?? '';
+    this.iconTooltip.visible = !!this.tooltipText;
+    this.iconTooltip.tooltip.content = this.tooltipText || '';
   }
 
   private renderUI() {

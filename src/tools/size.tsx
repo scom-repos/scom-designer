@@ -12,7 +12,7 @@ import {
 } from '@ijstech/components'
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
 import { onChangedCallback } from '../interface';
-import { parseNumberValue } from '../utils';
+import { parseNumberValue } from '../helpers/utils';
 const Theme = Styles.Theme.ThemeVars;
 
 const sizes = [

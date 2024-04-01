@@ -10,7 +10,14 @@ import {
   Control,
   IdUtils,
   getCustomElements,
-  IconName
+  IconName,
+  Menu,
+  Link,
+  Icon,
+  Image,
+  Tabs,
+  RadioGroup,
+  TreeView
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -26,7 +33,7 @@ import {
 } from './data'
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
-import { parsePropValue } from './utils'
+import { parsePropValue } from './helpers/utils'
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -37,16 +44,14 @@ enum TABS {
 }
 
 export function createControl(parent: Control, name: string, options?: any): Control {
-  const newObj = {};
-  if (options) {
-    for (let key in options) {
-      const value = options[key];
-      newObj[key] = typeof value === "string" ? parsePropValue(options[key]) : value;
-    }
-  }
   const controlConstructor: any = window.customElements.get(name);
-  const control: Control = new controlConstructor(parent, newObj);
-  if (options) control._setDesignProps(newObj);
+  const control: Control = new controlConstructor(parent, options);
+  if (options) control._setDesignProps(options);
+  return control;
+}
+
+export function addControl(parent: any, name: string, options?: any) {
+  const control = parent.add(options);
   return control;
 }
 
@@ -60,7 +65,6 @@ class ControlResizer {
     let resizer = document.createElement("div");
     this._control.appendChild(resizer);
     this.resizers.push(resizer);
-    resizer.className = className;
     resizer.className = "i-resizer " + className;
   }
   hideResizers() {
@@ -120,6 +124,8 @@ export class ScomDesignerForm extends Module {
   constructor(parent?: Container, options?: any) {
     super(parent, options)
     this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
+    this.onDeleteComponent = this.onDeleteComponent.bind(this);
+    this.onVisibleComponent = this.onVisibleComponent.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -139,11 +145,13 @@ export class ScomDesignerForm extends Module {
         items: [...this.recentComponents]
       }]
     } else {
-      components = [{
-        name: 'Basic',
-        tooltipText: 'The most simple & essential components to build a screen',
-        items: this.getComponents()
-      }]
+      components = [
+        {
+          name: 'Basic',
+          tooltipText: 'The most simple & essential components to build a screen',
+          items: this.getComponents()
+        }
+      ]
     }
     if (this.inputSearch.value) {
       const val = this.inputSearch.value.toLowerCase()
@@ -260,15 +268,27 @@ export class ScomDesignerForm extends Module {
       if (control?.control) {
         control.control.visible = visible;
         control.control._setDesignPropValue("visible", visible);
+        control.props.visible = `{${visible}}`;
+      }
+    }
+  }
+
+  private onDeleteComponent(component: IComponent) {
+    const path = component.path;
+    if (path) {
+      const control = this.pathMapping.get(path);
+      if (control?.control) {
+        control.control.remove();
+        this.pathMapping.delete(path);
       }
     }
   }
 
   private renderComponent(parent: Control, component: IControl, select?: boolean) {
     if (!component?.name) return;
-    let control = createControl(parent, component.name, component.props);
+    let control = this.renderControl(parent, component);
+    if (!control) return;
     if (!control.style.position) control.style.position = "relative";
-
     (component as IControl).control = control;
     this.bindControlEvents(component as IControl);
     control.tag = new ControlResizer(control);
@@ -277,13 +297,49 @@ export class ScomDesignerForm extends Module {
     if (select) this.handleSelectControl(component);
   }
 
+  private parseOptions(options: any) {
+    if (!options) return null;
+    const newObj = {};
+    if (options) {
+      for (let key in options) {
+        const value = options[key];
+        newObj[key] = typeof value === "string" ? parsePropValue(options[key]) : value;
+      }
+    }
+    return newObj;
+  }
+
+  private renderControl(parent: Control, component: IControl) {
+    const options = this.parseOptions(component.props);
+    let control = null;
+    let isTab = component.name === 'i-tab' && parent instanceof Tabs;
+    let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
+    let isRadio = component.name === 'i-radio' && parent instanceof RadioGroup;
+    let isTree = component.name === 'i-tree-node' && parent instanceof TreeView;
+    if (isTab || isMenu || isRadio || isTree) {
+      control = (parent as any).add(options);
+    } else {
+      control = createControl(parent, component.name, options);
+    }
+    return control;
+  }
+
+  private isParentGroup(control: Control) {
+    return control instanceof Container ||
+      control instanceof Tabs ||
+      control instanceof Menu ||
+      control instanceof RadioGroup ||
+      control instanceof TreeView;
+  }
+
   private bindControlEvents(control: IControl) {
     control.control.onclick = event => {
-      if (control.control instanceof Container) {
+      if (this.isParentGroup(control.control)) {
         let com = this.handleAddControl(event, control.control);
         if (com) {
           control.items = control.items || [];
           control.items.push(com);
+          this.updateStructure();
         }
       }
     };
@@ -292,13 +348,13 @@ export class ScomDesignerForm extends Module {
       event?.stopPropagation();
       let id = control.control.id;
       if (id) {
-        // let name = control.control._getDesignPropValue("onClick");
-        // if (!name) {
-        //   this.modified = true;
-        //   control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
-        //   this.studio.addEventHandler(this, "onClick", `${id}Click`);
-        // } else if (name.startsWith("{this."))
-        //   this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
+        let name = control.control._getDesignPropValue("onClick") as string;
+        if (!name) {
+          this.modified = true;
+          control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
+          this.studio.addEventHandler(this, "onClick", `${id}Click`);
+        } else if (name.startsWith("{this."))
+          this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
       }
     };
   }
@@ -327,22 +383,23 @@ export class ScomDesignerForm extends Module {
         name: this.selectedComponent.name,
         path: IdUtils.generateUUID(),
         props: {
-          left: `{${pos.x}}`,
-          top: `{${pos.y}}`,
           width: `{${100}}`,
-          height: `{${30}}`,
+          height: `{${30}}`
         },
         control: null
       };
       if (parent) {
         this.renderComponent(parent, com, true);
       } else {
-        this.renderComponent(this.pnlFormDesigner, com, true);
-        this._rootComponent.items.push(com);
-        this.designerComponents.screen = {
-          ...this.designerComponents.screen,
-          elements: [this._rootComponent]
+        com.props = {
+          ...com.props,
+          left: `{${pos.x}}`,
+          top: `{${pos.y}}`,
         }
+        this.renderComponent(this.pnlFormDesigner, com, true);
+        if (!this._rootComponent.items) this._rootComponent.items = []!
+        this._rootComponent.items.push(com);
+        this.updateStructure();
       }
       this.selectedComponent.control.classList.remove("selected");
       this.selectedComponent = null;
@@ -350,9 +407,17 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  private updateStructure() {
+    this.designerComponents.screen = {
+      ...this.designerComponents.screen,
+      elements: [this._rootComponent]
+    }
+  }
+
   private initComponentPicker() {
     const nodeItems: HTMLElement[] = []
-    for (const picker of this.pickerComponentsFiltered) {
+    const components = this.pickerComponentsFiltered;
+    for (const picker of components) {
       const pickerElm = new DesignerPickerComponents(undefined, {
         ...picker,
         display: 'block',
@@ -382,18 +447,6 @@ export class ScomDesignerForm extends Module {
     this.pnlBlockPicker.append(pickerElm)
   }
 
-  private initComponentScreen() {
-    // const newScreen = this.parseScreen;
-    // this.designerComponents.screen = newScreen
-    // this._rootComponent = newScreen?.elements[0];
-    // if (this._rootComponent) {
-    //   this.renderComponent(this.pnlFormDesigner, {
-    //     ...this._rootComponent,
-    //     control: null
-    //   });
-    // }
-  }
-
   private initDesignerProperties() {
     if (this.selectedControl)
       this.designerProperties.component = this.selectedControl;
@@ -401,7 +454,18 @@ export class ScomDesignerForm extends Module {
 
   private onPropertiesChanged(prop: string, value: any) {
     this.modified = true;
-    this.selectedControl.control._setDesignPropValue(prop, value);
+    const control = this.selectedControl.control
+    control._setDesignPropValue(prop, value);
+    if (prop === 'link' && value.href) {
+      const linkEl = new Link(control, value);
+      control[prop] = linkEl;
+    } else if (prop.includes('icon') && (value.name || value.image?.url)) {
+      const iconEl = new Icon(control, {width: '1rem', height: '1rem', display: 'flex', ...value});
+      control[prop] = iconEl;
+    } else if (prop === 'image' && value.url) {
+      const imageEl = new Image(control, {width: '1rem', height: '1rem', display: 'flex', ...value});
+      control[prop] = imageEl;
+    }
     let props = this.selectedControl.control._getCustomProperties();
     let property = props.props[prop];
     let valueStr = '';
@@ -420,6 +484,10 @@ export class ScomDesignerForm extends Module {
           break;
         }
         case "object": {
+          valueStr = `{${JSON.stringify(value)}}`;
+          break;
+        }
+        case "array": {
           valueStr = `{${JSON.stringify(value)}}`;
           break;
         }
@@ -470,8 +538,7 @@ export class ScomDesignerForm extends Module {
           case "tm": {
             let top = (currentControl.top as number) + mouseMoveDelta.y;
             let height = (currentControl.height as number) - mouseMoveDelta.y;
-            currentControl._setDesignPropValue("top", top);
-            currentControl._setDesignPropValue("height", height);
+            this.updatePosition({ top, height })
             this.updatePosition({ top, height })
             break;
           }
@@ -517,7 +584,6 @@ export class ScomDesignerForm extends Module {
         let top = (currentControl.top as number) + mouseMoveDelta.y;
         this.updatePosition({ left, top })
       }
-      this.showDesignProperties();
     }
   }
 
@@ -537,8 +603,23 @@ export class ScomDesignerForm extends Module {
       this.mouseDown = true;
       this.mouseDownPos = { x: event.clientX, y: event.clientY };
       let elm = event.target as HTMLElement;
-      this.resizing = elm.classList.contains("i-resizer");
-      this.resizerPos = elm.className.split(" ")[1];
+      const resizers = elm.querySelectorAll('.i-resizer');
+      let currentResizer = null;
+      for (let i = 0; i < resizers.length; i++) {
+        const resizer = resizers[i] as HTMLElement;
+        const resizerRect = resizer.getBoundingClientRect();
+        if (resizerRect.left <= event.clientX && event.clientX <= resizerRect.right && resizerRect.top <= event.clientY && event.clientY <= resizerRect.bottom) {
+          currentResizer = resizer;
+          break;
+        }
+      }
+      if (currentResizer) {
+        this.resizing = currentResizer.classList?.contains("i-resizer");
+        this.resizerPos = currentResizer.className?.split(" ")[1];
+      } else {
+        this.resizing = false;
+        this.resizerPos = '';
+      }
     };
     this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
     this.pnlFormDesigner.onmouseup = event => {
@@ -552,7 +633,6 @@ export class ScomDesignerForm extends Module {
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
     this.initBlockPicker()
-    this.initComponentScreen()
     this.initDesignerProperties()
     this.initEvents()
   }
@@ -589,6 +669,7 @@ export class ScomDesignerForm extends Module {
               onShowComponentPicker={this.onShowComponentPicker}
               onSelect={this.onSelectComponent}
               onVisible={this.onVisibleComponent}
+              onDelete={this.onDeleteComponent}
             />
           </i-vstack>
           <i-vstack

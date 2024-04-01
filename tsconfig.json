@@ -16,7 +16,7 @@
         "@scom-designer/*": ["src/*"],
       }
     },
-    "include": ["src/*.tsx", "src/*.ts"],
+    "include": ["src/*.tsx", "src/*.ts", "src/helpers/config.ts", "src/helpers/utils.ts"],
     "exclude": ["node_modules"]
   }
   

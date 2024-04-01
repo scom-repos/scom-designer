@@ -29,10 +29,13 @@ declare module "@scom/scom-designer/components/components.tsx" {
     import { Module, ControlElement } from '@ijstech/components';
     import { IComponent, IScreen } from "@scom/scom-designer/interface.ts";
     import "@scom/scom-designer/components/index.css.ts";
+    type visibleCallback = (component: IComponent, visible: boolean) => void;
+    type selectCallback = (component: IComponent) => void;
     interface DesignerComponentsElement extends ControlElement {
         onShowComponentPicker: () => void;
-        onSelect?: (component: IComponent) => void;
-        onVisible?: (component: IComponent, visible: boolean) => void;
+        onSelect?: selectCallback;
+        onVisible?: visibleCallback;
+        onDelete?: selectCallback;
         screen?: IScreen;
     }
     global {
@@ -47,9 +50,11 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private _screen;
         private mdActions;
         private mdAlert;
+        private currentComponent;
         onShowComponentPicker: () => void;
-        onSelect: (component: IComponent) => void;
-        onVisible: (component: IComponent, visible: boolean) => void;
+        onSelect: selectCallback;
+        onVisible: visibleCallback;
+        onDelete: selectCallback;
         get screen(): IScreen;
         set screen(value: IScreen);
         private renderUI;
@@ -57,17 +62,13 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private onHideComponent;
         private onShowActions;
         private initModalActions;
+        private onConfirm;
+        private removeElements;
+        private onClose;
+        private handleDelete;
         init(): void;
         render(): any;
     }
-}
-/// <amd-module name="@scom/scom-designer/assets.ts" />
-declare module "@scom/scom-designer/assets.ts" {
-    function fullPath(path: string): string;
-    const _default: {
-        fullPath: typeof fullPath;
-    };
-    export default _default;
 }
 /// <amd-module name="@scom/scom-designer/tools/index.css.ts" />
 declare module "@scom/scom-designer/tools/index.css.ts" {
@@ -81,6 +82,7 @@ declare module "@scom/scom-designer/tools/index.css.ts" {
     export const customColorStyled: string;
     export const unitStyled: string;
     export const buttonAutoStyled: string;
+    export const customFormStyle: string;
 }
 /// <amd-module name="@scom/scom-designer/tools/stylesheet.tsx" />
 declare module "@scom/scom-designer/tools/stylesheet.tsx" {
@@ -116,8 +118,16 @@ declare module "@scom/scom-designer/tools/stylesheet.tsx" {
         render(): any;
     }
 }
-/// <amd-module name="@scom/scom-designer/utils.ts" />
-declare module "@scom/scom-designer/utils.ts" {
+/// <amd-module name="@scom/scom-designer/assets.ts" />
+declare module "@scom/scom-designer/assets.ts" {
+    function fullPath(path: string): string;
+    const _default: {
+        fullPath: typeof fullPath;
+    };
+    export default _default;
+}
+/// <amd-module name="@scom/scom-designer/helpers/utils.ts" />
+declare module "@scom/scom-designer/helpers/utils.ts" {
     export const backgroundOptions: {
         value: string;
         label: string;
@@ -238,16 +248,18 @@ declare module "@scom/scom-designer/utils.ts" {
 /// <amd-module name="@scom/scom-designer/tools/selector.tsx" />
 declare module "@scom/scom-designer/tools/selector.tsx" {
     import { ControlElement, Module } from "@ijstech/components";
+    type selectorChanged = (type: string, value: string | number) => void;
     interface DesignerSelectorElement extends ControlElement {
         items?: IItem[];
         title?: string;
+        direction?: 'horizontal' | 'vertical';
         activeItem?: string;
-        onChanged?: (type: string, value: string) => void;
+        onChanged?: selectorChanged;
     }
     interface IItem {
         caption?: string;
         tooltip?: string;
-        value: string;
+        value: string | number;
         type: string;
         icon?: any;
         placement?: string;
@@ -257,7 +269,8 @@ declare module "@scom/scom-designer/tools/selector.tsx" {
     interface ISelector {
         items: IItem[];
         title?: string;
-        activeItem?: string;
+        direction?: 'horizontal' | 'vertical';
+        activeItem?: string | number;
     }
     global {
         namespace JSX {
@@ -270,15 +283,18 @@ declare module "@scom/scom-designer/tools/selector.tsx" {
         private pnlList;
         private lblTitle;
         private currentTarget;
+        private gridSelector;
         private listMap;
-        onChanged: (type: string, value: string) => void;
+        onChanged: selectorChanged;
         private _data;
         get items(): IItem[];
         set items(value: IItem[]);
         get title(): string;
         set title(value: string);
-        get activeItem(): string;
-        set activeItem(value: string);
+        get activeItem(): string | number;
+        set activeItem(value: string | number);
+        get direction(): 'horizontal' | 'vertical';
+        set direction(value: 'horizontal' | 'vertical');
         setData(value: ISelector): void;
         private renderUI;
         private onActiveChanged;
@@ -672,14 +688,18 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         }
     }
     export default class DesignerToolHeader extends Module {
-        private name;
-        private tooltipText;
+        private _name;
+        private _tooltipText;
         private isShown;
         private lbName;
         private iconArrow;
         private iconTooltip;
         onCollapse: (isShown: boolean) => void;
         constructor(parent?: Container, options?: DesignerToolHeaderElement);
+        get name(): string;
+        set name(value: string);
+        get tooltipText(): string;
+        set tooltipText(value: string);
         private renderUI;
         private _onCollapse;
         init(): void;
@@ -694,7 +714,6 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         onChanged?: onChangedCallback;
     }
     interface IDesignerContent {
-        caption?: string;
         font?: IFont;
     }
     global {
@@ -706,7 +725,6 @@ declare module "@scom/scom-designer/tools/content.tsx" {
     }
     export default class DesignerToolContent extends Module {
         private vStackContent;
-        private inputCaption;
         private inputFontSize;
         private inputFontColor;
         private _data;
@@ -716,7 +734,77 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         private onCollapse;
         private renderUI;
         private onFontChanged;
-        private onCaptionChanged;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/tools/group.tsx" />
+declare module "@scom/scom-designer/tools/group.tsx" {
+    import { Module, ControlElement, Container, IDataSchema, IUISchema } from '@ijstech/components';
+    interface DesignerToolGroupElement extends ControlElement {
+        title?: string;
+        tooltip?: string;
+        uiSchema?: IUISchema;
+        dataSchema?: IDataSchema;
+        props?: any;
+        customControls?: any;
+        onChanged?: (data: any) => void;
+    }
+    interface IDesignerGroup {
+        title?: string;
+        tooltip?: string;
+        uiSchema?: IUISchema;
+        dataSchema?: IDataSchema;
+        props?: any;
+        customControls?: any;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-group']: DesignerToolGroupElement;
+            }
+        }
+    }
+    export default class DesignerToolGroup extends Module {
+        private vStackContent;
+        private designerHeader;
+        private form;
+        private _data;
+        onChanged: (data: any) => void;
+        constructor(parent?: Container, options?: DesignerToolGroupElement);
+        setData(value: IDesignerGroup): void;
+        private onCollapse;
+        private renderUI;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/tools/numberInput.tsx" />
+declare module "@scom/scom-designer/tools/numberInput.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    interface DesignerToolInputElement extends ControlElement {
+        onChanged?: onChangedCallback;
+    }
+    interface IDesignerInput {
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-input']: DesignerToolInputElement;
+            }
+        }
+    }
+    export default class DesignerToolInput extends Module {
+        private inputEl;
+        private lblUnit;
+        private mdUnit;
+        private _data;
+        onChanged: onChangedCallback;
+        constructor(parent?: Container, options?: DesignerToolInputElement);
+        setData(value: IDesignerInput): void;
+        private renderUI;
+        private onInputChanged;
         init(): void;
         render(): any;
     }
@@ -734,8 +822,10 @@ declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolHeader from "@scom/scom-designer/tools/header.tsx";
     import DesignerSelector from "@scom/scom-designer/tools/selector.tsx";
     import DesignerToolContent from "@scom/scom-designer/tools/content.tsx";
+    import DesignerToolGroup from "@scom/scom-designer/tools/group.tsx";
+    import DesignerToolInput from "@scom/scom-designer/tools/numberInput.tsx";
     export * from "@scom/scom-designer/tools/index.css.ts";
-    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector, DesignerToolContent };
+    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector, DesignerToolContent, DesignerToolGroup, DesignerToolInput };
 }
 /// <amd-module name="@scom/scom-designer/settings/basic.tsx" />
 declare module "@scom/scom-designer/settings/basic.tsx" {
@@ -860,6 +950,73 @@ declare module "@scom/scom-designer/setting-data/index.tsx" {
     import DesignerDataLinking from "@scom/scom-designer/setting-data/linking.tsx";
     export { DesignerDataParams, DesignerDataLinking };
 }
+/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
+declare module "@scom/scom-designer/helpers/config.ts" {
+    const enum BREAKPOINTS {
+        MOBILE = 0,
+        TABLET = 1,
+        LAPTOP = 2,
+        DESKTOP = 3,
+        BIG_SCREEN = 4
+    }
+    const breakpoints: {
+        tooltip: string;
+        type: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+        };
+        value: BREAKPOINTS;
+    }[];
+    const enum PREVIEWS {
+        DRAFT = 0,
+        WEB = 1,
+        IOS = 2,
+        ANDROID = 3
+    }
+    const previews: ({
+        tooltip: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+            image?: undefined;
+        };
+        type: string;
+        value: PREVIEWS;
+    } | {
+        tooltip: string;
+        icon: {
+            image: {
+                width: string;
+                height: string;
+                padding: {
+                    top: number;
+                    left: number;
+                    right: number;
+                    bottom: number;
+                };
+                url: string;
+            };
+        };
+        type: string;
+        value: PREVIEWS;
+    })[];
+    export { BREAKPOINTS, breakpoints, previews };
+}
 /// <amd-module name="@scom/scom-designer/components/properties.tsx" />
 declare module "@scom/scom-designer/components/properties.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
@@ -890,6 +1047,9 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private designerBorders;
         private designerEffects;
         private designerContent;
+        private customGroup;
+        private breakpointSelector;
+        private previewSelector;
         private _component;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: any);
@@ -897,9 +1057,13 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         get component(): IControl;
         set component(value: IControl);
         private renderUI;
+        private renderCustomGroup;
         private updateInfo;
         private updateProps;
         private onPropChanged;
+        private onGroupChanged;
+        private onBreakpointClick;
+        private onPreviewClick;
         init(): void;
         render(): any;
     }
@@ -1036,6 +1200,7 @@ declare module "@scom/scom-designer/designer.tsx" {
     import { IComponentPicker, IControl, IStudio } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     export function createControl(parent: Control, name: string, options?: any): Control;
+    export function addControl(parent: any, name: string, options?: any): any;
     interface ScomDesignerFormElement extends ControlElement {
     }
     global {
@@ -1083,15 +1248,19 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onShowComponentPicker;
         private onSelectComponent;
         private onVisibleComponent;
+        private onDeleteComponent;
         private renderComponent;
+        private parseOptions;
+        private renderControl;
+        private isParentGroup;
         private bindControlEvents;
         private handleSelectControl;
         private showDesignProperties;
         private onCloseComponentPicker;
         private handleAddControl;
+        private updateStructure;
         private initComponentPicker;
         private initBlockPicker;
-        private initComponentScreen;
         private initDesignerProperties;
         private onPropertiesChanged;
         renderUI(root: Parser.IComponent): void;

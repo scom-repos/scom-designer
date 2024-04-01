@@ -13,7 +13,7 @@ import {
 import { textInputRight } from './index.css';
 import assets from '../assets';
 import { onChangedCallback } from '../interface';
-import { alignContentProps, getAlignProps, justifyProps } from '../utils';
+import { alignContentProps, getAlignProps, justifyProps } from '../helpers/utils';
 import DesignerSelector from './selector';
 const Theme = Styles.Theme.ThemeVars;
 

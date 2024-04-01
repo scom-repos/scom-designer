@@ -1,17 +1,20 @@
 import { Control, ControlElement, GridLayout, HStack, Icon, Label, Module, customElements, Image } from "@ijstech/components";
 import { borderRadiusLeft, borderRadiusRight, customIconLayoutActiveStyled, customIconLayoutStyled } from "./index.css";
+import { customIconTabActiveStyled } from "../index.css";
 
+type selectorChanged = (type: string, value: string|number) => void;
 interface DesignerSelectorElement extends ControlElement {
   items?: IItem[];
   title?: string;
+  direction?: 'horizontal' | 'vertical';
   activeItem?: string;
-  onChanged?: (type: string, value: string) => void;
+  onChanged?: selectorChanged;
 }
 
 interface IItem {
   caption?: string;
   tooltip?: string;
-  value: string;
+  value: string|number;
   type: string;
   icon?: any;
   placement?: string;
@@ -22,7 +25,8 @@ interface IItem {
 interface ISelector {
   items: IItem[];
   title?: string;
-  activeItem?: string;
+  direction?: 'horizontal' | 'vertical';
+  activeItem?: string|number;
 }
 
 declare global {
@@ -38,12 +42,14 @@ export default class DesignerSelector extends Module {
   private pnlList: GridLayout;
   private lblTitle: Label;
   private currentTarget: Control;
-  private listMap: Map<string, HStack> = new Map();
+  private gridSelector: GridLayout;
+  private listMap: Map<any, HStack> = new Map();
 
-  onChanged: (type: string, value: string) => void;
+  onChanged: selectorChanged;
 
   private _data: ISelector = {
-    items: []
+    items: [],
+    direction: 'horizontal'
   }
 
   get items() {
@@ -63,15 +69,23 @@ export default class DesignerSelector extends Module {
   get activeItem() {
     return this._data.activeItem;
   }
-  set activeItem(value: string) {
+  set activeItem(value: string|number) {
     this._data.activeItem = value;
     const target = this.listMap.get(value)
     if (target) {
       this.updateActiveItem(target);
-    } else {
-      if (this.currentTarget)
+    } else if (this.currentTarget) {
+      if (this.direction === 'horizontal')
         this.currentTarget.classList.remove(customIconLayoutActiveStyled);
+      else this.currentTarget.classList.remove(customIconTabActiveStyled);
     }
+  }
+
+  get direction() {
+    return this._data.direction ?? 'horizontal';
+  }
+  set direction(value: 'horizontal' | 'vertical') {
+    this._data.direction = value ?? 'horizontal';
   }
 
   setData(value: ISelector) {
@@ -81,6 +95,7 @@ export default class DesignerSelector extends Module {
 
   private renderUI() {
     this.lblTitle.caption = this.title;
+    this.gridSelector.templateColumns = this.direction === 'horizontal' ? ['70px', 'auto'] : ['auto'];
     this.pnlList.clearInnerHTML();
     const length = this.items.length;
     for (let i = 0; i < length; i++) {
@@ -115,14 +130,15 @@ export default class DesignerSelector extends Module {
           img = new Image(elm, {
             width: '1rem',
             height: '1rem',
-            url: item.icon.image.url,
-            display: 'flex'
+            display: 'flex',
+            ...item.icon.image
           });
           if (item.rotate) img.rotate = item.rotate;
         } else {
           img = new Icon(elm, {
             width: '1rem',
             height: '1rem',
+            display: 'flex',
             ...item.icon
           });
         }
@@ -134,14 +150,15 @@ export default class DesignerSelector extends Module {
     }
   }
 
-  private onActiveChanged(target: Control, type: string, value: string) {
+  private onActiveChanged(target: Control, type: string, value: string|number) {
     this.updateActiveItem(target);
     if (this.onChanged) this.onChanged(type, value);
   }
   
   private updateActiveItem(target: Control) {
-    if (this.currentTarget) this.currentTarget.classList.remove(customIconLayoutActiveStyled);
-    target.classList.add(customIconLayoutActiveStyled);
+    const activeStyle = this.direction === 'horizontal' ? customIconLayoutActiveStyled : customIconTabActiveStyled;
+    if (this.currentTarget) this.currentTarget.classList.remove(activeStyle);
+    target.classList.add(activeStyle);
     this.currentTarget = target;
   }
 
@@ -149,12 +166,18 @@ export default class DesignerSelector extends Module {
     super.init();
     const items = this.getAttribute('items', true, []);
     const title = this.getAttribute('title', true, '');
-    this.setData({ items, title });
+    const direction = this.getAttribute('direction', true, 'horizontal');
+    this.setData({ items, title, direction });
   }
 
   render(): void {
     return (
-      <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
+      <i-grid-layout
+        id="gridSelector"
+        templateColumns={['70px', 'auto']}
+        verticalAlignment="center"
+        gap={{column: '0.5rem', row: '0.5rem'}}
+      >
         <i-label id="lblTitle" caption="" font={{ size: '0.75rem' }} />
         <i-hstack id="pnlList" gap={`1px`} verticalAlignment="center" height={'1.5rem'}></i-hstack>
       </i-grid-layout>

@@ -16,7 +16,7 @@ import { IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import * as Dts from './types/index'
 import { Compiler } from '@ijstech/compiler'
-import { extractFileName, getFileContent } from './utils'
+import { extractFileName, getFileContent } from './helpers/utils'
 
 type onSaveCallback = (path: string, content: string) => void;
 

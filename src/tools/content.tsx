@@ -18,7 +18,6 @@ interface DesignerToolContentElement extends ControlElement {
 }
 
 interface IDesignerContent {
-  caption?: string;
   font?: IFont;
 }
 
@@ -33,7 +32,6 @@ declare global {
 @customElements('designer-tool-content')
 export default class DesignerToolContent extends Module {
   private vStackContent: VStack;
-  private inputCaption: Input;
   private inputFontSize: Input;
   private inputFontColor: ColorPicker;
 
@@ -44,7 +42,6 @@ export default class DesignerToolContent extends Module {
   constructor(parent?: Container, options?: DesignerToolContentElement) {
     super(parent, options);
     this.onFontChanged = this.onFontChanged.bind(this);
-    this.onCaptionChanged = this.onCaptionChanged.bind(this);
   }
 
   setData(value: IDesignerContent) {
@@ -57,8 +54,7 @@ export default class DesignerToolContent extends Module {
   }
 
   private renderUI() {
-    const { caption = '', font = {} } = this._data;
-    this.inputCaption.value = caption;
+    const { font = {} } = this._data;
     this.inputFontColor.value = font.color;
     this.inputFontSize.value = font.size;
   }
@@ -68,11 +64,6 @@ export default class DesignerToolContent extends Module {
     this._data.font[prop] = target.value;
     if (prop === 'size') this._data.font[prop] = `${this._data.font[prop]}px`;
     if (this.onChanged) this.onChanged('font', this._data.font);
-  }
-
-  private onCaptionChanged(target: Input) {
-    this._data.caption = target.value;
-    if (this.onChanged) this.onChanged('caption', this._data.caption);
   }
 
   init() {
@@ -87,26 +78,9 @@ export default class DesignerToolContent extends Module {
         height="100%"
         margin={{ left: "auto", right: "auto" }}
       >
-        <designer-tool-header name="Caption" tooltipText="Set caption for the element." onCollapse={this.onCollapse} />
+        <designer-tool-header name="Font" tooltipText="Set font for the element." onCollapse={this.onCollapse} />
         <i-vstack id="vStackContent" padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}>
           <i-vstack gap={'0.5rem'}>
-            <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption={'Caption'} font={{ size: '0.75rem' }} />
-              <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
-                <i-input
-                  id="inputCaption"
-                  placeholder="Enter caption..."
-                  background={{ color: 'transparent' }}
-                  width="calc(100% - 1.5rem)"
-                  height={'1.5rem'}
-                  border={{ width: 0 }}
-                  padding={{ left: 4, right: 2 }}
-                  font={{ size: '0.675rem' }}
-                  class={`${bgInputTransparent}`}
-                  onChanged={this.onCaptionChanged}
-                />
-              </i-hstack>
-            </i-grid-layout>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
               <i-label caption="Font color" font={{ size: '0.75rem' }} />
               <i-hstack gap={4} width="100%" verticalAlignment="center">
