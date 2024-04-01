@@ -18,10 +18,14 @@ import { IComponent, IScreen } from '../interface';
 import './index.css';
 const Theme = Styles.Theme.ThemeVars;
 
+type visibleCallback = (component: IComponent, visible: boolean) => void;
+type selectCallback = (component: IComponent) => void;
+
 interface DesignerComponentsElement extends ControlElement {
   onShowComponentPicker: () => void;
-  onSelect?: (component: IComponent) => void;
-  onVisible?: (component: IComponent, visible: boolean) => void;
+  onSelect?: selectCallback;
+  onVisible?: visibleCallback;
+  onDelete?: selectCallback;
   screen?: IScreen;
 }
 
@@ -40,9 +44,12 @@ export default class DesignerComponents extends Module {
   private mdActions: Modal;
   private mdAlert: Alert;
 
+  private currentComponent: IComponent = null;
+
   public onShowComponentPicker: () => void;
-  onSelect: (component: IComponent) => void;
-  onVisible: (component: IComponent, visible: boolean) => void;
+  onSelect: selectCallback;
+  onVisible: visibleCallback;
+  onDelete: selectCallback;
 
   get screen() {
     return this._screen;
@@ -62,7 +69,9 @@ export default class DesignerComponents extends Module {
         <i-label caption={this.screen.name} font={{ size: '0.75rem' }} />
       </i-hstack>
     );
-    this.renderTreeItems(this.screen.elements, this.vStackComponents, 0);
+    if (this.screen.elements?.length) {
+      this.renderTreeItems(this.screen.elements, this.vStackComponents, 0);
+    }
   }
 
   private renderTreeItems(elements: IComponent[], parentElm: VStack, parentPl: number) {
@@ -85,7 +94,9 @@ export default class DesignerComponents extends Module {
           vStack2.visible = isShown;
         }
         const vStack2 = new VStack(vStack1);
-        this.renderTreeItems(elm.items, vStack2, parentPl + 12);
+        if (elm.items?.length) {
+          this.renderTreeItems(elm.items, vStack2, parentPl + 12);
+        }
       }
       const image = new Image(hStack, { url: elm.image, width: 14, height: 14, display: 'flex' });
       const label = new Label(hStack, { caption: elm.name, font: { size: '0.75rem' }, lineHeight: 1, opacity: 0.8 });
@@ -100,7 +111,8 @@ export default class DesignerComponents extends Module {
         padding: { left: 4 }
       });
 
-      const onShowActions = (target: Control, event: MouseEvent) => {
+      const onShowActions = (target: Control, event: MouseEvent, component: IComponent) => {
+        this.currentComponent = component;
         const { pageX, pageY, screenX } = event;
         let x = pageX;
         if (pageX + 112 >= screenX) {
@@ -114,7 +126,7 @@ export default class DesignerComponents extends Module {
           name="ellipsis-h"
           width={'0.875rem'} height={'0.875rem'}
           opacity={0} cursor="pointer"
-          onClick={onShowActions}
+          onClick={(target: Control, event: MouseEvent) => onShowActions(target, event, elm)}
         />
       );
       hStackActions.appendChild(
@@ -174,17 +186,84 @@ export default class DesignerComponents extends Module {
       popupPlacement: 'bottomRight'
     });
     const itemActions = new VStack(undefined, { gap: 8, border: { radius: 8 } });
-    itemActions.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" icon={{ name: 'save', width: 12, height: 12 }} caption="Save Custom Block" class={iconButtonStyled} />);
-    itemActions.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" icon={{ name: 'copy', width: 12, height: 12 }} caption="Duplicate" class={iconButtonStyled} />);
-    itemActions.appendChild(<i-button background={{ color: 'transparent' }} boxShadow="none" icon={{ name: 'trash', width: 12, height: 12 }} caption="Delete" class={iconButtonStyled} />);
+    itemActions.appendChild(
+      <i-button
+        background={{ color: 'transparent' }}
+        boxShadow="none"
+        icon={{ name: 'save', width: 12, height: 12 }}
+        caption="Save Custom Block"
+        class={iconButtonStyled}
+      />
+    );
+    itemActions.appendChild(
+      <i-button
+        background={{ color: 'transparent' }}
+        boxShadow="none"
+        icon={{ name: 'copy', width: 12, height: 12 }}
+        caption="Duplicate"
+        class={iconButtonStyled} />
+      );
+    itemActions.appendChild(
+      <i-button
+        background={{ color: 'transparent' }}
+        boxShadow="none"
+        icon={{ name: 'trash', width: 12, height: 12 }}
+        caption="Delete"
+        class={iconButtonStyled}
+        onClick={this.handleDelete.bind(this)}
+      />
+    );
     this.mdActions.item = itemActions;
     document.body.appendChild(this.mdActions);
+  }
+
+  private onConfirm() {
+    const screen = this.screen?.elements[0]
+    if (screen && this.currentComponent) {
+      if (this.onDelete) this.onDelete({...this.currentComponent});
+      if (screen.path === this.currentComponent.path) {
+        screen.items = []
+        this.screen = {
+          ...this.screen,
+          elements: []
+        }
+        this.currentComponent = null;
+        return
+      }
+      this.removeElements(screen.items);
+      this.currentComponent = null;
+      this.renderUI();
+    }
+  }
+
+  private removeElements(elements: IComponent[]) {
+    for (let elm of elements) {
+      if (elm.path === this.currentComponent.path) {
+        const index = elements.indexOf(elm);
+        if (index > -1) {
+          elements.splice(index, 1);
+        }
+        return
+      }
+      if (elm.items) {
+        this.removeElements(elm.items);
+      }
+    }
+  }
+
+  private onClose() {
+    this.mdAlert.closeModal();
+  }
+
+  private handleDelete() {
+    this.mdAlert.showModal();
   }
 
   init() {
     super.init();
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
+    this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
     this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
     this.initModalActions();
     this.screen = this.getAttribute('screen', true);
@@ -242,7 +321,14 @@ export default class DesignerComponents extends Module {
         </i-hstack>
         <i-vstack id="vStackComponents" gap={4} overflow="auto" maxHeight="calc(100% - 32px)" />
 
-        <i-alert id="mdAlert" />
+        <i-alert
+          id="mdAlert"
+          title='Confirm'
+          status='confirm'
+          content='Are you sure to delete this component?'
+          onConfirm={this.onConfirm.bind(this)}
+          onClose={this.onClose.bind(this)}
+        />
       </i-vstack>
     )
   }

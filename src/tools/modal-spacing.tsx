@@ -13,7 +13,7 @@ import {
   Input
 } from '@ijstech/components';
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
-import { parseNumberValue } from '../utils';
+import { parseNumberValue } from '../helpers/utils';
 const Theme = Styles.Theme.ThemeVars;
 
 type onChangedCallback = (type: string, position: string, value: string) => void;

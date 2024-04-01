@@ -13,7 +13,7 @@ import {
 import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
-import { backgroundOptions, borderStyles } from '../utils';
+import { backgroundOptions, borderStyles } from '../helpers/utils';
 import DesignerSelector from './selector';
 const Theme = Styles.Theme.ThemeVars;
 

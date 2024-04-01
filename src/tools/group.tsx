@@ -92,8 +92,7 @@ export default class DesignerToolGroup extends Module {
           },
       };
       this.form.renderForm();
-      this.form.clearFormData();
-      this.form.setFormData(this._data.props || {});
+      this.form.setFormData({...this._data.props || {}});
     }
   }
 

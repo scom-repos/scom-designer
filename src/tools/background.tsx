@@ -9,7 +9,7 @@ import {
   ColorPicker
 } from '@ijstech/components'
 import { customColorStyled } from './index.css';
-import { backgroundOptions } from '../utils';
+import { backgroundOptions } from '../helpers/utils';
 import { onChangedCallback } from '../interface';
 
 interface DesignerToolBackgroundElement extends ControlElement {
