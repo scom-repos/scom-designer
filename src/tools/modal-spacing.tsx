@@ -13,6 +13,7 @@ import {
   Input
 } from '@ijstech/components';
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
+import { parseNumberValue } from '../utils';
 const Theme = Styles.Theme.ThemeVars;
 
 type onChangedCallback = (type: string, position: string, value: string) => void;
@@ -76,17 +77,17 @@ export default class DesignerToolModalSpacing extends Module {
     }
     const onUnitChanged = (value: 'px' | '%') => {
       this.lbIndUnit.caption = value;
-      if (this.unit !== value) {
-        const { type, position } = this.spacing;
-        if (this.onChanged) this.onChanged(type, position, `${value}${this.unit}`);
-      }
       this.unit = value;
+      const { type, position } = this.spacing;
+      const valStr = this.inputValue.value !== '' ? `${this.inputValue.value}${this.unit}` : '';
+      if (this.onChanged) this.onChanged(type, position, valStr);
       this.vStackIndUnits.visible = false;
     }
     const onValueChanged = (target: Input) => {
       const value = target.value;
       const { type, position } = this.spacing;
-      if (this.onChanged) this.onChanged(type, position, `${value}${this.unit}`);
+      const valueStr = value !== '' ? `${value}${this.unit}` : 'auto';
+      if (this.onChanged) this.onChanged(type, position, valueStr);
     }
     const item = new VStack(undefined, { gap: 8, border: { radius: 8 } });
     const { breakpointText, iconName } = this.config;
@@ -169,23 +170,18 @@ export default class DesignerToolModalSpacing extends Module {
     this.lbTitle.caption = title;
     this.lbBreakpoint.caption = breakpointText;
     this.iconTitle.name = iconName;
-    this.updateValue(value);
+    const parsedValue = parseNumberValue(value);
+    this.lbIndUnit.caption = parsedValue.unit;
+    this.inputValue.value = parsedValue.value;
   }
-
-  private updateValue(value: string | number) {
-    if (typeof value === 'number') {
-      this.inputValue.value = value;
-      this.lbIndUnit.caption = 'px';
-    } else {
-      const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
-      const number = value.replace(unit, '');
-      this.inputValue.value = number;
-      this.lbIndUnit.caption = unit || 'px';
-    }
-  };
 
   onShowModal(target: Button, value: ISpacing, config: IConfig) {
     if (this.vStackIndUnits) this.vStackIndUnits.visible = false;
+    const parseValue = parseNumberValue(value.value);
+    const unit = parseValue?.unit || 'px';
+    this.unit = unit;
+    this.inputValue.value = parseValue?.value || '';
+    this.lbIndUnit.caption = unit;
     this.config = config || {};
     this.spacing = value || {};
     this.updateHeader();

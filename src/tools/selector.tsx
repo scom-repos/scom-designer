@@ -4,6 +4,7 @@ import { borderRadiusLeft, borderRadiusRight, customIconLayoutActiveStyled, cust
 interface DesignerSelectorElement extends ControlElement {
   items?: IItem[];
   title?: string;
+  activeItem?: string;
   onChanged?: (type: string, value: string) => void;
 }
 
@@ -21,6 +22,7 @@ interface IItem {
 interface ISelector {
   items: IItem[];
   title?: string;
+  activeItem?: string;
 }
 
 declare global {
@@ -36,6 +38,7 @@ export default class DesignerSelector extends Module {
   private pnlList: GridLayout;
   private lblTitle: Label;
   private currentTarget: Control;
+  private listMap: Map<string, HStack> = new Map();
 
   onChanged: (type: string, value: string) => void;
 
@@ -55,6 +58,20 @@ export default class DesignerSelector extends Module {
   }
   set title(value: string) {
     this._data.title = value || '';
+  }
+
+  get activeItem() {
+    return this._data.activeItem;
+  }
+  set activeItem(value: string) {
+    this._data.activeItem = value;
+    const target = this.listMap.get(value)
+    if (target) {
+      this.updateActiveItem(target);
+    } else {
+      if (this.currentTarget)
+        this.currentTarget.classList.remove(customIconLayoutActiveStyled);
+    }
   }
 
   setData(value: ISelector) {
@@ -113,14 +130,19 @@ export default class DesignerSelector extends Module {
       }
       if (item.isActive) this.currentTarget = elm;
       this.pnlList.appendChild(elm);
+      this.listMap.set(item.value, elm);
     }
   }
 
   private onActiveChanged(target: Control, type: string, value: string) {
+    this.updateActiveItem(target);
+    if (this.onChanged) this.onChanged(type, value);
+  }
+  
+  private updateActiveItem(target: Control) {
     if (this.currentTarget) this.currentTarget.classList.remove(customIconLayoutActiveStyled);
     target.classList.add(customIconLayoutActiveStyled);
     this.currentTarget = target;
-    if (this.onChanged) this.onChanged(type, value);
   }
 
   init() {

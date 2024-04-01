@@ -8,6 +8,7 @@ import DesignerToolBorders from "./borders";
 import DesignerToolEffects from "./effects";
 import DesignerToolHeader from "./header";
 import DesignerSelector from './selector';
+import DesignerToolContent from './content';
 
 export * from "./index.css";
 
@@ -21,5 +22,6 @@ export {
   DesignerToolBorders,
   DesignerToolEffects,
   DesignerToolHeader,
-  DesignerSelector
+  DesignerSelector,
+  DesignerToolContent
 }

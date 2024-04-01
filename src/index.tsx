@@ -12,7 +12,7 @@ import {
   Tabs,
 } from '@ijstech/components'
 import { blockStyle, codeTabsStyle } from './index.css'
-import { IFileHandler, IIPFSData } from './interface'
+import { IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import * as Dts from './types/index'
 import { Compiler } from '@ijstech/compiler'
@@ -49,7 +49,7 @@ interface IDesigner {
 }
 
 @customElements('i-scom-designer')
-export class ScomDesigner extends Module implements IFileHandler {
+export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private formDesigner: ScomDesignerForm
   private codeEditor: CodeEditor
   private pnlMessage: Panel;
@@ -60,6 +60,7 @@ export class ScomDesigner extends Module implements IFileHandler {
   private _data: IDesigner = {
     url: ''
   }
+  private updateDesigner: boolean = true
 
   onSave: onSaveCallback
   onChanged?: (value: string) => void
@@ -188,7 +189,8 @@ export class ScomDesigner extends Module implements IFileHandler {
   }
 
   private async renderUI() {
-    const { url } = this._data
+    this.formDesigner.studio = this;
+    const { url = '' } = this._data
     const content = url ? await getFileContent(url) : ''
     const fileName = this.fileName
     await this.codeEditor.loadContent(content, 'typescript', fileName)
@@ -209,20 +211,24 @@ export class ScomDesigner extends Module implements IFileHandler {
     this.pnlMessage.visible = tab.id === 'codeTab';
     const fileName = this.fileName
     if (tab.id === 'designTab') {
-      const code = this.codeEditor.value
-      try {
-        this.compiler.addFile(fileName, code)
-        const ui = this.compiler.parseUI(fileName)
-        this.formDesigner.renderUI(ui)
-      } catch(error) {
-        console.log(error)
+      if (this.updateDesigner) {
+        this.updateDesigner = false
+        const code = this.codeEditor.value
+        try {
+          this.compiler.addFile(fileName, code)
+          const ui = this.compiler.parseUI(fileName)
+          this.formDesigner.renderUI(ui)
+        } catch(error) {
+          console.log(error)
+        }
       }
     } else if (tab.id === 'codeTab') {
-      this.updateDesignerCode(fileName)
+      this.updateDesignerCode(fileName, true)
     }
   }
 
   private handleCodeEditorChange(target: CodeEditor, event: any) {
+    this.updateDesigner = true;
     if (this.contentChangeTimer) clearTimeout(this.contentChangeTimer)
     this.contentChangeTimer = setTimeout(async () => {
       this.handleGetChangedFiles()
@@ -262,6 +268,7 @@ export class ScomDesigner extends Module implements IFileHandler {
     parent: Control
   ) {
     parent.append(this)
+    this.updateDesigner = true;
     const path = file.path.startsWith('/') ? file.path.slice(1) : file.path
     const mediaUrl = `${endpoint}/ipfs/${parentCid}/${path}`
     this.setData({ url: mediaUrl })

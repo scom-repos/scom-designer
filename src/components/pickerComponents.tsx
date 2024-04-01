@@ -7,16 +7,21 @@ import {
   Label,
   HStack,
   Panel,
-  Container
+  Container,
+  Control,
+  Image
 } from '@ijstech/components'
 import { IComponentItem } from '../interface';
 import { blockItemHoverStyled } from '../index.css';
 const Theme = Styles.Theme.ThemeVars;
 
+type onSelectCallback = (target: Control, component: IComponentItem) => void;
+
 interface DesignerPickerComponentsElement extends ControlElement {
   name: string;
   tooltipText?: string;
   items: IComponentItem[];
+  onSelect?: onSelectCallback;
 }
 
 declare global {
@@ -39,6 +44,8 @@ export default class DesignerPickerComponents extends Module {
   private iconTooltip: Icon;
   private hStackItems: HStack;
 
+  onSelect: onSelectCallback;
+
   constructor(parent?: Container, options?: DesignerPickerComponentsElement) {
     super(parent, options);
   }
@@ -51,11 +58,15 @@ export default class DesignerPickerComponents extends Module {
 
     const nodeItems: HTMLElement[] = [];
     for (const item of this.items) {
-      const { name, path, image, category } = item;
-      const block = new Panel(undefined, { width: 'calc(50% - 0.5px)', height: 80, background: { color: Theme.background.main } });
+      const { name, image, icon } = item;
+      const block = new Panel(undefined, { width: 'calc(50% - 0.5px)', height: '5rem', background: { color: Theme.background.main } });
       block.appendChild(
-        <i-vstack gap={8} width="100%" height="100%" verticalAlignment="center" horizontalAlignment="center">
-          <i-image url={image} width={32} height={32} />
+        <i-vstack
+          gap={'0.5rem'} width="100%" height="100%"
+          verticalAlignment="center" horizontalAlignment="center"
+          onClick={(target: Control) => this.onItemSelected(target, item)}
+        >
+          {icon ? <i-icon name={icon} width={'1.5rem'} height={'1.5rem'} /> : (image ? <i-image url={image} width={'1.5rem'} height={'1.5rem'} /> : [])}
           <i-label caption={name} font={{ size: '0.75rem' }} />
         </i-vstack>
       );
@@ -69,6 +80,10 @@ export default class DesignerPickerComponents extends Module {
     this.hStackItems.append(...nodeItems);
   }
 
+  private onItemSelected(target: Control, item: IComponentItem) {
+    if (this.onSelect) this.onSelect(target, item);
+  }
+
   private onCollapse() {
     this.isShown = !this.isShown;
     this.hStackItems.visible = this.isShown;
@@ -77,6 +92,7 @@ export default class DesignerPickerComponents extends Module {
 
   init() {
     super.init();
+    this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.name = this.getAttribute('name', true) || '';
     this.tooltipText = this.getAttribute('tooltipText', true);
     this.items = this.getAttribute('items', true) || [];

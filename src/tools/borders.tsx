@@ -9,48 +9,13 @@ import {
   IBorder,
   Input,
   ColorPicker,
-  Panel
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
-import assets from '../assets';
 import { onChangedCallback } from '../interface';
-import { backgroundOptions } from '../utils';
+import { backgroundOptions, borderStyles } from '../utils';
+import DesignerSelector from './selector';
 const Theme = Styles.Theme.ThemeVars;
-
-const borderStyles = [
-  {
-    tooltip: 'Solid',
-    value: 'solid',
-    type: 'style',
-    icon: {
-      image: {
-        url: assets.fullPath('img/designer/border/solid.svg')
-      }
-    },
-    isActive: true
-  },
-  {
-    tooltip: 'Dotted',
-    value: 'dotted',
-    type: 'style',
-    icon: {
-      image: {
-        url: assets.fullPath('img/designer/border/dotted.svg')
-      }
-    }
-  },
-  {
-    tooltip: 'Dashed',
-    value: 'dashed',
-    type: 'style',
-    icon: {
-      image: {
-        url: assets.fullPath('img/designer/border/dashed.svg')
-      }
-    }
-  },
-]
 
 interface DesignerToolBordersElement extends ControlElement {
   onChanged?: onChangedCallback;
@@ -75,6 +40,7 @@ export default class DesignerToolBorders extends Module {
   private inputRadius: Input;
   private inputWidth: Input;
   private pnlIndividual: VStack;
+  private styleSelector: DesignerSelector;
 
   private _data: IDesignerBorder = {};
   private radiusObj = {
@@ -111,6 +77,7 @@ export default class DesignerToolBorders extends Module {
     }
     this.updateButtons();
     border.style = border?.style || 'solid';
+    this.styleSelector.activeItem = border.style;
   }
 
   private updateButtons() {
@@ -165,7 +132,6 @@ export default class DesignerToolBorders extends Module {
     const value = target.value;
     this._data.border[prop] = `${value}px`;
     if (this.onChanged) this.onChanged('border', this._data.border);
-    // TODO: update individiual buttons
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {

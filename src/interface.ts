@@ -1,5 +1,14 @@
 import { Parser } from "@ijstech/compiler";
 import { Control, IconName } from "@ijstech/components";
+import { ScomDesignerForm } from "./designer";
+
+export interface IStudio {
+  addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
+  locateMethod(designer: ScomDesignerForm, funcName: string): void;
+  removeComponent(designer: ScomDesignerForm): void;
+  renameComponent(designer: ScomDesignerForm, oldId: string, newId: string): boolean;
+  renameEventHandler(designer: ScomDesignerForm, funcName: string, newFuncName: string): boolean;
+}
 
 export interface IScreen {
   id: string;
@@ -19,7 +28,7 @@ export interface IComponentItem extends Parser.IComponent {
   path: string;
   name: string;
   image?: string;
-  iconName?: IconName;
+  icon?: IconName;
   category?: string;
 }
 

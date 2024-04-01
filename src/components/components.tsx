@@ -139,6 +139,7 @@ export default class DesignerComponents extends Module {
       }
       input.onBlur = () => {
         if (input.value) {
+          console.log('on blur', input.value)
           label.caption = input.value;
           // TODO - update list
         } else {
@@ -154,7 +155,7 @@ export default class DesignerComponents extends Module {
 
   private onHideComponent(icon: Icon, component: IComponent) {
     icon.name = icon.name === 'eye' ? 'eye-slash' : 'eye';
-    if (this.onVisible) this.onVisible(component, icon.name === 'eye-slash');
+    if (this.onVisible) this.onVisible(component, icon.name === 'eye');
   }
 
   private onShowActions(top: number, left: number) {

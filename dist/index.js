@@ -153,10 +153,6 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
         height: '100%'
     });
 });
-define("@scom/scom-designer/interface.ts", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-});
 define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -622,6 +618,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 };
                 input.onBlur = () => {
                     if (input.value) {
+                        console.log('on blur', input.value);
                         label.caption = input.value;
                         // TODO - update list
                     }
@@ -639,7 +636,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         onHideComponent(icon, component) {
             icon.name = icon.name === 'eye' ? 'eye-slash' : 'eye';
             if (this.onVisible)
-                this.onVisible(component, icon.name === 'eye-slash');
+                this.onVisible(component, icon.name === 'eye');
         }
         onShowActions(top, left) {
             const mdWrapper = this.mdActions.querySelector('.modal-wrapper');
@@ -779,95 +776,79 @@ define("@scom/scom-designer/tools/index.css.ts", ["require", "exports", "@ijstec
         }
     });
     exports.buttonAutoStyled = components_5.Styles.style({
-        width: 40,
+        minWidth: 40,
+        padding: '0 0.25rem',
         height: 28,
         opacity: 0.8,
         background: 'transparent',
         border: `1px solid ${Theme.action.selectedBackground}`
     });
 });
-define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_6) {
+define("@scom/scom-designer/tools/stylesheet.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_6, index_css_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    let DesignerToolHeader = class DesignerToolHeader extends components_6.Module {
+    const Theme = components_6.Styles.Theme.ThemeVars;
+    let DesignerToolStylesheet = class DesignerToolStylesheet extends components_6.Module {
         constructor(parent, options) {
             super(parent, options);
-            this.isShown = true;
-        }
-        renderUI() {
-            this.lbName.caption = this.name;
-            this.iconArrow.name = 'angle-down';
-            this.iconTooltip.visible = !!this.tooltipText;
-            this.iconTooltip.tooltip.content = this.tooltipText || '';
-        }
-        _onCollapse() {
-            this.isShown = !this.isShown;
-            this.iconArrow.name = this.isShown ? 'angle-down' : 'angle-right';
-            this.onCollapse(this.isShown);
-        }
-        init() {
-            super.init();
-            this.name = this.getAttribute('name', true) || '';
-            this.tooltipText = this.getAttribute('tooltipText', true);
-            this.onCollapse = this.getAttribute('onCollapse', true);
-            this.renderUI();
-        }
-        render() {
-            return (this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, background: { color: '#26324b' }, onClick: this._onCollapse },
-                this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
-                this.$render("i-label", { id: "lbName", font: { size: '0.75rem', bold: true } }),
-                this.$render("i-icon", { id: "iconTooltip", name: "exclamation-circle", width: 14, height: 14, opacity: 0.8 })));
-        }
-    };
-    DesignerToolHeader = __decorate([
-        (0, components_6.customElements)('designer-tool-header')
-    ], DesignerToolHeader);
-    exports.default = DesignerToolHeader;
-});
-define("@scom/scom-designer/tools/stylesheet.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_7, index_css_2) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_7.Styles.Theme.ThemeVars;
-    let DesignerToolStylesheet = class DesignerToolStylesheet extends components_7.Module {
-        constructor(parent, options) {
-            super(parent, options);
+            this._data = {};
+            this.handleEdit = this.handleEdit.bind(this);
+            this.handleCopy = this.handleCopy.bind(this);
+            this.handleMove = this.handleMove.bind(this);
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
+        setData(value) {
+            this._data = value;
+            this.renderUI();
+        }
         renderUI() {
+            this.stylesSelect.items = this.getStylesOptions();
+        }
+        getStylesOptions() {
+            return [
+                {
+                    value: 'My Style',
+                    label: 'My Style'
+                }
+            ];
+        }
+        handleEdit() {
+            console.log('handleEdit');
+        }
+        handleCopy() {
+            console.log('handleCopy');
+        }
+        handleMove() {
+            console.log('handleMove');
         }
         init() {
             super.init();
-            this.renderUI();
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Stylesheet", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: 8, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("i-vstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
                     this.$render("i-hstack", { gap: 4, verticalAlignment: "center" },
-                        this.$render("i-combo-box", { items: [
-                                {
-                                    value: 'My Style',
-                                    label: 'My Style'
-                                }
-                            ], placeholder: "Select or Create New..." }),
-                        this.$render("i-icon", { name: "pen", width: 24, height: 24, class: index_css_2.customIconBorderStyled }),
-                        this.$render("i-icon", { name: "copy", width: 24, height: 24, class: index_css_2.customIconBorderStyled }),
-                        this.$render("i-icon", { name: "arrow-up", width: 24, height: 24, class: index_css_2.customIconBorderStyled }),
-                        this.$render("i-icon", { name: "arrow-left", width: 24, height: 24, class: index_css_2.customIconBorderStyled })),
-                    this.$render("i-label", { caption: "Styles: 0 direct, 0 disabled, 4 inherited", font: { size: '0.675rem' }, opacity: 0.6 }))));
+                        this.$render("i-combo-box", { id: "stylesSelect", items: [], placeholder: "Select or Create New..." }),
+                        this.$render("i-icon", { name: "pen", width: '1.5rem', height: '1.5rem', class: index_css_2.customIconBorderStyled, onClick: this.handleEdit }),
+                        this.$render("i-icon", { name: "copy", width: '1.5rem', height: '1.5rem', class: index_css_2.customIconBorderStyled, onClick: this.handleCopy }),
+                        this.$render("i-icon", { name: "arrow-up", width: '1.5rem', height: '1.5rem', class: index_css_2.customIconBorderStyled, onClick: this.handleMove }),
+                        this.$render("i-icon", { name: "arrow-left", width: '1.5rem', height: '1.5rem', class: index_css_2.customIconBorderStyled, onClick: this.handleMove })),
+                    this.$render("i-label", { id: "lblStats", caption: "Styles: 0 direct, 0 disabled, 4 inherited", font: { size: '0.675rem' }, opacity: 0.6 }))));
         }
     };
     DesignerToolStylesheet = __decorate([
-        (0, components_7.customElements)('designer-tool-stylesheet')
+        (0, components_6.customElements)('designer-tool-stylesheet')
     ], DesignerToolStylesheet);
     exports.default = DesignerToolStylesheet;
 });
 define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-designer/assets.ts"], function (require, exports, assets_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.parsePropValue = exports.extractFileName = exports.getFileContent = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
+    exports.parseNumberValue = exports.parsePropValue = exports.extractFileName = exports.getFileContent = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
     exports.backgroundOptions = [
         {
             value: 'primary',
@@ -886,7 +867,7 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
         const alignProps = [
             {
                 tooltip: 'Flex Start',
-                value: 'flex-start',
+                value: 'start',
                 type,
                 icon: {
                     image: {
@@ -906,7 +887,7 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
             },
             {
                 tooltip: 'Flex End',
-                value: 'flex-end',
+                value: 'end',
                 type,
                 icon: {
                     image: {
@@ -951,7 +932,7 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
     exports.justifyProps = [
         {
             tooltip: 'Flex Start',
-            value: 'flex-start',
+            value: 'start',
             type: 'justifyContent',
             icon: {
                 image: {
@@ -972,7 +953,7 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
         },
         {
             tooltip: 'Flex End',
-            value: 'flex-end',
+            value: 'end',
             type: 'justifyContent',
             icon: {
                 image: {
@@ -1016,7 +997,7 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
     exports.alignContentProps = [
         {
             tooltip: 'Flex Start',
-            value: 'flex-start',
+            value: 'start',
             type: 'alignContent',
             icon: {
                 image: {
@@ -1037,7 +1018,7 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
         },
         {
             tooltip: 'Flex End',
-            value: 'flex-end',
+            value: 'end',
             type: 'alignContent',
             icon: {
                 image: {
@@ -1079,6 +1060,39 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
             }
         }
     ];
+    exports.borderStyles = [
+        {
+            tooltip: 'Solid',
+            value: 'solid',
+            type: 'style',
+            icon: {
+                image: {
+                    url: assets_1.default.fullPath('img/designer/border/solid.svg')
+                }
+            },
+            isActive: true
+        },
+        {
+            tooltip: 'Dotted',
+            value: 'dotted',
+            type: 'style',
+            icon: {
+                image: {
+                    url: assets_1.default.fullPath('img/designer/border/dotted.svg')
+                }
+            }
+        },
+        {
+            tooltip: 'Dashed',
+            value: 'dashed',
+            type: 'style',
+            icon: {
+                image: {
+                    url: assets_1.default.fullPath('img/designer/border/dashed.svg')
+                }
+            }
+        },
+    ];
     const getFileContent = async (url) => {
         let result = '';
         if (url) {
@@ -1117,25 +1131,206 @@ define("@scom/scom-designer/utils.ts", ["require", "exports", "@scom/scom-design
         return value;
     };
     exports.parsePropValue = parsePropValue;
+    const parseNumberValue = (value) => {
+        let result = {
+            value: undefined,
+            unit: 'px'
+        };
+        if (typeof value === 'number') {
+            result.value = Number.isInteger(value) ? value : value.toFixed(2);
+        }
+        else if (value === 'auto' || !value) {
+            result.value = '';
+        }
+        else {
+            const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
+            const numVal = +(value.replace(unit, ''));
+            result.value = Number.isInteger(numVal) ? numVal : numVal.toFixed(2);
+            result.unit = unit || 'px';
+        }
+        return result;
+    };
+    exports.parseNumberValue = parseNumberValue;
 });
-define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_8, index_css_3, assets_2, utils_1) {
+define("@scom/scom-designer/tools/selector.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_7, index_css_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    let DesignerSelector = class DesignerSelector extends components_7.Module {
+        constructor() {
+            super(...arguments);
+            this.listMap = new Map();
+            this._data = {
+                items: []
+            };
+        }
+        get items() {
+            return this._data.items || [];
+        }
+        set items(value) {
+            this._data.items = value || [];
+        }
+        get title() {
+            return this._data.title || '';
+        }
+        set title(value) {
+            this._data.title = value || '';
+        }
+        get activeItem() {
+            return this._data.activeItem;
+        }
+        set activeItem(value) {
+            this._data.activeItem = value;
+            const target = this.listMap.get(value);
+            if (target) {
+                this.updateActiveItem(target);
+            }
+            else {
+                if (this.currentTarget)
+                    this.currentTarget.classList.remove(index_css_3.customIconLayoutActiveStyled);
+            }
+        }
+        setData(value) {
+            this._data = value;
+            this.renderUI();
+        }
+        renderUI() {
+            this.lblTitle.caption = this.title;
+            this.pnlList.clearInnerHTML();
+            const length = this.items.length;
+            for (let i = 0; i < length; i++) {
+                const item = this.items[i];
+                const elm = this.$render("i-hstack", { gap: 1, verticalAlignment: "center", horizontalAlignment: "center", height: '100%', cursor: "pointer", stack: { grow: '1', shrink: '1' }, class: `${index_css_3.customIconLayoutStyled} ${i === 0 ? index_css_3.borderRadiusLeft : i === length - 1 ? index_css_3.borderRadiusRight : ''} ${item.isActive ? index_css_3.customIconLayoutActiveStyled : ''}`, tooltip: { content: item.tooltip || '', placement: item.placement }, onClick: (target) => this.onActiveChanged(target, item.type, item.value) });
+                if (item.tooltip) {
+                    elm.tooltip.content = item.tooltip;
+                    if (item.placement)
+                        elm.tooltip.placement = item.placement;
+                }
+                if (item.caption) {
+                    const lb = this.$render("i-label", { caption: item.caption, stack: { grow: '1', shrink: '1' }, class: `text-center`, padding: { top: '0.25rem', bottom: '0.25rem' } });
+                    elm.append(lb);
+                }
+                if (item.icon) {
+                    let img;
+                    if (item.icon?.image) {
+                        img = new components_7.Image(elm, {
+                            width: '1rem',
+                            height: '1rem',
+                            url: item.icon.image.url,
+                            display: 'flex'
+                        });
+                        if (item.rotate)
+                            img.rotate = item.rotate;
+                    }
+                    else {
+                        img = new components_7.Icon(elm, {
+                            width: '1rem',
+                            height: '1rem',
+                            ...item.icon
+                        });
+                    }
+                    elm.append(img);
+                }
+                if (item.isActive)
+                    this.currentTarget = elm;
+                this.pnlList.appendChild(elm);
+                this.listMap.set(item.value, elm);
+            }
+        }
+        onActiveChanged(target, type, value) {
+            this.updateActiveItem(target);
+            if (this.onChanged)
+                this.onChanged(type, value);
+        }
+        updateActiveItem(target) {
+            if (this.currentTarget)
+                this.currentTarget.classList.remove(index_css_3.customIconLayoutActiveStyled);
+            target.classList.add(index_css_3.customIconLayoutActiveStyled);
+            this.currentTarget = target;
+        }
+        init() {
+            super.init();
+            const items = this.getAttribute('items', true, []);
+            const title = this.getAttribute('title', true, '');
+            this.setData({ items, title });
+        }
+        render() {
+            return (this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
+                this.$render("i-label", { id: "lblTitle", caption: "", font: { size: '0.75rem' } }),
+                this.$render("i-hstack", { id: "pnlList", gap: `1px`, verticalAlignment: "center", height: '1.5rem' })));
+        }
+    };
+    DesignerSelector = __decorate([
+        (0, components_7.customElements)('designer-selector')
+    ], DesignerSelector);
+    exports.default = DesignerSelector;
+});
+define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_8, index_css_4, assets_2, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_8.Styles.Theme.ThemeVars;
+    ;
+    const stackTypes = ['i-stack', 'i-hstack', 'i-vstack'];
     let DesignerToolLayout = class DesignerToolLayout extends components_8.Module {
         constructor(parent, options) {
             super(parent, options);
-            this.isBasicFlex = true;
             this._data = {};
+            this.isBasicFlex = true;
             this.onSelectChanged = this.onSelectChanged.bind(this);
             this.onReverseSwitch = this.onReverseSwitch.bind(this);
+            this.onAdvFlexChanged = this.onAdvFlexChanged.bind(this);
+        }
+        get name() {
+            return this._data.name ?? '';
+        }
+        set name(value) {
+            this._data.name = value ?? '';
+        }
+        get isStack() {
+            return this.name && stackTypes.includes(this.name);
         }
         setData(data) {
             this._data = data;
             this.renderUI();
         }
         renderUI() {
-            // TODO: fill data
+            this.togglePanels();
+            const { wrap, alignItems, justifyContent, alignSelf, alignContent, direction, stack } = this._data;
+            this.directionSelector.activeItem = direction;
+            this.reverseSwitch.checked = this._data.reverse ?? (direction || '').includes('reverse') ?? false;
+            if (this.isStack) {
+                if (wrap)
+                    this.wrapSelector.activeItem = wrap;
+                if (alignItems)
+                    this.alignSelector.activeItem = alignItems;
+                if (justifyContent)
+                    this.justifySelector.activeItem = justifyContent;
+                if (alignSelf)
+                    this.alignSelfSelector.activeItem = alignSelf;
+                if (alignContent)
+                    this.alignContentSelector.activeItem = alignContent;
+            }
+            if (stack) {
+                const { basis, grow, shrink } = stack;
+                this.basisInput.value = basis || '';
+                this.shrinkInput.value = shrink || '';
+                this.growInput.value = grow || '';
+            }
+        }
+        togglePanels() {
+            const isStack = this.isStack;
+            this.directionSelector.visible = this.name === 'i-stack';
+            this.wrapSelector.visible = isStack;
+            this.justifySelector.visible = isStack;
+            this.alignSelector.visible = isStack;
+            this.alignSelfSelector.visible = isStack;
+            this.alignContentSelector.visible = isStack;
+            if (!this._data.display && isStack) {
+                this._data.display = 'flex';
+                this.onSelectChanged('display', this._data.display);
+            }
+            this.pnlFlexItems.visible = isStack;
+            this.pnlFlexContent.visible = true;
+            this.pnlSelectedItem.visible = !isStack;
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
@@ -1148,16 +1343,38 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
         }
         onSelectChanged(type, value) {
             this._data[type] = value;
-            // console.log('type', type, ' value', value)
             if (this.onChanged)
                 this.onChanged(type, value);
         }
         onReverseSwitch(target) {
-            const checked = target.checked;
-            const type = this._data.direction === 'horizontal' ? 'row' : 'column';
-            this._data.flexFlow = checked ? `${type}-reverse` : type;
+            this._data.reverse = target.checked;
             if (this.onChanged)
-                this.onChanged('flexFlow', this._data.flexFlow);
+                this.onChanged('reverse', this._data.reverse);
+        }
+        onBasicFlexChanged(target) {
+            const value = target.value;
+            if (value) {
+                this._data.stack = { basis: '0%', shrink: '1', grow: `${value}` };
+                this.basisInput.value = '0%';
+                this.shrinkInput.value = '1';
+                this.growInput.value = value;
+            }
+            else {
+                this._data.stack = undefined;
+                this.basisInput.value = '';
+                this.shrinkInput.value = '';
+                this.growInput.value = '';
+            }
+            if (this.onChanged)
+                this.onChanged('stack', this._data.stack);
+        }
+        onAdvFlexChanged(target, type) {
+            const value = target.value;
+            if (!this._data.stack)
+                this._data.stack = {};
+            this._data.stack[type] = value;
+            if (this.onChanged)
+                this.onChanged('stack', this._data.stack);
         }
         init() {
             super.init();
@@ -1167,24 +1384,23 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Layout", tooltipText: "With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes.", onCollapse: this.onCollapse }),
                 this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
-                    this.$render("i-vstack", { gap: 8 },
+                    this.$render("i-vstack", { id: "pnlFlexItems", gap: 8 },
                         this.$render("i-label", { caption: "FLEX ITEMS", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 12 },
                             this.$render("i-hstack", { verticalAlignment: 'center', gap: "5px" },
-                                this.$render("designer-selector", { title: "Direction", stack: { grow: '1', shrink: '1' }, items: [
-                                        { value: 'column', tooltip: 'Column', type: 'direction', isActive: true, icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
-                                        { value: 'row', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
+                                this.$render("designer-selector", { id: "directionSelector", title: "Direction", stack: { grow: '1', shrink: '1' }, items: [
+                                        { value: 'vertical', tooltip: 'Column', type: 'direction', isActive: true, icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
+                                        { value: 'horizontal', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
                                     ], onChanged: this.onSelectChanged }),
                                 this.$render("i-hstack", { gap: 4, verticalAlignment: "center", stack: { grow: '1', shrink: '1' } },
                                     this.$render("i-switch", { id: "reverseSwitch", onChanged: this.onReverseSwitch }),
                                     this.$render("i-label", { caption: "Reverse", font: { size: '0.875rem' } }))),
-                            this.$render("designer-selector", { title: "Align", items: (0, utils_1.getAlignProps)('alignItems'), onChanged: this.onSelectChanged }),
-                            this.$render("designer-selector", { title: "Justify", items: utils_1.justifyProps, onChanged: this.onSelectChanged }))),
-                    this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
-                    this.$render("i-vstack", { gap: 8 },
+                            this.$render("designer-selector", { id: "alignSelector", title: "Align", items: (0, utils_1.getAlignProps)('alignItems'), onChanged: this.onSelectChanged }),
+                            this.$render("designer-selector", { id: "justifySelector", title: "Justify", items: utils_1.justifyProps, onChanged: this.onSelectChanged }))),
+                    this.$render("i-vstack", { id: "pnlSelectedItem", gap: 8, border: { top: { width: '1px', style: 'solid', color: Theme.divider } }, padding: { top: '1rem' } },
                         this.$render("i-label", { caption: "SELECTED ITEM", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 12 },
-                            this.$render("designer-selector", { title: "Align", items: (0, utils_1.getAlignProps)('alignSelf'), onChanged: this.onSelectChanged }),
+                            this.$render("designer-selector", { id: "alignSelfSelector", title: "Align", items: (0, utils_1.getAlignProps)('alignSelf'), onChanged: this.onSelectChanged }),
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'] },
                                 this.$render("i-vstack", { gap: 8 },
                                     this.$render("i-label", { caption: "Flex", font: { size: '0.75rem' }, lineHeight: "24px" }),
@@ -1195,36 +1411,35 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
                                     this.$render("i-input", { id: "inputBasicFlex", inputType: "number", placeholder: "0", width: "100%", height: 24, border: {
                                             radius: 8,
                                             width: 0
-                                        }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_3.textInputRight }),
+                                        }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_4.textInputRight, onChanged: this.onBasicFlexChanged }),
                                     this.$render("i-grid-layout", { id: "wrapperAdvancedFlex", visible: false, gap: { column: 4 }, templateColumns: ['1fr', '1fr', '1fr'], maxWidth: 254, verticalAlignment: "center" },
                                         this.$render("i-vstack", { gap: 8, horizontalAlignment: "center" },
-                                            this.$render("i-input", { inputType: "number", placeholder: "auto", width: "100%", height: 24, border: {
+                                            this.$render("i-input", { id: "basisInput", inputType: "number", placeholder: "auto", width: "100%", height: 24, border: {
                                                     radius: 8,
                                                     width: 0
-                                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_3.textInputRight }),
+                                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_4.textInputRight, onChanged: (target) => this.onAdvFlexChanged(target, 'basis') }),
                                             this.$render("i-label", { caption: "Basis", font: { size: '0.75rem' }, opacity: 0.7 })),
                                         this.$render("i-vstack", { gap: 8, horizontalAlignment: "center" },
-                                            this.$render("i-input", { inputType: "number", placeholder: "0", width: "100%", height: 24, border: {
+                                            this.$render("i-input", { id: "growInput", inputType: "number", placeholder: "0", width: "100%", height: 24, border: {
                                                     radius: 8,
                                                     width: 0
-                                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_3.textInputRight }),
+                                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_4.textInputRight, onChanged: (target) => this.onAdvFlexChanged(target, 'grow') }),
                                             this.$render("i-label", { caption: "Grow", font: { size: '0.75rem' }, opacity: 0.7 })),
                                         this.$render("i-vstack", { gap: 8, horizontalAlignment: "center" },
-                                            this.$render("i-input", { inputType: "number", placeholder: "1", width: "100%", height: 24, border: {
+                                            this.$render("i-input", { id: "shrinkInput", inputType: "number", placeholder: "1", width: "100%", height: 24, border: {
                                                     radius: 8,
                                                     width: 0
-                                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_3.textInputRight }),
+                                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: index_css_4.textInputRight, onChanged: (target) => this.onAdvFlexChanged(target, 'shrink') }),
                                             this.$render("i-label", { caption: "Shrink", font: { size: '0.75rem' }, opacity: 0.7 }))))))),
-                    this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
-                    this.$render("i-vstack", { gap: 8 },
+                    this.$render("i-vstack", { id: "pnlFlexContent", gap: 8, border: { top: { width: '1px', style: 'solid', color: Theme.divider } }, padding: { top: '1rem' } },
                         this.$render("i-label", { caption: "CONTENT", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 12 },
-                            this.$render("designer-selector", { title: "Wrap", items: [
+                            this.$render("designer-selector", { id: "wrapSelector", title: "Wrap", items: [
                                     { value: 'nowrap', caption: 'None', type: 'wrap', isActive: true },
                                     { value: 'wrap', caption: 'Wrap', type: 'wrap' },
                                     { value: 'wrap-reverse', caption: 'Reverse', type: 'wrap' }
                                 ], onChanged: this.onSelectChanged }),
-                            this.$render("designer-selector", { title: "Align", items: utils_1.alignContentProps, onChanged: this.onSelectChanged }))))));
+                            this.$render("designer-selector", { id: "alignContentSelector", title: "Align", items: utils_1.alignContentProps, onChanged: this.onSelectChanged }))))));
         }
     };
     DesignerToolLayout = __decorate([
@@ -1232,7 +1447,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
     ], DesignerToolLayout);
     exports.default = DesignerToolLayout;
 });
-define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_9, index_css_4, utils_2) {
+define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_9, index_css_5, utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     let DesignerToolBackground = class DesignerToolBackground extends components_9.Module {
@@ -1275,13 +1490,13 @@ define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijst
             const selectedValue = target.selectedItem.value;
             this.type = selectedValue;
             if (this.onChanged)
-                this.onChanged('background', this.color);
+                this.onChanged('background', { color: this.color });
         }
         onColorChanged(target) {
             const color = target.value;
             this.color = color;
             if (this.onChanged)
-                this.onChanged('background', this.color);
+                this.onChanged('background', { color: this.color });
         }
         init() {
             super.init();
@@ -1298,7 +1513,7 @@ define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijst
                     this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                         this.$render("i-label", { caption: "Color", font: { size: '0.75rem' } }),
                         this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
-                            this.$render("i-color", { id: "bgColor", onChanged: this.onColorChanged, class: index_css_4.customColorStyled }),
+                            this.$render("i-color", { id: "bgColor", onChanged: this.onColorChanged, class: index_css_5.customColorStyled }),
                             this.$render("i-combo-box", { id: "bgSelect", width: "calc(100% - 28px)", items: utils_2.backgroundOptions, placeholder: "Type or select a color...", onChanged: this.onTypeChanged }))))));
         }
     };
@@ -1307,53 +1522,48 @@ define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijst
     ], DesignerToolBackground);
     exports.default = DesignerToolBackground;
 });
-define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_10, index_css_5) {
+define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_10, index_css_6, utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_10.Styles.Theme.ThemeVars;
     const sizes = [
-        [
-            {
-                id: 'inputWidth',
-                caption: 'Width',
-                prop: 'width'
-            },
-            {
-                id: 'inputHeight',
-                caption: 'Height',
-                prop: 'height'
-            }
-        ],
-        [
-            {
-                id: 'inputMinWidth',
-                caption: 'Min W',
-                prop: 'minWidth'
-            },
-            {
-                id: 'inputMinHeight',
-                caption: 'Min H',
-                prop: 'minHeight'
-            }
-        ],
-        [
-            {
-                id: 'inputMaxWidth',
-                caption: 'Max W',
-                prop: 'maxWidth'
-            },
-            {
-                id: 'inputMaxHeight',
-                caption: 'Max H',
-                prop: 'maxHeight'
-            }
-        ]
+        {
+            id: 'inputWidth',
+            caption: 'Width',
+            prop: 'width'
+        },
+        {
+            id: 'inputHeight',
+            caption: 'Height',
+            prop: 'height'
+        },
+        {
+            id: 'inputMinWidth',
+            caption: 'Min W',
+            prop: 'minWidth'
+        },
+        {
+            id: 'inputMinHeight',
+            caption: 'Min H',
+            prop: 'minHeight'
+        },
+        {
+            id: 'inputMaxWidth',
+            caption: 'Max W',
+            prop: 'maxWidth'
+        },
+        {
+            id: 'inputMaxHeight',
+            caption: 'Max H',
+            prop: 'maxHeight'
+        }
     ];
     let DesignerToolSize = class DesignerToolSize extends components_10.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {};
             this.unit = 'px';
+            this.currentProp = '';
         }
         setData(value) {
             this._data = value;
@@ -1363,28 +1573,34 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
             this.vStackContent.visible = isShown;
         }
         renderUI() {
-            const { width, height, minWidth, minHeight, maxWidth, maxHeight } = this._data;
-            if (width !== undefined)
-                this.inputWidth.value = width;
-            if (height !== undefined)
-                this.inputHeight.value = height;
-            if (minWidth !== undefined)
-                this.inputMinWidth.value = minWidth;
-            if (minHeight !== undefined)
-                this.inputMinHeight.value = minHeight;
-            if (maxWidth !== undefined)
-                this.inputMaxWidth.value = maxWidth;
-            if (maxHeight !== undefined)
-                this.inputMaxHeight.value = maxHeight;
+            this.pnlSizes.clearInnerHTML();
+            for (let size of sizes) {
+                const parsedValue = (0, utils_3.parseNumberValue)(this._data[size.prop]);
+                const elm = (this.$render("i-hstack", { verticalAlignment: "center" },
+                    this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
+                        this.$render("i-label", { caption: size.caption, font: { size: '0.75rem' } }),
+                        this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
+                            this.$render("i-input", { inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_6.textInputRight} ${index_css_6.bgInputTransparent}`, value: parsedValue.value, onChanged: (target) => this.onValueChanged(target, size.prop) }),
+                            this.$render("i-label", { caption: parsedValue.unit, font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "1.5rem", opacity: 1, border: {
+                                    left: {
+                                        width: 1,
+                                        style: 'solid',
+                                        color: Theme.action.focus
+                                    }
+                                }, class: `text-center ${index_css_6.unitStyled}`, onClick: (target, event) => this.onShowUnits(target, event, size.prop) })))));
+                this.pnlSizes.append(elm);
+            }
         }
         onValueChanged(target, prop) {
             const newValue = target.value;
-            this._data[prop] = `${newValue}${this.unit}`;
+            const valueStr = newValue !== '' ? `${newValue}${this.unit}` : '';
+            this._data[prop] = valueStr;
             if (this.onChanged)
                 this.onChanged(prop, this._data[prop]);
         }
-        onShowUnits(target, event) {
+        onShowUnits(target, event, prop) {
             this.currentLabel = target;
+            this.currentProp = prop;
             const rect = target.getBoundingClientRect();
             const { x, y } = rect;
             const mdWrapper = this.mdUnits.querySelector('.modal-wrapper');
@@ -1405,6 +1621,14 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
             mdWrapper.style.paddingInline = '0px';
             const onUnitChanged = (value) => {
                 this.currentLabel.caption = value;
+                const input = this.currentLabel.previousSibling;
+                if (value !== this.unit) {
+                    const num = input?.value ?? (0, utils_3.parseNumberValue)(this._data[this.currentProp])?.value;
+                    const valueStr = num !== '' ? `${num}${value}` : '';
+                    this._data[this.currentProp] = valueStr;
+                    if (this.onChanged)
+                        this.onChanged(this.currentProp, this._data[this.currentProp]);
+                }
                 this.unit = value;
                 this.mdUnits.visible = false;
             };
@@ -1423,17 +1647,7 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Size", tooltipText: "Specify minimum, maximum, or specifically set heights and widths for the element.", onCollapse: this.onCollapse }),
                 this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 } },
-                    this.$render("i-vstack", { gap: 8 }, sizes.map(size => this.$render("i-hstack", { gap: 16, verticalAlignment: "center" }, size.map(v => this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
-                        this.$render("i-label", { caption: v.caption, font: { size: '0.75rem' } }),
-                        this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                            this.$render("i-input", { id: v.id, inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_5.textInputRight} ${index_css_5.bgInputTransparent}`, onChanged: (target) => this.onValueChanged(target, v.prop) }),
-                            this.$render("i-label", { caption: "px", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "1.5rem", opacity: 1, border: {
-                                    left: {
-                                        width: 1,
-                                        style: 'solid',
-                                        color: Theme.action.focus
-                                    }
-                                }, class: `text-center ${index_css_5.unitStyled}`, onClick: (target, event) => this.onShowUnits(target, event) }))))))))));
+                    this.$render("i-grid-layout", { id: "pnlSizes", gap: { column: '1rem', row: '0.5rem' }, columnsPerRow: 2 }))));
         }
     };
     DesignerToolSize = __decorate([
@@ -1441,7 +1655,7 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
     ], DesignerToolSize);
     exports.default = DesignerToolSize;
 });
-define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_11, index_css_6) {
+define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_11, index_css_7, utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_11.Styles.Theme.ThemeVars;
@@ -1466,19 +1680,19 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
             };
             const onUnitChanged = (value) => {
                 this.lbIndUnit.caption = value;
-                if (this.unit !== value) {
-                    const { type, position } = this.spacing;
-                    if (this.onChanged)
-                        this.onChanged(type, position, `${value}${this.unit}`);
-                }
                 this.unit = value;
+                const { type, position } = this.spacing;
+                const valStr = this.inputValue.value !== '' ? `${this.inputValue.value}${this.unit}` : '';
+                if (this.onChanged)
+                    this.onChanged(type, position, valStr);
                 this.vStackIndUnits.visible = false;
             };
             const onValueChanged = (target) => {
                 const value = target.value;
                 const { type, position } = this.spacing;
+                const valueStr = value !== '' ? `${value}${this.unit}` : 'auto';
                 if (this.onChanged)
-                    this.onChanged(type, position, `${value}${this.unit}`);
+                    this.onChanged(type, position, valueStr);
             };
             const item = new components_11.VStack(undefined, { gap: 8, border: { radius: 8 } });
             const { breakpointText, iconName } = this.config;
@@ -1491,14 +1705,14 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
                 this.$render("i-grid-layout", { position: "relative", templateColumns: ['100px', 'auto'], verticalAlignment: "center" },
                     this.$render("i-label", { caption: "Static Value:", font: { size: '0.75rem' } }),
                     this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                        this.$render("i-input", { id: "inputValue", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_6.textInputRight} ${index_css_6.bgInputTransparent}`, onChanged: onValueChanged, onClick: () => { this.vStackIndUnits.visible = false; } }),
+                        this.$render("i-input", { id: "inputValue", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}`, onChanged: onValueChanged, onClick: () => { this.vStackIndUnits.visible = false; } }),
                         this.$render("i-label", { id: "lbIndUnit", caption: "px", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
                                 left: {
                                     width: 1,
                                     style: 'solid',
                                     color: Theme.action.focus
                                 }
-                            }, class: `text-center ${index_css_6.unitStyled}`, onClick: () => onShowUnits() })),
+                            }, class: `text-center ${index_css_7.unitStyled}`, onClick: () => onShowUnits() })),
                     this.$render("i-vstack", { id: "vStackIndUnits", gap: 8, position: "absolute", width: 24, top: 24, left: 156, zIndex: 100, background: { color: Theme.background.modal } },
                         this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "px", font: { size: '0.625rem' }, padding: { top: 4, bottom: 4 }, onClick: () => onUnitChanged('px') }),
                         this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "%", font: { size: '0.625rem' }, padding: { top: 4, bottom: 4 }, onClick: () => onUnitChanged('%') }))),
@@ -1516,24 +1730,18 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
             this.lbTitle.caption = title;
             this.lbBreakpoint.caption = breakpointText;
             this.iconTitle.name = iconName;
-            this.updateValue(value);
+            const parsedValue = (0, utils_4.parseNumberValue)(value);
+            this.lbIndUnit.caption = parsedValue.unit;
+            this.inputValue.value = parsedValue.value;
         }
-        updateValue(value) {
-            if (typeof value === 'number') {
-                this.inputValue.value = value;
-                this.lbIndUnit.caption = 'px';
-            }
-            else {
-                const unit = value.replace(/^-?\d+(\.\d+)?/g, '');
-                const number = value.replace(unit, '');
-                this.inputValue.value = number;
-                this.lbIndUnit.caption = unit || 'px';
-            }
-        }
-        ;
         onShowModal(target, value, config) {
             if (this.vStackIndUnits)
                 this.vStackIndUnits.visible = false;
+            const parseValue = (0, utils_4.parseNumberValue)(value.value);
+            const unit = parseValue?.unit || 'px';
+            this.unit = unit;
+            this.inputValue.value = parseValue?.value || '';
+            this.lbIndUnit.caption = unit;
             this.config = config || {};
             this.spacing = value || {};
             this.updateHeader();
@@ -1568,7 +1776,7 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
     ], DesignerToolModalSpacing);
     exports.default = DesignerToolModalSpacing;
 });
-define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_12, index_css_7) {
+define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_12, index_css_8, utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_12.Styles.Theme.ThemeVars;
@@ -1577,6 +1785,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             super(parent, options);
             this._data = {};
             this._unit = 'px';
+            this.currentProp = '';
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
         }
         setData(data) {
@@ -1599,12 +1808,13 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                 const match = /^(margin|padding)(.*)/.exec(id);
                 if (match?.length) {
                     const position = (match[2] || '').toLowerCase();
-                    button.caption = this._data[match[1]]?.[position] ?? 'auto';
+                    const parseData = (0, utils_5.parseNumberValue)(this._data[match[1]]?.[position]);
+                    button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
                 }
             }
         }
         onOverallChanged(target, prop) {
-            const value = (target.value || 0) + this._unit;
+            const value = target.value !== '' ? `${target.value}${this._unit}` : '';
             this._data[prop] = {
                 top: value,
                 right: value,
@@ -1615,8 +1825,9 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             if (this.onChanged)
                 this.onChanged(prop, this._data[prop]);
         }
-        onShowUnitsModal(target) {
+        onShowUnitsModal(target, prop) {
             this.currentLabel = target;
+            this.currentProp = prop;
             const rect = target.getBoundingClientRect();
             const { x, y } = rect;
             const mdWrapper = this.mdUnits.querySelector('.modal-wrapper');
@@ -1637,6 +1848,19 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             mdWrapper.style.paddingInline = '0px';
             const onUnitChanged = (value) => {
                 this.currentLabel.caption = value;
+                if (value !== this._unit) {
+                    const valueObj = this._data[this.currentProp];
+                    if (valueObj) {
+                        for (let prop in valueObj) {
+                            const numValue = (0, utils_5.parseNumberValue)(valueObj[prop])?.value;
+                            const valueStr = numValue !== '' ? `${numValue}${value}` : '';
+                            this._data[this.currentProp][prop] = valueStr;
+                        }
+                        this.updateButtons();
+                        if (this.onChanged)
+                            this.onChanged(this.currentProp, this._data[this.currentProp]);
+                    }
+                }
                 this._unit = value;
                 this.mdUnits.visible = false;
             };
@@ -1682,44 +1906,44 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Margin", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { id: "marginInput", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, onChanged: (target) => this.onOverallChanged(target, 'margin'), class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}` }),
+                                    this.$render("i-input", { id: "marginInput", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, onChanged: (target) => this.onOverallChanged(target, 'margin'), class: `${index_css_8.textInputRight} ${index_css_8.bgInputTransparent}` }),
                                     this.$render("i-label", { caption: "px", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "1.5rem", opacity: 1, border: {
                                             left: {
                                                 width: 1,
                                                 style: 'solid',
                                                 color: Theme.action.focus
                                             }
-                                        }, class: `text-center ${index_css_7.unitStyled}`, onClick: (target) => this.onShowUnitsModal(target) }))),
+                                        }, class: `text-center ${index_css_8.unitStyled}`, onClick: (target) => this.onShowUnitsModal(target, 'margin') }))),
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Padding", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { id: "paddingInput", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, onChanged: (target) => this.onOverallChanged(target, 'padding'), class: `${index_css_7.textInputRight} ${index_css_7.bgInputTransparent}` }),
+                                    this.$render("i-input", { id: "paddingInput", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, onChanged: (target) => this.onOverallChanged(target, 'padding'), class: `${index_css_8.textInputRight} ${index_css_8.bgInputTransparent}` }),
                                     this.$render("i-label", { caption: "px", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "1.5rem", opacity: 1, border: {
                                             left: {
                                                 width: 1,
                                                 style: 'solid',
                                                 color: Theme.action.focus
                                             }
-                                        }, class: `text-center ${index_css_7.unitStyled}`, onClick: (target) => this.onShowUnitsModal(target) }))))),
+                                        }, class: `text-center ${index_css_8.unitStyled}`, onClick: (target) => this.onShowUnitsModal(target, 'padding') }))))),
                     this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
                     this.$render("i-vstack", { id: "vStackIndividual", gap: 8 },
                         this.$render("i-label", { caption: "INDIVIDUAL", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 8, width: "100%", horizontalAlignment: "center" },
                             this.$render("i-hstack", { position: "relative", width: "100%", horizontalAlignment: "center" },
                                 this.$render("i-label", { caption: "Margin", font: { size: '0.75rem' }, position: "absolute", top: 0, left: 0 }),
-                                this.$render("i-button", { id: "marginTop", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'top') })),
+                                this.$render("i-button", { id: "marginTop", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'top') })),
                             this.$render("i-hstack", { width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                this.$render("i-button", { id: "marginLeft", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'left') }),
+                                this.$render("i-button", { id: "marginLeft", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'left') }),
                                 this.$render("i-panel", { position: "relative", width: 200, padding: { top: 10, bottom: 10, left: 10, right: 10 }, border: { width: 4, style: 'solid', color: Theme.action.selectedBackground } },
                                     this.$render("i-label", { caption: "Padding", font: { size: '0.75rem' }, position: "absolute", top: 10, left: 10 }),
                                     this.$render("i-vstack", { horizontalAlignment: "center" },
-                                        this.$render("i-button", { id: "paddingTop", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'top') }),
+                                        this.$render("i-button", { id: "paddingTop", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'top') }),
                                         this.$render("i-hstack", { width: "100%", horizontalAlignment: "space-between" },
-                                            this.$render("i-button", { id: "paddingLeft", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'left') }),
-                                            this.$render("i-button", { id: "paddingRight", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'right') })),
-                                        this.$render("i-button", { id: "paddingBottom", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'bottom') }))),
-                                this.$render("i-button", { id: "marginRight", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'right') })),
-                            this.$render("i-button", { id: "marginBottom", caption: "auto", class: index_css_7.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'bottom') })))),
+                                            this.$render("i-button", { id: "paddingLeft", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'left') }),
+                                            this.$render("i-button", { id: "paddingRight", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'right') })),
+                                        this.$render("i-button", { id: "paddingBottom", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'padding', 'bottom') }))),
+                                this.$render("i-button", { id: "marginRight", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'right') })),
+                            this.$render("i-button", { id: "marginBottom", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'margin', 'bottom') })))),
                 this.$render("designer-tool-modal-spacing", { id: "mdSpacing", onChanged: this.onSpacingChanged })));
         }
     };
@@ -1728,7 +1952,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
     ], DesignerToolMarginsAndPadding);
     exports.default = DesignerToolMarginsAndPadding;
 });
-define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_13, index_css_8) {
+define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_13, index_css_9, utils_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_13.Styles.Theme.ThemeVars;
@@ -1753,12 +1977,12 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
             if (position) {
                 const positionEl = this.vStackContent.querySelector(`#lb${position.charAt(0).toUpperCase() + position.slice(1)}`);
                 if (positionEl)
-                    positionEl.classList.add(index_css_8.customIconLayoutActiveStyled);
+                    positionEl.classList.add(index_css_9.customIconLayoutActiveStyled);
             }
             if (overflow) {
                 const overflowEl = this.vStackContent.querySelector(`#lb${overflow.charAt(0).toUpperCase() + overflow.slice(1)}`);
                 if (overflowEl)
-                    overflowEl.classList.add(index_css_8.customIconLayoutActiveStyled);
+                    overflowEl.classList.add(index_css_9.customIconLayoutActiveStyled);
             }
             this.updateButtons();
         }
@@ -1767,8 +1991,8 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
             for (let i = 0; i < buttons.length; i++) {
                 const button = buttons[i];
                 const id = button.id || '';
-                const value = typeof this._data[id] === 'number' ? `${this._data[id]}px` : this._data[id];
-                button.caption = value ?? 'auto';
+                const parseData = (0, utils_6.parseNumberValue)(this._data[id]);
+                button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
             }
         }
         onShowModal(target, position) {
@@ -1816,17 +2040,17 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                             ], onChanged: this.onSelectChanged }),
                         this.$render("i-panel", { width: 320, padding: { top: 10, bottom: 10, left: 20, right: 20 }, border: { radius: 8, width: 1, style: 'solid', color: Theme.action.selectedBackground } },
                             this.$render("i-vstack", { id: "pnlPosition", gap: 4, horizontalAlignment: "center" },
-                                this.$render("i-button", { id: "top", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'top') }),
+                                this.$render("i-button", { id: "top", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'top') }),
                                 this.$render("i-hstack", { width: "100%", horizontalAlignment: "space-between" },
-                                    this.$render("i-button", { id: "left", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'left') }),
-                                    this.$render("i-button", { id: "right", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'right') })),
-                                this.$render("i-button", { id: "bottom", caption: "auto", class: index_css_8.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'bottom') }))),
+                                    this.$render("i-button", { id: "left", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'left') }),
+                                    this.$render("i-button", { id: "right", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'right') })),
+                                this.$render("i-button", { id: "bottom", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowModal(target, 'bottom') }))),
                         this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Z-Index", font: { size: '0.75rem' } }),
                             this.$render("i-input", { id: "zIndexInput", inputType: "number", placeholder: "auto", width: "100%", height: 24, border: {
                                     radius: 8,
                                     width: 0
-                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onChanged: (target) => this.onZIndexChanged(target, 'zIndex'), class: index_css_8.textInputRight })),
+                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onChanged: (target) => this.onZIndexChanged(target, 'zIndex'), class: index_css_9.textInputRight })),
                         this.$render("designer-selector", { id: "overflowSelector", title: "Overflow", items: [
                                 { value: 'auto', caption: 'Visible', type: 'overflow' },
                                 { value: 'hidden', caption: 'Hidden', type: 'overflow' },
@@ -1839,43 +2063,10 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
     ], DesignerToolPosition);
     exports.default = DesignerToolPosition;
 });
-define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_14, index_css_9, assets_3, utils_3) {
+define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_14, index_css_10, utils_7) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_14.Styles.Theme.ThemeVars;
-    const borderStyles = [
-        {
-            tooltip: 'Solid',
-            value: 'solid',
-            type: 'style',
-            icon: {
-                image: {
-                    url: assets_3.default.fullPath('img/designer/border/solid.svg')
-                }
-            },
-            isActive: true
-        },
-        {
-            tooltip: 'Dotted',
-            value: 'dotted',
-            type: 'style',
-            icon: {
-                image: {
-                    url: assets_3.default.fullPath('img/designer/border/dotted.svg')
-                }
-            }
-        },
-        {
-            tooltip: 'Dashed',
-            value: 'dashed',
-            type: 'style',
-            icon: {
-                image: {
-                    url: assets_3.default.fullPath('img/designer/border/dashed.svg')
-                }
-            }
-        },
-    ];
     let DesignerToolBorders = class DesignerToolBorders extends components_14.Module {
         constructor(parent, options) {
             super(parent, options);
@@ -1906,6 +2097,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             }
             this.updateButtons();
             border.style = border?.style || 'solid';
+            this.styleSelector.activeItem = border.style;
         }
         updateButtons() {
             const buttons = this.pnlIndividual.querySelectorAll('i-button');
@@ -1962,7 +2154,6 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             this._data.border[prop] = `${value}px`;
             if (this.onChanged)
                 this.onChanged('border', this._data.border);
-            // TODO: update individiual buttons
         }
         onSpacingChanged(type, position, value) {
             if (type === 'width') {
@@ -2003,39 +2194,39 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Width", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { id: "inputWidth", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}`, onChanged: (target) => this.onPropChanged(target, 'width') }))),
+                                    this.$render("i-input", { id: "inputWidth", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_10.textInputRight} ${index_css_10.bgInputTransparent}`, onChanged: (target) => this.onPropChanged(target, 'width') }))),
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                                 this.$render("i-label", { caption: "Radius", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                    this.$render("i-input", { id: "inputRadius", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}`, onChanged: (target) => this.onPropChanged(target, 'radius') }))))),
+                                    this.$render("i-input", { id: "inputRadius", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "100%", height: 24, border: { width: 0 }, padding: { left: 4, right: 4 }, font: { size: '0.675rem' }, class: `${index_css_10.textInputRight} ${index_css_10.bgInputTransparent}`, onChanged: (target) => this.onPropChanged(target, 'radius') }))))),
                     this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
                     this.$render("i-vstack", { id: "pnlIndividual", gap: 8 },
                         this.$render("i-label", { caption: "INDIVIDUAL EDGES", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 8, width: "100%", horizontalAlignment: "center" },
                             this.$render("i-hstack", { position: "relative", width: "100%", horizontalAlignment: "center" },
                                 this.$render("i-label", { caption: "Width", font: { size: '0.75rem' }, position: "absolute", top: 0, left: 0 }),
-                                this.$render("i-button", { id: "topWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'top') })),
+                                this.$render("i-button", { id: "topWidth", caption: "auto", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'top') })),
                             this.$render("i-hstack", { width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                this.$render("i-button", { id: "leftWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'left') }),
+                                this.$render("i-button", { id: "leftWidth", caption: "auto", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'left') }),
                                 this.$render("i-vstack", { verticalAlignment: "space-between", width: 200, height: 100, padding: { top: 4, bottom: 4, left: 4, right: 4 }, border: { width: 4, style: 'solid', color: Theme.action.selectedBackground } },
                                     this.$render("i-hstack", { width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
-                                        this.$render("i-button", { id: "topLeftRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'topLeft') }),
+                                        this.$render("i-button", { id: "topLeftRadius", caption: "0", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'topLeft') }),
                                         this.$render("i-label", { caption: "Radius", font: { size: '0.75rem' } }),
-                                        this.$render("i-button", { id: "topRightRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'topRight') })),
+                                        this.$render("i-button", { id: "topRightRadius", caption: "0", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'topRight') })),
                                     this.$render("i-hstack", { width: "100%", horizontalAlignment: "space-between" },
-                                        this.$render("i-button", { id: "bottomLeftRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'bottomLeft') }),
-                                        this.$render("i-button", { id: "bottomRightRadius", caption: "0", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'bottomRight') }))),
-                                this.$render("i-button", { id: "rightWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'right') })),
-                            this.$render("i-button", { id: "bottomWidth", caption: "auto", class: index_css_9.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'bottom') }))),
+                                        this.$render("i-button", { id: "bottomLeftRadius", caption: "0", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'bottomLeft') }),
+                                        this.$render("i-button", { id: "bottomRightRadius", caption: "0", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'radius', 'bottomRight') }))),
+                                this.$render("i-button", { id: "rightWidth", caption: "auto", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'right') })),
+                            this.$render("i-button", { id: "bottomWidth", caption: "auto", class: index_css_10.buttonAutoStyled, onClick: (target) => this.onShowSpacingModal(target, 'width', 'bottom') }))),
                     this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
                     this.$render("i-vstack", { gap: 8 },
                         this.$render("i-label", { caption: "DECORATION", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Color", font: { size: '0.75rem' } }),
                             this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
-                                this.$render("i-color", { id: "bgColor", onChanged: (target) => this.onStyleChanged('color', target.value), class: index_css_9.customColorStyled }),
-                                this.$render("i-combo-box", { width: "calc(100% - 28px)", items: utils_3.backgroundOptions, placeholder: "Type or select a color..." }))),
-                        this.$render("designer-selector", { id: "styleSelector", title: "Style", items: borderStyles, onChanged: this.onStyleChanged }))),
+                                this.$render("i-color", { id: "bgColor", onChanged: (target) => this.onStyleChanged('color', target.value), class: index_css_10.customColorStyled }),
+                                this.$render("i-combo-box", { width: "calc(100% - 28px)", items: utils_7.backgroundOptions, placeholder: "Type or select a color..." }))),
+                        this.$render("designer-selector", { id: "styleSelector", title: "Style", items: utils_7.borderStyles, onChanged: this.onStyleChanged }))),
                 this.$render("designer-tool-modal-spacing", { id: "mdSpacing", onChanged: this.onSpacingChanged })));
         }
     };
@@ -2044,7 +2235,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
     ], DesignerToolBorders);
     exports.default = DesignerToolBorders;
 });
-define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_15, index_css_10) {
+define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_15, index_css_11) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_15.Styles.Theme.ThemeVars;
@@ -2089,7 +2280,7 @@ define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech
                         this.$render("i-label", { caption: "Opacity", font: { size: '0.75rem' } }),
                         this.$render("i-hstack", { gap: 16, verticalAlignment: "center" },
                             this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                this.$render("i-input", { id: "inputEffect", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.725rem' }, class: `${index_css_10.textInputRight} ${index_css_10.bgInputTransparent}`, onChanged: this.onInputEffectChanged }),
+                                this.$render("i-input", { id: "inputEffect", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.725rem' }, class: `${index_css_11.textInputRight} ${index_css_11.bgInputTransparent}`, onChanged: this.onInputEffectChanged }),
                                 this.$render("i-label", { caption: "%", font: { size: '0.725rem' }, width: 24, height: 24, lineHeight: "24px", border: {
                                         left: {
                                             width: 1,
@@ -2106,103 +2297,121 @@ define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech
     ], DesignerToolEffects);
     exports.default = DesignerToolEffects;
 });
-define("@scom/scom-designer/tools/selector.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_16, index_css_11) {
+define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_16) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    let DesignerSelector = class DesignerSelector extends components_16.Module {
-        constructor() {
-            super(...arguments);
-            this._data = {
-                items: []
-            };
+    let DesignerToolHeader = class DesignerToolHeader extends components_16.Module {
+        constructor(parent, options) {
+            super(parent, options);
+            this.isShown = true;
         }
-        get items() {
-            return this._data.items || [];
+        renderUI() {
+            this.lbName.caption = this.name;
+            this.iconArrow.name = 'angle-down';
+            this.iconTooltip.visible = !!this.tooltipText;
+            this.iconTooltip.tooltip.content = this.tooltipText || '';
         }
-        set items(value) {
-            this._data.items = value || [];
+        _onCollapse() {
+            this.isShown = !this.isShown;
+            this.iconArrow.name = this.isShown ? 'angle-down' : 'angle-right';
+            this.onCollapse(this.isShown);
         }
-        get title() {
-            return this._data.title || '';
+        init() {
+            super.init();
+            this.name = this.getAttribute('name', true) || '';
+            this.tooltipText = this.getAttribute('tooltipText', true);
+            this.onCollapse = this.getAttribute('onCollapse', true);
+            this.renderUI();
         }
-        set title(value) {
-            this._data.title = value || '';
+        render() {
+            return (this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, background: { color: '#26324b' }, onClick: this._onCollapse },
+                this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
+                this.$render("i-label", { id: "lbName", font: { size: '0.75rem', bold: true } }),
+                this.$render("i-icon", { id: "iconTooltip", name: "exclamation-circle", width: 14, height: 14, opacity: 0.8 })));
+        }
+    };
+    DesignerToolHeader = __decorate([
+        (0, components_16.customElements)('designer-tool-header')
+    ], DesignerToolHeader);
+    exports.default = DesignerToolHeader;
+});
+define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_17, index_css_12) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_17.Styles.Theme.ThemeVars;
+    let DesignerToolContent = class DesignerToolContent extends components_17.Module {
+        constructor(parent, options) {
+            super(parent, options);
+            this._data = {};
+            this.onFontChanged = this.onFontChanged.bind(this);
+            this.onCaptionChanged = this.onCaptionChanged.bind(this);
         }
         setData(value) {
             this._data = value;
             this.renderUI();
         }
-        renderUI() {
-            this.lblTitle.caption = this.title;
-            this.pnlList.clearInnerHTML();
-            const length = this.items.length;
-            for (let i = 0; i < length; i++) {
-                const item = this.items[i];
-                const elm = this.$render("i-hstack", { gap: 1, verticalAlignment: "center", horizontalAlignment: "center", height: '100%', cursor: "pointer", stack: { grow: '1', shrink: '1' }, class: `${index_css_11.customIconLayoutStyled} ${i === 0 ? index_css_11.borderRadiusLeft : i === length - 1 ? index_css_11.borderRadiusRight : ''} ${item.isActive ? index_css_11.customIconLayoutActiveStyled : ''}`, tooltip: { content: item.tooltip || '', placement: item.placement }, onClick: (target) => this.onActiveChanged(target, item.type, item.value) });
-                if (item.tooltip) {
-                    elm.tooltip.content = item.tooltip;
-                    if (item.placement)
-                        elm.tooltip.placement = item.placement;
-                }
-                if (item.caption) {
-                    const lb = this.$render("i-label", { caption: item.caption, stack: { grow: '1', shrink: '1' }, class: `text-center`, padding: { top: '0.25rem', bottom: '0.25rem' } });
-                    elm.append(lb);
-                }
-                if (item.icon) {
-                    let img;
-                    if (item.icon?.image) {
-                        img = new components_16.Image(elm, {
-                            width: '1rem',
-                            height: '1rem',
-                            url: item.icon.image.url,
-                            display: 'flex'
-                        });
-                        if (item.rotate)
-                            img.rotate = item.rotate;
-                    }
-                    else {
-                        img = new components_16.Icon(elm, {
-                            width: '1rem',
-                            height: '1rem',
-                            ...item.icon
-                        });
-                    }
-                    elm.append(img);
-                }
-                if (item.isActive)
-                    this.currentTarget = elm;
-                this.pnlList.appendChild(elm);
-            }
+        onCollapse(isShown) {
+            this.vStackContent.visible = isShown;
         }
-        onActiveChanged(target, type, value) {
-            if (this.currentTarget)
-                this.currentTarget.classList.remove(index_css_11.customIconLayoutActiveStyled);
-            target.classList.add(index_css_11.customIconLayoutActiveStyled);
-            this.currentTarget = target;
+        renderUI() {
+            const { caption = '', font = {} } = this._data;
+            this.inputCaption.value = caption;
+            this.inputFontColor.value = font.color;
+            this.inputFontSize.value = font.size;
+        }
+        onFontChanged(target, prop) {
+            if (!this._data.font)
+                this._data.font = {};
+            this._data.font[prop] = target.value;
+            if (prop === 'size')
+                this._data.font[prop] = `${this._data.font[prop]}px`;
             if (this.onChanged)
-                this.onChanged(type, value);
+                this.onChanged('font', this._data.font);
+        }
+        onCaptionChanged(target) {
+            this._data.caption = target.value;
+            if (this.onChanged)
+                this.onChanged('caption', this._data.caption);
         }
         init() {
             super.init();
-            const items = this.getAttribute('items', true, []);
-            const title = this.getAttribute('title', true, '');
-            this.setData({ items, title });
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
         }
         render() {
-            return (this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
-                this.$render("i-label", { id: "lblTitle", caption: "", font: { size: '0.75rem' } }),
-                this.$render("i-hstack", { id: "pnlList", gap: `1px`, verticalAlignment: "center", height: '1.5rem' })));
+            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" } },
+                this.$render("designer-tool-header", { name: "Caption", tooltipText: "Set caption for the element.", onCollapse: this.onCollapse }),
+                this.$render("i-vstack", { id: "vStackContent", padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
+                    this.$render("i-vstack", { gap: '0.5rem' },
+                        this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
+                            this.$render("i-label", { caption: 'Caption', font: { size: '0.75rem' } }),
+                            this.$render("i-hstack", { verticalAlignment: "center", border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
+                                this.$render("i-input", { id: "inputCaption", placeholder: "Enter caption...", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: '1.5rem', border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_12.bgInputTransparent}`, onChanged: this.onCaptionChanged }))),
+                        this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
+                            this.$render("i-label", { caption: "Font color", font: { size: '0.75rem' } }),
+                            this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
+                                this.$render("i-color", { id: "inputFontColor", onChanged: (target) => this.onFontChanged(target, 'color'), class: index_css_12.customColorStyled }))),
+                        this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
+                            this.$render("i-label", { caption: 'Font size', font: { size: '0.75rem' } }),
+                            this.$render("i-hstack", { verticalAlignment: "center", border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
+                                this.$render("i-input", { id: "inputFontSize", inputType: 'number', placeholder: "Enter font size...", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: '1.5rem', border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_12.bgInputTransparent}`, onChanged: (target) => this.onFontChanged(target, 'size') }),
+                                this.$render("i-label", { caption: "px", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
+                                        left: {
+                                            width: 1,
+                                            style: 'solid',
+                                            color: Theme.action.focus
+                                        }
+                                    }, class: `text-center ${index_css_12.unitStyled}` })))))));
         }
     };
-    DesignerSelector = __decorate([
-        (0, components_16.customElements)('designer-selector')
-    ], DesignerSelector);
-    exports.default = DesignerSelector;
+    DesignerToolContent = __decorate([
+        (0, components_17.customElements)('designer-tool-content')
+    ], DesignerToolContent);
+    exports.default = DesignerToolContent;
 });
-define("@scom/scom-designer/tools/index.ts", ["require", "exports", "@scom/scom-designer/tools/stylesheet.tsx", "@scom/scom-designer/tools/layout.tsx", "@scom/scom-designer/tools/background.tsx", "@scom/scom-designer/tools/size.tsx", "@scom/scom-designer/tools/margins-padding.tsx", "@scom/scom-designer/tools/position.tsx", "@scom/scom-designer/tools/borders.tsx", "@scom/scom-designer/tools/effects.tsx", "@scom/scom-designer/tools/header.tsx", "@scom/scom-designer/tools/selector.tsx", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, stylesheet_1, layout_1, background_1, size_1, margins_padding_1, position_1, borders_1, effects_1, header_1, selector_1, index_css_12) {
+define("@scom/scom-designer/tools/index.ts", ["require", "exports", "@scom/scom-designer/tools/stylesheet.tsx", "@scom/scom-designer/tools/layout.tsx", "@scom/scom-designer/tools/background.tsx", "@scom/scom-designer/tools/size.tsx", "@scom/scom-designer/tools/margins-padding.tsx", "@scom/scom-designer/tools/position.tsx", "@scom/scom-designer/tools/borders.tsx", "@scom/scom-designer/tools/effects.tsx", "@scom/scom-designer/tools/header.tsx", "@scom/scom-designer/tools/selector.tsx", "@scom/scom-designer/tools/content.tsx", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, stylesheet_1, layout_1, background_1, size_1, margins_padding_1, position_1, borders_1, effects_1, header_1, selector_1, content_1, index_css_13) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.DesignerSelector = exports.DesignerToolHeader = exports.DesignerToolEffects = exports.DesignerToolBorders = exports.DesignerToolPosition = exports.DesignerToolMarginsAndPadding = exports.DesignerToolSize = exports.DesignerToolBackground = exports.DesignerToolLayout = exports.DesignerToolStylesheet = void 0;
+    exports.DesignerToolContent = exports.DesignerSelector = exports.DesignerToolHeader = exports.DesignerToolEffects = exports.DesignerToolBorders = exports.DesignerToolPosition = exports.DesignerToolMarginsAndPadding = exports.DesignerToolSize = exports.DesignerToolBackground = exports.DesignerToolLayout = exports.DesignerToolStylesheet = void 0;
     exports.DesignerToolStylesheet = stylesheet_1.default;
     exports.DesignerToolLayout = layout_1.default;
     exports.DesignerToolBackground = background_1.default;
@@ -2213,13 +2422,14 @@ define("@scom/scom-designer/tools/index.ts", ["require", "exports", "@scom/scom-
     exports.DesignerToolEffects = effects_1.default;
     exports.DesignerToolHeader = header_1.default;
     exports.DesignerSelector = selector_1.default;
-    __exportStar(index_css_12, exports);
+    exports.DesignerToolContent = content_1.default;
+    __exportStar(index_css_13, exports);
 });
-define("@scom/scom-designer/settings/basic.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_17, index_1) {
+define("@scom/scom-designer/settings/basic.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_18, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_17.Styles.Theme.ThemeVars;
-    let DesignerSettingsBasic = class DesignerSettingsBasic extends components_17.Module {
+    const Theme = components_18.Styles.Theme.ThemeVars;
+    let DesignerSettingsBasic = class DesignerSettingsBasic extends components_18.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -2255,15 +2465,15 @@ define("@scom/scom-designer/settings/basic.tsx", ["require", "exports", "@ijstec
         }
     };
     DesignerSettingsBasic = __decorate([
-        (0, components_17.customElements)('designer-settings-basic')
+        (0, components_18.customElements)('designer-settings-basic')
     ], DesignerSettingsBasic);
     exports.default = DesignerSettingsBasic;
 });
-define("@scom/scom-designer/settings/advanced.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_18) {
+define("@scom/scom-designer/settings/advanced.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_19) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_18.Styles.Theme.ThemeVars;
-    let DesignerSettingsAdvanced = class DesignerSettingsAdvanced extends components_18.Module {
+    const Theme = components_19.Styles.Theme.ThemeVars;
+    let DesignerSettingsAdvanced = class DesignerSettingsAdvanced extends components_19.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -2293,7 +2503,7 @@ define("@scom/scom-designer/settings/advanced.tsx", ["require", "exports", "@ijs
         }
     };
     DesignerSettingsAdvanced = __decorate([
-        (0, components_18.customElements)('designer-settings-advanced')
+        (0, components_19.customElements)('designer-settings-advanced')
     ], DesignerSettingsAdvanced);
     exports.default = DesignerSettingsAdvanced;
 });
@@ -2304,11 +2514,11 @@ define("@scom/scom-designer/settings/index.ts", ["require", "exports", "@scom/sc
     exports.DesignerSettingsBasic = basic_1.default;
     exports.DesignerSettingsAdvanced = advanced_1.default;
 });
-define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_19) {
+define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_20) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_19.Styles.Theme.ThemeVars;
-    let DesignerTrigger = class DesignerTrigger extends components_19.Module {
+    const Theme = components_20.Styles.Theme.ThemeVars;
+    let DesignerTrigger = class DesignerTrigger extends components_20.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -2335,7 +2545,7 @@ define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijst
         }
     };
     DesignerTrigger = __decorate([
-        (0, components_19.customElements)('designer-trigger')
+        (0, components_20.customElements)('designer-trigger')
     ], DesignerTrigger);
     exports.default = DesignerTrigger;
 });
@@ -2345,10 +2555,93 @@ define("@scom/scom-designer/triggers/index.ts", ["require", "exports", "@scom/sc
     exports.DesignerTrigger = void 0;
     exports.DesignerTrigger = trigger_1.default;
 });
-define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/assets.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/settings/index.ts", "@scom/scom-designer/triggers/index.ts"], function (require, exports, components_20, assets_4, index_css_13, index_2) {
+define("@scom/scom-designer/setting-data/params.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_21, tools_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_20.Styles.Theme.ThemeVars;
+    const Theme = components_21.Styles.Theme.ThemeVars;
+    let DesignerDataParams = class DesignerDataParams extends components_21.Module {
+        constructor(parent, options) {
+            super(parent, options);
+        }
+        onCollapse(isShown) {
+            this.vStackContent.visible = isShown;
+        }
+        renderUI() {
+        }
+        init() {
+            super.init();
+            this.renderUI();
+        }
+        render() {
+            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
+                this.$render("designer-tool-header", { name: "Navigation Params", tooltipText: "Pass data between screens by creating Navigation parameters that your screen accepts when navigated to. Test values will be used when no value is passed in, or when viewing the screen in the Web view.", onCollapse: this.onCollapse }),
+                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                    this.$render("i-label", { caption: "This screen does not have any Navigation Parameters. If you'd like to pass data to this screen, create a new parameter below.", font: { size: '0.75rem' }, opacity: 0.8 }),
+                    this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
+                    this.$render("i-vstack", { gap: 8 },
+                        this.$render("i-label", { caption: "CREATE NAVIGATION PARAM", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
+                        this.$render("i-grid-layout", { gap: { column: 8 }, templateColumns: ['auto', '16px'], verticalAlignment: "center" },
+                            this.$render("i-input", { placeholder: "Parameter Name", width: "100%", height: 24, border: {
+                                    radius: 8,
+                                    width: 0
+                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, class: tools_1.textInputRight }),
+                            this.$render("i-checkbox", { width: 16, height: 16, border: { radius: 8 } }))))));
+        }
+    };
+    DesignerDataParams = __decorate([
+        (0, components_21.customElements)('designer-data-params')
+    ], DesignerDataParams);
+    exports.default = DesignerDataParams;
+});
+define("@scom/scom-designer/setting-data/linking.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_22) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_22.Styles.Theme.ThemeVars;
+    let DesignerDataLinking = class DesignerDataLinking extends components_22.Module {
+        constructor(parent, options) {
+            super(parent, options);
+        }
+        onCollapse(isShown) {
+            this.vStackContent.visible = isShown;
+        }
+        renderUI() {
+        }
+        init() {
+            super.init();
+            this.renderUI();
+        }
+        render() {
+            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
+                this.$render("designer-tool-header", { name: "Navigation Params", tooltipText: "Pass data between screens by creating Navigation parameters that your screen accepts when navigated to. Test values will be used when no value is passed in, or when viewing the screen in the Web view.", onCollapse: this.onCollapse }),
+                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                    this.$render("i-vstack", { gap: 8 },
+                        this.$render("i-label", { caption: "Deep Linking allows you to open a specific screen from a website or other app.", font: { size: '0.75rem' }, opacity: 0.8 }),
+                        this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between" },
+                            this.$render("i-label", { caption: "Create Deep Link For This Screen", font: { size: '0.75rem' } }),
+                            this.$render("i-switch", null))),
+                    this.$render("i-panel", { width: "100%", height: 1, background: { color: Theme.divider } }),
+                    this.$render("i-vstack", { gap: 8 },
+                        this.$render("i-label", { caption: "DEEP LINKING PREVIEW", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
+                        this.$render("i-label", { caption: "In order to access this screen from a different app, type the following URL into a web browser. This will only work if you're using the Draftbit app or if you export your project", font: { size: '0.75rem' }, opacity: 0.8 }),
+                        this.$render("i-label", { caption: "Enable Deep Linking above to see your URL preview", font: { size: '0.75rem', color: Theme.colors.primary.main } })))));
+        }
+    };
+    DesignerDataLinking = __decorate([
+        (0, components_22.customElements)('designer-data-linking')
+    ], DesignerDataLinking);
+    exports.default = DesignerDataLinking;
+});
+define("@scom/scom-designer/setting-data/index.tsx", ["require", "exports", "@scom/scom-designer/setting-data/params.tsx", "@scom/scom-designer/setting-data/linking.tsx"], function (require, exports, params_1, linking_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DesignerDataLinking = exports.DesignerDataParams = void 0;
+    exports.DesignerDataParams = params_1.default;
+    exports.DesignerDataLinking = linking_1.default;
+});
+define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/assets.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/settings/index.ts", "@scom/scom-designer/triggers/index.ts", "@scom/scom-designer/setting-data/index.tsx"], function (require, exports, components_23, assets_3, index_css_14, index_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_23.Styles.Theme.ThemeVars;
     const previews = [
         {
             caption: 'Draft View',
@@ -2364,12 +2657,12 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         },
         {
             caption: 'iOS Preview',
-            url: assets_4.default.fullPath('img/designer/iOS.svg'),
+            url: assets_3.default.fullPath('img/designer/iOS.svg'),
             value: 2 /* PREVIEWS.IOS */
         },
         {
             caption: 'Android Preview',
-            url: assets_4.default.fullPath('img/designer/Android.svg'),
+            url: assets_3.default.fullPath('img/designer/Android.svg'),
             value: 3 /* PREVIEWS.ANDROID */,
             classes: index_2.borderRadiusRight
         }
@@ -2404,7 +2697,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             classes: index_2.borderRadiusRight
         }
     ];
-    let DesignerProperties = class DesignerProperties extends components_20.Module {
+    let DesignerProperties = class DesignerProperties extends components_23.Module {
         constructor(parent, options) {
             super(parent, options);
             this.onPropChanged = this.onPropChanged.bind(this);
@@ -2424,55 +2717,104 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         renderUI() {
             this.updateInfo();
             this.updateProps();
+            const arr = ['i-label', 'i-button'];
+            this.designerContent.visible = this.component?.name && arr.includes(this.component.name);
         }
         updateInfo() {
             if (!this.hStackInfo)
                 return;
-            const { name, image, iconName, category } = this.component;
+            const { name, image, icon, category } = this.component;
             this.hStackInfo.clearInnerHTML();
             this.hStackInfo.appendChild(this.$render("i-hstack", { gap: 8, verticalAlignment: "center", width: "100%" },
-                iconName ? this.$render("i-icon", { name: iconName, width: 24, height: 24 }) : this.$render("i-image", { url: image, width: 24, height: 24 }),
+                icon ? this.$render("i-icon", { name: icon, width: '1.5rem', height: '1.5rem' }) : image ? this.$render("i-image", { url: image, width: '1.5rem', height: '1.5rem' }) : [],
                 this.$render("i-label", { caption: name, font: { size: '1rem', bold: true } }),
                 this.$render("i-label", { caption: category || '', opacity: 0.6, font: { size: '0.625rem' }, margin: { left: 'auto' }, display: "flex" })));
         }
         updateProps() {
-            const { margin, padding, background, width, height, opacity, position, zIndex, border, top, right, bottom, left, overflow } = this.component.control;
+            const control = this.component.control;
+            const { margin, padding, background, width, height, opacity, position, zIndex, border, top, right, bottom, left, overflow, display, stack, font } = control;
+            const computedStyle = window.getComputedStyle(control);
             this.designerBackground.setData({ color: background?.color || '' });
-            this.designerSize.setData({ width: width || 0, height: height || 0 });
-            this.designerEffects.setData({ opacity });
-            this.designerSpacing.setData({
-                ...(margin ? { margin: { top: margin.top, bottom: margin.bottom, left: margin.left, right: margin.right } } : {}),
-                ...(padding ? { padding: { top: padding.top, bottom: padding.bottom, left: padding.left, right: padding.right } } : {}),
+            this.designerSize.setData({
+                width: computedStyle?.width || width || 0,
+                height: computedStyle?.height || height || 0
             });
-            let overflowValue = (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto';
-            this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow: overflowValue });
+            this.designerEffects.setData({ opacity });
+            let marginObj = {};
+            let paddingObj = {};
+            if (margin) {
+                marginObj = {
+                    top: computedStyle?.marginTop || margin.top || 0,
+                    bottom: computedStyle?.marginBottom || margin.bottom || 0,
+                    left: computedStyle?.marginLeft || margin.left || 0,
+                    right: computedStyle?.marginRight || margin.right || 0
+                };
+            }
+            if (padding) {
+                paddingObj = {
+                    top: computedStyle?.paddingTop || padding.top || 0,
+                    bottom: computedStyle?.paddingBottom || padding.bottom || 0,
+                    left: computedStyle?.paddingLeft || padding.left || 0,
+                    right: computedStyle?.paddingRight || padding.right || 0
+                };
+            }
+            this.designerSpacing.setData({
+                margin: marginObj,
+                padding: paddingObj
+            });
+            this.designerPosition.setData({
+                position,
+                zIndex,
+                top: computedStyle?.top || top || 0,
+                left: computedStyle?.left || left || 0,
+                right: computedStyle?.right || right || 0,
+                bottom: computedStyle?.bottom || bottom || 0,
+                overflow: (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto'
+            });
+            let borderObj = {};
+            if (border) {
+                const topObj = border.top || {};
+                topObj.width = computedStyle?.borderTopWidth || topObj.width || undefined;
+                const bottomObj = border.bottom || {};
+                bottomObj.width = computedStyle?.borderBottomWidth || bottomObj.width || undefined;
+                const leftObj = border.left || {};
+                leftObj.width = computedStyle?.borderLeftWidth || leftObj.width || undefined;
+                const rightObj = border.right || {};
+                rightObj.width = computedStyle?.borderRightWidth || rightObj.width || undefined;
+                borderObj = {
+                    top: topObj,
+                    right: rightObj,
+                    bottom: bottomObj,
+                    left: leftObj,
+                    radius: computedStyle?.borderRadius || border.radius,
+                    width: computedStyle?.borderWidth || border.width,
+                    style: border.style,
+                    color: border.color
+                };
+            }
             this.designerBorders.setData({
-                ...(border ? {
-                    border: {
-                        top: border.top,
-                        right: border.right,
-                        bottom: border.bottom,
-                        left: border.left,
-                        radius: border.radius,
-                        width: border.width,
-                        style: border.style,
-                        color: border.color
-                    }
-                } : {})
+                border: borderObj
+            });
+            this.designerLayout.setData({
+                name: this.component?.name,
+                display: display || control?.style.display,
+                stack,
+                direction: control.direction
+            });
+            this.designerContent.setData({
+                caption: control.caption,
+                font
             });
         }
         onPropChanged(prop, value) {
             if (!this.component)
                 return;
-            if (prop === 'background') {
-                this.component.control._setDesignPropValue(prop, { color: value });
-            }
-            else {
-                this.component.control._setDesignPropValue(prop, value);
-            }
+            if (this.onChanged)
+                this.onChanged(prop, value);
         }
         init() {
             super.init();
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
             const component = this.getAttribute('component', true);
             if (component)
                 this.component = component;
@@ -2482,48 +2824,51 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' } },
                     this.$render("i-vstack", { gap: '0.5rem' },
                         this.$render("i-label", { caption: "BREAKPOINT", letterSpacing: "0.1rem", font: { size: '0.675rem' } }),
-                        this.$render("i-hstack", { gap: 1, verticalAlignment: "center", class: `${index_2.borderRadiusLeft} ${index_2.borderRadiusRight}` }, breakpoints.map(v => this.$render("i-icon", { name: v.icon, width: '1.5rem', height: '1.5rem', tooltip: { content: v.caption }, class: `${index_css_13.customIconTabStyled} ${v.classes || ''} ${v.isActive ? index_css_13.customIconTabActiveStyled : ''}`, padding: { top: 6, bottom: 6, left: 6, right: 6 } })))),
+                        this.$render("i-hstack", { gap: 1, verticalAlignment: "center", class: `${index_2.borderRadiusLeft} ${index_2.borderRadiusRight}` }, breakpoints.map(v => this.$render("i-icon", { name: v.icon, width: '1.5rem', height: '1.5rem', tooltip: { content: v.caption }, class: `${index_css_14.customIconTabStyled} ${v.classes || ''} ${v.isActive ? index_css_14.customIconTabActiveStyled : ''}`, padding: { top: 6, bottom: 6, left: 6, right: 6 } })))),
                     this.$render("i-vstack", { gap: '0.5rem' },
                         this.$render("i-label", { caption: "PREVIEW", letterSpacing: "0.1rem", font: { size: '0.675rem' } }),
-                        this.$render("i-hstack", { gap: 1, verticalAlignment: "center", background: { color: Theme.action.hoverBackground }, class: `${index_2.borderRadiusLeft} ${index_2.borderRadiusRight}` }, previews.map(v => v.icon ? this.$render("i-icon", { name: v.icon, width: '1.5rem', height: '1.5rem', tooltip: { content: v.caption }, class: `${index_css_13.customIconTabStyled} ${v.classes || ''} ${v.isActive ? index_css_13.customIconTabActiveStyled : ''}`, padding: { top: 6, bottom: 6, left: 6, right: 6 } }) : this.$render("i-image", { url: v.url, width: '1.5rem', height: '1.5rem', display: "flex", tooltip: { content: v.caption }, class: `${index_css_13.customIconTabStyled} ${v.classes || ''} ${v.isActive ? index_css_13.customIconTabActiveStyled : ''}`, padding: { top: 6, bottom: 6, left: 6, right: 6 } })))),
+                        this.$render("i-hstack", { gap: 1, verticalAlignment: "center", background: { color: Theme.action.hoverBackground }, class: `${index_2.borderRadiusLeft} ${index_2.borderRadiusRight}` }, previews.map(v => v.icon ? this.$render("i-icon", { name: v.icon, width: '1.5rem', height: '1.5rem', tooltip: { content: v.caption }, class: `${index_css_14.customIconTabStyled} ${v.classes || ''} ${v.isActive ? index_css_14.customIconTabActiveStyled : ''}`, padding: { top: 6, bottom: 6, left: 6, right: 6 } }) : (v.url ? this.$render("i-image", { url: v.url, width: '1.5rem', height: '1.5rem', display: "flex", tooltip: { content: v.caption }, class: `${index_css_14.customIconTabStyled} ${v.classes || ''} ${v.isActive ? index_css_14.customIconTabActiveStyled : ''}`, padding: { top: 6, bottom: 6, left: 6, right: 6 } }) : [])))),
                     this.$render("i-vstack", { gap: '0.5rem' },
                         this.$render("i-hstack", { gap: 4, verticalAlignment: "center" },
                             this.$render("i-label", { caption: "ENV", letterSpacing: "0.1rem", font: { size: '0.675rem' } }),
                             this.$render("i-icon", { name: "exclamation-circle", width: 12, height: 12, tooltip: { content: 'You can configure some values in your app to change based on which environment the app is running in. If unspecified, Development (Dev) values will be used.' } })),
                         this.$render("i-label", { caption: "Dev", font: { size: '0.675rem' }, width: "5rem", background: { color: Theme.action.hoverBackground }, class: `${index_2.borderRadiusLeft} ${index_2.borderRadiusRight}`, padding: { top: '0.25rem', bottom: '0.25rem', left: '0.5rem', right: '0.5rem' } }))),
                 this.$render("i-hstack", { id: "hStackInfo", width: "100%", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' } }),
-                this.$render("i-tabs", { mode: "horizontal", activeTabIndex: 0, class: index_css_13.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
+                this.$render("i-tabs", { mode: "horizontal", activeTabIndex: 0, class: index_css_14.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
                     this.$render("i-tab", { icon: { name: 'paint-brush', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
-                            this.$render("designer-tool-stylesheet", { id: "designerStylesheet", display: "block" }),
-                            this.$render("designer-tool-layout", { id: 'designerLayout', display: "block" }),
+                            this.$render("designer-tool-stylesheet", { id: "designerStylesheet", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-layout", { id: 'designerLayout', display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-background", { id: "designerBackground", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-size", { id: "designerSize", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-margins-padding", { id: "designerSpacing", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-position", { id: "designerPosition", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-borders", { id: "designerBorders", display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-effects", { id: "designerEffects", display: "block", onChanged: this.onPropChanged }))),
+                            this.$render("designer-tool-effects", { id: "designerEffects", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-content", { id: "designerContent", visible: false, display: "block", onChanged: this.onPropChanged }))),
                     this.$render("i-tab", { icon: { name: 'sliders-h', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
                             this.$render("designer-settings-basic", { display: "block" }),
                             this.$render("designer-settings-advanced", { display: "block" }))),
                     this.$render("i-tab", { icon: { name: 'database', width: '1.5rem', height: '1.5rem' } },
-                        this.$render("i-label", { caption: "Database" })),
+                        this.$render("i-vstack", { gap: 1, width: "100%" },
+                            this.$render("designer-data-params", { display: "block" }),
+                            this.$render("designer-data-linking", { display: "block" }))),
                     this.$render("i-tab", { icon: { name: 'magic', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
                             this.$render("designer-trigger", { display: "block" }))))));
         }
     };
     DesignerProperties = __decorate([
-        (0, components_20.customElements)('designer-properties')
+        (0, components_23.customElements)('designer-properties')
     ], DesignerProperties);
     exports.default = DesignerProperties;
 });
-define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_21, index_css_14) {
+define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_24, index_css_15) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_21.Styles.Theme.ThemeVars;
-    let DesignerScreens = class DesignerScreens extends components_21.Module {
+    const Theme = components_24.Styles.Theme.ThemeVars;
+    let DesignerScreens = class DesignerScreens extends components_24.Module {
         constructor() {
             super(...arguments);
             this.listScreen = [];
@@ -2558,7 +2903,7 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             const screenElm = this.vStackScreens.querySelector(`#screen-${id}`);
             this.vStackScreens.removeChild(screenElm);
             this.mdActions.visible = false;
-            // this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
+            this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
             this.lbDeletedScreens.caption = `Deleted Screens (${this.listScreen.filter(v => v.isDeleted).length})`;
             const onRestore = () => {
                 this.listScreen[idx].isDeleted = false;
@@ -2566,8 +2911,8 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                 this.vStackDeletedScreens.removeChild(pnl);
                 this.lbDeletedScreens.caption = `Deleted Screens (${this.listScreen.filter(v => v.isDeleted).length})`;
             };
-            const pnl = new components_21.Panel();
-            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_14.hoverFullOpacity} ${index_css_14.rowItemHoverStyled}` },
+            const pnl = new components_24.Panel();
+            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_15.hoverFullOpacity} ${index_css_15.rowItemHoverStyled}` },
                 this.$render("i-label", { caption: `${deletedScreen.name} (Deleted)`, font: { size: '0.75rem' } }),
                 this.$render("i-icon", { name: "trash-restore", width: 14, height: 14, opacity: 0, cursor: "pointer", tooltip: { content: 'Restore Deleted Screen' }, onClick: onRestore })));
             this.vStackDeletedScreens.appendChild(pnl);
@@ -2599,7 +2944,7 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
         }
         onAddScreen(name, elements, _id) {
             const _name = this.getNewName(name);
-            const id = _id || components_21.IdUtils.generateUUID();
+            const id = _id || components_24.IdUtils.generateUUID();
             if (!_id) {
                 const obj = {
                     id,
@@ -2612,8 +2957,8 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                 const index = this.listScreen.findIndex(v => v.id === _id);
                 this.listScreen[index].name = _name;
             }
-            const lb = new components_21.Label(undefined, { caption: _name, font: { size: '0.75rem' } });
-            const input = new components_21.Input(undefined, { width: '100%', value: _name, visible: false, font: { size: '0.75rem' }, border: 'none' });
+            const lb = new components_24.Label(undefined, { caption: _name, font: { size: '0.75rem' } });
+            const input = new components_24.Input(undefined, { width: '100%', value: _name, visible: false, font: { size: '0.75rem' }, border: 'none' });
             input.onBlur = () => {
                 if (input.value) {
                     lb.caption = this.getNewName(input.value);
@@ -2643,12 +2988,12 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             };
             const onScreenChanged = () => {
                 for (const elm of this.vStackScreens.children) {
-                    elm.classList.remove(index_css_14.rowItemActiveStyled);
+                    elm.classList.remove(index_css_15.rowItemActiveStyled);
                 }
-                pnl.classList.add(index_css_14.rowItemActiveStyled);
+                pnl.classList.add(index_css_15.rowItemActiveStyled);
                 this.onScreenChanged(this.listScreen.find(screen => screen.id === id));
             };
-            const hStackActions = new components_21.HStack(undefined, {
+            const hStackActions = new components_24.HStack(undefined, {
                 gap: 8,
                 position: 'relative',
                 verticalAlignment: 'center',
@@ -2657,15 +3002,15 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             });
             hStackActions.appendChild(this.$render("i-icon", { name: "ellipsis-h", width: 14, height: 14, opacity: 0, cursor: "pointer", onClick: onShowActions }));
             hStackActions.appendChild(this.$render("i-icon", { name: "eye", width: 14, height: 14, opacity: 0, cursor: "pointer", onClick: (icon) => this.onHideScreen(icon, id) }));
-            const pnl = new components_21.Panel();
+            const pnl = new components_24.Panel();
             pnl.id = `screen-${id}`;
             pnl.onClick = () => onScreenChanged();
-            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_14.hoverFullOpacity} ${index_css_14.rowItemHoverStyled}`, onDblClick: onEditName },
+            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_15.hoverFullOpacity} ${index_css_15.rowItemHoverStyled}`, onDblClick: onEditName },
                 lb,
                 input,
                 hStackActions));
             this.vStackScreens.appendChild(pnl);
-            // this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
+            this.lbScreens.caption = `Screens (${this.listScreen.filter(v => !v.isDeleted).length})`;
         }
         onShowActions(top, left) {
             const mdWrapper = this.mdActions.querySelector('.modal-wrapper');
@@ -2674,16 +3019,16 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             this.mdActions.visible = true;
         }
         async initModalActions() {
-            this.mdActions = await components_21.Modal.create({
+            this.mdActions = await components_24.Modal.create({
                 visible: false,
                 showBackdrop: false,
                 minWidth: '7rem',
                 height: 'auto',
                 popupPlacement: 'bottomRight'
             });
-            const itemActions = new components_21.VStack(undefined, { gap: 8, border: { radius: 8 } });
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'copy', width: 12, height: 12 }, caption: "Duplicate", class: index_css_14.iconButtonStyled, onClick: () => this.onDuplicateScreen(this.selectedId) }));
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'trash', width: 12, height: 12 }, caption: "Delete", class: index_css_14.iconButtonStyled, onClick: () => this.onShowModalDelete(this.selectedId) }));
+            const itemActions = new components_24.VStack(undefined, { gap: 8, border: { radius: 8 } });
+            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'copy', width: 12, height: 12 }, caption: "Duplicate", class: index_css_15.iconButtonStyled, onClick: () => this.onDuplicateScreen(this.selectedId) }));
+            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'trash', width: 12, height: 12 }, caption: "Delete", class: index_css_15.iconButtonStyled, onClick: () => this.onShowModalDelete(this.selectedId) }));
             this.mdActions.item = itemActions;
             document.body.appendChild(this.mdActions);
         }
@@ -2707,20 +3052,20 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                             this.$render("i-label", { id: "lbScreens", caption: "Components", font: { bold: true, size: '0.75rem' } }),
                             this.$render("i-label", { caption: "Last Updated", font: { bold: true, size: '0.75rem' }, opacity: 0.8 })),
                         this.$render("i-hstack", { verticalAlignment: "center", margin: { left: 'auto' } },
-                            this.$render("i-icon", { name: "history", class: index_css_14.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
+                            this.$render("i-icon", { name: "history", class: index_css_15.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
                                     left: { style: 'solid', color: Theme.divider, width: 1 },
                                     right: { style: 'solid', color: Theme.divider, width: 1 }
                                 }, tooltip: {
                                     content: 'View Deleted Screens'
                                 }, onClick: () => this.onShowDeletedScreens(true) }),
-                            this.$render("i-icon", { name: "plus-circle", class: index_css_14.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, tooltip: {
+                            this.$render("i-icon", { name: "plus-circle", class: index_css_15.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, tooltip: {
                                     content: 'Add Screen'
                                 }, onClick: () => this.onAddScreen('Blank') }))),
                     this.$render("i-vstack", { id: "vStackScreens", gap: 2, overflow: "auto", maxHeight: "calc(100% - 32px)" })),
                 this.$render("i-vstack", { id: "wrapperDeletedScreens", visible: false },
                     this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: '#26324b' } },
                         this.$render("i-label", { id: "lbDeletedScreens", caption: "Deleted Screens (0)", font: { bold: true, size: '0.75rem' } }),
-                        this.$render("i-icon", { name: "history", margin: { left: 'auto' }, class: index_css_14.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
+                        this.$render("i-icon", { name: "history", margin: { left: 'auto' }, class: index_css_15.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
                                 left: { style: 'solid', color: Theme.divider, width: 1 },
                             }, tooltip: {
                                 content: 'View Live Screens'
@@ -2730,15 +3075,15 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
         }
     };
     DesignerScreens = __decorate([
-        (0, components_21.customElements)('designer-screens')
+        (0, components_24.customElements)('designer-screens')
     ], DesignerScreens);
     exports.default = DesignerScreens;
 });
-define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_22, index_css_15) {
+define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_25, index_css_16) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_22.Styles.Theme.ThemeVars;
-    let DesignerPickerBlocks = class DesignerPickerBlocks extends components_22.Module {
+    const Theme = components_25.Styles.Theme.ThemeVars;
+    let DesignerPickerBlocks = class DesignerPickerBlocks extends components_25.Module {
         constructor(parent, options) {
             super(parent, options);
             this.isShown = true;
@@ -2751,13 +3096,13 @@ define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports",
             const nodeItems = [];
             for (const item of this.items) {
                 const { id, caption, image, path } = item;
-                const block = new components_22.Panel(undefined, { width: '100%', height: 'auto', background: { color: Theme.background.main }, padding: { top: 6, bottom: 6, left: 8, right: 8 } });
+                const block = new components_25.Panel(undefined, { width: '100%', height: 'auto', background: { color: Theme.background.main }, padding: { top: 6, bottom: 6, left: 8, right: 8 } });
                 block.appendChild(this.$render("i-hstack", { gap: 8, width: "100%", height: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
                     this.$render("i-hstack", { gap: 8, verticalAlignment: "center", wrap: "wrap" },
-                        this.$render("i-image", { url: image, width: 24, height: 24 }),
+                        image ? this.$render("i-image", { url: image, width: 24, height: 24 }) : [],
                         this.$render("i-label", { caption: caption, font: { size: '0.75rem' } })),
                     this.$render("i-icon", { name: "trash", width: 16, height: 16, cursor: "pointer", tooltip: { content: 'Delete Custom Block' }, onClick: () => this.onDeleteCustomBlock(id) })));
-                block.classList.add(index_css_15.blockItemHoverStyled);
+                block.classList.add(index_css_16.blockItemHoverStyled);
                 nodeItems.push(block);
             }
             this.vStackItems.clearInnerHTML();
@@ -2783,15 +3128,15 @@ define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports",
         }
     };
     DesignerPickerBlocks = __decorate([
-        (0, components_22.customElements)('designer-picker-blocks')
+        (0, components_25.customElements)('designer-picker-blocks')
     ], DesignerPickerBlocks);
     exports.default = DesignerPickerBlocks;
 });
-define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_23, index_css_16) {
+define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_26, index_css_17) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_23.Styles.Theme.ThemeVars;
-    let DesignerPickerComponents = class DesignerPickerComponents extends components_23.Module {
+    const Theme = components_26.Styles.Theme.ThemeVars;
+    let DesignerPickerComponents = class DesignerPickerComponents extends components_26.Module {
         constructor(parent, options) {
             super(parent, options);
             this.isShown = true;
@@ -2803,12 +3148,12 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             this.iconTooltip.tooltip.content = this.tooltipText || '';
             const nodeItems = [];
             for (const item of this.items) {
-                const { name, path, image, category } = item;
-                const block = new components_23.Panel(undefined, { width: 'calc(50% - 0.5px)', height: 80, background: { color: Theme.background.main } });
-                block.appendChild(this.$render("i-vstack", { gap: 8, width: "100%", height: "100%", verticalAlignment: "center", horizontalAlignment: "center" },
-                    this.$render("i-image", { url: image, width: 32, height: 32 }),
+                const { name, image, icon } = item;
+                const block = new components_26.Panel(undefined, { width: 'calc(50% - 0.5px)', height: '5rem', background: { color: Theme.background.main } });
+                block.appendChild(this.$render("i-vstack", { gap: '0.5rem', width: "100%", height: "100%", verticalAlignment: "center", horizontalAlignment: "center", onClick: (target) => this.onItemSelected(target, item) },
+                    icon ? this.$render("i-icon", { name: icon, width: '1.5rem', height: '1.5rem' }) : (image ? this.$render("i-image", { url: image, width: '1.5rem', height: '1.5rem' }) : []),
                     this.$render("i-label", { caption: name, font: { size: '0.75rem' } })));
-                block.classList.add(index_css_16.blockItemHoverStyled);
+                block.classList.add(index_css_17.blockItemHoverStyled);
                 nodeItems.push(block);
             }
             if (this.items.length % 2 === 1) {
@@ -2817,6 +3162,10 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             this.hStackItems.clearInnerHTML();
             this.hStackItems.append(...nodeItems);
         }
+        onItemSelected(target, item) {
+            if (this.onSelect)
+                this.onSelect(target, item);
+        }
         onCollapse() {
             this.isShown = !this.isShown;
             this.hStackItems.visible = this.isShown;
@@ -2824,6 +3173,7 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
         }
         init() {
             super.init();
+            this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
             this.name = this.getAttribute('name', true) || '';
             this.tooltipText = this.getAttribute('tooltipText', true);
             this.items = this.getAttribute('items', true) || [];
@@ -2839,21 +3189,21 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
         }
     };
     DesignerPickerComponents = __decorate([
-        (0, components_23.customElements)('designer-picker-components')
+        (0, components_26.customElements)('designer-picker-components')
     ], DesignerPickerComponents);
     exports.default = DesignerPickerComponents;
 });
-define("@scom/scom-designer/components/index.ts", ["require", "exports", "@scom/scom-designer/components/components.tsx", "@scom/scom-designer/components/properties.tsx", "@scom/scom-designer/components/screens.tsx", "@scom/scom-designer/components/pickerBlocks.tsx", "@scom/scom-designer/components/pickerComponents.tsx"], function (require, exports, components_24, properties_1, screens_1, pickerBlocks_1, pickerComponents_1) {
+define("@scom/scom-designer/components/index.ts", ["require", "exports", "@scom/scom-designer/components/components.tsx", "@scom/scom-designer/components/properties.tsx", "@scom/scom-designer/components/screens.tsx", "@scom/scom-designer/components/pickerBlocks.tsx", "@scom/scom-designer/components/pickerComponents.tsx"], function (require, exports, components_27, properties_1, screens_1, pickerBlocks_1, pickerComponents_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DesignerPickerComponents = exports.DesignerPickerBlocks = exports.DesignerScreens = exports.DesignerProperties = exports.DesignerComponents = void 0;
-    exports.DesignerComponents = components_24.default;
+    exports.DesignerComponents = components_27.default;
     exports.DesignerProperties = properties_1.default;
     exports.DesignerScreens = screens_1.default;
     exports.DesignerPickerBlocks = pickerBlocks_1.default;
     exports.DesignerPickerComponents = pickerComponents_1.default;
 });
-define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designer/assets.ts"], function (require, exports, assets_5) {
+define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designer/assets.ts"], function (require, exports, assets_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.screen = exports.blockComponents = exports.pickerComponents = exports.recentComponents = void 0;
@@ -2866,12 +3216,12 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Text',
-                    image: assets_5.default.fullPath('img/designer/Text.svg')
+                    image: assets_4.default.fullPath('img/designer/Text.svg')
                 },
                 {
                     path: '',
                     name: 'View',
-                    image: assets_5.default.fullPath('img/designer/View.svg')
+                    image: assets_4.default.fullPath('img/designer/View.svg')
                 }
             ]
         },
@@ -2882,7 +3232,7 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Button',
-                    image: assets_5.default.fullPath('img/designer/Button.svg')
+                    image: assets_4.default.fullPath('img/designer/Button.svg')
                 }
             ]
         }
@@ -2895,17 +3245,17 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Icon',
-                    image: assets_5.default.fullPath('img/designer/Icon.svg')
+                    image: assets_4.default.fullPath('img/designer/Icon.svg')
                 },
                 {
                     path: '',
                     name: 'Text',
-                    image: assets_5.default.fullPath('img/designer/Text.svg')
+                    image: assets_4.default.fullPath('img/designer/Text.svg')
                 },
                 {
                     path: '',
                     name: 'View',
-                    image: assets_5.default.fullPath('img/designer/View.svg')
+                    image: assets_4.default.fullPath('img/designer/View.svg')
                 }
             ]
         },
@@ -2916,12 +3266,12 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Button',
-                    image: assets_5.default.fullPath('img/designer/Button.svg')
+                    image: assets_4.default.fullPath('img/designer/Button.svg')
                 },
                 {
                     path: '',
                     name: 'Link',
-                    image: assets_5.default.fullPath('img/designer/Link.svg')
+                    image: assets_4.default.fullPath('img/designer/Link.svg')
                 }
             ]
         }
@@ -2932,13 +3282,13 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
             id: '1',
             path: '',
             caption: 'My Block 1',
-            image: assets_5.default.fullPath('img/designer/Block.svg')
+            image: assets_4.default.fullPath('img/designer/Block.svg')
         },
         {
             id: '2',
             path: '',
             caption: 'My Block 2',
-            image: assets_5.default.fullPath('img/designer/Block.svg')
+            image: assets_4.default.fullPath('img/designer/Block.svg')
         }
     ];
     exports.screen = {
@@ -2948,32 +3298,32 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
             {
                 path: 'root',
                 name: 'View',
-                image: assets_5.default.fullPath('img/designer/View.svg'),
+                image: assets_4.default.fullPath('img/designer/View.svg'),
                 items: [
                     {
                         path: 'root/text',
                         name: 'Text',
-                        image: assets_5.default.fullPath('img/designer/Text.svg')
+                        image: assets_4.default.fullPath('img/designer/Text.svg')
                     },
                     {
                         path: 'root/button',
                         name: 'Button',
-                        image: assets_5.default.fullPath('img/designer/Button.svg')
+                        image: assets_4.default.fullPath('img/designer/Button.svg')
                     },
                     {
                         path: 'root/view',
                         name: 'View',
-                        image: assets_5.default.fullPath('img/designer/View.svg'),
+                        image: assets_4.default.fullPath('img/designer/View.svg'),
                         items: [
                             {
                                 path: 'root/view/text',
                                 name: 'Text',
-                                image: assets_5.default.fullPath('img/designer/Text.svg')
+                                image: assets_4.default.fullPath('img/designer/Text.svg')
                             },
                             {
                                 path: 'root/view/text-2',
                                 name: 'Text 2',
-                                image: assets_5.default.fullPath('img/designer/Text.svg')
+                                image: assets_4.default.fullPath('img/designer/Text.svg')
                             }
                         ]
                     }
@@ -2981,6 +3331,533 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
             }
         ]
     };
+});
+define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_28, index_3, index_css_18, data_1, index_4, utils_8) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ScomDesignerForm = exports.createControl = void 0;
+    const Theme = components_28.Styles.Theme.ThemeVars;
+    var TABS;
+    (function (TABS) {
+        TABS[TABS["RECENT"] = 0] = "RECENT";
+        TABS[TABS["BITS"] = 1] = "BITS";
+        TABS[TABS["BLOCKS"] = 2] = "BLOCKS";
+    })(TABS || (TABS = {}));
+    function createControl(parent, name, options) {
+        const newObj = {};
+        if (options) {
+            for (let key in options) {
+                const value = options[key];
+                newObj[key] = typeof value === "string" ? (0, utils_8.parsePropValue)(options[key]) : value;
+            }
+        }
+        const controlConstructor = window.customElements.get(name);
+        const control = new controlConstructor(parent, newObj);
+        if (options)
+            control._setDesignProps(newObj);
+        return control;
+    }
+    exports.createControl = createControl;
+    class ControlResizer {
+        constructor(control) {
+            this.resizers = [];
+            this._control = control;
+        }
+        addResizer(className) {
+            let resizer = document.createElement("div");
+            this._control.appendChild(resizer);
+            this.resizers.push(resizer);
+            resizer.className = className;
+            resizer.className = "i-resizer " + className;
+        }
+        hideResizers() {
+            this.resizers.forEach(resizer => this._control.removeChild(resizer));
+            this.resizers = [];
+        }
+        showResizers() {
+            if (this.resizers.length == 0) {
+                this.addResizer("tl");
+                this.addResizer("tm");
+                this.addResizer("tr");
+                this.addResizer("ml");
+                this.addResizer("mr");
+                this.addResizer("bl");
+                this.addResizer("bm");
+                this.addResizer("br");
+            }
+        }
+    }
+    let ScomDesignerForm = class ScomDesignerForm extends components_28.Module {
+        constructor(parent, options) {
+            super(parent, options);
+            this.currentTab = TABS.BITS;
+            this.pathMapping = new Map();
+            this.mouseDown = false;
+            this.resizing = false;
+            this.resizerPos = "";
+            this.recentComponents = [];
+            this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
+        }
+        static async create(options, parent) {
+            let self = new this(parent, options);
+            await self.ready();
+            return self;
+        }
+        setData() { }
+        get pickerComponentsFiltered() {
+            let components;
+            if (this.currentTab === TABS.RECENT) {
+                components = [{
+                        name: 'Frequently Used',
+                        tooltipText: 'Components that you use most frequently',
+                        items: [...this.recentComponents]
+                    }];
+            }
+            else {
+                components = [{
+                        name: 'Basic',
+                        tooltipText: 'The most simple & essential components to build a screen',
+                        items: this.getComponents()
+                    }];
+            }
+            if (this.inputSearch.value) {
+                const val = this.inputSearch.value.toLowerCase();
+                components = components
+                    .map((component) => {
+                    const filteredItems = component.items.filter((item) => item.name.toLowerCase().includes(val));
+                    return {
+                        ...component,
+                        items: filteredItems,
+                    };
+                })
+                    .filter((component) => component.items.length > 0);
+            }
+            return components;
+        }
+        getComponents() {
+            let result = [];
+            let components = (0, components_28.getCustomElements)();
+            for (let name in components) {
+                const component = components[name];
+                const icon = component?.icon;
+                const className = component?.className;
+                if (icon && className) {
+                    result.push({
+                        ...component,
+                        icon,
+                        path: '',
+                        name: component.tagName
+                    });
+                }
+            }
+            return result;
+        }
+        get pickerBlocksFiltered() {
+            if (this.inputSearch.value) {
+                return data_1.blockComponents.filter((v) => v.caption.toLowerCase().includes(this.inputSearch.value.toLowerCase()));
+            }
+            return data_1.blockComponents;
+        }
+        updateDesignProps(component) {
+            // TODO: update control
+            let control = component;
+            component.props = control.control._getDesignProps();
+            component.items?.forEach(item => {
+                this.updateDesignProps(item);
+            });
+        }
+        get rootComponent() {
+            return this._rootComponent;
+        }
+        clear() {
+            this.pathMapping = new Map();
+        }
+        onScreenChanged(screen) { }
+        onScreenHistoryShown(shown) {
+            this.designerComponents.visible = !shown;
+            this.designerScreens.height = shown ? '100%' : '40%';
+        }
+        onTabChanged(value) {
+            if (this.currentTab === value)
+                return;
+            for (let i = 0; i < this.wrapperTab.children.length; i++) {
+                if (value === i) {
+                    this.wrapperTab.children[i].classList.add(index_css_18.labelActiveStyled);
+                }
+                else {
+                    this.wrapperTab.children[i].classList.remove(index_css_18.labelActiveStyled);
+                }
+            }
+            this.currentTab = value;
+            const isBlock = value === TABS.BLOCKS;
+            if (isBlock) {
+                this.initBlockPicker();
+            }
+            else {
+                this.initComponentPicker();
+            }
+            this.pnlComponentPicker.visible = !isBlock;
+            this.pnlBlockPicker.visible = isBlock;
+        }
+        onFilterComponent() {
+            if (this.currentTab === TABS.BLOCKS) {
+                this.initBlockPicker();
+            }
+            else {
+                this.initComponentPicker();
+            }
+        }
+        onShowComponentPicker() {
+            this.wrapperComponentPicker.visible = true;
+        }
+        onSelectComponent(component) {
+            const path = component.path;
+            if (path) {
+                const control = this.pathMapping.get(path);
+                if (control)
+                    this.handleSelectControl(control);
+            }
+        }
+        onVisibleComponent(component, visible) {
+            const path = component.path;
+            if (path) {
+                const control = this.pathMapping.get(path);
+                if (control?.control) {
+                    control.control.visible = visible;
+                    control.control._setDesignPropValue("visible", visible);
+                }
+            }
+        }
+        renderComponent(parent, component, select) {
+            if (!component?.name)
+                return;
+            let control = createControl(parent, component.name, component.props);
+            if (!control.style.position)
+                control.style.position = "relative";
+            component.control = control;
+            this.bindControlEvents(component);
+            control.tag = new ControlResizer(control);
+            component.items?.forEach(item => this.renderComponent(control, { ...item, control: null }));
+            this.pathMapping.set(component.path, { ...component });
+            if (select)
+                this.handleSelectControl(component);
+        }
+        bindControlEvents(control) {
+            control.control.onclick = event => {
+                if (control.control instanceof components_28.Container) {
+                    let com = this.handleAddControl(event, control.control);
+                    if (com) {
+                        control.items = control.items || [];
+                        control.items.push(com);
+                    }
+                }
+            };
+            control.control.onMouseDown = () => this.handleSelectControl(control);
+            control.control.onDblClick = (target, event) => {
+                event?.stopPropagation();
+                let id = control.control.id;
+                if (id) {
+                    // let name = control.control._getDesignPropValue("onClick");
+                    // if (!name) {
+                    //   this.modified = true;
+                    //   control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
+                    //   this.studio.addEventHandler(this, "onClick", `${id}Click`);
+                    // } else if (name.startsWith("{this."))
+                    //   this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
+                }
+            };
+        }
+        handleSelectControl(target) {
+            if (this.selectedControl)
+                this.selectedControl.control.tag.hideResizers();
+            this.selectedControl = target;
+            this.selectedControl.control.tag.showResizers();
+            this.showDesignProperties();
+        }
+        showDesignProperties() {
+            if (!this.selectedControl)
+                return;
+            this.designerProperties.component = this.selectedControl;
+        }
+        onCloseComponentPicker() {
+            this.wrapperComponentPicker.visible = false;
+        }
+        handleAddControl(event, parent) {
+            event.stopPropagation();
+            let pos = { x: event.offsetX, y: event.offsetY };
+            if (this.selectedComponent) {
+                let com = {
+                    name: this.selectedComponent.name,
+                    path: components_28.IdUtils.generateUUID(),
+                    props: {
+                        left: `{${pos.x}}`,
+                        top: `{${pos.y}}`,
+                        width: `{${100}}`,
+                        height: `{${30}}`,
+                    },
+                    control: null
+                };
+                if (parent) {
+                    this.renderComponent(parent, com, true);
+                }
+                else {
+                    this.renderComponent(this.pnlFormDesigner, com, true);
+                    this._rootComponent.items.push(com);
+                    this.designerComponents.screen = {
+                        ...this.designerComponents.screen,
+                        elements: [this._rootComponent]
+                    };
+                }
+                this.selectedComponent.control.classList.remove("selected");
+                this.selectedComponent = null;
+                return com;
+            }
+        }
+        initComponentPicker() {
+            const nodeItems = [];
+            for (const picker of this.pickerComponentsFiltered) {
+                const pickerElm = new index_3.DesignerPickerComponents(undefined, {
+                    ...picker,
+                    display: 'block',
+                    margin: { bottom: 1 },
+                    onSelect: (target, component) => {
+                        if (this.selectedComponent?.control)
+                            this.selectedComponent.control.classList.remove("selected");
+                        this.selectedComponent = { ...component, control: target };
+                        this.selectedComponent.control.classList.add("selected");
+                        const finded = this.recentComponents.find(x => x.name === this.selectedComponent.name);
+                        if (!finded) {
+                            this.recentComponents.push(this.selectedComponent);
+                        }
+                    }
+                });
+                nodeItems.push(pickerElm);
+            }
+            this.pnlComponentPicker.clearInnerHTML();
+            this.pnlComponentPicker.append(...nodeItems);
+        }
+        initBlockPicker() {
+            const pickerElm = new index_3.DesignerPickerBlocks(undefined, {
+                items: this.pickerBlocksFiltered,
+            });
+            this.pnlBlockPicker.clearInnerHTML();
+            this.pnlBlockPicker.append(pickerElm);
+        }
+        initComponentScreen() {
+            // const newScreen = this.parseScreen;
+            // this.designerComponents.screen = newScreen
+            // this._rootComponent = newScreen?.elements[0];
+            // if (this._rootComponent) {
+            //   this.renderComponent(this.pnlFormDesigner, {
+            //     ...this._rootComponent,
+            //     control: null
+            //   });
+            // }
+        }
+        initDesignerProperties() {
+            if (this.selectedControl)
+                this.designerProperties.component = this.selectedControl;
+        }
+        onPropertiesChanged(prop, value) {
+            this.modified = true;
+            this.selectedControl.control._setDesignPropValue(prop, value);
+            let props = this.selectedControl.control._getCustomProperties();
+            let property = props.props[prop];
+            let valueStr = '';
+            if (property) {
+                switch (property.type) {
+                    case "number": {
+                        valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
+                        break;
+                    }
+                    case "string": {
+                        valueStr = "'" + value + "'";
+                        break;
+                    }
+                    case "boolean": {
+                        valueStr = "{" + value + "}";
+                        break;
+                    }
+                    case "object": {
+                        valueStr = `{${JSON.stringify(value)}}`;
+                        break;
+                    }
+                }
+                this.selectedControl.props[prop] = valueStr;
+            }
+        }
+        renderUI(root) {
+            if (root?.items?.length) {
+                root.items = [...root.items].map(item => {
+                    return { ...item, path: components_28.IdUtils.generateUUID() };
+                });
+            }
+            this._rootComponent = { ...root, path: components_28.IdUtils.generateUUID() };
+            this.pnlFormDesigner.clearInnerHTML();
+            if (this._rootComponent) {
+                this.designerComponents.screen = {
+                    name: this._rootComponent.name,
+                    id: components_28.IdUtils.generateUUID(),
+                    elements: [this._rootComponent]
+                };
+                this.renderComponent(this.pnlFormDesigner, {
+                    ...this._rootComponent,
+                    control: null
+                });
+            }
+        }
+        handleControlMouseMove(event) {
+            if (this.mouseDown) {
+                let mouseMovePos = { x: event.clientX, y: event.clientY };
+                let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
+                this.mouseDownPos = mouseMovePos;
+                const currentControl = this.selectedControl?.control;
+                if (!currentControl)
+                    return;
+                if (this.resizing) {
+                    this.modified = true;
+                    switch (this.resizerPos) {
+                        case "tl": {
+                            let left = currentControl.left + mouseMoveDelta.x;
+                            let top = currentControl.top + mouseMoveDelta.y;
+                            let width = currentControl.width - mouseMoveDelta.x;
+                            let height = currentControl.height - mouseMoveDelta.y;
+                            this.updatePosition({ left, top, width, height });
+                            break;
+                        }
+                        case "tm": {
+                            let top = currentControl.top + mouseMoveDelta.y;
+                            let height = currentControl.height - mouseMoveDelta.y;
+                            currentControl._setDesignPropValue("top", top);
+                            currentControl._setDesignPropValue("height", height);
+                            this.updatePosition({ top, height });
+                            break;
+                        }
+                        case "tr": {
+                            let top = currentControl.top + mouseMoveDelta.y;
+                            let width = currentControl.width + mouseMoveDelta.x;
+                            let height = currentControl.height - mouseMoveDelta.y;
+                            this.updatePosition({ top, width, height });
+                            break;
+                        }
+                        case "ml": {
+                            let left = currentControl.left + mouseMoveDelta.x;
+                            let width = currentControl.width - mouseMoveDelta.x;
+                            this.updatePosition({ left, width });
+                            break;
+                        }
+                        case "mr": {
+                            let width = currentControl.width + mouseMoveDelta.x;
+                            this.updatePosition({ width });
+                            break;
+                        }
+                        case "bl": {
+                            let left = currentControl.left + mouseMoveDelta.x;
+                            let width = currentControl.width - mouseMoveDelta.x;
+                            let height = currentControl.height + mouseMoveDelta.y;
+                            this.updatePosition({ left, width, height });
+                            break;
+                        }
+                        case "bm": {
+                            let height = currentControl.height + mouseMoveDelta.y;
+                            this.updatePosition({ height });
+                            break;
+                        }
+                        case "br": {
+                            let width = currentControl.width + mouseMoveDelta.x;
+                            let height = currentControl.height + mouseMoveDelta.y;
+                            this.updatePosition({ width, height });
+                            break;
+                        }
+                    }
+                }
+                else {
+                    let left = currentControl.left + mouseMoveDelta.x;
+                    let top = currentControl.top + mouseMoveDelta.y;
+                    this.updatePosition({ left, top });
+                }
+                this.showDesignProperties();
+            }
+        }
+        updatePosition(value) {
+            for (let prop in value) {
+                if (value.hasOwnProperty(prop)) {
+                    this.onPropertiesChanged(prop, value[prop]);
+                }
+            }
+        }
+        initEvents() {
+            this.pnlFormDesigner.onmouseleave = event => {
+                this.mouseDown = false;
+            };
+            this.pnlFormDesigner.onmousedown = event => {
+                this.mouseDown = true;
+                this.mouseDownPos = { x: event.clientX, y: event.clientY };
+                let elm = event.target;
+                this.resizing = elm.classList.contains("i-resizer");
+                this.resizerPos = elm.className.split(" ")[1];
+            };
+            this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
+            this.pnlFormDesigner.onmouseup = event => {
+                this.mouseDown = false;
+            };
+            this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
+        }
+        init() {
+            super.init();
+            this.wrapperComponentPicker.style.borderBottom = 'none';
+            this.initComponentPicker();
+            this.initBlockPicker();
+            this.initComponentScreen();
+            this.initDesignerProperties();
+            this.initEvents();
+        }
+        render() {
+            return (this.$render("i-vstack", { width: '100%', height: '100%', maxWidth: Theme.layout.container.maxWidth, margin: { left: 'auto', right: 'auto' }, position: 'relative' },
+                this.$render("i-hstack", { width: '100%', height: '100%' },
+                    this.$render("i-vstack", { width: '100%', height: '100%', border: {
+                            top: { width: 1, style: 'solid', color: Theme.divider },
+                        }, maxWidth: 300 },
+                        this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
+                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent })),
+                    this.$render("i-vstack", { id: 'wrapperComponentPicker', visible: false, width: 250, height: '100%', border: {
+                            width: 1,
+                            style: 'solid',
+                            color: Theme.divider,
+                            bottom: { width: 0 },
+                        }, background: { color: Theme.background.main }, overflow: 'auto' },
+                        this.$render("i-vstack", { gap: 12, padding: { top: 12, bottom: 12, left: 8, right: 8 }, border: {
+                                bottom: { width: 1, style: 'solid', color: Theme.divider },
+                            } },
+                            this.$render("i-hstack", { gap: 8, verticalAlignment: 'center', horizontalAlignment: 'space-between' },
+                                this.$render("i-label", { caption: 'Add Components', font: { size: '0.75rem', bold: true } }),
+                                this.$render("i-icon", { name: 'times', width: 14, height: 14, cursor: 'pointer', onClick: this.onCloseComponentPicker })),
+                            this.$render("i-grid-layout", { id: 'wrapperTab', width: '100%', background: { color: Theme.action.hoverBackground }, templateColumns: ['1fr', '1fr', '1fr'], class: `${index_4.borderRadiusLeft} ${index_4.borderRadiusRight}` },
+                                this.$render("i-label", { caption: 'Recent', class: `${index_css_18.customLabelTabStyled} ${index_4.borderRadiusLeft}`, onClick: () => this.onTabChanged(TABS.RECENT) }),
+                                this.$render("i-label", { caption: 'Bits', class: `${index_css_18.customLabelTabStyled} ${index_css_18.labelActiveStyled}`, border: {
+                                        radius: 0,
+                                        left: { width: 1, style: 'solid', color: Theme.divider },
+                                        right: { width: 1, style: 'solid', color: Theme.divider },
+                                    }, onClick: () => this.onTabChanged(TABS.BITS) }),
+                                this.$render("i-label", { caption: 'Blocks', class: `${index_css_18.customLabelTabStyled} ${index_4.borderRadiusRight}`, onClick: () => this.onTabChanged(TABS.BLOCKS) })),
+                            this.$render("i-input", { id: 'inputSearch', placeholder: 'Search', width: '100%', height: 24, border: {
+                                    radius: 8,
+                                    width: 0,
+                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onChanged: this.onFilterComponent })),
+                        this.$render("i-panel", { id: 'pnlComponentPicker', width: '100%' }),
+                        this.$render("i-panel", { id: 'pnlBlockPicker', width: '100%', visible: false })),
+                    this.$render("i-panel", { id: "pnlFormDesigner", stack: { grow: '1' }, overflow: { y: 'auto' }, background: { color: "gray" } }),
+                    this.$render("designer-properties", { id: 'designerProperties', display: 'flex', onChanged: this.onPropertiesChanged }))));
+        }
+    };
+    ScomDesignerForm = __decorate([
+        (0, components_28.customElements)('i-scom-designer--form')
+    ], ScomDesignerForm);
+    exports.ScomDesignerForm = ScomDesignerForm;
+});
+define("@scom/scom-designer/interface.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
 });
 define("@scom/scom-designer/types/components.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -3784,7 +4661,8 @@ define("@scom/scom-designer/types/components.ts", ["require", "exports"], functi
 
 export default moment;
 
-}declare module "packages/style/src/colors" {
+}/// <reference types="node" />
+declare module "packages/style/src/colors" {
     export interface IColor {
         50: string;
         100: string;
@@ -3864,15 +4742,19 @@ declare module "packages/style/src/theme" {
     export interface ITheme {
         action: {
             active: IColorVar;
+            activeBackground: IColorVar;
             activeOpacity: number;
             disabled: IColorVar;
             disabledBackground: IColorVar;
             disabledOpacity: number;
             focus: IColorVar;
+            focusBackground: IColorVar;
             focusOpacity: number;
             hover: IColorVar;
+            hoverBackground: IColorVar;
             hoverOpacity: number;
             selected: IColorVar;
+            selectedBackground: IColorVar;
             selectedOpacity: number;
         };
         background: {
@@ -3882,7 +4764,7 @@ declare module "packages/style/src/theme" {
             modal: IColorVar;
             gradient: IColorVar;
         };
-        breakboints: {
+        breakpoints: {
             xs: number;
             sm: number;
             md: number;
@@ -3934,15 +4816,19 @@ declare module "packages/style/src/theme" {
     export interface IThemeVariables {
         action: {
             active: string;
+            activeBackground: string;
             activeOpacity: string;
             disabled: string;
             disabledBackground: string;
             disabledOpacity: string;
             focus: string;
+            focusBackground: string;
             focusOpacity: string;
             hover: string;
+            hoverBackground: string;
             hoverOpacity: string;
             selected: string;
+            selectedBackground: string;
             selectedOpacity: string;
         };
         background: {
@@ -3952,7 +4838,7 @@ declare module "packages/style/src/theme" {
             modal: string;
             gradient: string;
         };
-        breakboints: {
+        breakpoints: {
             xs: string;
             sm: string;
             md: string;
@@ -6708,6 +7594,7 @@ declare module "packages/base/src/component" {
     export type TextTransform = 'capitalize' | 'uppercase' | 'lowercase' | 'full-width' | 'full-size-kana' | 'inherit' | 'initial' | 'revert' | 'revert-layer' | 'unset';
     export type WrapType = 'nowrap' | 'wrap' | 'wrap-reverse' | 'initial' | 'inherit';
     export type OverflowType = 'visible' | 'hidden' | 'clip' | 'scroll' | 'auto' | 'initial' | 'inherit' | 'unset';
+    export type CursorType = "auto" | "default" | "none" | "context-menu" | "help" | "pointer" | "progress" | "wait" | "cell" | "crosshair" | "text" | "vertical-text" | "alias" | "copy" | "move" | "no-drop" | "not-allowed" | "grab" | "grabbing" | "e-resize" | "n-resize" | "ne-resize" | "nw-resize" | "s-resize" | "se-resize" | "sw-resize" | "w-resize" | "ew-resize" | "ns-resize" | "nesw-resize" | "nwse-resize" | "col-resize" | "row-resize" | "all-scroll" | "zoom-in" | "zoom-out";
     export interface IOverflow {
         x?: OverflowType;
         y?: OverflowType;
@@ -6738,8 +7625,8 @@ declare module "packages/base/src/component" {
     export const notifyEventParams: ICustomEventParam[];
     export interface ICustomProp {
         type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-        values?: string[];
-        default?: string;
+        values?: any[];
+        default?: string | number | boolean | object;
     }
     export interface ICustomProperties {
         icon?: string;
@@ -6763,33 +7650,34 @@ declare module "packages/base/src/component" {
         protected _bottom: number | string;
         protected options: any;
         protected defaults: any;
-        protected _ready: boolean;
-        private _readyInit;
+        protected deferReadyCallback: boolean;
         protected _readyCallback: any[];
-        protected isReadyCallbackQueued: boolean;
+        initializing: boolean;
         initialized: boolean;
         protected attrs: any;
         protected _designProps: {
-            [prop: string]: string;
+            [prop: string]: string | number | boolean | object;
         };
         private _propInfo;
+        protected _uuid: string;
         constructor(parent?: Component, options?: any, defaults?: any);
         connectedCallback(): void;
         disconnectedCallback(): void;
         protected parseDesignPropValue(value: string): any;
-        _getDesignPropValue(prop: string): string;
-        _setDesignPropValue(prop: string, value: string): void;
+        _getDesignPropValue(prop: string): string | number | boolean | object;
+        _setDesignPropValue(prop: string, value: string | number | boolean | object): void;
         _setDesignProps(props: {
             [prop: string]: string;
         }): void;
         _getDesignProps(): {
-            [prop: string]: string;
+            [prop: string]: string | number | boolean | object;
         };
         createElement(tagName: string, parentElm?: HTMLElement): HTMLElement;
         getAttributeValue(target: any, paths: string[], idx?: number): any;
         getAttribute(name: string, removeAfter?: boolean, defaultValue?: any): any;
         getPositionAttribute(name: string, removeAfter?: boolean, defaultValue?: any): number;
         getStyleAttribute(name: string, removeAfter?: boolean, defaultValue?: any): string;
+        get uuid(): string;
         get id(): string;
         set id(value: string);
         ready(): Promise<void>;
@@ -6798,16 +7686,24 @@ declare module "packages/base/src/component" {
     }
 }
 declare module "packages/base/src/style/base.css" {
-    import { BorderStylesSideType, IBorder, IBorderSideStyles, IOverflow, IBackground, IControlMediaQuery } from "@ijstech/components/base";
+    import { BorderStylesSideType, IBorder, IBorderSideStyles, IOverflow, IBackground, IControlMediaQuery, DisplayType, IMediaQuery } from "@ijstech/components/base";
     export const disabledStyle: string;
     export const containerStyle: string;
     export const getBorderSideStyleClass: (side: BorderStylesSideType, value: IBorderSideStyles) => string;
     export const getBorderStyleClass: (value: IBorder) => string;
     export const getOverflowStyleClass: (value: IOverflow) => string;
+    export const getBackground: (value: IBackground) => {
+        background: string;
+    };
     export const getBackgroundStyleClass: (value: IBackground) => string;
     export const getSpacingValue: (value: string | number) => string;
-    export const getControlMediaQueriesStyle: (mediaQueries: IControlMediaQuery[]) => any;
-    export const getControlMediaQueriesStyleClass: (mediaQueries: IControlMediaQuery[]) => string;
+    export const getMediaQueryRule: (mediaQuery: IMediaQuery<any>) => string | undefined;
+    interface IProps {
+        display?: DisplayType;
+    }
+    export const getControlMediaQueriesStyle: (mediaQueries: IControlMediaQuery[], props?: IProps | undefined) => any;
+    export const getControlMediaQueriesStyleClass: (mediaQueries: IControlMediaQuery[], props: IProps) => string;
+    export const getOpacityStyleClass: (opacity: number | string) => string;
 }
 declare module "packages/tooltip/src/style/tooltip.css" { }
 declare module "packages/tooltip/src/tooltip" {
@@ -6858,18 +7754,18 @@ declare module "packages/tooltip/src/index" {
     export { Tooltip, ITooltip } from "packages/tooltip/src/tooltip";
 }
 declare module "packages/base/src/control" {
-    import { Component, IStack, IFont, ISpace, IOverflow, OverflowType, IAnchor, IBackground, ICustomProperties } from "packages/base/src/component";
-    import { notifyEventCallback, notifyMouseEventCallback, notifyKeyboardEventCallback } from "@ijstech/components/base";
+    import { Component, IStack, IFont, ISpace, IOverflow, OverflowType, IAnchor, IBackground, ICustomProperties, CursorType } from "packages/base/src/component";
+    import { notifyEventCallback, notifyMouseEventCallback, notifyKeyboardEventCallback, notifyGestureEventCallback } from "@ijstech/components/base";
     export type DockStyle = 'none' | 'bottom' | 'center' | 'fill' | 'left' | 'right' | 'top';
     export type LineHeightType = string | number | 'normal' | 'initial' | 'inherit';
-    export type DisplayType = 'inline-block' | 'block' | 'inline-flex' | 'flex' | 'inline' | 'initial' | 'inherit' | 'none';
+    export type DisplayType = 'inline-block' | 'block' | 'inline-flex' | 'flex' | 'inline' | 'initial' | 'inherit' | 'none' | '-webkit-box';
     export interface IMediaQuery<T> {
         minWidth?: string | number;
         maxWidth?: string | number;
         properties: T;
     }
     export type SpaceProps = 'margin' | 'padding';
-    class SpaceValue implements ISpace {
+    export class SpaceValue implements ISpace {
         private _value;
         private _prop;
         private _owner;
@@ -6882,6 +7778,7 @@ declare module "packages/base/src/control" {
         set right(value: string | number | undefined);
         get bottom(): string | number | undefined;
         set bottom(value: string | number | undefined);
+        getSpacingValue(value: string | number): string;
         update(value?: ISpace): void;
     }
     export type PositionType = 'static' | 'relative' | 'absolute' | 'fixed' | 'sticky' | 'inherit' | 'initial';
@@ -6951,7 +7848,7 @@ declare module "packages/base/src/control" {
         verticalAlignment?: "stretch" | "start" | "end" | "center";
         area?: string;
     }
-    class Overflow {
+    export class Overflow {
         private _target;
         private _value;
         private _style;
@@ -6980,8 +7877,18 @@ declare module "packages/base/src/control" {
         margin?: ISpace;
         border?: IBorder;
         visible?: boolean;
+        display?: DisplayType;
         background?: IBackground;
         grid?: IGrid;
+        position?: PositionType;
+        top?: number | string;
+        left?: number | string;
+        right?: number | string;
+        bottom?: number | string;
+        zIndex?: string | number;
+        maxHeight?: string | number;
+        maxWidth?: string | number;
+        overflow?: IOverflow | OverflowType;
     }
     export type IControlMediaQuery = IMediaQuery<IControlMediaQueryProps>;
     export const ControlProperties: ICustomProperties;
@@ -7000,9 +7907,9 @@ declare module "packages/base/src/control" {
         protected _onFocus: notifyEventCallback;
         protected _onKeyDown: notifyKeyboardEventCallback;
         protected _onKeyUp: notifyKeyboardEventCallback;
-        protected _onMouseDown: notifyMouseEventCallback;
-        protected _onMouseMove: notifyMouseEventCallback;
-        protected _onMouseUp: notifyMouseEventCallback;
+        protected _onMouseDown: notifyGestureEventCallback;
+        protected _onMouseMove: notifyGestureEventCallback;
+        protected _onMouseUp: notifyGestureEventCallback;
         protected _visible: boolean;
         protected _margin: SpaceValue;
         protected _padding: SpaceValue;
@@ -7020,15 +7927,21 @@ declare module "packages/base/src/control" {
         private _tooltip;
         protected _font: IFont;
         protected _display: DisplayType;
+        protected _cursor: CursorType;
+        protected _letterSpacing: string | number;
+        protected _boxShadow: string;
         private _cmediaQueries;
         protected _mediaStyle: string;
         protected _contextMenuId: string | null;
         protected _contextMenuControl: Control | null;
+        private _opacity;
+        protected _zIndex: string;
+        protected propertyClassMap: Record<string, string>;
         _container?: HTMLElement;
         tag: any;
         protected static create(options?: any, parent?: Container, defaults?: any): Promise<Control>;
         constructor(parent?: Control, options?: any, defaults?: any);
-        _setDesignPropValue(prop: string, value: string): void;
+        _setDesignPropValue(prop: string, value: string | number | boolean | object): void;
         _getCustomProperties(): ICustomProperties;
         private getMarginStyle;
         private getPaddingStyle;
@@ -7045,7 +7958,6 @@ declare module "packages/base/src/control" {
         protected removeChildControl(control: Control): void;
         get parent(): Control | undefined;
         set parent(value: Control | undefined);
-        protected getSpacingValue(value: string | number): string;
         connectedCallback(): void;
         disconnectedCallback(): void;
         protected getParentHeight(): number;
@@ -7064,9 +7976,9 @@ declare module "packages/base/src/control" {
         protected _handleFocus(event: Event, stopPropagation?: boolean): boolean;
         protected _handleKeyDown(event: KeyboardEvent, stopPropagation?: boolean): boolean | undefined;
         protected _handleKeyUp(event: KeyboardEvent, stopPropagation?: boolean): boolean | undefined;
-        protected _handleMouseDown(event: MouseEvent, stopPropagation?: boolean): boolean;
-        protected _handleMouseMove(event: MouseEvent, stopPropagation?: boolean): boolean;
-        protected _handleMouseUp(event: MouseEvent, stopPropagation?: boolean): boolean | undefined;
+        protected _handleMouseDown(event: PointerEvent | MouseEvent | TouchEvent, stopPropagation?: boolean): boolean;
+        protected _handleMouseMove(event: PointerEvent | MouseEvent | TouchEvent, stopPropagation?: boolean): boolean;
+        protected _handleMouseUp(event: PointerEvent | MouseEvent | TouchEvent, stopPropagation?: boolean): boolean | undefined;
         get maxWidth(): number | string;
         set maxWidth(value: number | string);
         get minWidth(): string | number;
@@ -7078,10 +7990,10 @@ declare module "packages/base/src/control" {
         set onContextMenu(callback: notifyMouseEventCallback);
         get onDblClick(): notifyMouseEventCallback;
         set onDblClick(callback: notifyMouseEventCallback);
-        get onMouseDown(): notifyMouseEventCallback;
-        set onMouseDown(callback: notifyMouseEventCallback);
-        get onMouseUp(): notifyMouseEventCallback;
-        set onMouseUp(callback: notifyMouseEventCallback);
+        get onMouseDown(): notifyGestureEventCallback;
+        set onMouseDown(callback: notifyGestureEventCallback);
+        get onMouseUp(): notifyGestureEventCallback;
+        set onMouseUp(callback: notifyGestureEventCallback);
         clearInnerHTML(): void;
         refresh(): void;
         get resizable(): boolean;
@@ -7110,7 +8022,7 @@ declare module "packages/base/src/control" {
         set grid(value: IGrid);
         get background(): Background;
         set background(value: IBackground);
-        get zIndex(): string | number;
+        get zIndex(): string;
         set zIndex(value: string | number);
         get lineHeight(): LineHeightType;
         set lineHeight(value: LineHeightType);
@@ -7133,10 +8045,18 @@ declare module "packages/base/src/control" {
         set display(value: DisplayType);
         get anchor(): IAnchor;
         set anchor(value: IAnchor);
-        get opacity(): number | string;
+        get opacity(): string;
         set opacity(value: number | string);
+        get cursor(): CursorType;
+        set cursor(value: CursorType);
+        get letterSpacing(): string | number;
+        set letterSpacing(value: string | number);
+        get boxShadow(): string;
+        set boxShadow(value: string);
         get mediaQueries(): any[];
         set mediaQueries(value: any[]);
+        protected removeStyle<P extends keyof Control>(propertyName: P): void;
+        protected setStyle<P extends keyof Control>(propertyName: P, value: string): void;
     }
     export class ContainerResizer {
         private target;
@@ -7172,14 +8092,14 @@ declare module "packages/base/src/types" {
 /// <amd-module name="@ijstech/components/base" />
 declare module "@ijstech/components/base" {
     export { Observe, Unobserve, ClearObservers, Observables, isObservable, observable } from "packages/base/src/observable";
-    export { IFont, Component, BorderSides, ISpace, IStack, FontStyle, IOverflow, IBackground, TextTransform, ICustomEventParam } from "packages/base/src/component";
-    export { IBorder, BorderStylesSideType, IBorderSideStyles, IMediaQuery, DisplayType, PositionType, Background, Border, IControlMediaQueryProps, IControlMediaQuery, IContextMenu } from "packages/base/src/control";
-    import { IStack, IFont, ISpace, IOverflow, OverflowType, IAnchor, IBackground, ICustomProperties } from "packages/base/src/component";
+    export { IFont, Component, BorderSides, ISpace, IStack, FontStyle, IOverflow, OverflowType, IBackground, TextTransform, ICustomEventParam } from "packages/base/src/component";
+    export { IBorder, BorderStylesSideType, IBorderSideStyles, IMediaQuery, DisplayType, PositionType, Background, Border, SpaceValue, IControlMediaQueryProps, IControlMediaQuery, IContextMenu, Overflow } from "packages/base/src/control";
+    import { IStack, IFont, ISpace, IOverflow, OverflowType, IAnchor, IBackground, ICustomProperties, CursorType } from "packages/base/src/component";
     import { Control, Container, DockStyle, LineHeightType, IBorder, IGrid, DisplayType, PositionType, IControlMediaQuery } from "packages/base/src/control";
     import { ITooltip } from "packages/tooltip/src/index";
     export { Control, Container };
     export * as Types from "packages/base/src/types";
-    export { getControlMediaQueriesStyle } from "packages/base/src/style/base.css";
+    export { getControlMediaQueriesStyle, getBackground, getSpacingValue } from "packages/base/src/style/base.css";
     let LibPath: string;
     export { LibPath };
     export const RequireJS: {
@@ -7190,6 +8110,7 @@ declare module "@ijstech/components/base" {
     export type notifyEventCallback = (target: Control, event: Event) => void;
     export type notifyMouseEventCallback = (target: Control, event: MouseEvent) => void;
     export type notifyKeyboardEventCallback = (target: Control, event: KeyboardEvent) => void;
+    export type notifyGestureEventCallback = (target: Control, event: PointerEvent | MouseEvent | TouchEvent) => void;
     export interface ControlElement {
         class?: string;
         contextMenu?: string;
@@ -7224,6 +8145,9 @@ declare module "@ijstech/components/base" {
         anchor?: IAnchor;
         opacity?: number | string;
         tag?: any;
+        cursor?: CursorType;
+        letterSpacing?: string | number;
+        boxShadow?: string;
         mediaQueries?: IControlMediaQuery[];
         onClick?: notifyMouseEventCallback;
         onDblClick?: notifyMouseEventCallback;
@@ -7238,9 +8162,233 @@ declare module "@ijstech/components/base" {
     };
     export function customElements(tagName: string, properties?: ICustomProperties): (constructor: CustomElementConstructor) => void;
     export function customModule(target: any): void;
+    export function setAttributeToProperty<T extends Control>(element: T, propertyName: keyof T, defaultValue?: any): void;
+}
+declare module "packages/image/src/style/image.css" { }
+declare module "packages/image/src/image" {
+    import { Control, ControlElement, IBorder, Border } from "@ijstech/components/base";
+    import "packages/image/src/style/image.css";
+    type ObjectFitType = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+    export interface ImageElement extends ControlElement {
+        rotate?: number;
+        url?: string;
+        fallbackUrl?: string;
+        objectFit?: ObjectFitType;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-image']: ImageElement;
+            }
+        }
+    }
+    export class Image extends Control {
+        private imageElm;
+        private _url;
+        private _rotate;
+        private _fallbackUrl;
+        private _objectFit;
+        private _borderValue;
+        constructor(parent?: Control, options?: any);
+        get rotate(): number;
+        set rotate(value: any);
+        get url(): string;
+        set url(value: string);
+        get objectFit(): ObjectFitType;
+        set objectFit(value: ObjectFitType);
+        get border(): Border;
+        set border(value: IBorder);
+        protected init(): void;
+        static create(options?: ImageElement, parent?: Control): Promise<Image>;
+    }
+}
+declare module "packages/image/src/index" {
+    export { Image, ImageElement } from "packages/image/src/image";
+}
+declare module "packages/icon/src/style/icon.css" { }
+declare module "packages/icon/src/icon" {
+    import { Control, ControlElement, Types } from "@ijstech/components/base";
+    import { Image, ImageElement } from "packages/image/src/index";
+    import "packages/icon/src/style/icon.css";
+    export type IconName = "" | "ad" | "address-book" | "address-card" | "adjust" | "air-freshener" | "align-center" | "align-justify" | "align-left" | "align-right" | "allergies" | "ambulance" | "american-sign-language-interpreting" | "anchor" | "angle-double-down" | "angle-double-left" | "angle-double-right" | "angle-double-up" | "angle-down" | "angle-left" | "angle-right" | "angle-up" | "angry" | "ankh" | "apple-alt" | "archive" | "archway" | "arrow-alt-circle-down" | "arrow-alt-circle-left" | "arrow-alt-circle-right" | "arrow-alt-circle-up" | "arrow-circle-down" | "arrow-circle-left" | "arrow-circle-right" | "arrow-circle-up" | "arrow-down" | "arrow-left" | "arrow-right" | "arrow-up" | "arrows-alt" | "arrows-alt-h" | "arrows-alt-v" | "assistive-listening-systems" | "asterisk" | "at" | "atlas" | "atom" | "audio-description" | "award" | "baby" | "baby-carriage" | "backspace" | "backward" | "bacon" | "bacteria" | "bacterium" | "bahai" | "balance-scale" | "balance-scale-left" | "balance-scale-right" | "ban" | "band-aid" | "barcode" | "bars" | "baseball-ball" | "basketball-ball" | "bath" | "battery-empty" | "battery-full" | "battery-half" | "battery-quarter" | "battery-three-quarters" | "bed" | "beer" | "bell" | "bell-slash" | "bezier-curve" | "bible" | "bicycle" | "biking" | "binoculars" | "biohazard" | "birthday-cake" | "blender" | "blender-phone" | "blind" | "blog" | "bold" | "bolt" | "bomb" | "bone" | "bong" | "book" | "book-dead" | "book-medical" | "book-open" | "book-reader" | "bookmark" | "border-all" | "border-none" | "border-style" | "bowling-ball" | "box" | "box-open" | "box-tissue" | "boxes" | "braille" | "brain" | "bread-slice" | "briefcase" | "briefcase-medical" | "broadcast-tower" | "broom" | "brush" | "bug" | "building" | "bullhorn" | "bullseye" | "burn" | "bus" | "bus-alt" | "business-time" | "calculator" | "calendar" | "calendar-alt" | "calendar-check" | "calendar-day" | "calendar-minus" | "calendar-plus" | "calendar-times" | "calendar-week" | "camera" | "camera-retro" | "campground" | "candy-cane" | "cannabis" | "capsules" | "car" | "car-alt" | "car-battery" | "car-crash" | "car-side" | "caravan" | "caret-down" | "caret-left" | "caret-right" | "caret-square-down" | "caret-square-left" | "caret-square-right" | "caret-square-up" | "caret-up" | "carrot" | "cart-arrow-down" | "cart-plus" | "cash-register" | "cat" | "certificate" | "chair" | "chalkboard" | "chalkboard-teacher" | "charging-station" | "chart-area" | "chart-bar" | "chart-line" | "chart-pie" | "check" | "check-circle" | "check-double" | "check-square" | "cheese" | "chess" | "chess-bishop" | "chess-board" | "chess-king" | "chess-knight" | "chess-pawn" | "chess-queen" | "chess-rook" | "chevron-circle-down" | "chevron-circle-left" | "chevron-circle-right" | "chevron-circle-up" | "chevron-down" | "chevron-left" | "chevron-right" | "chevron-up" | "child" | "church" | "circle" | "circle-notch" | "city" | "clinic-medical" | "clipboard" | "clipboard-check" | "clipboard-list" | "clock" | "clone" | "closed-captioning" | "cloud" | "cloud-download-alt" | "cloud-meatball" | "cloud-moon" | "cloud-moon-rain" | "cloud-rain" | "cloud-showers-heavy" | "cloud-sun" | "cloud-sun-rain" | "cloud-upload-alt" | "cocktail" | "code" | "code-branch" | "coffee" | "cog" | "cogs" | "coins" | "columns" | "comment" | "comment-alt" | "comment-dollar" | "comment-dots" | "comment-medical" | "comment-slash" | "comments" | "comments-dollar" | "compact-disc" | "compass" | "compress" | "compress-alt" | "compress-arrows-alt" | "concierge-bell" | "cookie" | "cookie-bite" | "copy" | "copyright" | "couch" | "credit-card" | "crop" | "crop-alt" | "cross" | "crosshairs" | "crow" | "crown" | "crutch" | "cube" | "cubes" | "cut" | "database" | "deaf" | "democrat" | "desktop" | "dharmachakra" | "diagnoses" | "dice" | "dice-d20" | "dice-d6" | "dice-five" | "dice-four" | "dice-one" | "dice-six" | "dice-three" | "dice-two" | "digital-tachograph" | "directions" | "disease" | "divide" | "dizzy" | "dna" | "dog" | "dollar-sign" | "dolly" | "dolly-flatbed" | "donate" | "door-closed" | "door-open" | "dot-circle" | "dove" | "download" | "drafting-compass" | "dragon" | "draw-polygon" | "drum" | "drum-steelpan" | "drumstick-bite" | "dumbbell" | "dumpster" | "dumpster-fire" | "dungeon" | "edit" | "egg" | "eject" | "ellipsis-h" | "ellipsis-v" | "envelope" | "envelope-open" | "envelope-open-text" | "envelope-square" | "equals" | "eraser" | "ethernet" | "euro-sign" | "exchange-alt" | "exclamation" | "exclamation-circle" | "exclamation-triangle" | "expand" | "expand-alt" | "expand-arrows-alt" | "external-link-alt" | "external-link-square-alt" | "eye" | "eye-dropper" | "eye-slash" | "fan" | "fast-backward" | "fast-forward" | "faucet" | "fax" | "feather" | "feather-alt" | "female" | "fighter-jet" | "file" | "file-alt" | "file-archive" | "file-audio" | "file-code" | "file-contract" | "file-csv" | "file-download" | "file-excel" | "file-export" | "file-image" | "file-import" | "file-invoice" | "file-invoice-dollar" | "file-medical" | "file-medical-alt" | "file-pdf" | "file-powerpoint" | "file-prescription" | "file-signature" | "file-upload" | "file-video" | "file-word" | "fill" | "fill-drip" | "film" | "filter" | "fingerprint" | "fire" | "fire-alt" | "fire-extinguisher" | "first-aid" | "fish" | "fist-raised" | "flag" | "flag-checkered" | "flag-usa" | "flask" | "flushed" | "folder" | "folder-minus" | "folder-open" | "folder-plus" | "font" | "font-awesome-logo-full" | "football-ball" | "forward" | "frog" | "frown" | "frown-open" | "funnel-dollar" | "futbol" | "gamepad" | "gas-pump" | "gavel" | "gem" | "genderless" | "ghost" | "gift" | "gifts" | "glass-cheers" | "glass-martini" | "glass-martini-alt" | "glass-whiskey" | "glasses" | "globe" | "globe-africa" | "globe-americas" | "globe-asia" | "globe-europe" | "golf-ball" | "gopuram" | "graduation-cap" | "greater-than" | "greater-than-equal" | "grimace" | "grin" | "grin-alt" | "grin-beam" | "grin-beam-sweat" | "grin-hearts" | "grin-squint" | "grin-squint-tears" | "grin-stars" | "grin-tears" | "grin-tongue" | "grin-tongue-squint" | "grin-tongue-wink" | "grin-wink" | "grip-horizontal" | "grip-lines" | "grip-lines-vertical" | "grip-vertical" | "guitar" | "h-square" | "hamburger" | "hammer" | "hamsa" | "hand-holding" | "hand-holding-heart" | "hand-holding-medical" | "hand-holding-usd" | "hand-holding-water" | "hand-lizard" | "hand-middle-finger" | "hand-paper" | "hand-peace" | "hand-point-down" | "hand-point-left" | "hand-point-right" | "hand-point-up" | "hand-pointer" | "hand-rock" | "hand-scissors" | "hand-sparkles" | "hand-spock" | "hands" | "hands-helping" | "hands-wash" | "handshake" | "handshake-alt-slash" | "handshake-slash" | "hanukiah" | "hard-hat" | "hashtag" | "hat-cowboy" | "hat-cowboy-side" | "hat-wizard" | "hdd" | "head-side-cough" | "head-side-cough-slash" | "head-side-mask" | "head-side-virus" | "heading" | "headphones" | "headphones-alt" | "headset" | "heart" | "heart-broken" | "heartbeat" | "helicopter" | "highlighter" | "hiking" | "hippo" | "history" | "hockey-puck" | "holly-berry" | "home" | "horse" | "horse-head" | "hospital" | "hospital-alt" | "hospital-symbol" | "hospital-user" | "hot-tub" | "hotdog" | "hotel" | "hourglass" | "hourglass-end" | "hourglass-half" | "hourglass-start" | "house-damage" | "house-user" | "hryvnia" | "i-cursor" | "ice-cream" | "icicles" | "icons" | "id-badge" | "id-card" | "id-card-alt" | "igloo" | "image" | "images" | "inbox" | "indent" | "industry" | "infinity" | "info" | "info-circle" | "italic" | "jedi" | "joint" | "journal-whills" | "kaaba" | "key" | "keyboard" | "khanda" | "kiss" | "kiss-beam" | "kiss-wink-heart" | "kiwi-bird" | "landmark" | "language" | "laptop" | "laptop-code" | "laptop-house" | "laptop-medical" | "laugh" | "laugh-beam" | "laugh-squint" | "laugh-wink" | "layer-group" | "leaf" | "lemon" | "less-than" | "less-than-equal" | "level-down-alt" | "level-up-alt" | "life-ring" | "lightbulb" | "link" | "lira-sign" | "list" | "list-alt" | "list-ol" | "list-ul" | "location-arrow" | "lock" | "lock-open" | "long-arrow-alt-down" | "long-arrow-alt-left" | "long-arrow-alt-right" | "long-arrow-alt-up" | "low-vision" | "luggage-cart" | "lungs" | "lungs-virus" | "magic" | "magnet" | "mail-bulk" | "male" | "map" | "map-marked" | "map-marked-alt" | "map-marker" | "map-marker-alt" | "map-pin" | "map-signs" | "marker" | "mars" | "mars-double" | "mars-stroke" | "mars-stroke-h" | "mars-stroke-v" | "mask" | "medal" | "medkit" | "meh" | "meh-blank" | "meh-rolling-eyes" | "memory" | "menorah" | "mercury" | "meteor" | "microchip" | "microphone" | "microphone-alt" | "microphone-alt-slash" | "microphone-slash" | "microscope" | "minus" | "minus-circle" | "minus-square" | "mitten" | "mobile" | "mobile-alt" | "money-bill" | "money-bill-alt" | "money-bill-wave" | "money-bill-wave-alt" | "money-check" | "money-check-alt" | "monument" | "moon" | "mortar-pestle" | "mosque" | "motorcycle" | "mountain" | "mouse" | "mouse-pointer" | "mug-hot" | "music" | "network-wired" | "neuter" | "newspaper" | "not-equal" | "notes-medical" | "object-group" | "object-ungroup" | "oil-can" | "om" | "otter" | "outdent" | "pager" | "paint-brush" | "paint-roller" | "palette" | "pallet" | "paper-plane" | "paperclip" | "parachute-box" | "paragraph" | "parking" | "passport" | "pastafarianism" | "paste" | "pause" | "pause-circle" | "paw" | "peace" | "pen" | "pen-alt" | "pen-fancy" | "pen-nib" | "pen-square" | "pencil-alt" | "pencil-ruler" | "people-arrows" | "people-carry" | "pepper-hot" | "percent" | "percentage" | "person-booth" | "phone" | "phone-alt" | "phone-slash" | "phone-square" | "phone-square-alt" | "phone-volume" | "photo-video" | "piggy-bank" | "pills" | "pizza-slice" | "place-of-worship" | "plane" | "plane-arrival" | "plane-departure" | "plane-slash" | "play" | "play-circle" | "plug" | "plus" | "plus-circle" | "plus-square" | "podcast" | "poll" | "poll-h" | "poo" | "poo-storm" | "poop" | "portrait" | "pound-sign" | "power-off" | "pray" | "praying-hands" | "prescription" | "prescription-bottle" | "prescription-bottle-alt" | "print" | "procedures" | "project-diagram" | "pump-medical" | "pump-soap" | "puzzle-piece" | "qrcode" | "question" | "question-circle" | "quidditch" | "quote-left" | "quote-right" | "quran" | "radiation" | "radiation-alt" | "rainbow" | "random" | "receipt" | "record-vinyl" | "recycle" | "redo" | "redo-alt" | "registered" | "remove-format" | "reply" | "reply-all" | "republican" | "restroom" | "retweet" | "ribbon" | "ring" | "road" | "robot" | "rocket" | "route" | "rss" | "rss-square" | "ruble-sign" | "ruler" | "ruler-combined" | "ruler-horizontal" | "ruler-vertical" | "running" | "rupee-sign" | "sad-cry" | "sad-tear" | "satellite" | "satellite-dish" | "save" | "school" | "screwdriver" | "scroll" | "sd-card" | "search" | "search-dollar" | "search-location" | "search-minus" | "search-plus" | "seedling" | "server" | "shapes" | "share" | "share-alt" | "share-alt-square" | "share-square" | "shekel-sign" | "shield-alt" | "shield-virus" | "ship" | "shipping-fast" | "shoe-prints" | "shopping-bag" | "shopping-basket" | "shopping-cart" | "shower" | "shuttle-van" | "sign" | "sign-in-alt" | "sign-language" | "sign-out-alt" | "signal" | "signature" | "sim-card" | "sink" | "sitemap" | "skating" | "skiing" | "skiing-nordic" | "skull" | "skull-crossbones" | "slash" | "sleigh" | "sliders-h" | "smile" | "smile-beam" | "smile-wink" | "smog" | "smoking" | "smoking-ban" | "sms" | "snowboarding" | "snowflake" | "snowman" | "snowplow" | "soap" | "socks" | "solar-panel" | "sort" | "sort-alpha-down" | "sort-alpha-down-alt" | "sort-alpha-up" | "sort-alpha-up-alt" | "sort-amount-down" | "sort-amount-down-alt" | "sort-amount-up" | "sort-amount-up-alt" | "sort-down" | "sort-numeric-down" | "sort-numeric-down-alt" | "sort-numeric-up" | "sort-numeric-up-alt" | "sort-up" | "spa" | "space-shuttle" | "spell-check" | "spider" | "spinner" | "splotch" | "spray-can" | "square" | "square-full" | "square-root-alt" | "stamp" | "star" | "star-and-crescent" | "star-half" | "star-half-alt" | "star-of-david" | "star-of-life" | "step-backward" | "step-forward" | "stethoscope" | "sticky-note" | "stop" | "stop-circle" | "stopwatch" | "stopwatch-20" | "store" | "store-alt" | "store-alt-slash" | "store-slash" | "stream" | "street-view" | "strikethrough" | "stroopwafel" | "subscript" | "subway" | "suitcase" | "suitcase-rolling" | "sun" | "superscript" | "surprise" | "swatchbook" | "swimmer" | "swimming-pool" | "synagogue" | "sync" | "sync-alt" | "syringe" | "table" | "table-tennis" | "tablet" | "tablet-alt" | "tablets" | "tachometer-alt" | "tag" | "tags" | "tape" | "tasks" | "taxi" | "teeth" | "teeth-open" | "temperature-high" | "temperature-low" | "tenge" | "terminal" | "text-height" | "text-width" | "th" | "th-large" | "th-list" | "theater-masks" | "thermometer" | "thermometer-empty" | "thermometer-full" | "thermometer-half" | "thermometer-quarter" | "thermometer-three-quarters" | "thumbs-down" | "thumbs-up" | "thumbtack" | "ticket-alt" | "times" | "times-circle" | "tint" | "tint-slash" | "tired" | "toggle-off" | "toggle-on" | "toilet" | "toilet-paper" | "toilet-paper-slash" | "toolbox" | "tools" | "tooth" | "torah" | "torii-gate" | "tractor" | "trademark" | "traffic-light" | "trailer" | "train" | "tram" | "transgender" | "transgender-alt" | "trash" | "trash-alt" | "trash-restore" | "trash-restore-alt" | "tree" | "trophy" | "truck" | "truck-loading" | "truck-monster" | "truck-moving" | "truck-pickup" | "tshirt" | "tty" | "tv" | "umbrella" | "umbrella-beach" | "underline" | "undo" | "undo-alt" | "universal-access" | "university" | "unlink" | "unlock" | "unlock-alt" | "upload" | "user" | "user-alt" | "user-alt-slash" | "user-astronaut" | "user-check" | "user-circle" | "user-clock" | "user-cog" | "user-edit" | "user-friends" | "user-graduate" | "user-injured" | "user-lock" | "user-md" | "user-minus" | "user-ninja" | "user-nurse" | "user-plus" | "user-secret" | "user-shield" | "user-slash" | "user-tag" | "user-tie" | "user-times" | "users" | "users-cog" | "users-slash" | "utensil-spoon" | "utensils" | "vector-square" | "venus" | "venus-double" | "venus-mars" | "vest" | "vest-patches" | "vial" | "vials" | "video" | "video-slash" | "vihara" | "virus" | "virus-slash" | "viruses" | "voicemail" | "volleyball-ball" | "volume-down" | "volume-mute" | "volume-off" | "volume-up" | "vote-yea" | "vr-cardboard" | "walking" | "wallet" | "warehouse" | "water" | "wave-square" | "weight" | "weight-hanging" | "wheelchair" | "wifi" | "wind" | "window-close" | "window-maximize" | "window-minimize" | "window-restore" | "wine-bottle" | "wine-glass" | "wine-glass-alt" | "won-sign" | "wrench" | "x-ray" | "yen-sign" | "yin-yang";
+    export interface IconElement extends ControlElement {
+        name?: IconName;
+        fill?: Types.Color;
+        image?: ImageElement;
+        spin?: boolean;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-icon']: IconElement;
+            }
+        }
+    }
+    export class Icon extends Control {
+        private svgElm;
+        private _name;
+        private _size;
+        private _image;
+        private _spin;
+        private _fill;
+        constructor(parent?: Control, options?: any);
+        protected init(): void;
+        get fill(): Types.Color;
+        set fill(color: Types.Color);
+        get name(): IconName;
+        set name(value: IconName);
+        get image(): Image;
+        set image(image: Image);
+        get spin(): boolean;
+        set spin(value: boolean);
+        private _updateIcon;
+        static create(options?: IconElement, parent?: Control): Promise<Icon>;
+    }
+}
+declare module "packages/icon/src/index" {
+    export { IconName, Icon, IconElement } from "packages/icon/src/icon";
+}
+declare module "packages/modal/src/style/modal.css" {
+    import { IModalMediaQuery } from "packages/modal/src/modal";
+    export const getOverlayStyle: () => string;
+    export const getWrapperStyle: () => string;
+    export const getNoBackdropStyle: () => string;
+    export const getFixedWrapperStyle: (paddingLeft: string, paddingTop: string) => string;
+    export const getAbsoluteWrapperStyle: (left: string, top: string) => string;
+    export const getModalStyle: (left: string, top: string) => string;
+    export const modalStyle: string;
+    export const titleStyle: string;
+    export const getModalMediaQueriesStyleClass: (mediaQueries: IModalMediaQuery[]) => string;
+}
+declare module "packages/modal/src/modal" {
+    import { Control, ControlElement, Container, IBackground, IBorder, Background, Border, IMediaQuery, IControlMediaQueryProps, ISpace, Overflow, IOverflow, OverflowType } from "@ijstech/components/base";
+    import { Icon, IconElement } from "packages/icon/src/index";
+    export type modalPopupPlacementType = 'center' | 'bottom' | 'bottomLeft' | 'bottomRight' | 'top' | 'topLeft' | 'topRight' | 'rightTop' | 'left' | 'right';
+    type eventCallback = (target: Control) => void;
+    type ModalPositionType = "fixed" | "absolute";
+    export interface IModalMediaQueryProps extends IControlMediaQueryProps {
+        showBackdrop?: boolean;
+        popupPlacement?: 'center' | 'bottom' | 'top';
+        maxWidth?: string | number;
+        maxHeight?: string | number;
+        height?: string | number;
+        minWidth?: string | number;
+        width?: string | number;
+        position?: ModalPositionType;
+    }
+    export type IModalMediaQuery = IMediaQuery<IModalMediaQueryProps>;
+    export interface ModalElement extends ControlElement {
+        title?: string;
+        showBackdrop?: boolean;
+        closeIcon?: IconElement;
+        popupPlacement?: modalPopupPlacementType;
+        closeOnBackdropClick?: boolean;
+        isChildFixed?: boolean;
+        closeOnScrollChildFixed?: boolean;
+        item?: Control;
+        mediaQueries?: IModalMediaQuery[];
+        onOpen?: eventCallback;
+        onClose?: eventCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-modal']: ModalElement;
+            }
+        }
+    }
+    export class Modal extends Container {
+        protected _visible: boolean;
+        private wrapperDiv;
+        private titleSpan;
+        private modalDiv;
+        private bodyDiv;
+        private overlayDiv;
+        private _closeIcon;
+        private _placement;
+        private _closeOnBackdropClick;
+        private _showBackdrop;
+        private _wrapperPositionAt;
+        private _isChildFixed;
+        private _closeOnScrollChildFixed;
+        private _mediaQueries;
+        private hasInitializedChildFixed;
+        private mapScrollTop;
+        private insideClick;
+        private boundHandleModalMouseDown;
+        private boundHandleModalMouseUp;
+        protected _onOpen: eventCallback;
+        onClose: eventCallback;
+        constructor(parent?: Control, options?: any);
+        get visible(): boolean;
+        set visible(value: boolean);
+        get onOpen(): any;
+        set onOpen(callback: any);
+        get title(): string;
+        set title(value: string);
+        get popupPlacement(): modalPopupPlacementType;
+        set popupPlacement(value: modalPopupPlacementType);
+        get closeIcon(): Icon | null;
+        set closeIcon(elm: Icon | null);
+        get closeOnBackdropClick(): boolean;
+        set closeOnBackdropClick(value: boolean);
+        get showBackdrop(): boolean;
+        set showBackdrop(value: boolean);
+        private updateNoBackdropMd;
+        get item(): Control;
+        set item(value: Control);
+        get body(): Control;
+        set body(value: Control);
+        get position(): ModalPositionType;
+        set position(value: ModalPositionType);
+        get isChildFixed(): boolean;
+        set isChildFixed(value: boolean);
+        get closeOnScrollChildFixed(): boolean;
+        set closeOnScrollChildFixed(value: boolean);
+        get mediaQueries(): IModalMediaQuery[];
+        set mediaQueries(value: IModalMediaQuery[]);
+        private setChildFixed;
+        private positionAtChildFixed;
+        private getWrapperParent;
+        private positionAt;
+        private positionAtFix;
+        private positionAtAbsolute;
+        private getWrapperFixCoords;
+        private getWrapperOffsets;
+        private getWrapperAbsoluteCoords;
+        protected _handleOnShow(event: Event): void;
+        private handleModalMouseDown;
+        private handleModalMouseUp;
+        private setInsideClick;
+        private updateModal;
+        refresh(): void;
+        get background(): Background;
+        set background(value: IBackground);
+        get width(): number | string;
+        set width(value: number | string);
+        get height(): number | string;
+        set height(value: number | string);
+        get border(): Border;
+        set border(value: IBorder);
+        get padding(): ISpace;
+        set padding(value: ISpace);
+        get boxShadow(): string;
+        set boxShadow(value: string);
+        get overflow(): Overflow;
+        set overflow(value: OverflowType | IOverflow);
+        protected removeTargetStyle(target: HTMLElement, propertyName: string): void;
+        protected setTargetStyle(target: HTMLElement, propertyName: string, value: string): void;
+        protected init(): void;
+        static create(options?: ModalElement, parent?: Container): Promise<Modal>;
+    }
+}
+declare module "packages/modal/src/index" {
+    export { Modal, ModalElement, modalPopupPlacementType } from "packages/modal/src/modal";
 }
 declare module "packages/module/src/module" {
     import { Container, ContainerElement } from "@ijstech/components/base";
+    import { IconElement } from "packages/icon/src/index";
+    import { Modal, ModalElement } from "packages/modal/src/index";
     export interface ModuleElement extends ContainerElement {
         caption?: string;
     }
@@ -7252,10 +8400,18 @@ declare module "packages/module/src/module" {
             }
         }
     }
+    export interface IOpenModalOptions {
+        title?: string;
+        showBackdrop?: boolean;
+        closeIcon?: IconElement;
+        width?: number | string;
+        zIndex?: number;
+    }
     export class Module extends Container {
         private $renderElms;
         private $render;
         private modulesUrlRegex;
+        private static _modalMap;
         static create(options?: ModuleElement, parent?: Container, defaults?: ModuleElement): Promise<Module>;
         constructor(parent?: Container, options?: any, defaults?: any);
         init(): void;
@@ -7265,10 +8421,13 @@ declare module "packages/module/src/module" {
         onLoad(): void;
         onShow(options?: any): void;
         onHide(): void;
+        disconnectedCallback(): void;
+        openModal(options?: ModalElement): Modal;
+        closeModal(): void;
     }
 }
 declare module "packages/module/src/index" {
-    export { Module, ModuleElement } from "packages/module/src/module";
+    export { Module, ModuleElement, IOpenModalOptions } from "packages/module/src/module";
 }
 declare module "packages/application/src/event-bus" {
     export interface Registry {
@@ -7353,6 +8512,7 @@ declare module "packages/checkbox/src/index" {
 declare module "packages/application/src/globalEvent" {
     export class GlobalEvents {
         _leftMouseButtonDown: boolean;
+        private _initialTouchPos;
         constructor();
         abortEvent(event: Event): void;
         private _handleClick;
@@ -7363,9 +8523,6 @@ declare module "packages/application/src/globalEvent" {
         private _handleKeyDown;
         private _handleKeyUp;
         private _handleContextMenu;
-        private _handleTouchStart;
-        private _handleTouchEnd;
-        private _handleTouchMove;
         private _handleChange;
         private _handleMouseWheel;
         private _handleFocus;
@@ -7376,31 +8533,178 @@ declare module "packages/application/src/globalEvent" {
 declare module "packages/application/src/styles/index.css" {
     export const applicationStyle: string;
 }
-declare module "packages/ipfs/src/index" {
+declare module "packages/ipfs/src/types" {
+    export enum CidCode {
+        DAG_PB = 112,
+        RAW = 85
+    }
+    export interface ICidData {
+        cid: string;
+        links?: ICidInfo[];
+        name?: string;
+        size: number;
+        type?: 'dir' | 'file';
+        code?: CidCode;
+        multihash?: any;
+        bytes?: Uint8Array;
+    }
     export interface ICidInfo {
         cid: string;
         links?: ICidInfo[];
-        name: string;
+        name?: string;
         size: number;
         type?: 'dir' | 'file';
     }
-    export function parse(cid: string): {
-        code: number;
-        version: number;
-        multihash: {
-            code: number;
-            size: number;
-            digest: Uint8Array;
-            bytes: Uint8Array;
-        };
-        bytes: Uint8Array;
-    };
-    export function hashItems(items?: ICidInfo[], version?: number): Promise<ICidInfo>;
-    export function hashContent(content: string, version?: number): Promise<ICidInfo>;
-    export function hashFile(file: File, version?: number): Promise<{
-        cid: string;
+}
+declare module "packages/ipfs/src/utils" {
+    import { ICidData, ICidInfo } from "packages/ipfs/src/types";
+    export function parse(cid: string, bytes?: Uint8Array): ICidData;
+    export interface IHashChunk {
         size: number;
-    }>;
+        dataSize: number;
+        cid: {
+            toString: () => string;
+        };
+    }
+    export function hashChunk(data: Buffer, version?: number): Promise<IHashChunk>;
+    export function hashChunks(chunks: IHashChunk[] | ICidInfo[], version?: number): Promise<ICidData>;
+    export function hashItems(items?: ICidInfo[], version?: number): Promise<ICidData>;
+    export function hashContent(content: string | Uint8Array, version?: number): Promise<ICidData>;
+    export function hashFile(file: File | Uint8Array, version?: number): Promise<ICidData>;
+    export function cidToHash(cid: string): string;
+}
+declare module "packages/ipfs/src/fileManager" {
+    import { ICidData, ICidInfo } from "packages/ipfs/src/types";
+    export interface ISignature {
+        pubKey: string;
+        timestamp: number;
+        sig: string;
+    }
+    export interface ISignerData {
+        action: string;
+        timestamp: number;
+        data?: any;
+    }
+    export interface ISigner {
+        sign(data: ISignerData, schema: object): Promise<ISignature>;
+    }
+    interface IFileManagerOptions {
+        transport?: IFileManagerTransport;
+        endpoint?: string;
+        signer?: ISigner;
+        rootCid?: string;
+    }
+    export interface IUploadEndpoints {
+        [cid: string]: {
+            exists?: boolean;
+            url: string;
+            method?: string;
+            headers?: {
+                [key: string]: string;
+            };
+        };
+    }
+    export type IGetUploadUrlResult = {
+        success: true;
+        data: IUploadEndpoints;
+    };
+    export interface IRootInfo {
+        success: boolean;
+        data: {
+            cid: string;
+            used: number;
+            quota: number;
+        };
+    }
+    export interface IResult {
+        success: boolean;
+        data?: any;
+    }
+    export interface IFileManagerTransport {
+        applyUpdate(node: FileNode): Promise<IResult>;
+        getCidInfo(cid: string): Promise<ICidInfo | undefined>;
+        getRoot(): Promise<IRootInfo>;
+        getUploadUrl(cidInfo: ICidInfo): Promise<IGetUploadUrlResult | undefined>;
+    }
+    export interface IFileManagerTransporterOptions {
+        endpoint?: string;
+        signer?: ISigner;
+    }
+    export class FileManagerHttpTransport implements IFileManagerTransport {
+        private options;
+        private updated;
+        constructor(options?: IFileManagerTransporterOptions);
+        applyUpdate(node: FileNode): Promise<IResult>;
+        getCidInfo(cid: string): Promise<ICidInfo | undefined>;
+        getRoot(): Promise<IRootInfo>;
+        getUploadUrl(cidInfo: ICidInfo, isRoot?: boolean): Promise<IGetUploadUrlResult | undefined>;
+    }
+    export class FileNode {
+        private _name;
+        private _parent;
+        protected _items: FileNode[];
+        private _cidInfo;
+        private _isFile;
+        private _isFolder;
+        private _file;
+        private _fileContent;
+        private _isModified;
+        private _owner;
+        isRoot: boolean;
+        constructor(owner: FileManager, name: string, parent?: FileNode, cidInfo?: ICidData);
+        get cid(): string;
+        checkCid(): Promise<void>;
+        get fullPath(): string;
+        get isModified(): boolean;
+        modified(value?: boolean): false | undefined;
+        get name(): string;
+        set name(value: string);
+        get parent(): FileNode;
+        set parent(value: FileNode);
+        itemCount(): Promise<number>;
+        items(index: number): Promise<FileNode>;
+        addFile(name: string, file: File): Promise<FileNode>;
+        addFileContent(name: string, content: Uint8Array | string): Promise<FileNode>;
+        addItem(item: FileNode): Promise<void>;
+        removeItem(item: FileNode): void;
+        findItem(name: string): Promise<FileNode | undefined>;
+        get cidInfo(): ICidData | undefined;
+        isFile(): Promise<boolean>;
+        isFolder(): Promise<boolean>;
+        get file(): File | undefined;
+        set file(value: File | undefined);
+        get fileContent(): string | Uint8Array | undefined;
+        set fileContent(value: string | Uint8Array | undefined);
+        hash(): Promise<ICidData | undefined>;
+    }
+    export class FileManager {
+        private transporter;
+        private rootNode;
+        private options;
+        quota: number;
+        used: number;
+        constructor(options?: IFileManagerOptions);
+        addFileTo(folder: FileNode, filePath: string, file: File | Uint8Array): Promise<FileNode>;
+        addFile(filePath: string, file: File): Promise<FileNode | undefined>;
+        addFileContent(filePath: string, content: Uint8Array | string): Promise<FileNode | undefined>;
+        getCidInfo(cid: string): Promise<ICidInfo | undefined>;
+        private updateNode;
+        applyUpdates(): Promise<FileNode | undefined>;
+        delete(fileNode: FileNode): void;
+        addFolder(folder: FileNode, name: string): Promise<FileNode>;
+        updateFolderName(fileNode: FileNode, newName: string): Promise<void>;
+        getFileNode(path: string): Promise<FileNode | undefined>;
+        getRootNode(): Promise<FileNode | undefined>;
+        reset(): void;
+        setRootCid(cid: string): Promise<FileNode | undefined>;
+        move(fileNode: FileNode, newParent: FileNode): void;
+    }
+}
+declare module "packages/ipfs/src/index" {
+    import { ICidInfo } from "packages/ipfs/src/types";
+    export { CidCode, ICidData, ICidInfo } from "packages/ipfs/src/types";
+    export { cidToHash, hashContent, hashFile, hashItems, parse } from "packages/ipfs/src/utils";
+    export { FileManager, FileManagerHttpTransport, IFileManagerTransport, IFileManagerTransporterOptions, ISigner, ISignerData, ISignature, FileNode, IGetUploadUrlResult } from "packages/ipfs/src/fileManager";
     export interface IFile extends File {
         path?: string;
         cid?: {
@@ -7410,6 +8714,50 @@ declare module "packages/ipfs/src/index" {
     }
     export function hashFiles(files: IFile[], version?: number): Promise<ICidInfo>;
     export function cidToSri(cid: string): Promise<string>;
+}
+declare module "packages/button/src/style/button.css" { }
+/// <amd-module name="@ijstech/components/button" />
+declare module "@ijstech/components/button" {
+    import { Control, Container, ControlElement } from "@ijstech/components/base";
+    import { Icon, IconElement } from "packages/icon/src/index";
+    import "packages/button/src/style/button.css";
+    export interface ButtonElement extends ControlElement {
+        caption?: string;
+        icon?: IconElement;
+        rightIcon?: IconElement;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-button']: ButtonElement;
+            }
+        }
+    }
+    export class Button extends Control {
+        private captionElm;
+        private _icon;
+        private _rightIcon;
+        static create(options?: ButtonElement, parent?: Container): Promise<Button>;
+        constructor(parent?: Control, options?: ButtonElement);
+        get caption(): string;
+        set caption(value: string);
+        get icon(): Icon;
+        set icon(value: Icon);
+        get rightIcon(): Icon;
+        set rightIcon(value: Icon);
+        get enabled(): boolean;
+        set enabled(value: boolean);
+        private get isSpinning();
+        private prependIcon;
+        private appendIcon;
+        private updateButton;
+        _handleClick(event: MouseEvent): boolean;
+        refresh(): void;
+        protected init(): void;
+    }
+}
+declare module "packages/button/src/index" {
+    export { Button, ButtonElement } from "@ijstech/components/button";
 }
 declare module "packages/link/src/style/link.css" { }
 declare module "packages/link/src/link" {
@@ -7440,18 +8788,55 @@ declare module "packages/link/src/link" {
 declare module "packages/link/src/index" {
     export { Link, LinkElement } from "packages/link/src/link";
 }
-declare module "packages/label/src/style/label.css" { }
-declare module "packages/label/src/label" {
-    import { Control, ControlElement } from "@ijstech/components/base";
-    import { Link, LinkElement } from "packages/link/src/index";
-    import "packages/label/src/style/label.css";
+declare module "packages/text/src/style/text.css" { }
+declare module "packages/text/src/text" {
+    import { Control, ControlElement, DisplayType } from "@ijstech/components/base";
+    import "packages/text/src/style/text.css";
     type WordBreakType = 'normal' | 'break-all' | 'keep-all' | 'break-word' | 'inherit' | 'initial' | 'revert' | 'unset';
     type OverflowWrapType = 'normal' | 'break-word' | 'anywhere' | 'inherit' | 'initial' | 'revert' | 'unset';
-    export interface LabelElement extends ControlElement {
-        caption?: string;
-        link?: LinkElement;
+    export type TextOverflowType = 'clip' | 'ellipsis' | 'initial' | 'inherit';
+    export interface TextElement extends ControlElement {
         wordBreak?: WordBreakType;
         overflowWrap?: OverflowWrapType;
+        textOverflow?: TextOverflowType;
+        lineClamp?: number;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-text']: TextElement;
+            }
+        }
+    }
+    export class Text extends Control {
+        constructor(parent?: Control, options?: any);
+        get wordBreak(): WordBreakType;
+        set wordBreak(value: WordBreakType);
+        get overflowWrap(): OverflowWrapType;
+        set overflowWrap(value: OverflowWrapType);
+        get textOverflow(): TextOverflowType;
+        set textOverflow(value: TextOverflowType);
+        get lineClamp(): number;
+        set lineClamp(value: number);
+        get display(): DisplayType;
+        set display(value: DisplayType);
+        protected init(): void;
+        static create(options?: TextElement, parent?: Control): Promise<Text>;
+    }
+}
+declare module "packages/text/src/index" {
+    export { Text, TextElement, TextOverflowType } from "packages/text/src/text";
+}
+declare module "packages/label/src/style/label.css" { }
+declare module "packages/label/src/label" {
+    import { Control } from "@ijstech/components/base";
+    import { Link, LinkElement } from "packages/link/src/index";
+    import { Text, TextElement } from "packages/text/src/index";
+    import "packages/label/src/style/label.css";
+    export interface LabelElement extends TextElement {
+        caption?: string;
+        link?: LinkElement;
+        textDecoration?: string;
     }
     global {
         namespace JSX {
@@ -7460,7 +8845,7 @@ declare module "packages/label/src/label" {
             }
         }
     }
-    export class Label extends Control {
+    export class Label extends Text {
         private captionSpan;
         private _link;
         constructor(parent?: Control, options?: any);
@@ -7470,10 +8855,8 @@ declare module "packages/label/src/label" {
         set link(value: Link);
         set height(value: number);
         set width(value: number);
-        get wordBreak(): WordBreakType;
-        set wordBreak(value: WordBreakType);
-        get overflowWrap(): OverflowWrapType;
-        set overflowWrap(value: OverflowWrapType);
+        get textDecoration(): string;
+        set textDecoration(value: string);
         protected init(): void;
         static create(options?: LabelElement, parent?: Control): Promise<Label>;
     }
@@ -7481,8 +8864,16 @@ declare module "packages/label/src/label" {
 declare module "packages/label/src/index" {
     export { Label, LabelElement } from "packages/label/src/label";
 }
+declare module "packages/layout/src/interfaces" {
+    export interface IHover {
+        opacity?: number;
+        backgroundColor?: string;
+        fontColor?: string;
+    }
+}
 declare module "packages/layout/src/style/panel.css" {
     import { IGridLayoutMediaQuery, IStackMediaQuery, StackDirectionType } from "packages/layout/src/index";
+    import { IHover } from "packages/layout/src/interfaces";
     export const panelStyle: string;
     export const overflowStyle: string;
     export const vStackStyle: string;
@@ -7498,14 +8889,26 @@ declare module "packages/layout/src/style/panel.css" {
     export const alignItemsStartStyle: string;
     export const alignItemsCenterStyle: string;
     export const alignItemsEndStyle: string;
+    export const alignSelfAutoStyle: string;
+    export const alignSelfStretchStyle: string;
+    export const alignSelfStartStyle: string;
+    export const alignSelfCenterStyle: string;
+    export const alignSelfEndStyle: string;
+    export const alignContentSpaceBetweenStyle: string;
+    export const alignContentSpaceAroundStyle: string;
+    export const alignContentStretchStyle: string;
+    export const alignContentStartStyle: string;
+    export const alignContentCenterStyle: string;
+    export const alignContentEndStyle: string;
     export const getTemplateColumnsStyleClass: (columns: string[]) => string;
     export const getTemplateRowsStyleClass: (rows: string[]) => string;
     export const getTemplateAreasStyleClass: (templateAreas: string[][]) => string;
-    export const getSpacingValue: (value: string | number) => string;
     export const getGridLayoutMediaQueriesStyleClass: (mediaQueries: IGridLayoutMediaQuery[]) => string;
+    export const getHoverStyleClass: (hover: IHover) => string;
 }
 declare module "packages/layout/src/stack" {
     import { Container, ContainerElement, IMediaQuery, IBackground, PositionType, IControlMediaQueryProps } from "@ijstech/components/base";
+    import { IHover } from "packages/layout/src/interfaces";
     export interface IStackMediaQueryProps extends IControlMediaQueryProps {
         direction?: StackDirectionType;
         width?: number | string;
@@ -7514,6 +8917,7 @@ declare module "packages/layout/src/stack" {
         background?: IBackground;
         justifyContent?: StackJustifyContentType;
         alignItems?: StackAlignItemsType;
+        alignSelf?: StackAlignSelfType;
         position?: PositionType;
         top?: number | string;
     }
@@ -7522,13 +8926,18 @@ declare module "packages/layout/src/stack" {
     export type StackDirectionType = 'horizontal' | 'vertical';
     export type StackJustifyContentType = "start" | "center" | "end" | "space-between";
     export type StackAlignItemsType = "stretch" | "start" | "center" | "end";
+    export type StackAlignSelfType = "auto" | "stretch" | "start" | "center" | "end";
+    export type StackAlignContentType = "stretch" | "start" | "center" | "end" | "space-between" | "space-around" | "space-evenly";
     export interface StackLayoutElement extends ContainerElement {
         gap?: number | string;
         wrap?: StackWrapType;
         direction?: StackDirectionType;
         justifyContent?: StackJustifyContentType;
         alignItems?: StackAlignItemsType;
+        alignSelf?: StackAlignSelfType;
+        alignContent?: StackAlignSelfType;
         mediaQueries?: IStackMediaQuery[];
+        hover?: IHover;
     }
     export type HStackHAlignmentType = StackJustifyContentType;
     export type HStackVAlignmentType = StackAlignItemsType;
@@ -7571,7 +8980,10 @@ declare module "packages/layout/src/stack" {
         private _direction;
         private _justifyContent;
         private _alignItems;
+        private _alignSelf;
+        private _alignContent;
         private _mediaQueries;
+        private _hover;
         constructor(parent?: Container, options?: any);
         static create(options?: StackLayoutElement, parent?: Container): Promise<StackLayout>;
         get direction(): StackDirectionType;
@@ -7580,13 +8992,20 @@ declare module "packages/layout/src/stack" {
         set justifyContent(value: StackJustifyContentType);
         get alignItems(): StackAlignItemsType;
         set alignItems(value: StackAlignItemsType);
+        get alignSelf(): StackAlignSelfType;
+        set alignSelf(value: StackAlignSelfType);
+        get alignContent(): StackAlignContentType;
+        set alignContent(value: StackAlignContentType);
         get gap(): number | string;
         set gap(value: number | string);
         get wrap(): StackWrapType;
         set wrap(value: StackWrapType);
         get mediaQueries(): IStackMediaQuery[];
         set mediaQueries(value: IStackMediaQuery[]);
-        protected setAttributeToProperty<P extends keyof StackLayout>(propertyName: P): void;
+        get hover(): IHover;
+        set hover(value: IHover);
+        protected removeStyle<P extends keyof StackLayout>(propertyName: P): void;
+        protected setStyle<P extends keyof StackLayout>(propertyName: P, value: string): void;
         protected init(): void;
     }
     export class HStack extends StackLayout {
@@ -7597,7 +9016,6 @@ declare module "packages/layout/src/stack" {
         set horizontalAlignment(value: HStackHAlignmentType);
         get verticalAlignment(): HStackVAlignmentType;
         set verticalAlignment(value: HStackVAlignmentType);
-        protected setAttributeToProperty<P extends keyof HStack>(propertyName: P): void;
         protected init(): void;
         static create(options?: HStackElement, parent?: Container): Promise<HStack>;
     }
@@ -7609,14 +9027,15 @@ declare module "packages/layout/src/stack" {
         set horizontalAlignment(value: VStackHAlignmentType);
         get verticalAlignment(): VStackVAlignmentType;
         set verticalAlignment(value: VStackVAlignmentType);
-        protected setAttributeToProperty<P extends keyof VStack>(propertyName: P): void;
         init(): void;
         static create(options?: VStackElement, parent?: Container): Promise<VStack>;
     }
 }
 declare module "packages/layout/src/panel" {
     import { Control, Container, ContainerElement } from "@ijstech/components/base";
+    import { IHover } from "packages/layout/src/interfaces";
     export interface PanelElement extends ContainerElement {
+        hover?: IHover;
     }
     global {
         namespace JSX {
@@ -7626,7 +9045,12 @@ declare module "packages/layout/src/panel" {
         }
     }
     export class Panel extends Container {
+        private _hover;
         constructor(parent?: Control, options?: any);
+        get hover(): IHover;
+        set hover(value: IHover);
+        protected removeStyle<P extends keyof Panel>(propertyName: P): void;
+        protected setStyle<P extends keyof Panel>(propertyName: P, value: string): void;
         protected init(): void;
         connectedCallback(): void;
         static create(options?: PanelElement, parent?: Control): Promise<Panel>;
@@ -7748,42 +9172,6 @@ declare module "packages/layout/src/index" {
     export { CardLayout, CardLayoutElement } from "packages/layout/src/card";
     export { IGridLayoutMediaQuery, GridLayout, GridLayoutElement } from "packages/layout/src/grid";
 }
-declare module "packages/image/src/style/image.css" { }
-declare module "packages/image/src/image" {
-    import { Control, ControlElement } from "@ijstech/components/base";
-    import "packages/image/src/style/image.css";
-    export interface ImageElement extends ControlElement {
-        rotate?: number;
-        url?: string;
-        fallbackUrl?: string;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['i-image']: ImageElement;
-            }
-        }
-    }
-    export class Image extends Control {
-        private imageElm;
-        private _wrapCropElm;
-        private _wrapResizeElm;
-        private _imageClippedElm;
-        private _url;
-        private _rotate;
-        private _fallbackUrl;
-        constructor(parent?: Control, options?: any);
-        get rotate(): number;
-        set rotate(value: any);
-        get url(): string;
-        set url(value: string);
-        protected init(): void;
-        static create(options?: ImageElement, parent?: Control): Promise<Image>;
-    }
-}
-declare module "packages/image/src/index" {
-    export { Image, ImageElement } from "packages/image/src/image";
-}
 declare module "packages/upload/src/style/upload.css" { }
 declare module "packages/upload/src/upload" {
     import { Control, ControlElement } from "@ijstech/components/base";
@@ -7884,106 +9272,83 @@ declare module "packages/upload/src/upload" {
         static create(options?: UploadElement, parent?: Control): Promise<Upload>;
     }
 }
-declare module "packages/modal/src/style/modal.css" {
-    export const overlayStyle: string;
-    export const wrapperStyle: string;
-    export const noBackdropStyle: string;
-    export const visibleStyle: string;
-    export const modalStyle: string;
-    export const titleStyle: string;
-}
-declare module "packages/modal/src/modal" {
-    import { Control, ControlElement, Container, IBackground, IBorder, Background, Border } from "@ijstech/components/base";
-    import { Icon, IconElement } from "packages/icon/src/index";
-    export type modalPopupPlacementType = 'center' | 'bottom' | 'bottomLeft' | 'bottomRight' | 'top' | 'topLeft' | 'topRight' | 'rightTop' | 'left';
-    type eventCallback = (target: Control) => void;
-    type ModalPositionType = "fixed" | "absolute";
-    export interface ModalElement extends ControlElement {
-        title?: string;
-        showBackdrop?: boolean;
-        closeIcon?: IconElement;
-        popupPlacement?: modalPopupPlacementType;
-        closeOnBackdropClick?: boolean;
-        isChildFixed?: boolean;
-        closeOnScrollChildFixed?: boolean;
-        item?: Control;
-        onOpen?: eventCallback;
-        onClose?: eventCallback;
+declare module "packages/progress/src/style/progress.css" { }
+declare module "packages/progress/src/progress" {
+    import { Control, ControlElement, Types, IFont } from "@ijstech/components/base";
+    import "packages/progress/src/style/progress.css";
+    export type ProgressStatus = 'success' | 'exception' | 'active' | 'warning';
+    export type ProgressType = 'line' | 'circle';
+    type callbackType = (source: Control) => void;
+    export interface ProgressElement extends ControlElement {
+        percent?: number;
+        strokeWidth?: number;
+        strokeColor?: Types.Color;
+        loading?: boolean;
+        steps?: number;
+        type?: ProgressType;
+        format?: (percent: number) => string;
+        onRenderStart?: callbackType;
+        onRenderEnd?: callbackType;
     }
     global {
         namespace JSX {
             interface IntrinsicElements {
-                ['i-modal']: ModalElement;
+                ['i-progress']: ProgressElement;
             }
         }
     }
-    export class Modal extends Container {
-        private wrapperDiv;
-        private titleSpan;
-        private modalDiv;
-        private overlayDiv;
-        private _closeIcon;
-        private _placement;
-        private _closeOnBackdropClick;
-        private _showBackdrop;
-        private _wrapperPositionAt;
-        private _isChildFixed;
-        private _closeOnScrollChildFixed;
-        private hasInitializedChildFixed;
-        private mapScrollTop;
-        private insideClick;
-        private boundHandleModalMouseDown;
-        private boundHandleModalMouseUp;
-        protected _onOpen: eventCallback;
-        onClose: eventCallback;
+    export class Progress extends Control {
+        private _percent;
+        private _status;
+        private _loading;
+        private _steps;
+        private _type;
+        private _strokeWidth;
+        private _strokeColor;
+        private _wrapperElm;
+        private _startElm;
+        private _barElm;
+        private _endElm;
+        private _textElm;
+        format: (percent: number) => string;
+        onRenderStart: callbackType;
+        onRenderEnd: callbackType;
         constructor(parent?: Control, options?: any);
-        get visible(): boolean;
-        set visible(value: boolean);
-        get onOpen(): any;
-        set onOpen(callback: any);
-        get title(): string;
-        set title(value: string);
-        get popupPlacement(): modalPopupPlacementType;
-        set popupPlacement(value: modalPopupPlacementType);
-        get closeIcon(): Icon | null;
-        set closeIcon(elm: Icon | null);
-        get closeOnBackdropClick(): boolean;
-        set closeOnBackdropClick(value: boolean);
-        get showBackdrop(): boolean;
-        set showBackdrop(value: boolean);
-        get item(): Control;
-        set item(value: Control);
-        get position(): ModalPositionType;
-        set position(value: ModalPositionType);
-        get isChildFixed(): boolean;
-        set isChildFixed(value: boolean);
-        get closeOnScrollChildFixed(): boolean;
-        set closeOnScrollChildFixed(value: boolean);
-        private generateUUID;
-        private setChildFixed;
-        private positionAtChildFixed;
-        private positionAt;
-        private positionAtFix;
-        private positionAtAbsolute;
-        private getWrapperFixCoords;
-        private getWrapperAbsoluteCoords;
-        protected _handleOnShow(event: Event): void;
-        private handleModalMouseDown;
-        private handleModalMouseUp;
-        private updateModal;
-        refresh(): void;
-        get background(): Background;
-        set background(value: IBackground);
-        get width(): number | string;
-        set width(value: number | string);
-        get border(): Border;
-        set border(value: IBorder);
+        get percent(): number;
+        set percent(value: number);
+        get strokeColor(): Types.Color;
+        set strokeColor(value: Types.Color);
+        get loading(): boolean;
+        set loading(value: boolean);
+        get steps(): number;
+        set steps(value: number);
+        get type(): ProgressType;
+        set type(value: ProgressType);
+        get strokeWidth(): number;
+        set strokeWidth(value: number);
+        get font(): IFont;
+        set font(value: IFont);
+        private get relativeStrokeWidth();
+        private get radius();
+        private get trackPath();
+        private get perimeter();
+        private get rate();
+        private get strokeDashoffset();
+        private get trailPathStyle();
+        private get circlePathStyle();
+        private get stroke();
+        private get trackColor();
+        private get progressTextSize();
+        private renderLine;
+        private renderCircle;
+        private renderCircleInner;
+        private updateCircleInner;
         protected init(): void;
-        static create(options?: ModalElement, parent?: Container): Promise<Modal>;
+        static create(options?: ProgressElement, parent?: Control): Promise<Progress>;
     }
 }
-declare module "packages/modal/src/index" {
-    export { Modal, ModalElement, modalPopupPlacementType } from "packages/modal/src/modal";
+declare module "packages/progress/src/index" {
+    export { Progress } from "packages/progress/src/progress";
 }
 declare module "packages/upload/src/style/upload-modal.css" { }
 declare module "packages/upload/src/upload-modal" {
@@ -8053,20 +9418,25 @@ declare module "packages/upload/src/upload-modal" {
         get parentDir(): Partial<ICidInfo>;
         set parentDir(value: Partial<ICidInfo>);
         show(): Promise<void>;
+        private updateUI;
         hide(): void;
         private onBeforeDrop;
         private onBeforeUpload;
         private filteredFileListData;
         private numPages;
         private setCurrentPage;
+        private get isSmallWidth();
         private renderFilterBar;
         private renderFileList;
+        private formatBytes;
+        private getStatus;
         private getPagination;
         private renderPagination;
         private onChangeCurrentFilterStatus;
         private onClear;
         private onCancel;
         private onChangeFile;
+        private updateBtnCaption;
         private onRemove;
         private onRemoveFile;
         private getDirItems;
@@ -8431,7 +9801,9 @@ declare module "packages/radio/src/radio" {
         captionWidth?: number | string;
         value?: string;
     }
+    export type RadioGroupLayout = 'vertical' | 'horizontal';
     export interface RadioGroupElement extends ControlElement {
+        layout?: RadioGroupLayout;
         selectedValue?: string;
         radioItems?: RadioElement[];
         onChanged?: notifyEventCallback;
@@ -8464,6 +9836,7 @@ declare module "packages/radio/src/radio" {
     export class RadioGroup extends Control {
         private _selectedValue;
         private _radioItems;
+        private _layout;
         private _group;
         private name;
         onChanged: notifyEventCallback;
@@ -8472,6 +9845,8 @@ declare module "packages/radio/src/radio" {
         set selectedValue(value: string);
         get radioItems(): RadioElement[];
         set radioItems(value: RadioElement[]);
+        get layout(): RadioGroupLayout;
+        set layout(value: RadioGroupLayout);
         private renderUI;
         private appendItem;
         private _handleChange;
@@ -8482,7 +9857,7 @@ declare module "packages/radio/src/radio" {
     }
 }
 declare module "packages/radio/src/index" {
-    export { Radio, RadioElement, RadioGroup, RadioGroupElement } from "packages/radio/src/radio";
+    export { Radio, RadioElement, RadioGroup, RadioGroupElement, RadioGroupLayout } from "packages/radio/src/radio";
 }
 declare module "packages/color/src/utils" {
     export function stringToArr(color: string, isRgb: boolean): string[];
@@ -8625,6 +10000,7 @@ declare module "packages/input/src/input" {
         rows?: number;
         multiline?: boolean;
         resize?: resizeType;
+        maxLength?: number;
         onChanged?: notifyEventCallback;
         onKeyDown?: notifyEventCallback;
         onKeyUp?: notifyEventCallback;
@@ -8652,6 +10028,7 @@ declare module "packages/input/src/input" {
         private _rows;
         private _multiline;
         private _resize;
+        private _maxLength;
         private captionSpanElm;
         private labelElm;
         private inputElm;
@@ -8691,6 +10068,8 @@ declare module "packages/input/src/input" {
         set resize(value: resizeType);
         set border(value: IBorder);
         get border(): Border;
+        set maxLength(value: number);
+        get maxLength(): number;
         set onClosed(callback: () => void);
         get onClosed(): () => void;
         private _createInputElement;
@@ -8701,6 +10080,7 @@ declare module "packages/input/src/input" {
         protected _handleBlur(event: Event, stopPropagation?: boolean): boolean;
         private _handleOnFocus;
         private _clearValue;
+        focus(): void;
         protected init(): void;
         static create(options?: InputElement, parent?: Control): Promise<Input>;
     }
@@ -9046,6 +10426,7 @@ declare module "packages/application/src/formatUtils" {
         decimalFigures?: number;
         minValue?: number | string;
         shortScale?: boolean;
+        hasTrailingZero?: boolean;
     }
     export class FormatUtils {
         static unixToFormattedDate(unixTimestamp: number): string;
@@ -9067,6 +10448,11 @@ declare module "packages/application/src/formatUtils" {
         static fromBigInt(bigVal: bigint): any;
         toString(): string;
         divide(value: BigDecimal): any;
+    }
+}
+declare module "packages/application/src/idUtils" {
+    export class IdUtils {
+        static generateUUID(length?: number): string;
     }
 }
 declare module "packages/application/src/index" {
@@ -9212,94 +10598,8 @@ declare module "packages/application/src/index" {
     export { EventBus, IEventBus } from "packages/application/src/event-bus";
     export { IDataSchema, IUISchema, IRenderUIOptions, renderUI, DataSchemaValidator } from "packages/application/src/jsonUI";
     export { FormatUtils, IFormatNumberOptions } from "packages/application/src/formatUtils";
+    export { IdUtils } from "packages/application/src/idUtils";
     export default application;
-}
-declare module "packages/icon/src/style/icon.css" { }
-declare module "packages/icon/src/icon" {
-    import { Control, ControlElement, Types } from "@ijstech/components/base";
-    import { Image, ImageElement } from "packages/image/src/index";
-    import "packages/icon/src/style/icon.css";
-    export type IconName = "" | "ad" | "address-book" | "address-card" | "adjust" | "air-freshener" | "align-center" | "align-justify" | "align-left" | "align-right" | "allergies" | "ambulance" | "american-sign-language-interpreting" | "anchor" | "angle-double-down" | "angle-double-left" | "angle-double-right" | "angle-double-up" | "angle-down" | "angle-left" | "angle-right" | "angle-up" | "angry" | "ankh" | "apple-alt" | "archive" | "archway" | "arrow-alt-circle-down" | "arrow-alt-circle-left" | "arrow-alt-circle-right" | "arrow-alt-circle-up" | "arrow-circle-down" | "arrow-circle-left" | "arrow-circle-right" | "arrow-circle-up" | "arrow-down" | "arrow-left" | "arrow-right" | "arrow-up" | "arrows-alt" | "arrows-alt-h" | "arrows-alt-v" | "assistive-listening-systems" | "asterisk" | "at" | "atlas" | "atom" | "audio-description" | "award" | "baby" | "baby-carriage" | "backspace" | "backward" | "bacon" | "bacteria" | "bacterium" | "bahai" | "balance-scale" | "balance-scale-left" | "balance-scale-right" | "ban" | "band-aid" | "barcode" | "bars" | "baseball-ball" | "basketball-ball" | "bath" | "battery-empty" | "battery-full" | "battery-half" | "battery-quarter" | "battery-three-quarters" | "bed" | "beer" | "bell" | "bell-slash" | "bezier-curve" | "bible" | "bicycle" | "biking" | "binoculars" | "biohazard" | "birthday-cake" | "blender" | "blender-phone" | "blind" | "blog" | "bold" | "bolt" | "bomb" | "bone" | "bong" | "book" | "book-dead" | "book-medical" | "book-open" | "book-reader" | "bookmark" | "border-all" | "border-none" | "border-style" | "bowling-ball" | "box" | "box-open" | "box-tissue" | "boxes" | "braille" | "brain" | "bread-slice" | "briefcase" | "briefcase-medical" | "broadcast-tower" | "broom" | "brush" | "bug" | "building" | "bullhorn" | "bullseye" | "burn" | "bus" | "bus-alt" | "business-time" | "calculator" | "calendar" | "calendar-alt" | "calendar-check" | "calendar-day" | "calendar-minus" | "calendar-plus" | "calendar-times" | "calendar-week" | "camera" | "camera-retro" | "campground" | "candy-cane" | "cannabis" | "capsules" | "car" | "car-alt" | "car-battery" | "car-crash" | "car-side" | "caravan" | "caret-down" | "caret-left" | "caret-right" | "caret-square-down" | "caret-square-left" | "caret-square-right" | "caret-square-up" | "caret-up" | "carrot" | "cart-arrow-down" | "cart-plus" | "cash-register" | "cat" | "certificate" | "chair" | "chalkboard" | "chalkboard-teacher" | "charging-station" | "chart-area" | "chart-bar" | "chart-line" | "chart-pie" | "check" | "check-circle" | "check-double" | "check-square" | "cheese" | "chess" | "chess-bishop" | "chess-board" | "chess-king" | "chess-knight" | "chess-pawn" | "chess-queen" | "chess-rook" | "chevron-circle-down" | "chevron-circle-left" | "chevron-circle-right" | "chevron-circle-up" | "chevron-down" | "chevron-left" | "chevron-right" | "chevron-up" | "child" | "church" | "circle" | "circle-notch" | "city" | "clinic-medical" | "clipboard" | "clipboard-check" | "clipboard-list" | "clock" | "clone" | "closed-captioning" | "cloud" | "cloud-download-alt" | "cloud-meatball" | "cloud-moon" | "cloud-moon-rain" | "cloud-rain" | "cloud-showers-heavy" | "cloud-sun" | "cloud-sun-rain" | "cloud-upload-alt" | "cocktail" | "code" | "code-branch" | "coffee" | "cog" | "cogs" | "coins" | "columns" | "comment" | "comment-alt" | "comment-dollar" | "comment-dots" | "comment-medical" | "comment-slash" | "comments" | "comments-dollar" | "compact-disc" | "compass" | "compress" | "compress-alt" | "compress-arrows-alt" | "concierge-bell" | "cookie" | "cookie-bite" | "copy" | "copyright" | "couch" | "credit-card" | "crop" | "crop-alt" | "cross" | "crosshairs" | "crow" | "crown" | "crutch" | "cube" | "cubes" | "cut" | "database" | "deaf" | "democrat" | "desktop" | "dharmachakra" | "diagnoses" | "dice" | "dice-d20" | "dice-d6" | "dice-five" | "dice-four" | "dice-one" | "dice-six" | "dice-three" | "dice-two" | "digital-tachograph" | "directions" | "disease" | "divide" | "dizzy" | "dna" | "dog" | "dollar-sign" | "dolly" | "dolly-flatbed" | "donate" | "door-closed" | "door-open" | "dot-circle" | "dove" | "download" | "drafting-compass" | "dragon" | "draw-polygon" | "drum" | "drum-steelpan" | "drumstick-bite" | "dumbbell" | "dumpster" | "dumpster-fire" | "dungeon" | "edit" | "egg" | "eject" | "ellipsis-h" | "ellipsis-v" | "envelope" | "envelope-open" | "envelope-open-text" | "envelope-square" | "equals" | "eraser" | "ethernet" | "euro-sign" | "exchange-alt" | "exclamation" | "exclamation-circle" | "exclamation-triangle" | "expand" | "expand-alt" | "expand-arrows-alt" | "external-link-alt" | "external-link-square-alt" | "eye" | "eye-dropper" | "eye-slash" | "fan" | "fast-backward" | "fast-forward" | "faucet" | "fax" | "feather" | "feather-alt" | "female" | "fighter-jet" | "file" | "file-alt" | "file-archive" | "file-audio" | "file-code" | "file-contract" | "file-csv" | "file-download" | "file-excel" | "file-export" | "file-image" | "file-import" | "file-invoice" | "file-invoice-dollar" | "file-medical" | "file-medical-alt" | "file-pdf" | "file-powerpoint" | "file-prescription" | "file-signature" | "file-upload" | "file-video" | "file-word" | "fill" | "fill-drip" | "film" | "filter" | "fingerprint" | "fire" | "fire-alt" | "fire-extinguisher" | "first-aid" | "fish" | "fist-raised" | "flag" | "flag-checkered" | "flag-usa" | "flask" | "flushed" | "folder" | "folder-minus" | "folder-open" | "folder-plus" | "font" | "font-awesome-logo-full" | "football-ball" | "forward" | "frog" | "frown" | "frown-open" | "funnel-dollar" | "futbol" | "gamepad" | "gas-pump" | "gavel" | "gem" | "genderless" | "ghost" | "gift" | "gifts" | "glass-cheers" | "glass-martini" | "glass-martini-alt" | "glass-whiskey" | "glasses" | "globe" | "globe-africa" | "globe-americas" | "globe-asia" | "globe-europe" | "golf-ball" | "gopuram" | "graduation-cap" | "greater-than" | "greater-than-equal" | "grimace" | "grin" | "grin-alt" | "grin-beam" | "grin-beam-sweat" | "grin-hearts" | "grin-squint" | "grin-squint-tears" | "grin-stars" | "grin-tears" | "grin-tongue" | "grin-tongue-squint" | "grin-tongue-wink" | "grin-wink" | "grip-horizontal" | "grip-lines" | "grip-lines-vertical" | "grip-vertical" | "guitar" | "h-square" | "hamburger" | "hammer" | "hamsa" | "hand-holding" | "hand-holding-heart" | "hand-holding-medical" | "hand-holding-usd" | "hand-holding-water" | "hand-lizard" | "hand-middle-finger" | "hand-paper" | "hand-peace" | "hand-point-down" | "hand-point-left" | "hand-point-right" | "hand-point-up" | "hand-pointer" | "hand-rock" | "hand-scissors" | "hand-sparkles" | "hand-spock" | "hands" | "hands-helping" | "hands-wash" | "handshake" | "handshake-alt-slash" | "handshake-slash" | "hanukiah" | "hard-hat" | "hashtag" | "hat-cowboy" | "hat-cowboy-side" | "hat-wizard" | "hdd" | "head-side-cough" | "head-side-cough-slash" | "head-side-mask" | "head-side-virus" | "heading" | "headphones" | "headphones-alt" | "headset" | "heart" | "heart-broken" | "heartbeat" | "helicopter" | "highlighter" | "hiking" | "hippo" | "history" | "hockey-puck" | "holly-berry" | "home" | "horse" | "horse-head" | "hospital" | "hospital-alt" | "hospital-symbol" | "hospital-user" | "hot-tub" | "hotdog" | "hotel" | "hourglass" | "hourglass-end" | "hourglass-half" | "hourglass-start" | "house-damage" | "house-user" | "hryvnia" | "i-cursor" | "ice-cream" | "icicles" | "icons" | "id-badge" | "id-card" | "id-card-alt" | "igloo" | "image" | "images" | "inbox" | "indent" | "industry" | "infinity" | "info" | "info-circle" | "italic" | "jedi" | "joint" | "journal-whills" | "kaaba" | "key" | "keyboard" | "khanda" | "kiss" | "kiss-beam" | "kiss-wink-heart" | "kiwi-bird" | "landmark" | "language" | "laptop" | "laptop-code" | "laptop-house" | "laptop-medical" | "laugh" | "laugh-beam" | "laugh-squint" | "laugh-wink" | "layer-group" | "leaf" | "lemon" | "less-than" | "less-than-equal" | "level-down-alt" | "level-up-alt" | "life-ring" | "lightbulb" | "link" | "lira-sign" | "list" | "list-alt" | "list-ol" | "list-ul" | "location-arrow" | "lock" | "lock-open" | "long-arrow-alt-down" | "long-arrow-alt-left" | "long-arrow-alt-right" | "long-arrow-alt-up" | "low-vision" | "luggage-cart" | "lungs" | "lungs-virus" | "magic" | "magnet" | "mail-bulk" | "male" | "map" | "map-marked" | "map-marked-alt" | "map-marker" | "map-marker-alt" | "map-pin" | "map-signs" | "marker" | "mars" | "mars-double" | "mars-stroke" | "mars-stroke-h" | "mars-stroke-v" | "mask" | "medal" | "medkit" | "meh" | "meh-blank" | "meh-rolling-eyes" | "memory" | "menorah" | "mercury" | "meteor" | "microchip" | "microphone" | "microphone-alt" | "microphone-alt-slash" | "microphone-slash" | "microscope" | "minus" | "minus-circle" | "minus-square" | "mitten" | "mobile" | "mobile-alt" | "money-bill" | "money-bill-alt" | "money-bill-wave" | "money-bill-wave-alt" | "money-check" | "money-check-alt" | "monument" | "moon" | "mortar-pestle" | "mosque" | "motorcycle" | "mountain" | "mouse" | "mouse-pointer" | "mug-hot" | "music" | "network-wired" | "neuter" | "newspaper" | "not-equal" | "notes-medical" | "object-group" | "object-ungroup" | "oil-can" | "om" | "otter" | "outdent" | "pager" | "paint-brush" | "paint-roller" | "palette" | "pallet" | "paper-plane" | "paperclip" | "parachute-box" | "paragraph" | "parking" | "passport" | "pastafarianism" | "paste" | "pause" | "pause-circle" | "paw" | "peace" | "pen" | "pen-alt" | "pen-fancy" | "pen-nib" | "pen-square" | "pencil-alt" | "pencil-ruler" | "people-arrows" | "people-carry" | "pepper-hot" | "percent" | "percentage" | "person-booth" | "phone" | "phone-alt" | "phone-slash" | "phone-square" | "phone-square-alt" | "phone-volume" | "photo-video" | "piggy-bank" | "pills" | "pizza-slice" | "place-of-worship" | "plane" | "plane-arrival" | "plane-departure" | "plane-slash" | "play" | "play-circle" | "plug" | "plus" | "plus-circle" | "plus-square" | "podcast" | "poll" | "poll-h" | "poo" | "poo-storm" | "poop" | "portrait" | "pound-sign" | "power-off" | "pray" | "praying-hands" | "prescription" | "prescription-bottle" | "prescription-bottle-alt" | "print" | "procedures" | "project-diagram" | "pump-medical" | "pump-soap" | "puzzle-piece" | "qrcode" | "question" | "question-circle" | "quidditch" | "quote-left" | "quote-right" | "quran" | "radiation" | "radiation-alt" | "rainbow" | "random" | "receipt" | "record-vinyl" | "recycle" | "redo" | "redo-alt" | "registered" | "remove-format" | "reply" | "reply-all" | "republican" | "restroom" | "retweet" | "ribbon" | "ring" | "road" | "robot" | "rocket" | "route" | "rss" | "rss-square" | "ruble-sign" | "ruler" | "ruler-combined" | "ruler-horizontal" | "ruler-vertical" | "running" | "rupee-sign" | "sad-cry" | "sad-tear" | "satellite" | "satellite-dish" | "save" | "school" | "screwdriver" | "scroll" | "sd-card" | "search" | "search-dollar" | "search-location" | "search-minus" | "search-plus" | "seedling" | "server" | "shapes" | "share" | "share-alt" | "share-alt-square" | "share-square" | "shekel-sign" | "shield-alt" | "shield-virus" | "ship" | "shipping-fast" | "shoe-prints" | "shopping-bag" | "shopping-basket" | "shopping-cart" | "shower" | "shuttle-van" | "sign" | "sign-in-alt" | "sign-language" | "sign-out-alt" | "signal" | "signature" | "sim-card" | "sink" | "sitemap" | "skating" | "skiing" | "skiing-nordic" | "skull" | "skull-crossbones" | "slash" | "sleigh" | "sliders-h" | "smile" | "smile-beam" | "smile-wink" | "smog" | "smoking" | "smoking-ban" | "sms" | "snowboarding" | "snowflake" | "snowman" | "snowplow" | "soap" | "socks" | "solar-panel" | "sort" | "sort-alpha-down" | "sort-alpha-down-alt" | "sort-alpha-up" | "sort-alpha-up-alt" | "sort-amount-down" | "sort-amount-down-alt" | "sort-amount-up" | "sort-amount-up-alt" | "sort-down" | "sort-numeric-down" | "sort-numeric-down-alt" | "sort-numeric-up" | "sort-numeric-up-alt" | "sort-up" | "spa" | "space-shuttle" | "spell-check" | "spider" | "spinner" | "splotch" | "spray-can" | "square" | "square-full" | "square-root-alt" | "stamp" | "star" | "star-and-crescent" | "star-half" | "star-half-alt" | "star-of-david" | "star-of-life" | "step-backward" | "step-forward" | "stethoscope" | "sticky-note" | "stop" | "stop-circle" | "stopwatch" | "stopwatch-20" | "store" | "store-alt" | "store-alt-slash" | "store-slash" | "stream" | "street-view" | "strikethrough" | "stroopwafel" | "subscript" | "subway" | "suitcase" | "suitcase-rolling" | "sun" | "superscript" | "surprise" | "swatchbook" | "swimmer" | "swimming-pool" | "synagogue" | "sync" | "sync-alt" | "syringe" | "table" | "table-tennis" | "tablet" | "tablet-alt" | "tablets" | "tachometer-alt" | "tag" | "tags" | "tape" | "tasks" | "taxi" | "teeth" | "teeth-open" | "temperature-high" | "temperature-low" | "tenge" | "terminal" | "text-height" | "text-width" | "th" | "th-large" | "th-list" | "theater-masks" | "thermometer" | "thermometer-empty" | "thermometer-full" | "thermometer-half" | "thermometer-quarter" | "thermometer-three-quarters" | "thumbs-down" | "thumbs-up" | "thumbtack" | "ticket-alt" | "times" | "times-circle" | "tint" | "tint-slash" | "tired" | "toggle-off" | "toggle-on" | "toilet" | "toilet-paper" | "toilet-paper-slash" | "toolbox" | "tools" | "tooth" | "torah" | "torii-gate" | "tractor" | "trademark" | "traffic-light" | "trailer" | "train" | "tram" | "transgender" | "transgender-alt" | "trash" | "trash-alt" | "trash-restore" | "trash-restore-alt" | "tree" | "trophy" | "truck" | "truck-loading" | "truck-monster" | "truck-moving" | "truck-pickup" | "tshirt" | "tty" | "tv" | "umbrella" | "umbrella-beach" | "underline" | "undo" | "undo-alt" | "universal-access" | "university" | "unlink" | "unlock" | "unlock-alt" | "upload" | "user" | "user-alt" | "user-alt-slash" | "user-astronaut" | "user-check" | "user-circle" | "user-clock" | "user-cog" | "user-edit" | "user-friends" | "user-graduate" | "user-injured" | "user-lock" | "user-md" | "user-minus" | "user-ninja" | "user-nurse" | "user-plus" | "user-secret" | "user-shield" | "user-slash" | "user-tag" | "user-tie" | "user-times" | "users" | "users-cog" | "users-slash" | "utensil-spoon" | "utensils" | "vector-square" | "venus" | "venus-double" | "venus-mars" | "vest" | "vest-patches" | "vial" | "vials" | "video" | "video-slash" | "vihara" | "virus" | "virus-slash" | "viruses" | "voicemail" | "volleyball-ball" | "volume-down" | "volume-mute" | "volume-off" | "volume-up" | "vote-yea" | "vr-cardboard" | "walking" | "wallet" | "warehouse" | "water" | "wave-square" | "weight" | "weight-hanging" | "wheelchair" | "wifi" | "wind" | "window-close" | "window-maximize" | "window-minimize" | "window-restore" | "wine-bottle" | "wine-glass" | "wine-glass-alt" | "won-sign" | "wrench" | "x-ray" | "yen-sign" | "yin-yang";
-    export interface IconElement extends ControlElement {
-        name?: IconName;
-        fill?: Types.Color;
-        image?: ImageElement;
-        spin?: boolean;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['i-icon']: IconElement;
-            }
-        }
-    }
-    export class Icon extends Control {
-        private svgElm;
-        private _name;
-        private _size;
-        private _image;
-        private _spin;
-        private _fill;
-        constructor(parent?: Control, options?: any);
-        protected init(): void;
-        get fill(): Types.Color;
-        set fill(color: Types.Color);
-        get name(): IconName;
-        set name(value: IconName);
-        get image(): Image;
-        set image(image: Image);
-        get spin(): boolean;
-        set spin(value: boolean);
-        private _updateIcon;
-        static create(options?: IconElement, parent?: Control): Promise<Icon>;
-    }
-}
-declare module "packages/icon/src/index" {
-    export { IconName, Icon, IconElement } from "packages/icon/src/icon";
-}
-declare module "packages/button/src/style/button.css" { }
-/// <amd-module name="@ijstech/components/button" />
-declare module "@ijstech/components/button" {
-    import { Control, Container, ControlElement } from "@ijstech/components/base";
-    import { Icon, IconElement } from "packages/icon/src/index";
-    import "packages/button/src/style/button.css";
-    export interface ButtonElement extends ControlElement {
-        caption?: string;
-        icon?: IconElement;
-        rightIcon?: IconElement;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['i-button']: ButtonElement;
-            }
-        }
-    }
-    export class Button extends Control {
-        private captionElm;
-        private _icon;
-        private _rightIcon;
-        static create(options?: ButtonElement, parent?: Container): Promise<Button>;
-        constructor(parent?: Control, options?: ButtonElement);
-        get caption(): string;
-        set caption(value: string);
-        get icon(): Icon;
-        set icon(value: Icon);
-        get rightIcon(): Icon;
-        set rightIcon(value: Icon);
-        get enabled(): boolean;
-        set enabled(value: boolean);
-        private get isSpinning();
-        private prependIcon;
-        private appendIcon;
-        private updateButton;
-        _handleClick(event: MouseEvent): boolean;
-        refresh(): void;
-        protected init(): void;
-    }
-}
-declare module "packages/button/src/index" {
-    export { Button, ButtonElement } from "@ijstech/components/button";
 }
 declare module "packages/alert/src/style/alert.css" { }
 declare module "packages/alert/src/alert" {
@@ -12819,7 +14119,7 @@ declare module "@ijstech/components/dataGrid" {
 }
 declare module "packages/markdown/src/styles/index.css" { }
 declare module "packages/markdown/src/markdown" {
-    import { Control, ControlElement } from "@ijstech/components/base";
+    import { Control, ControlElement, ISpace } from "@ijstech/components/base";
     import "packages/markdown/src/styles/index.css";
     export interface MarkdownElement extends ControlElement {
         caption?: string;
@@ -12839,11 +14139,15 @@ declare module "packages/markdown/src/markdown" {
         gitbookProcess: boolean;
         fileRoot: string;
         private _theme;
+        private _space;
         constructor(parent?: Control, options?: MarkdownElement);
         get theme(): 'light' | 'dark';
         set theme(value: 'light' | 'dark');
+        get padding(): ISpace;
+        set padding(value: ISpace);
         private getRenderer;
         load(text: string): Promise<any>;
+        private preParse;
         beforeRender(text: string): Promise<void>;
         processText(text: string): Promise<string>;
         loadLib(): Promise<unknown>;
@@ -12855,10 +14159,11 @@ declare module "packages/markdown/src/index" {
 }
 declare module "packages/markdown-editor/src/styles/index.css" { }
 declare module "packages/markdown-editor/src/markdown-editor" {
-    import { Container, Control, ControlElement } from "@ijstech/components/base";
+    import { Border, Container, Control, IBorder, ISpace, notifyEventCallback } from "@ijstech/components/base";
     import { Markdown } from "packages/markdown/src/index";
+    import { Text, TextElement } from "packages/text/src/index";
     import "packages/markdown-editor/src/styles/index.css";
-    export interface MarkdownEditorElement extends ControlElement {
+    export interface MarkdownEditorElement extends TextElement {
         mode?: 'wysiwyg' | 'markdown';
         theme?: 'light' | 'dark';
         previewStyle?: 'tab' | 'vertical';
@@ -12873,6 +14178,10 @@ declare module "packages/markdown-editor/src/markdown-editor" {
             rule: string | object;
             toDOM: (text: string) => any;
         }[];
+        placeholder?: string;
+        onChanged?: notifyEventCallback;
+        onFocus?: notifyEventCallback;
+        onBlur?: notifyEventCallback;
     }
     global {
         namespace JSX {
@@ -12881,7 +14190,7 @@ declare module "packages/markdown-editor/src/markdown-editor" {
             }
         }
     }
-    export class MarkdownEditor extends Control {
+    export class MarkdownEditor extends Text {
         private editor;
         private editorPlugins;
         private editorObj;
@@ -12897,6 +14206,12 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         private _customPlugins;
         private _widgetRules;
         private _hideModeSwitch;
+        private _placeholder;
+        private autoFocus;
+        onChanged: notifyEventCallback;
+        onFocus: notifyEventCallback;
+        onBlur: notifyEventCallback;
+        setFocus(): void;
         get mode(): 'wysiwyg' | 'markdown';
         set mode(value: 'wysiwyg' | 'markdown');
         get theme(): 'light' | 'dark';
@@ -12907,6 +14222,7 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         set viewer(value: boolean);
         get value(): string;
         set value(value: string);
+        setValue(value: string): Promise<void>;
         get height(): string;
         set height(value: string);
         get toolbarItems(): any[];
@@ -12923,9 +14239,16 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         }[]);
         get hideModeSwitch(): boolean;
         set hideModeSwitch(value: boolean);
+        get placeholder(): string;
+        set placeholder(value: string);
+        get padding(): ISpace;
+        set padding(value: ISpace);
+        get border(): Border;
+        set border(value: IBorder);
         static create(options?: MarkdownEditorElement, parent?: Container): Promise<MarkdownEditor>;
         constructor(parent?: Control, options?: MarkdownEditorElement);
         private loadPlugin;
+        private loadSyntaxHighlightPlugin;
         private loadPlugins;
         private addCSS;
         private initEditor;
@@ -12945,10 +14268,11 @@ declare module "packages/menu/src/style/menu.css" {
     export const modalStyle: string;
 }
 declare module "packages/menu/src/menu" {
-    import { Control, ControlElement, IContextMenu } from "@ijstech/components/base";
+    import { Control, ControlElement, IContextMenu, ISpace } from "@ijstech/components/base";
     import { Link, LinkElement } from "packages/link/src/index";
     import { Icon, IconElement } from "packages/icon/src/index";
     export type MenuMode = "horizontal" | "vertical" | "inline";
+    type AlignType = 'left' | 'right' | 'center';
     interface MenuItemElement extends IMenuItem {
         level?: number;
     }
@@ -12957,6 +14281,7 @@ declare module "packages/menu/src/menu" {
         link?: LinkElement;
         icon?: IconElement;
         items?: IMenuItem[];
+        textAlign?: AlignType;
     }
     export interface MenuElement extends ControlElement {
         mode?: MenuMode;
@@ -13032,6 +14357,7 @@ declare module "packages/menu/src/menu" {
         private openTimeout;
         private closeTimeout;
         private _level;
+        private _textAlign;
         constructor(parent?: Control, options?: MenuItemElement);
         add(options?: IMenuItem): MenuItem;
         delete(item: MenuItem): void;
@@ -13043,7 +14369,11 @@ declare module "packages/menu/src/menu" {
         set icon(elm: Icon);
         get items(): MenuItem[];
         set items(items: MenuItem[]);
+        get textAlign(): AlignType;
+        set textAlign(value: AlignType);
         set level(value: number);
+        get padding(): ISpace;
+        set padding(value: ISpace);
         private get selected();
         private set selected(value);
         private updateLevel;
@@ -13198,6 +14528,8 @@ declare module "packages/tree-view/src/treeView" {
         get rootParent(): TreeView;
         get icon(): Icon;
         get rightIcon(): Icon;
+        get height(): number | string;
+        set height(value: number | string);
         private handleChange;
         private renderEditMode;
         private handleEdit;
@@ -13213,6 +14545,83 @@ declare module "packages/tree-view/src/treeView" {
 }
 declare module "packages/tree-view/src/index" {
     export { TreeView, TreeViewElement, TreeNode, TreeNodeElement } from "packages/tree-view/src/treeView";
+}
+declare module "packages/popover/src/style/popover.css" {
+    export const getOverlayStyle: () => string;
+    export const getNoBackdropStyle: () => string;
+    export const getAbsoluteWrapperStyle: (left: string, top: string) => string;
+    export const popoverMainContentStyle: string;
+}
+declare module "packages/popover/src/popover" {
+    import { Control, ControlElement, Container, IBackground, IBorder, Background, Border, ISpace } from "@ijstech/components/base";
+    export type popoverPlacementType = 'center' | 'bottom' | 'bottomLeft' | 'bottomRight' | 'top' | 'topLeft' | 'topRight' | 'rightTop' | 'left' | 'right';
+    type eventCallback = (target: Control) => void;
+    type PopoverPositionType = "fixed" | "absolute";
+    export interface PopoverElement extends ControlElement {
+        placement?: popoverPlacementType;
+        closeOnScrollChildFixed?: boolean;
+        item?: Control;
+        onOpen?: eventCallback;
+        onClose?: eventCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-popover']: PopoverElement;
+            }
+        }
+    }
+    export class Popover extends Container {
+        protected _visible: boolean;
+        private wrapperDiv;
+        private popoverDiv;
+        private bodyDiv;
+        private overlayDiv;
+        private _placement;
+        private _wrapperPositionAt;
+        private insideClick;
+        private boundHandlePopoverMouseDown;
+        private boundHandlePopoverMouseUp;
+        protected _onOpen: eventCallback;
+        onClose: eventCallback;
+        constructor(parent?: Control, options?: any);
+        get visible(): boolean;
+        set visible(value: boolean);
+        get onOpen(): any;
+        set onOpen(callback: any);
+        get placement(): popoverPlacementType;
+        set placement(value: popoverPlacementType);
+        get item(): Control;
+        set item(value: Control);
+        get position(): PopoverPositionType;
+        set position(value: PopoverPositionType);
+        _handleClick(event: MouseEvent): boolean;
+        private positionPopoverRelativeToParent;
+        private calculatePopoverWrapperCoordinates;
+        protected _handleOnShow(event: Event): void;
+        private handlePopoverMouseDown;
+        private handlePopoverMouseUp;
+        private setInsideClick;
+        private setPropertyValue;
+        refresh(): void;
+        get background(): Background;
+        set background(value: IBackground);
+        get width(): number | string;
+        set width(value: number | string);
+        get height(): number | string;
+        set height(value: number | string);
+        get border(): Border;
+        set border(value: IBorder);
+        get padding(): ISpace;
+        set padding(value: ISpace);
+        protected removeTargetStyle(target: HTMLElement, propertyName: string): void;
+        protected setTargetStyle(target: HTMLElement, propertyName: string, value: string): void;
+        protected init(): void;
+        static create(options?: PopoverElement, parent?: Container): Promise<Popover>;
+    }
+}
+declare module "packages/popover/src/index" {
+    export { Popover, PopoverElement, popoverPlacementType } from "packages/popover/src/popover";
 }
 declare module "packages/chart/src/chart" {
     import { Control, ControlElement } from "@ijstech/components/base";
@@ -13428,6 +14837,7 @@ declare module "packages/iframe/src/iframe" {
     import { Control, ControlElement } from "@ijstech/components/base";
     export interface IframeElement extends ControlElement {
         url?: string;
+        allowFullscreen?: boolean;
     }
     global {
         namespace JSX {
@@ -13438,6 +14848,7 @@ declare module "packages/iframe/src/iframe" {
     }
     export class Iframe extends Control {
         private _url;
+        private allowFullscreen;
         private iframeElm;
         constructor(parent?: Control, options?: any);
         reload(): Promise<void>;
@@ -13508,88 +14919,12 @@ declare module "packages/pagination/src/pagination" {
 declare module "packages/pagination/src/index" {
     export { Pagination, PaginationElement } from "packages/pagination/src/pagination";
 }
-declare module "packages/progress/src/style/progress.css" { }
-declare module "packages/progress/src/progress" {
-    import { Control, ControlElement, Types, IFont } from "@ijstech/components/base";
-    import "packages/progress/src/style/progress.css";
-    export type ProgressStatus = 'success' | 'exception' | 'active' | 'warning';
-    export type ProgressType = 'line' | 'circle';
-    type callbackType = (source: Control) => void;
-    export interface ProgressElement extends ControlElement {
-        percent?: number;
-        strokeWidth?: number;
-        strokeColor?: Types.Color;
-        loading?: boolean;
-        steps?: number;
-        type?: ProgressType;
-        format?: (percent: number) => string;
-        onRenderStart?: callbackType;
-        onRenderEnd?: callbackType;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['i-progress']: ProgressElement;
-            }
-        }
-    }
-    export class Progress extends Control {
-        private _percent;
-        private _status;
-        private _loading;
-        private _steps;
-        private _type;
-        private _strokeWidth;
-        private _strokeColor;
-        private _wrapperElm;
-        private _startElm;
-        private _barElm;
-        private _endElm;
-        private _textElm;
-        format: (percent: number) => string;
-        onRenderStart: callbackType;
-        onRenderEnd: callbackType;
-        constructor(parent?: Control, options?: any);
-        get percent(): number;
-        set percent(value: number);
-        get strokeColor(): Types.Color;
-        set strokeColor(value: Types.Color);
-        get loading(): boolean;
-        set loading(value: boolean);
-        get steps(): number;
-        set steps(value: number);
-        get type(): ProgressType;
-        set type(value: ProgressType);
-        get strokeWidth(): number;
-        set strokeWidth(value: number);
-        get font(): IFont;
-        set font(value: IFont);
-        private get relativeStrokeWidth();
-        private get radius();
-        private get trackPath();
-        private get perimeter();
-        private get rate();
-        private get strokeDashoffset();
-        private get trailPathStyle();
-        private get circlePathStyle();
-        private get stroke();
-        private get trackColor();
-        private get progressTextSize();
-        private renderLine;
-        private renderCircle;
-        private renderCircleInner;
-        private updateCircleInner;
-        protected init(): void;
-        static create(options?: ProgressElement, parent?: Control): Promise<Progress>;
-    }
-}
-declare module "packages/progress/src/index" {
-    export { Progress } from "packages/progress/src/progress";
-}
 declare module "packages/table/src/style/table.css" {
     import { TableColumnElement } from "packages/table/src/tableColumn";
     import { ITableMediaQuery } from "packages/table/src/table";
+    import { ControlElement } from "@ijstech/components/base";
     export const tableStyle: string;
+    export const getCustomStylesClass: (styles: ControlElement) => string;
     export const getTableMediaQueriesStyleClass: (columns: TableColumnElement[], mediaQueries: ITableMediaQuery[]) => string;
 }
 declare module "packages/table/src/tableCell" {
@@ -13707,6 +15042,8 @@ declare module "packages/table/src/table" {
         pagination?: string;
         expandable?: ITableExpandable;
         mediaQueries?: ITableMediaQuery[];
+        headingStyles?: ControlElement;
+        bodyStyles?: ControlElement;
         onRenderEmptyTable?: emptyCallback;
         onCellClick?: cellClickCallback;
         onColumnSort?: sortCallback;
@@ -13738,6 +15075,10 @@ declare module "packages/table/src/table" {
         private _expandable;
         private _sortConfig;
         private _heading;
+        private _headingStyles;
+        private _bodyStyles;
+        private _bodyStyle;
+        private _headingStyle;
         constructor(parent?: Control, options?: any);
         get data(): any;
         set data(value: any);
@@ -13757,6 +15098,10 @@ declare module "packages/table/src/table" {
         private get columnLength();
         get mediaQueries(): ITableMediaQuery[];
         set mediaQueries(value: ITableMediaQuery[]);
+        get headingStyles(): ControlElement;
+        set headingStyles(value: ControlElement);
+        get bodyStyles(): ControlElement;
+        set bodyStyles(value: ControlElement);
         private onPageChanged;
         private onSortChange;
         private renderHeader;
@@ -13777,12 +15122,19 @@ declare module "packages/table/src/index" {
     export { TableRow } from "packages/table/src/tableRow";
     export { TableCell } from "packages/table/src/tableCell";
 }
-declare module "packages/carousel/src/style/carousel.css" { }
+declare module "packages/carousel/src/style/carousel.css" {
+    import { ICarouselMediaQuery } from "packages/carousel/src/carousel";
+    export const sliderStyle: string;
+    export const getCarouselMediaQueriesStyleClass: (mediaQueries: ICarouselMediaQuery[]) => string;
+}
 declare module "packages/carousel/src/carousel" {
-    import { Control, ControlElement, ContainerElement } from "@ijstech/components/base";
-    import "packages/carousel/src/style/carousel.css";
+    import { Control, ControlElement, ContainerElement, IMediaQuery, IControlMediaQueryProps } from "@ijstech/components/base";
     type SwipeStartEventCallback = () => void;
     type SwipeEndEventCallback = (isSwiping: boolean) => void;
+    export interface ICarouselMediaQueryProps extends IControlMediaQueryProps {
+        indicators?: boolean;
+    }
+    export type ICarouselMediaQuery = IMediaQuery<ICarouselMediaQueryProps>;
     export interface CarouselItemElement extends ContainerElement {
         name?: string;
     }
@@ -13794,9 +15146,12 @@ declare module "packages/carousel/src/carousel" {
         items?: CarouselItemElement[];
         activeSlide?: number;
         type?: 'dot' | 'arrow';
+        indicators?: boolean;
         swipe?: boolean;
+        mediaQueries?: ICarouselMediaQuery[];
         onSwipeStart?: SwipeStartEventCallback;
         onSwipeEnd?: SwipeEndEventCallback;
+        onSlideChange?: (index: number) => void;
     }
     global {
         namespace JSX {
@@ -13821,13 +15176,17 @@ declare module "packages/carousel/src/carousel" {
         private wrapperSliderElm;
         private arrowPrev;
         private arrowNext;
-        private posX1;
-        private posX2;
+        private pos1;
+        private pos2;
         private threshold;
         private _swipe;
+        private _indicators;
+        private _mediaQueries;
         onSwipeStart: SwipeStartEventCallback;
         onSwipeEnd: SwipeEndEventCallback;
+        onSlideChange: (index: number) => void;
         private isSwiping;
+        private isHorizontalSwiping;
         constructor(parent?: Control, options?: any);
         get slidesToShow(): number;
         set slidesToShow(value: number);
@@ -13845,8 +15204,14 @@ declare module "packages/carousel/src/carousel" {
         set type(value: 'dot' | 'arrow');
         get swipe(): boolean;
         set swipe(value: boolean);
+        get mediaQueries(): ICarouselMediaQuery[];
+        set mediaQueries(value: ICarouselMediaQuery[]);
+        _handleMouseDown(event: PointerEvent | MouseEvent | TouchEvent, stopPropagation?: boolean): boolean;
+        _handleMouseMove(event: PointerEvent | MouseEvent | TouchEvent, stopPropagation?: boolean): boolean;
+        _handleMouseUp(event: PointerEvent | MouseEvent | TouchEvent, stopPropagation?: boolean): boolean;
+        get indicators(): boolean;
+        set indicators(value: boolean);
         get isArrow(): boolean;
-        disconnectedCallback(): void;
         private updateArrows;
         private updateSliderByArrows;
         private updateWrapperClass;
@@ -13870,10 +15235,11 @@ declare module "packages/carousel/src/index" {
 }
 declare module "packages/video/src/style/video.css" { }
 declare module "packages/video/src/video" {
-    import { Container, ControlElement, Control } from "@ijstech/components/base";
+    import { Container, ControlElement, Control, Border, IBorder } from "@ijstech/components/base";
     import "packages/video/src/style/video.css";
     export interface VideoElement extends ControlElement {
         url?: string;
+        isStreaming?: boolean;
     }
     global {
         namespace JSX {
@@ -13885,10 +15251,16 @@ declare module "packages/video/src/video" {
     export class Video extends Container {
         private videoElm;
         private sourceElm;
+        private overlayElm;
         private player;
         private _url;
+        private _isPlayed;
         get url(): string;
         set url(value: string);
+        get border(): Border;
+        set border(value: IBorder);
+        getPlayer(): any;
+        private getVideoTypeFromExtension;
         protected init(): void;
         static create(options?: VideoElement, parent?: Control): Promise<Video>;
     }
@@ -13937,7 +15309,6 @@ declare module "packages/schema-designer/src/uiSchema" {
         private pnlUISchemaBuilder;
         private uiSchema;
         schema: ISchemaDesignerData;
-        uuid: string;
         constructor(parent?: Container, options?: ControlElement);
         protected init(): void;
         refresh(): void;
@@ -14013,7 +15384,6 @@ declare module "packages/schema-designer/src/schemaDesigner" {
     export class SchemaDesigner extends Container {
         private txtSchema;
         private pnlSchemaBuilder;
-        private uuid;
         private schema;
         private pnlUISchema;
         private uiSchemaPanel;
@@ -14026,7 +15396,6 @@ declare module "packages/schema-designer/src/schemaDesigner" {
         private getJSON;
         private updateJsonData;
         private convertFieldNameToLabel;
-        private generateUUID;
         private generateFieldName;
         private createDataSchema;
         private renderEnum;
@@ -14518,9 +15887,9 @@ declare module "packages/form/src/index" {
 }
 declare module "@ijstech/components" {
     export * as Styles from "packages/style/src/index";
-    export { customModule, customElements, getCustomElements, Component, Control, ControlElement, Container, Observe, Unobserve, ClearObservers, isObservable, observable, LibPath, RequireJS, ISpace } from "@ijstech/components/base";
+    export { application, EventBus, IEventBus, IHasDependencies, IModuleOptions, IModuleRoute, IModuleMenuItem, IRenderUIOptions, DataSchemaValidator, renderUI, FormatUtils, IFormatNumberOptions, IdUtils } from "packages/application/src/index";
+    export { customModule, customElements, getCustomElements, Component, Control, ControlElement, Container, Observe, Unobserve, ClearObservers, isObservable, observable, LibPath, RequireJS, ISpace, IBorder } from "@ijstech/components/base";
     export { Alert } from "packages/alert/src/index";
-    export { application, EventBus, IEventBus, IHasDependencies, IModuleOptions, IModuleRoute, IModuleMenuItem, IRenderUIOptions, DataSchemaValidator, renderUI, FormatUtils, IFormatNumberOptions } from "packages/application/src/index";
     export { Button } from "packages/button/src/index";
     export { CodeEditor, LanguageType, CodeDiffEditor } from "packages/code-editor/src/index";
     export { ComboBox, IComboItem } from "packages/combo-box/src/index";
@@ -14537,6 +15906,7 @@ declare module "@ijstech/components" {
     export { TreeView, TreeNode } from "packages/tree-view/src/index";
     export { Switch } from "packages/switch/src/index";
     export { Modal } from "packages/modal/src/index";
+    export { Popover } from "packages/popover/src/index";
     export { Checkbox } from "packages/checkbox/src/index";
     export { Datepicker } from "packages/datepicker/src/index";
     export { LineChart, BarChart, PieChart, ScatterChart, ScatterLineChart } from "packages/chart/src/index";
@@ -14560,410 +15930,19 @@ declare module "@ijstech/components" {
     export { Form, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/index";
     export { ColorPicker } from "packages/color/src/index";
 }
-
 `;
 });
-define("@scom/scom-designer/types/index.ts", ["require", "exports", "@scom/scom-designer/types/components.ts"], function (require, exports, components_25) {
+define("@scom/scom-designer/types/index.ts", ["require", "exports", "@scom/scom-designer/types/components.ts"], function (require, exports, components_29) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.components = void 0;
-    exports.components = components_25.default;
+    exports.components = components_29.default;
 });
-define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@ijstech/compiler", "@scom/scom-designer/types/index.ts", "@scom/scom-designer/utils.ts"], function (require, exports, components_26, index_3, index_css_17, data_1, index_4, compiler_1, Dts, utils_4) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ScomDesignerForm = exports.createControl = void 0;
-    const Theme = components_26.Styles.Theme.ThemeVars;
-    var TABS;
-    (function (TABS) {
-        TABS[TABS["RECENT"] = 0] = "RECENT";
-        TABS[TABS["BITS"] = 1] = "BITS";
-        TABS[TABS["BLOCKS"] = 2] = "BLOCKS";
-    })(TABS || (TABS = {}));
-    function createControl(parent, name, options) {
-        const newObj = {};
-        if (options) {
-            for (let key in options) {
-                newObj[key] = (0, utils_4.parsePropValue)(options[key]);
-            }
-        }
-        const controlConstructor = window.customElements.get(name);
-        const control = new controlConstructor(parent, newObj);
-        if (options)
-            control._setDesignProps(newObj);
-        return control;
-    }
-    exports.createControl = createControl;
-    class ControlResizer {
-        constructor(control) {
-            this.resizers = [];
-            this._control = control;
-        }
-        addResizer(className) {
-            let resizer = document.createElement("div");
-            this._control.appendChild(resizer);
-            this.resizers.push(resizer);
-            resizer.className = className;
-            resizer.className = "i-resizer " + className;
-        }
-        hideResizers() {
-            this.resizers.forEach(resizer => this._control.removeChild(resizer));
-            this.resizers = [];
-        }
-        showResizers() {
-            if (this.resizers.length == 0) {
-                this.addResizer("tl");
-                this.addResizer("tm");
-                this.addResizer("tr");
-                this.addResizer("ml");
-                this.addResizer("mr");
-                this.addResizer("bl");
-                this.addResizer("bm");
-                this.addResizer("br");
-            }
-        }
-    }
-    let ScomDesignerForm = class ScomDesignerForm extends components_26.Module {
-        constructor(parent, options) {
-            super(parent, options);
-            this.currentTab = TABS.BITS;
-            this.pathMapping = new Map();
-        }
-        static async create(options, parent) {
-            let self = new this(parent, options);
-            await self.ready();
-            return self;
-        }
-        setData() { }
-        get pickerComponentsFiltered() {
-            let components;
-            if (this.currentTab === TABS.RECENT) {
-                components = data_1.recentComponents;
-            }
-            else {
-                components = data_1.pickerComponents;
-            }
-            if (this.inputSearch.value) {
-                const val = this.inputSearch.value.toLowerCase();
-                components = components
-                    .map((component) => {
-                    const filteredItems = component.items.filter((item) => item.name.toLowerCase().includes(val));
-                    return {
-                        ...component,
-                        items: filteredItems,
-                    };
-                })
-                    .filter((component) => component.items.length > 0);
-            }
-            return components;
-        }
-        get pickerBlocksFiltered() {
-            if (this.inputSearch.value) {
-                return data_1.blockComponents.filter((v) => v.caption.toLowerCase().includes(this.inputSearch.value.toLowerCase()));
-            }
-            return data_1.blockComponents;
-        }
-        get rootComponent() {
-            return this._rootComponent;
-        }
-        clear() {
-            this.pathMapping = new Map();
-        }
-        onScreenChanged(screen) { }
-        onScreenHistoryShown(shown) {
-            this.designerComponents.visible = !shown;
-            this.designerScreens.height = shown ? '100%' : '40%';
-        }
-        onTabChanged(value) {
-            if (this.currentTab === value)
-                return;
-            for (let i = 0; i < this.wrapperTab.children.length; i++) {
-                if (value === i) {
-                    this.wrapperTab.children[i].classList.add(index_css_17.labelActiveStyled);
-                }
-                else {
-                    this.wrapperTab.children[i].classList.remove(index_css_17.labelActiveStyled);
-                }
-            }
-            this.currentTab = value;
-            const isBlock = value === TABS.BLOCKS;
-            if (isBlock) {
-                this.initBlockPicker();
-            }
-            else {
-                this.initComponentPicker();
-            }
-            this.pnlComponentPicker.visible = !isBlock;
-            this.pnlBlockPicker.visible = isBlock;
-        }
-        onFilterComponent() {
-            if (this.currentTab === TABS.BLOCKS) {
-                this.initBlockPicker();
-            }
-            else {
-                this.initComponentPicker();
-            }
-        }
-        onShowComponentPicker() {
-            this.wrapperComponentPicker.visible = true;
-        }
-        onSelectComponent(component) {
-            const path = component.path;
-            if (path) {
-                const control = this.pathMapping.get(path);
-                if (control)
-                    this.handleSelectControl(control);
-            }
-        }
-        onVisibleComponent(component, visible) {
-            const path = component.path;
-            if (path) {
-                const control = this.pathMapping.get(path);
-                if (control?.control) {
-                    control.control.visible = visible;
-                    control.control._setDesignPropValue("visible", visible);
-                }
-            }
-        }
-        renderComponent(parent, component, select) {
-            if (!component?.name)
-                return;
-            let control = createControl(parent, component.name, component.props);
-            if (!control.style.position)
-                control.style.position = "relative";
-            component.control = control;
-            this.bindControlEvents(component);
-            control.tag = new ControlResizer(control);
-            component.items?.forEach(item => this.renderComponent(control, { ...item, control: null }));
-            this.pathMapping.set(component.path, { ...component });
-            if (select)
-                this.handleSelectControl(component);
-        }
-        bindControlEvents(control) {
-            control.control.onclick = event => {
-                if (control.control instanceof components_26.Container) {
-                    let com = this.handleAddControl(event, control.control);
-                    if (com) {
-                        control.items = control.items || [];
-                        control.items.push(com);
-                    }
-                }
-            };
-            control.control.onMouseDown = () => this.handleSelectControl(control);
-            control.control.onDblClick = (target, event) => {
-                event?.stopPropagation();
-                let id = control.control.id;
-                if (id) {
-                    // let name = control.control._getDesignPropValue("onClick");
-                    // if (!name) {
-                    //   this.modified = true;
-                    //   control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
-                    //   this.studio.addEventHandler(this, "onClick", `${id}Click`);
-                    // } else if (name.startsWith("{this."))
-                    //   this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
-                }
-            };
-        }
-        handleSelectControl(target) {
-            if (this.selectedControl)
-                this.selectedControl.control.tag.hideResizers();
-            this.selectedControl = target;
-            this.selectedControl.control.tag.showResizers();
-            this.showDesignProperties();
-        }
-        showDesignProperties() {
-            if (!this.selectedControl)
-                return;
-            this.designerProperties.component = this.selectedControl;
-        }
-        onCloseComponentPicker() {
-            this.wrapperComponentPicker.visible = false;
-        }
-        handleAddControl(event, parent) {
-            event.stopPropagation();
-            let pos = { x: event.offsetX, y: event.offsetY };
-            if (this.selectedDesignComponent) {
-                let com = {
-                    name: this.selectedDesignComponent.name,
-                    path: '',
-                    props: {
-                        left: pos.x,
-                        top: pos.y,
-                        width: 40,
-                        height: 20,
-                    },
-                    control: null
-                };
-                if (parent) {
-                    this.renderComponent(parent, com, true);
-                }
-                else {
-                    this.renderComponent(this.pnlFormDesigner, com, true);
-                    this._rootComponent.items.push(com);
-                }
-                this.selectedDesignComponent.control.classList.remove("selected");
-                this.selectedDesignComponent = null;
-                return com;
-            }
-        }
-        initComponentPicker() {
-            const nodeItems = [];
-            for (const picker of this.pickerComponentsFiltered) {
-                const pickerElm = new index_3.DesignerPickerComponents(undefined, {
-                    ...picker,
-                    display: 'block',
-                    margin: { bottom: 1 },
-                });
-                nodeItems.push(pickerElm);
-            }
-            this.pnlComponentPicker.clearInnerHTML();
-            this.pnlComponentPicker.append(...nodeItems);
-        }
-        initBlockPicker() {
-            const pickerElm = new index_3.DesignerPickerBlocks(undefined, {
-                items: this.pickerBlocksFiltered,
-            });
-            this.pnlBlockPicker.clearInnerHTML();
-            this.pnlBlockPicker.append(pickerElm);
-        }
-        initComponentScreen() {
-            // const newScreen = this.parseScreen;
-            // this.designerComponents.screen = newScreen
-            // this._rootComponent = newScreen?.elements[0];
-            // if (this._rootComponent) {
-            //   this.renderComponent(this.pnlFormDesigner, {
-            //     ...this._rootComponent,
-            //     control: null
-            //   });
-            // }
-        }
-        // private get parseScreen() {
-        //   const clonedScreen = JSON.parse(JSON.stringify(screen));
-        //   if (clonedScreen?.elements?.length) {
-        //     clonedScreen.elements = this.parseComponents(clonedScreen.elements)
-        //   }
-        //   return clonedScreen;
-        // }
-        // private parseComponents(elements: IComponent[]) {
-        //   return elements.map(element => {
-        //     const parserComp = this.getParserComponent(element)
-        //     element = {...element, ...parserComp}
-        //     if (element.items?.length) {
-        //       element.items = this.parseComponents(element.items)
-        //     }
-        //     return element
-        //   })
-        // }
-        // private getParserComponent(component: IComponent) {
-        //   if (component.name === 'View') {
-        //     return {
-        //       name: "i-panel",
-        //       props: {
-        //         width: '500px',
-        //         height: '600px',
-        //         background: {
-        //           color: '#ffffff'
-        //         }
-        //       }
-        //     }
-        //   } else {
-        //     return {
-        //       name: "i-button",
-        //       props: {
-        //         width: '20%',
-        //         height: '50px',
-        //         opacity: '0.5',
-        //         caption: 'Button',
-        //         background: {
-        //           color: '#0000ff'
-        //         }
-        //       }
-        //     }
-        //   }
-        // }
-        initDesignerProperties() {
-            if (this.selectedControl)
-                this.designerProperties.component = this.selectedControl;
-        }
-        renderUI(root) {
-            if (root.items?.length) {
-                root.items = [...root.items].map(item => {
-                    return { ...item, path: item.name };
-                });
-            }
-            this._rootComponent = { ...root, path: root.name };
-            this.pnlFormDesigner.clearInnerHTML();
-            if (this._rootComponent) {
-                this.designerComponents.screen = {
-                    name: this._rootComponent.name,
-                    id: components_26.IdUtils.generateUUID(),
-                    elements: [this._rootComponent]
-                };
-                this.renderComponent(this.pnlFormDesigner, {
-                    ...this._rootComponent,
-                    control: null
-                });
-            }
-        }
-        init() {
-            super.init();
-            this.wrapperComponentPicker.style.borderBottom = 'none';
-            if (!this.compiler)
-                this.compiler = new compiler_1.Compiler();
-            this.compiler.addPackage("@ijstech/components", { dts: { 'index.d.ts': Dts.components } });
-            this.initComponentPicker();
-            this.initBlockPicker();
-            this.initComponentScreen();
-            this.initDesignerProperties();
-        }
-        render() {
-            return (this.$render("i-vstack", { width: '100%', height: '100%', maxWidth: Theme.layout.container.maxWidth, margin: { left: 'auto', right: 'auto' }, position: 'relative' },
-                this.$render("i-hstack", { width: '100%', height: '100%' },
-                    this.$render("i-vstack", { width: '100%', height: '100%', border: {
-                            top: { width: 1, style: 'solid', color: Theme.divider },
-                        }, maxWidth: 300 },
-                        this.$render("designer-screens", { id: 'designerScreens', height: '40%', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown }),
-                        this.$render("designer-components", { id: 'designerComponents', height: '60%', minHeight: 200, onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent })),
-                    this.$render("i-vstack", { id: 'wrapperComponentPicker', visible: false, width: 250, height: '100%', border: {
-                            width: 1,
-                            style: 'solid',
-                            color: Theme.divider,
-                            bottom: { width: 0 },
-                        }, background: { color: Theme.background.main }, overflow: 'auto' },
-                        this.$render("i-vstack", { gap: 12, padding: { top: 12, bottom: 12, left: 8, right: 8 }, border: {
-                                bottom: { width: 1, style: 'solid', color: Theme.divider },
-                            } },
-                            this.$render("i-hstack", { gap: 8, verticalAlignment: 'center', horizontalAlignment: 'space-between' },
-                                this.$render("i-label", { caption: 'Add Components', font: { size: '0.75rem', bold: true } }),
-                                this.$render("i-icon", { name: 'times', width: 14, height: 14, cursor: 'pointer', onClick: this.onCloseComponentPicker })),
-                            this.$render("i-grid-layout", { id: 'wrapperTab', width: '100%', background: { color: Theme.action.hoverBackground }, templateColumns: ['1fr', '1fr', '1fr'], class: `${index_4.borderRadiusLeft} ${index_4.borderRadiusRight}` },
-                                this.$render("i-label", { caption: 'Recent', class: `${index_css_17.customLabelTabStyled} ${index_4.borderRadiusLeft}`, onClick: () => this.onTabChanged(TABS.RECENT) }),
-                                this.$render("i-label", { caption: 'Bits', class: `${index_css_17.customLabelTabStyled} ${index_css_17.labelActiveStyled}`, border: {
-                                        radius: 0,
-                                        left: { width: 1, style: 'solid', color: Theme.divider },
-                                        right: { width: 1, style: 'solid', color: Theme.divider },
-                                    }, onClick: () => this.onTabChanged(TABS.BITS) }),
-                                this.$render("i-label", { caption: 'Blocks', class: `${index_css_17.customLabelTabStyled} ${index_4.borderRadiusRight}`, onClick: () => this.onTabChanged(TABS.BLOCKS) })),
-                            this.$render("i-input", { id: 'inputSearch', placeholder: 'Search', width: '100%', height: 24, border: {
-                                    radius: 8,
-                                    width: 0,
-                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onChanged: this.onFilterComponent })),
-                        this.$render("i-panel", { id: 'pnlComponentPicker', width: '100%' }),
-                        this.$render("i-panel", { id: 'pnlBlockPicker', width: '100%', visible: false })),
-                    this.$render("i-panel", { id: "pnlFormDesigner", stack: { grow: '1' }, overflow: { y: 'auto' }, background: { color: "gray" } }),
-                    this.$render("designer-properties", { id: 'designerProperties', display: 'flex' }))));
-        }
-    };
-    ScomDesignerForm = __decorate([
-        (0, components_26.customElements)('i-scom-designer--form')
-    ], ScomDesignerForm);
-    exports.ScomDesignerForm = ScomDesignerForm;
-});
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/types/index.ts", "@ijstech/compiler", "@scom/scom-designer/utils.ts"], function (require, exports, components_27, index_css_18, Dts, compiler_2, utils_5) {
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/types/index.ts", "@ijstech/compiler", "@scom/scom-designer/utils.ts"], function (require, exports, components_30, index_css_19, Dts, compiler_1, utils_9) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
-    let ScomDesigner = class ScomDesigner extends components_27.Module {
+    let ScomDesigner = class ScomDesigner extends components_30.Module {
         addEventHandler(designer, eventName, funcName) {
             let control = designer.selectedControl?.control;
             let fileName = designer.selectedControl?.name;
@@ -15031,6 +16010,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._data = {
                 url: ''
             };
+            this.updateDesigner = true;
             this.tag = {};
         }
         static async create(options, parent) {
@@ -15045,7 +16025,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._data.url = value;
         }
         get fileName() {
-            const name = this.url ? (0, utils_5.extractFileName)(this.url) : '';
+            const name = this.url ? (0, utils_9.extractFileName)(this.url) : '';
             return name || 'File name';
         }
         get value() {
@@ -15062,17 +16042,18 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.setData({ url });
         }
         async renderUI() {
-            const { url } = this._data;
-            const content = url ? await (0, utils_5.getFileContent)(url) : '';
+            this.formDesigner.studio = this;
+            const { url = '' } = this._data;
+            const content = url ? await (0, utils_9.getFileContent)(url) : '';
             const fileName = this.fileName;
             await this.codeEditor.loadContent(content, 'typescript', fileName);
             this.pnlMessage.visible = true;
         }
         addLib() {
             try {
-                components_27.CodeEditor.addLib('@ijstech/components', Dts.components);
+                components_30.CodeEditor.addLib('@ijstech/components', Dts.components);
                 if (!this.compiler)
-                    this.compiler = new compiler_2.Compiler();
+                    this.compiler = new compiler_1.Compiler();
                 this.compiler.addPackage('@ijstech/components', {
                     dts: { 'index.d.ts': Dts.components },
                 });
@@ -15083,21 +16064,25 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.pnlMessage.visible = tab.id === 'codeTab';
             const fileName = this.fileName;
             if (tab.id === 'designTab') {
-                const code = this.codeEditor.value;
-                try {
-                    this.compiler.addFile(fileName, code);
-                    const ui = this.compiler.parseUI(fileName);
-                    this.formDesigner.renderUI(ui);
-                }
-                catch (error) {
-                    console.log(error);
+                if (this.updateDesigner) {
+                    this.updateDesigner = false;
+                    const code = this.codeEditor.value;
+                    try {
+                        this.compiler.addFile(fileName, code);
+                        const ui = this.compiler.parseUI(fileName);
+                        this.formDesigner.renderUI(ui);
+                    }
+                    catch (error) {
+                        console.log(error);
+                    }
                 }
             }
             else if (tab.id === 'codeTab') {
-                this.updateDesignerCode(fileName);
+                this.updateDesignerCode(fileName, true);
             }
         }
         handleCodeEditorChange(target, event) {
+            this.updateDesigner = true;
             if (this.contentChangeTimer)
                 clearTimeout(this.contentChangeTimer);
             this.contentChangeTimer = setTimeout(async () => {
@@ -15127,6 +16112,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async openFile(file, endpoint, parentCid, parent) {
             parent.append(this);
+            this.updateDesigner = true;
             const path = file.path.startsWith('/') ? file.path.slice(1) : file.path;
             const mediaUrl = `${endpoint}/ipfs/${parentCid}/${path}`;
             this.setData({ url: mediaUrl });
@@ -15139,7 +16125,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (url)
                 this.setData({ url });
             this.addLib();
-            this.classList.add(index_css_18.blockStyle);
+            this.classList.add(index_css_19.blockStyle);
         }
         // Configuration
         updateTag(type, value) {
@@ -15288,7 +16274,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         render() {
             return (this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden', background: { color: '#202020' } },
-                this.$render("i-tabs", { class: index_css_18.codeTabsStyle, dock: 'fill', draggable: false, closable: false, onChanged: this.handleTabChanged },
+                this.$render("i-tabs", { class: index_css_19.codeTabsStyle, dock: 'fill', draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
                         this.$render("i-code-editor", { id: "codeEditor", dock: 'fill', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
@@ -15304,7 +16290,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
     };
     ScomDesigner = __decorate([
-        (0, components_27.customElements)('i-scom-designer')
+        (0, components_30.customElements)('i-scom-designer')
     ], ScomDesigner);
     exports.ScomDesigner = ScomDesigner;
 });

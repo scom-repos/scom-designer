@@ -6,6 +6,7 @@ import {
   IconName,
   HStack,
   Container,
+  StackLayout,
 } from '@ijstech/components'
 import assets from '../assets';
 import { customIconTabActiveStyled, customIconTabStyled, customTabStyled } from '../index.css';
@@ -20,10 +21,12 @@ import {
   DesignerToolMarginsAndPadding,
   DesignerToolPosition,
   DesignerToolBorders,
-  DesignerToolEffects
+  DesignerToolEffects,
+  DesignerToolContent
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
+import '../setting-data/index';
 const Theme = Styles.Theme.ThemeVars;
 
 const enum BREAKPOINTS {
@@ -107,8 +110,11 @@ const breakpoints: { caption: string, icon: IconName, value: BREAKPOINTS, classe
   }
 ]
 
+type onChangedCallback = (prop: string, value: any) => void
+
 interface DesignerPropertiesElement extends ControlElement {
   component?: IControl;
+  onChanged?: onChangedCallback;
 }
 
 declare global {
@@ -130,8 +136,11 @@ export default class DesignerProperties extends Module {
   private designerPosition: DesignerToolPosition;
   private designerBorders: DesignerToolBorders;
   private designerEffects: DesignerToolEffects;
+  private designerContent: DesignerToolContent;
 
   private _component: IControl;
+
+  onChanged: onChangedCallback;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -156,15 +165,17 @@ export default class DesignerProperties extends Module {
   private renderUI() {
     this.updateInfo();
     this.updateProps();
+    const arr = ['i-label', 'i-button']
+    this.designerContent.visible = this.component?.name && arr.includes(this.component.name);
   }
 
   private updateInfo() {
     if (!this.hStackInfo) return;
-    const { name, image, iconName, category } = this.component;
+    const { name, image, icon, category } = this.component;
     this.hStackInfo.clearInnerHTML();
     this.hStackInfo.appendChild(
       <i-hstack gap={8} verticalAlignment="center" width="100%">
-        {iconName ? <i-icon name={iconName} width={24} height={24} /> : <i-image url={image} width={24} height={24} />}
+        {icon ? <i-icon name={icon} width={'1.5rem'} height={'1.5rem'} /> : image ? <i-image url={image} width={'1.5rem'} height={'1.5rem'} /> : []}
         <i-label caption={name} font={{ size: '1rem', bold: true }} />
         <i-label caption={category || ''} opacity={0.6} font={{ size: '0.625rem' }} margin={{ left: 'auto' }} display="flex" />
       </i-hstack>
@@ -172,6 +183,7 @@ export default class DesignerProperties extends Module {
   }
 
   private updateProps() {
+    const control = this.component.control;
     const {
       margin,
       padding,
@@ -186,43 +198,93 @@ export default class DesignerProperties extends Module {
       right,
       bottom,
       left,
-      overflow
-    } = this.component.control;
+      overflow,
+      display,
+      stack,
+      font
+    } = control;
+    const computedStyle =  window.getComputedStyle(control);
     this.designerBackground.setData({ color: background?.color || '' })
-    this.designerSize.setData({ width: width || 0, height: height || 0 })
+    this.designerSize.setData({
+      width: computedStyle?.width || width || 0,
+      height: computedStyle?.height || height || 0
+    })
     this.designerEffects.setData({ opacity })
+    let marginObj = {}
+    let paddingObj = {}
+    if (margin) {
+      marginObj = {
+        top: computedStyle?.marginTop || margin.top || 0,
+        bottom: computedStyle?.marginBottom || margin.bottom || 0,
+        left: computedStyle?.marginLeft || margin.left || 0,
+        right: computedStyle?.marginRight ||margin.right || 0
+      }
+    }
+    if (padding) {
+      paddingObj = {
+        top: computedStyle?.paddingTop || padding.top || 0,
+        bottom: computedStyle?.paddingBottom || padding.bottom || 0,
+        left: computedStyle?.paddingLeft || padding.left || 0,
+        right: computedStyle?.paddingRight || padding.right || 0
+      }
+    }
     this.designerSpacing.setData({
-      ...(margin ? { margin: { top: margin.top, bottom: margin.bottom, left: margin.left, right: margin.right }} : {}),
-      ...(padding ? { padding: { top: padding.top, bottom: padding.bottom, left: padding.left, right: padding.right }} : {}),
+      margin: marginObj,
+      padding: paddingObj
     });
-    let overflowValue = (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto' ;
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow: overflowValue })
+    this.designerPosition.setData({
+      position,
+      zIndex,
+      top: computedStyle?.top || top || 0,
+      left: computedStyle?.left || left || 0,
+      right: computedStyle?.right || right || 0, 
+      bottom: computedStyle?.bottom || bottom || 0,
+      overflow: (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto'
+    })
+    let borderObj = {}
+    if (border) {
+      const topObj: any = border.top || {}
+      topObj.width = computedStyle?.borderTopWidth || topObj.width || undefined
+      const bottomObj: any = border.bottom || {}
+      bottomObj.width = computedStyle?.borderBottomWidth || bottomObj.width || undefined
+      const leftObj: any = border.left || {}
+      leftObj.width = computedStyle?.borderLeftWidth || leftObj.width || undefined
+      const rightObj: any = border.right || {}
+      rightObj.width = computedStyle?.borderRightWidth || rightObj.width || undefined
+      borderObj = {
+        top: topObj,
+        right: rightObj,
+        bottom: bottomObj,
+        left: leftObj,
+        radius: computedStyle?.borderRadius || border.radius,
+        width: computedStyle?.borderWidth || border.width,
+        style: border.style,
+        color: border.color
+      }
+    }
     this.designerBorders.setData({
-      ...(border ? {
-        border: {
-          top: border.top,
-          right: border.right,
-          bottom: border.bottom,
-          left: border.left,
-          radius: border.radius,
-          width: border.width,
-          style: border.style,
-          color: border.color
-        }} : {})
+      border: borderObj
+    })
+    this.designerLayout.setData({
+      name: this.component?.name,
+      display: display || control?.style.display,
+      stack,
+      direction: (control as StackLayout).direction
+    })
+    this.designerContent.setData({
+      caption: (control as any).caption,
+      font
     })
   }
 
   private onPropChanged(prop: string, value: any) {
     if (!this.component) return;
-    if (prop === 'background') {
-      this.component.control._setDesignPropValue(prop, {color: value});
-    } else {
-      this.component.control._setDesignPropValue(prop, value);
-    }
+    if (this.onChanged) this.onChanged(prop, value);
   }
 
   init() {
     super.init();
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     const component = this.getAttribute('component', true);
     if (component) this.component = component;
   }
@@ -270,7 +332,7 @@ export default class DesignerProperties extends Module {
                 tooltip={{ content: v.caption }}
                 class={`${customIconTabStyled} ${v.classes || ''} ${v.isActive ? customIconTabActiveStyled : ''}`}
                 padding={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              /> : <i-image
+              /> : (v.url ? <i-image
                 url={v.url}
                 width={'1.5rem'}
                 height={'1.5rem'}
@@ -278,7 +340,7 @@ export default class DesignerProperties extends Module {
                 tooltip={{ content: v.caption }}
                 class={`${customIconTabStyled} ${v.classes || ''} ${v.isActive ? customIconTabActiveStyled : ''}`}
                 padding={{ top: 6, bottom: 6, left: 6, right: 6 }}
-              />
+              /> : [])
               )}
             </i-hstack>
           </i-vstack>
@@ -313,14 +375,15 @@ export default class DesignerProperties extends Module {
         >
           <i-tab icon={{ name: 'paint-brush', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
-              <designer-tool-stylesheet id="designerStylesheet" display="block" />
-              <designer-tool-layout id='designerLayout' display="block" />
+              <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} />
               <designer-tool-size id="designerSize" display="block" onChanged={this.onPropChanged} />
               <designer-tool-margins-padding id="designerSpacing" display="block" onChanged={this.onPropChanged} />
               <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-content id="designerContent" visible={false} display="block" onChanged={this.onPropChanged} />
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>
@@ -330,8 +393,10 @@ export default class DesignerProperties extends Module {
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'database', width: '1.5rem', height: '1.5rem' }}>
-            {/* TODO: update new components */}
-            <i-label caption="Database" />
+            <i-vstack gap={1} width="100%">
+              <designer-data-params display="block" />
+              <designer-data-linking display="block" />
+            </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'magic', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
