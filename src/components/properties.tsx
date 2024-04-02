@@ -28,6 +28,7 @@ import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
 import { breakpoints, previews } from '../helpers/config';
+import { parseProps } from '../helpers/utils';
 const Theme = Styles.Theme.ThemeVars;
 
 type onChangedCallback = (prop: string, value: any) => void
@@ -92,7 +93,7 @@ export default class DesignerProperties extends Module {
   }
 
   private renderCustomGroup() {
-    const designProps = this.component?.control._getDesignProps();
+    const designProps = parseProps(this.component?.control._getDesignProps());
     const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema || null;
 
     this.customGroup.setData({
@@ -139,28 +140,29 @@ export default class DesignerProperties extends Module {
       font
     } = control;
     const computedStyle =  window.getComputedStyle(control);
+    const designerProps: any = this.component.control._getDesignProps();
     this.designerBackground.setData({ color: background?.color || '' })
     this.designerSize.setData({
-      width: computedStyle?.width || width || 0,
-      height: computedStyle?.height || height || 0
+      width: this.getValue(width, designerProps?.width, computedStyle?.width),
+      height: this.getValue(height, designerProps?.height, computedStyle?.height),
     })
     this.designerEffects.setData({ opacity })
     let marginObj = {}
     let paddingObj = {}
     if (margin) {
       marginObj = {
-        top: computedStyle?.marginTop || margin.top || 0,
-        bottom: computedStyle?.marginBottom || margin.bottom || 0,
-        left: computedStyle?.marginLeft || margin.left || 0,
-        right: computedStyle?.marginRight ||margin.right || 0
+        top: this.getValue(margin.top, designerProps?.margin?.top, computedStyle?.marginTop),
+        bottom: this.getValue(margin.bottom, designerProps?.margin?.bottom, computedStyle?.marginBottom),
+        left: this.getValue(margin.left, designerProps?.margin?.left, computedStyle?.marginLeft),
+        right: this.getValue(margin.right, designerProps?.margin?.right, computedStyle?.marginRight),
       }
     }
     if (padding) {
       paddingObj = {
-        top: computedStyle?.paddingTop || padding.top || 0,
-        bottom: computedStyle?.paddingBottom || padding.bottom || 0,
-        left: computedStyle?.paddingLeft || padding.left || 0,
-        right: computedStyle?.paddingRight || padding.right || 0
+        top: this.getValue(padding.top, designerProps?.padding?.top, computedStyle?.paddingTop),
+        bottom: this.getValue(padding.bottom, designerProps?.padding?.bottom, computedStyle?.paddingBottom),
+        left: this.getValue(padding.left, designerProps?.padding?.left, computedStyle?.paddingLeft),
+        right: this.getValue(padding.right, designerProps?.padding?.right, computedStyle?.paddingRight),
       }
     }
     this.designerSpacing.setData({
@@ -170,29 +172,29 @@ export default class DesignerProperties extends Module {
     this.designerPosition.setData({
       position,
       zIndex,
-      top: computedStyle?.top || top || 0,
-      left: computedStyle?.left || left || 0,
-      right: computedStyle?.right || right || 0, 
-      bottom: computedStyle?.bottom || bottom || 0,
-      overflow: (overflow?.x === 'hidden' && overflow?.y === 'hidden') ? 'hidden' : 'auto'
+      top: this.getValue(top, designerProps?.top, computedStyle?.top),
+      left: this.getValue(left, designerProps?.left, computedStyle?.left),
+      right: this.getValue(right, designerProps?.right, computedStyle?.right),
+      bottom: this.getValue(bottom, designerProps?.bottom, computedStyle?.bottom),
+      overflow: (overflow?.y === 'hidden') ? 'hidden' : 'auto'
     })
     let borderObj = {}
     if (border) {
       const topObj: any = border.top || {}
-      topObj.width = computedStyle?.borderTopWidth || topObj.width || undefined
+      topObj.width = this.getValue(topObj.width, designerProps?.border?.top?.width, computedStyle?.borderTopWidth)
       const bottomObj: any = border.bottom || {}
-      bottomObj.width = computedStyle?.borderBottomWidth || bottomObj.width || undefined
+      bottomObj.width = this.getValue(bottomObj.width, designerProps?.border?.bottom?.width, computedStyle?.borderBottomWidth)
       const leftObj: any = border.left || {}
-      leftObj.width = computedStyle?.borderLeftWidth || leftObj.width || undefined
+      leftObj.width = this.getValue(leftObj.width, designerProps?.border?.left?.width, computedStyle?.borderLeftWidth)
       const rightObj: any = border.right || {}
-      rightObj.width = computedStyle?.borderRightWidth || rightObj.width || undefined
+      rightObj.width = this.getValue(rightObj.width, designerProps?.border?.right?.width, computedStyle?.borderRightWidth)
       borderObj = {
         top: topObj,
         right: rightObj,
         bottom: bottomObj,
         left: leftObj,
-        radius: computedStyle?.borderRadius || border.radius,
-        width: computedStyle?.borderWidth || border.width,
+        radius: this.getValue(border.radius, designerProps?.border?.radius, computedStyle?.borderRadius),
+        width: this.getValue(border.width, designerProps?.border?.width, computedStyle?.borderWidth),
         style: border.style,
         color: border.color
       }
@@ -209,6 +211,16 @@ export default class DesignerProperties extends Module {
     this.designerContent.setData({
       font
     })
+  }
+
+  private getValue(controlVal: any, designVal: any, computedVal: any) {
+    const hasUnit = (value: string|number) => {
+      if (value === undefined || value === '') return true
+      if (typeof value === 'number') return true
+      return value.includes('px') || value.includes('%')
+    }
+    if (designVal !== undefined) return designVal;
+    return hasUnit(controlVal) ? controlVal : (computedVal || controlVal || undefined)
   }
 
   private onPropChanged(prop: string, value: any) {
@@ -303,6 +315,7 @@ export default class DesignerProperties extends Module {
         >
           <i-tab icon={{ name: 'paint-brush', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
+              <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
               <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
               <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} />
@@ -310,9 +323,8 @@ export default class DesignerProperties extends Module {
               <designer-tool-margins-padding id="designerSpacing" display="block" onChanged={this.onPropChanged} />
               <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
               <designer-tool-content id="designerContent" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
+              <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
             </i-vstack>
           </i-tab>
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

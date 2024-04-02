@@ -77,7 +77,6 @@ export default class DesignerToolSize extends Module {
   private pnlSizes: GridLayout;
 
   private _data: IDesignerSize = {};
-  private unit: string = 'px';
   private currentProp: string = '';
 
   onChanged: onChangedCallback;
@@ -144,8 +143,10 @@ export default class DesignerToolSize extends Module {
   }
 
   private onValueChanged(target: Input, prop: string) {
+    const nextLabel = target.nextSibling as Label;
+    const unit = nextLabel?.caption || 'px';
     const newValue = target.value;
-    const valueStr = newValue !== '' ? `${newValue}${this.unit}` : '';
+    const valueStr = newValue !== '' ? `${newValue}${unit}` : 'auto';
     this._data[prop] = valueStr;
     if (this.onChanged) this.onChanged(prop, this._data[prop]);
   }
@@ -173,15 +174,12 @@ export default class DesignerToolSize extends Module {
     mdWrapper.style.width = '1.5rem';
     mdWrapper.style.paddingInline = '0px';
     const onUnitChanged = (value: 'px' | '%') => {
-      this.currentLabel.caption = value;
       const input = this.currentLabel.previousSibling as Input;
-      if (value !== this.unit) {
-        const num = input?.value ?? parseNumberValue(this._data[this.currentProp])?.value;
-        const valueStr = num !== '' ? `${num}${value}` : '';
-        this._data[this.currentProp] = valueStr;
-        if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
-      }
-      this.unit = value;
+      const num = input?.value ?? parseNumberValue(this._data[this.currentProp])?.value;
+      const valueStr = num !== '' ? `${num}${value}` : 'auto';
+      this._data[this.currentProp] = valueStr;
+      if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
+      this.currentLabel.caption = value;
       this.mdUnits.visible = false;
     }
     const itemUnits = new VStack(undefined, { gap: 8, border: { radius: 8 } });

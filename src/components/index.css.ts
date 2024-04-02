@@ -65,7 +65,7 @@ Styles.cssRule("body > .item-list", {
 
   $nest: {
     ul: {
-      overflow: "hidden",
+      // overflow: "hidden",
 
       $nest: {
         "& > li.matched, & > li:hover": {
