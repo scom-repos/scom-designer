@@ -7,13 +7,13 @@ import {
   VStack,
   Button,
   Input,
-  Control,
   Panel
 } from '@ijstech/components'
-import { buttonAutoStyled, customIconLayoutActiveStyled, textInputRight } from './index.css';
+import { buttonAutoStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback } from '../interface';
 import { parseNumberValue } from '../helpers/utils';
+import DesignerSelector from './selector';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {
@@ -26,7 +26,7 @@ interface IDesignerPosition {
   right?: number | string;
   bottom?: number | string;
   left?: number | string;
-  overflow?: string;
+  overflow?: {x?: string, y?: string};
   zIndex?: string;
 }
 
@@ -44,6 +44,8 @@ export default class DesignerToolPosition extends Module {
   private mdSpacing: DesignerToolModalSpacing;
   private zIndexInput: Input;
   private pnlPosition: Panel;
+  private overflowSelector: DesignerSelector;
+  private posSelector: DesignerSelector;
 
   private _data: IDesignerPosition = {};
 
@@ -66,15 +68,9 @@ export default class DesignerToolPosition extends Module {
 
   private renderUI() {
     const { zIndex, position, overflow } = this._data;
-    if (zIndex !== undefined) this.zIndexInput.value = `${zIndex}`;
-    if (position) {
-      const positionEl = this.vStackContent.querySelector(`#lb${position.charAt(0).toUpperCase() + position.slice(1)}`) as Control;
-      if (positionEl) positionEl.classList.add(customIconLayoutActiveStyled);
-    }
-    if (overflow) {
-      const overflowEl = this.vStackContent.querySelector(`#lb${overflow.charAt(0).toUpperCase() + overflow.slice(1)}`) as Control;
-      if (overflowEl) overflowEl.classList.add(customIconLayoutActiveStyled);
-    }
+    this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
+    this.posSelector.activeItem = position || '';
+    this.overflowSelector.activeItem = overflow?.y || '';
     this.updateButtons();
   }
 
@@ -109,8 +105,13 @@ export default class DesignerToolPosition extends Module {
   }
 
   private onSelectChanged(type: string, value: string) {
-    this._data[type] = value;
-    if (this.onChanged) this.onChanged(type, value);
+    if (type === 'overflow') {
+      this._data[type] = { y: value };
+      if (this.onChanged) this.onChanged(type, {x: 'hidden', y: value});
+    } else {
+      this._data[type] = value;
+      if (this.onChanged) this.onChanged(type, value);
+    }
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {

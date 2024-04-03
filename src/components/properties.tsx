@@ -5,14 +5,12 @@ import {
   customElements,
   HStack,
   Container,
-  StackLayout
+  Control
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
-import { IControl } from '../interface';
+import { IControl, onEventChangedCallback, onEventDblClickCallback } from '../interface';
 import {
   DesignerToolStylesheet,
-  borderRadiusLeft,
-  borderRadiusRight,
   DesignerToolLayout,
   DesignerToolBackground,
   DesignerToolSize,
@@ -29,6 +27,7 @@ import '../triggers/index';
 import '../setting-data/index';
 import { breakpoints, previews } from '../helpers/config';
 import { parseProps } from '../helpers/utils';
+import { DesignerTrigger } from '../triggers/index';
 const Theme = Styles.Theme.ThemeVars;
 
 type onChangedCallback = (prop: string, value: any) => void
@@ -36,6 +35,10 @@ type onChangedCallback = (prop: string, value: any) => void
 interface DesignerPropertiesElement extends ControlElement {
   component?: IControl;
   onChanged?: onChangedCallback;
+  onEventChanged?: onEventChangedCallback;
+  onEventDblClick?: onEventDblClickCallback;
+  onBreakpointChanged?: (value: number) => void;
+  onPreviewChanged?: onChangedCallback;
 }
 
 declare global {
@@ -61,14 +64,20 @@ export default class DesignerProperties extends Module {
   private customGroup: DesignerToolGroup;
   private breakpointSelector: DesignerSelector;
   private previewSelector: DesignerSelector;
+  private designerTrigger: DesignerTrigger;
 
   private _component: IControl;
 
   onChanged: onChangedCallback;
+  onBreakpointChanged: (value: number) => void;
+  onPreviewChanged: onChangedCallback;
+  onEventChanged: onEventChangedCallback;
+  onEventDblClick: onEventDblClickCallback;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
     this.onPropChanged = this.onPropChanged.bind(this);
+    this.onControlEventChanged = this.onControlEventChanged.bind(this);
   }
 
   static async create(options?: DesignerPropertiesElement, parent?: Container) {
@@ -90,6 +99,9 @@ export default class DesignerProperties extends Module {
     this.updateInfo();
     this.updateProps();
     this.renderCustomGroup();
+    const events = this._component?.control?._getCustomProperties()?.events;
+    const designProps = this.component?.control._getDesignProps();
+    this.designerTrigger.setData({ events, props: designProps });
   }
 
   private renderCustomGroup() {
@@ -123,30 +135,17 @@ export default class DesignerProperties extends Module {
     const {
       margin,
       padding,
-      background,
-      width,
-      height,
-      opacity,
-      position,
-      zIndex,
       border,
       top,
       right,
       bottom,
-      left,
-      overflow,
-      display,
-      stack,
-      font
+      left
     } = control;
     const computedStyle =  window.getComputedStyle(control);
     const designerProps: any = this.component.control._getDesignProps();
-    this.designerBackground.setData({ color: background?.color || '' })
-    this.designerSize.setData({
-      width: this.getValue(width, designerProps?.width, computedStyle?.width),
-      height: this.getValue(height, designerProps?.height, computedStyle?.height),
-    })
-    this.designerEffects.setData({ opacity })
+    this.designerBackground.setData({ color: designerProps?.background?.color || '' });
+    this.designerSize.setData({ width: designerProps?.width, height: designerProps?.height });
+    this.designerEffects.setData({ opacity: designerProps?.opacity || 1 });
     let marginObj = {}
     let paddingObj = {}
     if (margin) {
@@ -170,13 +169,13 @@ export default class DesignerProperties extends Module {
       padding: paddingObj
     });
     this.designerPosition.setData({
-      position,
-      zIndex,
+      position: designerProps?.position,
+      zIndex: designerProps?.zIndex,
       top: this.getValue(top, designerProps?.top, computedStyle?.top),
       left: this.getValue(left, designerProps?.left, computedStyle?.left),
       right: this.getValue(right, designerProps?.right, computedStyle?.right),
       bottom: this.getValue(bottom, designerProps?.bottom, computedStyle?.bottom),
-      overflow: (overflow?.y === 'hidden') ? 'hidden' : 'auto'
+      overflow: designerProps?.overflow
     })
     let borderObj = {}
     if (border) {
@@ -204,13 +203,11 @@ export default class DesignerProperties extends Module {
     })
     this.designerLayout.setData({
       name: this.component?.name,
-      display: display || control?.style.display,
-      stack,
-      direction: (control as StackLayout).direction
-    })
-    this.designerContent.setData({
-      font
-    })
+      display: designerProps?.display || control?.style.display,
+      stack: designerProps?.stack || undefined,
+      direction: designerProps?.direction
+    });
+    this.designerContent.setData({ font: designerProps?.font });
   }
 
   private getValue(controlVal: any, designVal: any, computedVal: any) {
@@ -233,21 +230,29 @@ export default class DesignerProperties extends Module {
     }
   }
 
+  private onControlEventChanged(prop: string, newVal: string, oldVal: string) {
+    if (this.onEventChanged) this.onEventChanged(prop, newVal, oldVal);
+  }
+
   private onBreakpointClick(type: string, value: any) {
-    console.log('break point  clicked', type, value)
+    if (this.onBreakpointChanged) this.onBreakpointChanged(value);
   }
 
   private onPreviewClick(type: string, value: any) {
-    console.log('preview clicked', type, value)
   }
 
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.onBreakpointChanged = this.getAttribute('onBreakpointChanged', true) || this.onBreakpointChanged;
+    this.onPreviewChanged = this.getAttribute('onPreviewChanged', true) || this.onPreviewChanged;
+    this.onEventChanged = this.getAttribute('onEventChanged', true) || this.onEventChanged;
+    this.onEventDblClick = this.getAttribute('onEventDblClick', true) || this.onEventDblClick;
     const component = this.getAttribute('component', true);
     if (component) this.component = component;
     this.breakpointSelector.activeItem = breakpoints[0].value;
     this.previewSelector.activeItem = previews[0].value;
+    this.onBreakpointClick('breakpoint', 0);
   }
 
   render() {
@@ -264,8 +269,8 @@ export default class DesignerProperties extends Module {
         gap={1}
       >
         <i-hstack
-          gap={4} width="100%"
-          verticalAlignment="center" horizontalAlignment="space-between"
+          gap={'1rem'} width="100%"
+          verticalAlignment="center" horizontalAlignment="center"
           padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}
           background={{ color: '#26324b' }}
           stack={{shrink: '0'}}
@@ -275,6 +280,7 @@ export default class DesignerProperties extends Module {
             title='BREAKPOINT'
             items={breakpoints}
             direction='vertical'
+            stack={{grow: '1', shrink: '1'}}
             onChanged={this.onBreakpointClick.bind(this)}
           />
           <designer-selector
@@ -282,9 +288,10 @@ export default class DesignerProperties extends Module {
             title='PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
             items={previews}
             direction='vertical'
+            stack={{grow: '1', shrink: '1'}}
             onChanged={this.onPreviewClick.bind(this)}
           />
-          <i-vstack gap={'0.5rem'}>
+          {/* <i-vstack gap={'0.5rem'}>
             <i-hstack gap={4} verticalAlignment="center">
               <i-label caption="ENV" letterSpacing="0.1rem" font={{ size: '0.675rem' }} />
               <i-icon name="exclamation-circle" width={12} height={12} tooltip={{ content: 'You can configure some values in your app to change based on which environment the app is running in. If unspecified, Development (Dev) values will be used.' }} />
@@ -297,7 +304,7 @@ export default class DesignerProperties extends Module {
               class={`${borderRadiusLeft} ${borderRadiusRight}`}
               padding={{ top: '0.25rem', bottom: '0.25rem', left: '0.5rem', right: '0.5rem' }}
             />
-          </i-vstack>
+          </i-vstack> */}
         </i-hstack>
         <i-hstack
           id="hStackInfo"
@@ -313,7 +320,7 @@ export default class DesignerProperties extends Module {
           class={customTabStyled}
           stack={{grow: '1'}} overflow={'hidden'}
         >
-          <i-tab icon={{ name: 'paint-brush', width: '1.5rem', height: '1.5rem' }}>
+          <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
               <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
               <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
@@ -327,7 +334,7 @@ export default class DesignerProperties extends Module {
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
             </i-vstack>
           </i-tab>
-          <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>
+          {/* <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
               <designer-settings-basic display="block" />
               <designer-settings-advanced display="block" />
@@ -338,10 +345,16 @@ export default class DesignerProperties extends Module {
               <designer-data-params display="block" />
               <designer-data-linking display="block" />
             </i-vstack>
-          </i-tab>
+          </i-tab> */}
           <i-tab icon={{ name: 'magic', width: '1.5rem', height: '1.5rem' }}>
-            <i-vstack gap={1} width="100%">
-              <designer-trigger display="block" />
+            <i-vstack gap={1} width="100%" height={'100%'}>
+              <designer-trigger
+                id="designerTrigger"
+                display="block"
+                width="100%" height={'100%'}
+                onChanged={this.onControlEventChanged}
+                onEventDblClick={(name: string) => this.onEventDblClick && this.onEventDblClick(name)}
+              />
             </i-vstack>
           </i-tab>
         </i-tabs>

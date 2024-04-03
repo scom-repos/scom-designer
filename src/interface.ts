@@ -49,6 +49,10 @@ export interface IControl extends IComponent {
 
 export type onChangedCallback = (prop: string, value: string|number|boolean|object) => void;
 
+export type onEventChangedCallback = (prop: string, newValue: string, oldValue: string) => void;
+
+export type onEventDblClickCallback = (funcName: string) => void;
+
 export interface IFileHandler {
   openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
 }

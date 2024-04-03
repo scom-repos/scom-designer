@@ -17,7 +17,8 @@ import {
   Image,
   Tabs,
   RadioGroup,
-  TreeView
+  TreeView,
+  Modal
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -34,6 +35,7 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
 import { parseProps } from './helpers/utils'
+import { breakpointsMap } from './helpers/config'
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -111,6 +113,8 @@ export class ScomDesignerForm extends Module {
   private inputSearch: Input
   private currentTab = TABS.BITS
   private pnlFormDesigner: Panel
+  private mdPicker: Modal
+  private pnlScreens: Panel
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -128,8 +132,11 @@ export class ScomDesignerForm extends Module {
   constructor(parent?: Container, options?: any) {
     super(parent, options)
     this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
+    this.onControlEventChanged = this.onControlEventChanged.bind(this);
+    this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
     this.onDeleteComponent = this.onDeleteComponent.bind(this);
     this.onVisibleComponent = this.onVisibleComponent.bind(this);
+    this.handleBreakpoint = this.handleBreakpoint.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -202,7 +209,54 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
+  private updateDesignProps(component: Parser.IComponent) {
+    const control = this.pathMapping.get((component as IComponent).path);
+    const props = control?.control?._getDesignProps() || {};
+    for (let prop in props) {
+      component.props[prop] = this.formatDesignProp(prop, props[prop], control);
+    }
+    component.items?.forEach(item => {
+      this.updateDesignProps(item);
+    });
+  }
+
+  private formatDesignProp(prop: string, value: any, control: IControl) {
+    if (value === undefined) return `{undefined}`;
+    let props = control.control._getCustomProperties();
+    let property = props.props[prop];
+    let valueStr = value;
+    if (property) {
+      switch (property.type) {
+        case "number": {
+          valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
+          break;
+        }
+        case "string": {
+          valueStr = "'" + value + "'";
+          break;
+        }
+        case "boolean": {
+          valueStr = "{" + value + "}";
+          break;
+        }
+        case "object": {
+          valueStr = `{${JSON.stringify(value)}}`;
+          break;
+        }
+        case "array": {
+          valueStr = `{${JSON.stringify(value)}}`;
+          break;
+        }
+      }
+      control.props[prop] = valueStr;
+    } else if (props.events[prop]) {
+      valueStr = "{" + value + "}";
+    }
+    return valueStr;
+  }
+
   get rootComponent(): Parser.IComponent {
+    this.updateDesignProps(this._rootComponent)
     return this._rootComponent;
   }
 
@@ -246,7 +300,9 @@ export class ScomDesignerForm extends Module {
   }
 
   private onShowComponentPicker() {
-    this.wrapperComponentPicker.visible = true
+    this.mdPicker.linkTo = this.pnlScreens;
+    this.mdPicker.height = this.designerComponents.height;
+    this.mdPicker.visible = true;
   }
 
   private onSelectComponent(component: IComponent) {
@@ -330,15 +386,15 @@ export class ScomDesignerForm extends Module {
     control.control.onMouseDown = () => this.handleSelectControl(control);
     control.control.onDblClick = (target, event) => {
       event?.stopPropagation();
-      let id = control.control.id;
+      const id = control.control.id;
       if (id) {
-        let name = control.control._getDesignPropValue("onClick") as string;
+        const name = control.control._getDesignPropValue("onClick") as string;
         if (!name) {
           this.modified = true;
-          control.control._setDesignPropValue("onClick", `{this.${id}Click}`);
+          control.control._setDesignPropValue("onClick", `this.${id}Click`);
           this.studio.addEventHandler(this, "onClick", `${id}Click`);
-        } else if (name.startsWith("{this."))
-          this.studio.addEventHandler(this, "onClick", name.substring(6, name.length - 1));
+        } else if (name.startsWith("this."))
+          this.studio.addEventHandler(this, "onClick", name.substring(5));
       }
     };
   }
@@ -357,11 +413,12 @@ export class ScomDesignerForm extends Module {
   }
 
   private onCloseComponentPicker() {
-    this.wrapperComponentPicker.visible = false
+    this.mdPicker.visible = false
   }
 
   private handleAddControl(event: MouseEvent, parent?: Control) {
     event.stopPropagation();
+    this.onCloseComponentPicker();
     let pos = { x: event.offsetX, y: event.offsetY };
     if (this.selectedComponent) {
       let com: IControl = {
@@ -451,33 +508,20 @@ export class ScomDesignerForm extends Module {
       const imageEl = new Image(control, {width: '1rem', height: '1rem', display: 'flex', ...value});
       control[prop] = imageEl;
     }
-    let props = this.selectedControl.control._getCustomProperties();
-    let property = props.props[prop];
-    let valueStr = '';
-    if (property) {
-      switch (property.type) {
-        case "number": {
-          valueStr = typeof value === 'number' || value === undefined ? "{" + value + "}" : "'" + value + "'";
-          break;
-        }
-        case "string": {
-          valueStr = "'" + value + "'";
-          break;
-        }
-        case "boolean": {
-          valueStr = "{" + value + "}";
-          break;
-        }
-        case "object": {
-          valueStr = `{${JSON.stringify(value)}}`;
-          break;
-        }
-        case "array": {
-          valueStr = `{${JSON.stringify(value)}}`;
-          break;
-        }
-      }
-      this.selectedControl.props[prop] = valueStr;
+  }
+
+  private onControlEventChanged(prop: string, newValue: string, oldValue: string) {
+    if (this.selectedControl?.control && oldValue !== newValue) {
+      this.modified = true;
+      this.selectedControl.control._setDesignPropValue(prop, `this.${newValue}`);
+      if (oldValue) this.studio.renameEventHandler(this, oldValue, newValue);
+      else this.studio.addEventHandler(this, prop, `${newValue}`);
+    }
+  }
+
+  private onControlEventDblClick(funcName: string) {
+    if (funcName) {
+      this.studio.locateMethod(this, funcName);
     }
   }
 
@@ -590,6 +634,16 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  private handleBreakpoint(value: number) {
+    const { minWidth, maxWidth } = breakpointsMap[value];
+    if (minWidth !== undefined) {
+      this.pnlFormDesigner.width = minWidth;
+    }
+    if (maxWidth !== undefined) {
+      this.pnlFormDesigner.maxWidth = maxWidth;
+    }
+  }
+
   private initEvents() {
     this.pnlFormDesigner.onmouseleave = event => {
       this.mouseDown = false;
@@ -643,6 +697,7 @@ export class ScomDesignerForm extends Module {
       >
         <i-hstack width='100%' height='100%'>
           <i-vstack
+            id="pnlScreens"
             width='100%'
             height='100%'
             border={{
@@ -666,100 +721,134 @@ export class ScomDesignerForm extends Module {
               onVisible={this.onVisibleComponent}
               onDelete={this.onDeleteComponent}
             />
-          </i-vstack>
-          <i-vstack
-            id='wrapperComponentPicker'
-            visible={false}
-            width={250}
-            height='100%'
-            border={{
-              width: 1,
-              style: 'solid',
-              color: Theme.divider,
-              bottom: { width: 0 },
-            }}
-            background={{ color: Theme.background.main }}
-            overflow='auto'
-          >
-            <i-vstack
-              gap={12}
-              padding={{ top: 12, bottom: 12, left: 8, right: 8 }}
-              border={{
-                bottom: { width: 1, style: 'solid', color: Theme.divider },
-              }}
+             <i-modal
+              id="mdPicker"
+              width={'16rem'}
+              maxWidth={'100%'}
+              height={'100dvh'}
+              overflow={'hidden'}
+              showBackdrop={false}
+              popupPlacement='rightTop'
+              zIndex={1000}
+              padding={{top: 0, bottom: 0, left: 0, right: 0}}
             >
-              <i-hstack
-                gap={8}
-                verticalAlignment='center'
-                horizontalAlignment='space-between'
+              <i-panel
+                width={'100%'}
+                height='100%'
+                overflow={'hidden'}
               >
-                <i-label
-                  caption='Add Components'
-                  font={{ size: '0.75rem', bold: true }}
-                />
-                <i-icon
-                  name='times'
-                  width={14}
-                  height={14}
-                  cursor='pointer'
-                  onClick={this.onCloseComponentPicker}
-                />
-              </i-hstack>
-              <i-grid-layout
-                id='wrapperTab'
-                width='100%'
-                background={{ color: Theme.action.hoverBackground }}
-                templateColumns={['1fr', '1fr', '1fr']}
-                class={`${borderRadiusLeft} ${borderRadiusRight}`}
-              >
-                <i-label
-                  caption='Recent'
-                  class={`${customLabelTabStyled} ${borderRadiusLeft}`}
-                  onClick={() => this.onTabChanged(TABS.RECENT)}
-                />
-                <i-label
-                  caption='Bits'
-                  class={`${customLabelTabStyled} ${labelActiveStyled}`}
+                <i-vstack
+                  id='wrapperComponentPicker'
+                  width={'100%'}
+                  height='100%'
                   border={{
-                    radius: 0,
-                    left: { width: 1, style: 'solid', color: Theme.divider },
-                    right: { width: 1, style: 'solid', color: Theme.divider },
+                    width: 1,
+                    style: 'solid',
+                    color: Theme.divider,
+                    bottom: { width: 0 },
                   }}
-                  onClick={() => this.onTabChanged(TABS.BITS)}
-                />
-                <i-label
-                  caption='Blocks'
-                  class={`${customLabelTabStyled} ${borderRadiusRight}`}
-                  onClick={() => this.onTabChanged(TABS.BLOCKS)}
-                />
-              </i-grid-layout>
-              <i-input
-                id='inputSearch'
-                placeholder='Search'
-                width='100%'
-                height={24}
-                border={{
-                  radius: 8,
-                  width: 0,
-                }}
-                padding={{ left: 4, right: 4 }}
-                font={{ size: '0.75rem' }}
-                onChanged={this.onFilterComponent}
-              />
-            </i-vstack>
-            <i-panel id='pnlComponentPicker' width='100%' />
-            <i-panel id='pnlBlockPicker' width='100%' visible={false} />
+                  background={{ color: Theme.background.main }}
+                  overflow='auto'
+                >
+                  <i-vstack
+                    gap={12}
+                    padding={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                    border={{
+                      bottom: { width: 1, style: 'solid', color: Theme.divider },
+                    }}
+                  >
+                    <i-hstack
+                      gap={8}
+                      verticalAlignment='center'
+                      horizontalAlignment='space-between'
+                    >
+                      <i-label
+                        caption='Add Components'
+                        font={{ size: '0.75rem', bold: true }}
+                      />
+                      <i-icon
+                        name='times'
+                        width={14}
+                        height={14}
+                        cursor='pointer'
+                        onClick={this.onCloseComponentPicker}
+                      />
+                    </i-hstack>
+                    <i-grid-layout
+                      id='wrapperTab'
+                      width='100%'
+                      background={{ color: Theme.action.hoverBackground }}
+                      templateColumns={['1fr', '1fr', '1fr']}
+                      class={`${borderRadiusLeft} ${borderRadiusRight}`}
+                    >
+                      <i-label
+                        caption='Recent'
+                        class={`${customLabelTabStyled} ${borderRadiusLeft}`}
+                        onClick={() => this.onTabChanged(TABS.RECENT)}
+                      />
+                      <i-label
+                        caption='Bits'
+                        class={`${customLabelTabStyled} ${labelActiveStyled}`}
+                        border={{
+                          radius: 0,
+                          left: { width: 1, style: 'solid', color: Theme.divider },
+                          right: { width: 1, style: 'solid', color: Theme.divider },
+                        }}
+                        onClick={() => this.onTabChanged(TABS.BITS)}
+                      />
+                      <i-label
+                        caption='Blocks'
+                        class={`${customLabelTabStyled} ${borderRadiusRight}`}
+                        onClick={() => this.onTabChanged(TABS.BLOCKS)}
+                      />
+                    </i-grid-layout>
+                    <i-input
+                      id='inputSearch'
+                      placeholder='Search'
+                      width='100%'
+                      height={24}
+                      border={{
+                        radius: 8,
+                        width: 0,
+                      }}
+                      padding={{ left: 4, right: 4 }}
+                      font={{ size: '0.75rem' }}
+                      onChanged={this.onFilterComponent}
+                    />
+                  </i-vstack>
+                  <i-panel id='pnlComponentPicker' width='100%' />
+                  <i-panel id='pnlBlockPicker' width='100%' visible={false} />
+                </i-vstack>
+              </i-panel>
+            </i-modal>
           </i-vstack>
           <i-panel
-            id="pnlFormDesigner"
             stack={{grow: '1'}}
-            overflow={{y: 'auto'}}
-            background={{ color: "gray" }}
-          ></i-panel>
+            padding={{top: '1rem', bottom: '1rem', left: '1rem', right: '1rem'}}
+            overflow={'auto'}
+          >
+            <i-panel
+              id="pnlFormDesigner"
+              width={'auto'} minHeight={'100%'}
+              background={{ color: "gray" }}
+              overflow={'auto'}
+              mediaQueries={[
+                {
+                  maxWidth: '1024px',
+                  properties: {
+                    maxHeight: '100%'
+                  }
+                }
+              ]}
+            ></i-panel>
+          </i-panel>
           <designer-properties
             id='designerProperties'
             display='flex'
             onChanged={this.onPropertiesChanged}
+            onEventChanged={this.onControlEventChanged}
+            onEventDblClick={this.onControlEventDblClick}
+            onBreakpointChanged={this.handleBreakpoint}
           />
         </i-hstack>
       </i-vstack>

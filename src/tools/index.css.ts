@@ -92,10 +92,12 @@ export const customFormStyle = Styles.style({
     '&#form': {
       $nest: {
         'i-input': {
-          height: '24px !important'
+          height: '24px !important',
+          borderRadius: '0.5rem !important'
         },
         'i-combo-box': {
-          height: '24px !important'
+          height: '24px !important',
+          borderRadius: '0.5rem !important'
         },
         'i-combo-box .selection': {
           padding: '0 1rem'
