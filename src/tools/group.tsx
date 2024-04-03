@@ -93,6 +93,7 @@ export default class DesignerToolGroup extends Module {
       };
       this.form.renderForm();
       this.form.setFormData({...this._data.props || {}});
+      this.form.visible = true;
     }
   }
 
@@ -117,7 +118,7 @@ export default class DesignerToolGroup extends Module {
       >
         <designer-tool-header id ="designerHeader" name="" tooltipText="" onCollapse={this.onCollapse} />
         <i-vstack id="vStackContent" gap={'0.5rem'} padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}>
-          <i-form id="form" class={customFormStyle}></i-form>
+          <i-form id="form" class={customFormStyle} visible={false}></i-form>
         </i-vstack>
       </i-vstack>
     )

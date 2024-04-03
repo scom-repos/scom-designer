@@ -266,7 +266,18 @@ export const extractFileName = (path: string): string => {
   return items[items.length - 1];
 }
 
-export const parsePropValue = (value: string) => {
+export const parseProps = (props: any) => {
+  if (!props) return null;
+  const newObj = {};
+  if (props) {
+    for (let key in props) {
+      const value = props[key];
+      newObj[key] = typeof value === "string" ? parsePropValue(props[key]) : value;
+    }
+  }
+  return newObj;
+}
+export const parsePropValue = (value: any) => {
   if (value.startsWith('{') && value.endsWith('}')) {
     value = value.substring(1, value.length - 1);
     if (value.startsWith('{') && value.endsWith('}')) {
@@ -276,6 +287,18 @@ export const parsePropValue = (value: string) => {
           .replace(/'/g, '"')
       );
       return parsedObject;
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      return JSON.parse(value);
+    } else {
+      if (value === 'true' || value === 'false') {
+        value = value === 'true' ? true : false;
+      } else if (!Number.isNaN(+value)) {
+        value = +value;
+      } else if (value === 'null') {
+        value = null;
+      } else if (value === 'undefined') {
+        value = undefined;
+      }
     }
   }
   else if (value.startsWith('"') && value.endsWith('"')) {

@@ -51,12 +51,15 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private mdActions;
         private mdAlert;
         private currentComponent;
+        private _activeComponent;
         onShowComponentPicker: () => void;
         onSelect: selectCallback;
         onVisible: visibleCallback;
         onDelete: selectCallback;
         get screen(): IScreen;
         set screen(value: IScreen);
+        get activeComponent(): IComponent;
+        set activeComponent(value: IComponent);
         private renderUI;
         private renderTreeItems;
         private onHideComponent;
@@ -239,7 +242,8 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     })[];
     export const getFileContent: (url: string) => Promise<string>;
     export const extractFileName: (path: string) => string;
-    export const parsePropValue: (value: string) => any;
+    export const parseProps: (props: any) => {};
+    export const parsePropValue: (value: any) => any;
     export const parseNumberValue: (value: string | number) => {
         value: any;
         unit: string;
@@ -441,7 +445,6 @@ declare module "@scom/scom-designer/tools/size.tsx" {
         private currentLabel;
         private pnlSizes;
         private _data;
-        private unit;
         private currentProp;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolSizeElement);
@@ -538,7 +541,6 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
         private paddingInput;
         private vStackIndividual;
         private _data;
-        private _unit;
         private currentProp;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolMarginsAndPaddingElement);
@@ -726,6 +728,7 @@ declare module "@scom/scom-designer/tools/content.tsx" {
     export default class DesignerToolContent extends Module {
         private vStackContent;
         private inputFontSize;
+        private inputFontWeight;
         private inputFontColor;
         private _data;
         onChanged: onChangedCallback;
@@ -1060,6 +1063,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private renderCustomGroup;
         private updateInfo;
         private updateProps;
+        private getValue;
         private onPropChanged;
         private onGroupChanged;
         private onBreakpointClick;
@@ -1238,7 +1242,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
-        private updateDesignProps;
         get rootComponent(): Parser.IComponent;
         clear(): void;
         private onScreenChanged;
@@ -1250,7 +1253,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onVisibleComponent;
         private onDeleteComponent;
         private renderComponent;
-        private parseOptions;
         private renderControl;
         private isParentGroup;
         private bindControlEvents;
@@ -1263,6 +1265,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private initBlockPicker;
         private initDesignerProperties;
         private onPropertiesChanged;
+        private updatePath;
         renderUI(root: Parser.IComponent): void;
         private handleControlMouseMove;
         private updatePosition;

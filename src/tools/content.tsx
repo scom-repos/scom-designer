@@ -33,6 +33,7 @@ declare global {
 export default class DesignerToolContent extends Module {
   private vStackContent: VStack;
   private inputFontSize: Input;
+  private inputFontWeight: Input;
   private inputFontColor: ColorPicker;
 
   private _data: IDesignerContent = {};
@@ -57,6 +58,7 @@ export default class DesignerToolContent extends Module {
     const { font = {} } = this._data;
     this.inputFontColor.value = font.color;
     this.inputFontSize.value = font.size;
+    this.inputFontWeight.value = font.weight;
   }
 
   private onFontChanged(target: any, prop: string) {
@@ -82,7 +84,7 @@ export default class DesignerToolContent extends Module {
         <i-vstack id="vStackContent" padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}>
           <i-vstack gap={'0.5rem'}>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption="Font color" font={{ size: '0.75rem' }} />
+              <i-label caption="Color" font={{ size: '0.75rem' }} />
               <i-hstack gap={4} width="100%" verticalAlignment="center">
                 <i-color
                   id="inputFontColor"
@@ -92,7 +94,7 @@ export default class DesignerToolContent extends Module {
               </i-hstack>
             </i-grid-layout>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption={'Font size'} font={{ size: '0.75rem' }} />
+              <i-label caption={'Size'} font={{ size: '0.75rem' }} />
               <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                 <i-input
                   id="inputFontSize"
@@ -105,7 +107,7 @@ export default class DesignerToolContent extends Module {
                   padding={{ left: 4, right: 2 }}
                   font={{ size: '0.675rem' }}
                   class={`${bgInputTransparent}`}
-                  onChanged={(target: ColorPicker) => this.onFontChanged(target, 'size')}
+                  onChanged={(target: Input) => this.onFontChanged(target, 'size')}
                 />
                 <i-label
                   caption="px"
@@ -123,6 +125,24 @@ export default class DesignerToolContent extends Module {
                     }
                   }}
                   class={`text-center ${unitStyled}`}
+                />
+              </i-hstack>
+            </i-grid-layout>
+            <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
+              <i-label caption={'Weight'} font={{ size: '0.75rem' }} />
+              <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
+                <i-input
+                  id="inputFontWeight"
+                  inputType='number'
+                  placeholder="Enter font weight..."
+                  background={{ color: 'transparent' }}
+                  width="calc(100% - 1.5rem)"
+                  height={'1.5rem'}
+                  border={{ width: 0 }}
+                  padding={{ left: 4, right: 2 }}
+                  font={{ size: '0.675rem' }}
+                  class={`${bgInputTransparent}`}
+                  onChanged={(target: Input) => this.onFontChanged(target, 'weight')}
                 />
               </i-hstack>
             </i-grid-layout>

@@ -89,9 +89,12 @@ export const buttonAutoStyled = Styles.style({
 
 export const customFormStyle = Styles.style({
   $nest: {
-    '&.#form': {
+    '&#form': {
       $nest: {
-        'i-input, i-combo-box': {
+        'i-input': {
+          height: '24px !important'
+        },
+        'i-combo-box': {
           height: '24px !important'
         },
         'i-combo-box .selection': {

@@ -45,6 +45,7 @@ export default class DesignerComponents extends Module {
   private mdAlert: Alert;
 
   private currentComponent: IComponent = null;
+  private _activeComponent: IComponent = null;
 
   public onShowComponentPicker: () => void;
   onSelect: selectCallback;
@@ -60,11 +61,24 @@ export default class DesignerComponents extends Module {
     this.renderUI();
   }
 
+  get activeComponent() {
+    return this._activeComponent;
+  }
+  set activeComponent(value: IComponent) {
+    this._activeComponent = value;
+    const currentElm = this.vStackComponents?.querySelector(`.${rowItemActiveStyled}`);
+    if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
+    if (value) {
+      const elm = this.vStackComponents?.querySelector(`#elm-${value.path}`);
+      if (elm) elm.classList.add(rowItemActiveStyled);
+    }
+  }
+
   private renderUI() {
     if (!this.screen || !this.vStackComponents) return;
     this.vStackComponents.clearInnerHTML();
     this.vStackComponents.appendChild(
-      <i-hstack gap={4} verticalAlignment="center" padding={{ top: 4, bottom: 4 }}>
+      <i-hstack visible={false} gap={4} verticalAlignment="center" padding={{ top: 4, bottom: 4 }}>
         <i-icon name="mobile-alt" width={14} height={14} />
         <i-label caption={this.screen.name} font={{ size: '0.75rem' }} />
       </i-hstack>
@@ -83,6 +97,7 @@ export default class DesignerComponents extends Module {
         verticalAlignment: 'center',
         padding: { left: parentPl + 2, right: 4, top: 6, bottom: 6 }
       });
+      hStack.id = `elm-${elm.path}`;
       hStack.classList.add(rowItemHoverStyled, hoverFullOpacity);
       let icon: Icon;
       if (elm.items?.length) {

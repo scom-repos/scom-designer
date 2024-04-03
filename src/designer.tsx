@@ -33,7 +33,7 @@ import {
 } from './data'
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
-import { parsePropValue } from './helpers/utils'
+import { parseProps } from './helpers/utils'
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -45,6 +45,10 @@ enum TABS {
 
 export function createControl(parent: Control, name: string, options?: any): Control {
   const controlConstructor: any = window.customElements.get(name);
+  if (name === 'i-stack') {
+    options = options || {};
+    options = {direction: 'vertical', ...options};
+  }
   const control: Control = new controlConstructor(parent, options);
   if (options) control._setDesignProps(options);
   return control;
@@ -68,7 +72,7 @@ class ControlResizer {
     resizer.className = "i-resizer " + className;
   }
   hideResizers() {
-    this.resizers.forEach(resizer => this._control.removeChild(resizer));
+    this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
     this.resizers = [];
   }
   showResizers() {
@@ -198,14 +202,6 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
-  private updateDesignProps(component: Parser.IComponent) {
-    // TODO: update control
-    let control = component as IControl;
-    component.props = control.control._getDesignProps();
-    component.items?.forEach(item => {
-      this.updateDesignProps(item);
-    });
-  }
   get rootComponent(): Parser.IComponent {
     return this._rootComponent;
   }
@@ -297,20 +293,8 @@ export class ScomDesignerForm extends Module {
     if (select) this.handleSelectControl(component);
   }
 
-  private parseOptions(options: any) {
-    if (!options) return null;
-    const newObj = {};
-    if (options) {
-      for (let key in options) {
-        const value = options[key];
-        newObj[key] = typeof value === "string" ? parsePropValue(options[key]) : value;
-      }
-    }
-    return newObj;
-  }
-
   private renderControl(parent: Control, component: IControl) {
-    const options = this.parseOptions(component.props);
+    const options = parseProps(component.props);
     let control = null;
     let isTab = component.name === 'i-tab' && parent instanceof Tabs;
     let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
@@ -363,6 +347,7 @@ export class ScomDesignerForm extends Module {
     if (this.selectedControl) this.selectedControl.control.tag.hideResizers();
     this.selectedControl = target;
     this.selectedControl.control.tag.showResizers();
+    this.designerComponents.activeComponent = this.selectedControl;
     this.showDesignProperties();
   }
 
@@ -384,7 +369,7 @@ export class ScomDesignerForm extends Module {
         path: IdUtils.generateUUID(),
         props: {
           width: `{${100}}`,
-          height: `{${30}}`
+          height: `{${20}}`
         },
         control: null
       };
@@ -472,7 +457,7 @@ export class ScomDesignerForm extends Module {
     if (property) {
       switch (property.type) {
         case "number": {
-          valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
+          valueStr = typeof value === 'number' || value === undefined ? "{" + value + "}" : "'" + value + "'";
           break;
         }
         case "string": {
@@ -496,17 +481,25 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  private updatePath(items: Parser.IComponent[]) {
+    return [...items].map((item) => {
+      (item as IComponent).path = IdUtils.generateUUID();
+      if (item.items?.length) {
+        item.items = this.updatePath(item.items);
+      }
+      return item;
+    })
+  }
+
   renderUI(root: Parser.IComponent) {
     if (root?.items?.length) {
-      root.items = [...root.items].map(item => {
-        return {...item, path: IdUtils.generateUUID()}
-      })
+      root.items = this.updatePath(root.items);
     }
     this._rootComponent = {...root, path: IdUtils.generateUUID()} as IComponent;
     this.pnlFormDesigner.clearInnerHTML();
     if (this._rootComponent) {
       this.designerComponents.screen = {
-        name: this._rootComponent.name,
+        name: 'Screen',
         id: IdUtils.generateUUID(),
         elements: [this._rootComponent]
       }
@@ -580,9 +573,11 @@ export class ScomDesignerForm extends Module {
           }
         }
       } else {
-        let left = (currentControl.left as number) + mouseMoveDelta.x;
-        let top = (currentControl.top as number) + mouseMoveDelta.y;
-        this.updatePosition({ left, top })
+        if (Math.abs(mouseMoveDelta.x) > 10 || Math.abs(mouseMoveDelta.y) > 10) {
+          let left = (currentControl.left as number) + mouseMoveDelta.x;
+          let top = (currentControl.top as number) + mouseMoveDelta.y;
+          this.updatePosition({ left, top })
+        }
       }
     }
   }

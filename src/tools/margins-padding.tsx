@@ -54,7 +54,6 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private vStackIndividual: VStack;
 
   private _data: IDesignerSpacing = {};
-  private _unit: string = 'px';
   private currentProp: string = '';
 
   onChanged: onChangedCallback;
@@ -94,7 +93,9 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private onOverallChanged(target: Input, prop: 'padding' | 'margin') {
-    const value = target.value !== '' ? `${target.value}${this._unit}` : '';
+    const nextLabel = target.nextSibling as Label;
+    const unit = nextLabel?.caption || 'px';
+    const value = target.value !== '' ? `${target.value}${unit}` : 'auto';
     this._data[prop] = {
       top: value,
       right: value,
@@ -129,19 +130,16 @@ export default class DesignerToolMarginsAndPadding extends Module {
     mdWrapper.style.paddingInline = '0px';
     const onUnitChanged = (value: 'px' | '%') => {
       this.currentLabel.caption = value;
-      if (value !== this._unit) {
-        const valueObj = this._data[this.currentProp]
-        if (valueObj) {
-          for (let prop in valueObj) {
-            const numValue = parseNumberValue(valueObj[prop])?.value;
-            const valueStr = numValue !== '' ? `${numValue}${value}` : '';
-            this._data[this.currentProp][prop] = valueStr
-          }
-          this.updateButtons()
-          if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
+      const valueObj = this._data[this.currentProp]
+      if (valueObj) {
+        for (let prop in valueObj) {
+          const numValue = parseNumberValue(valueObj[prop])?.value;
+          const valueStr = numValue !== '' ? `${numValue}${value}` : 'auto';
+          this._data[this.currentProp][prop] = valueStr
         }
+        this.updateButtons()
+        if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
       }
-      this._unit = value;
       this.mdUnits.visible = false;
     }
     const itemUnits = new VStack(undefined, { gap: 8, border: { radius: 8 } });
