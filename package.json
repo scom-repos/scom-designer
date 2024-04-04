@@ -9,7 +9,7 @@
         "node": ">=18.0.0"
     },
     "scripts": {
-        "build": "rm -rf dist && npx @ijstech/compiler",
+        "build": "rm -rf dist && npx @ijstech/compiler && cp template/debug.html dist",
         "serve": "npx @ijstech/cli serve 8080",
         "test": "cd test && npm run test && cd .."
     },

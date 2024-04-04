@@ -44,6 +44,29 @@ const breakpoints= [
   }
 ]
 
+const breakpointsMap = {
+  [BREAKPOINTS.MOBILE]: {
+    minWidth: '320px',
+    maxWidth: '767px',
+    width: '320px'
+  },
+  [BREAKPOINTS.TABLET]: {
+    minWidth: '768px',
+    maxWidth: '1024px'
+  },
+  [BREAKPOINTS.LAPTOP]: {
+    minWidth: '1025px',
+    maxWidth: '1440px'
+  },
+  [BREAKPOINTS.DESKTOP]: {
+    minWidth: '1441px',
+    maxWidth: '1920px'
+  },
+  [BREAKPOINTS.BIG_SCREEN]: {
+    minWidth: '1921px'
+  }
+}
+
 const enum PREVIEWS {
   DRAFT,
   WEB,
@@ -91,5 +114,6 @@ const previews = [
 export {
   BREAKPOINTS,
   breakpoints,
-  previews
+  previews,
+  breakpointsMap
 }

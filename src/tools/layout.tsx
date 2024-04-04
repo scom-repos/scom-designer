@@ -109,12 +109,10 @@ export default class DesignerToolLayout extends Module {
       if (alignSelf) this.alignSelfSelector.activeItem = alignSelf
       if (alignContent) this.alignContentSelector.activeItem = alignContent
     }
-    if (stack) {
-      const { basis, grow, shrink } = stack;
-      this.basisInput.value = basis || '';
-      this.shrinkInput.value = shrink || '';
-      this.growInput.value = grow || '';
-    }
+    const { basis, grow, shrink } = stack || {};
+    this.basisInput.value = basis || '';
+    this.shrinkInput.value = shrink || '';
+    this.growInput.value = grow || '';
   }
 
   private togglePanels() {
@@ -125,10 +123,6 @@ export default class DesignerToolLayout extends Module {
     this.alignSelector.visible = isStack;
     this.alignSelfSelector.visible = isStack;
     this.alignContentSelector.visible = isStack;
-    if (!this._data.display && isStack) {
-      this._data.display = 'flex';
-      this.onSelectChanged('display', this._data.display);
-    }
     this.pnlFlexItems.visible = isStack;
     this.pnlFlexContent.visible = true;
     this.pnlSelectedItem.visible = !isStack;

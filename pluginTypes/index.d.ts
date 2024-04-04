@@ -570,7 +570,10 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         right?: number | string;
         bottom?: number | string;
         left?: number | string;
-        overflow?: string;
+        overflow?: {
+            x?: string;
+            y?: string;
+        };
         zIndex?: string;
     }
     global {
@@ -585,6 +588,8 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private mdSpacing;
         private zIndexInput;
         private pnlPosition;
+        private overflowSelector;
+        private posSelector;
         private _data;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolPositionElement);
@@ -882,7 +887,16 @@ declare module "@scom/scom-designer/settings/index.ts" {
 /// <amd-module name="@scom/scom-designer/triggers/trigger.tsx" />
 declare module "@scom/scom-designer/triggers/trigger.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
+    import { onEventChangedCallback, onEventDblClickCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerTriggerElement extends ControlElement {
+        events?: {
+            [name: string]: any;
+        };
+        props?: {
+            [name: string]: any;
+        };
+        onChanged?: onEventChangedCallback;
+        onEventDblClick?: onEventDblClickCallback;
     }
     global {
         namespace JSX {
@@ -893,9 +907,37 @@ declare module "@scom/scom-designer/triggers/trigger.tsx" {
     }
     export default class DesignerTrigger extends Module {
         private vStackContent;
+        private gdEvents;
+        private _events;
+        private _props;
+        onChanged: onEventChangedCallback;
+        onEventDblClick: onEventDblClickCallback;
         constructor(parent?: Container, options?: DesignerTriggerElement);
+        static create(options?: DesignerTriggerElement, parent?: Container): Promise<DesignerTrigger>;
+        get events(): {
+            [name: string]: any;
+        };
+        set events(value: {
+            [name: string]: any;
+        });
+        get props(): {
+            [name: string]: any;
+        };
+        set props(value: {
+            [name: string]: any;
+        });
+        setData({ events, props }: {
+            events: {
+                [name: string]: any;
+            };
+            props?: {
+                [name: string]: any;
+            };
+        }): void;
         private onCollapse;
         private renderUI;
+        private onInputChanged;
+        private onHandleDbClick;
         init(): void;
         render(): any;
     }
@@ -978,6 +1020,28 @@ declare module "@scom/scom-designer/helpers/config.ts" {
         };
         value: BREAKPOINTS;
     }[];
+    const breakpointsMap: {
+        0: {
+            minWidth: string;
+            maxWidth: string;
+            width: string;
+        };
+        1: {
+            minWidth: string;
+            maxWidth: string;
+        };
+        2: {
+            minWidth: string;
+            maxWidth: string;
+        };
+        3: {
+            minWidth: string;
+            maxWidth: string;
+        };
+        4: {
+            minWidth: string;
+        };
+    };
     const enum PREVIEWS {
         DRAFT = 0,
         WEB = 1,
@@ -1018,12 +1082,12 @@ declare module "@scom/scom-designer/helpers/config.ts" {
         type: string;
         value: PREVIEWS;
     })[];
-    export { BREAKPOINTS, breakpoints, previews };
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap };
 }
 /// <amd-module name="@scom/scom-designer/components/properties.tsx" />
 declare module "@scom/scom-designer/components/properties.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { IControl } from "@scom/scom-designer/interface.ts";
+    import { IControl, onEventChangedCallback, onEventDblClickCallback } from "@scom/scom-designer/interface.ts";
     import "@scom/scom-designer/settings/index.ts";
     import "@scom/scom-designer/triggers/index.ts";
     import "@scom/scom-designer/setting-data/index.tsx";
@@ -1031,6 +1095,10 @@ declare module "@scom/scom-designer/components/properties.tsx" {
     interface DesignerPropertiesElement extends ControlElement {
         component?: IControl;
         onChanged?: onChangedCallback;
+        onEventChanged?: onEventChangedCallback;
+        onEventDblClick?: onEventDblClickCallback;
+        onBreakpointChanged?: (value: number) => void;
+        onPreviewChanged?: onChangedCallback;
     }
     global {
         namespace JSX {
@@ -1053,8 +1121,13 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private customGroup;
         private breakpointSelector;
         private previewSelector;
+        private designerTrigger;
         private _component;
         onChanged: onChangedCallback;
+        onBreakpointChanged: (value: number) => void;
+        onPreviewChanged: onChangedCallback;
+        onEventChanged: onEventChangedCallback;
+        onEventDblClick: onEventDblClickCallback;
         constructor(parent?: Container, options?: any);
         static create(options?: DesignerPropertiesElement, parent?: Container): Promise<DesignerProperties>;
         get component(): IControl;
@@ -1066,6 +1139,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private getValue;
         private onPropChanged;
         private onGroupChanged;
+        private onControlEventChanged;
         private onBreakpointClick;
         private onPreviewClick;
         init(): void;
@@ -1225,6 +1299,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private inputSearch;
         private currentTab;
         private pnlFormDesigner;
+        private mdPicker;
+        private pnlScreens;
         private pathMapping;
         private mouseDown;
         private resizing;
@@ -1242,6 +1318,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
+        private updateDesignProps;
+        private formatDesignProp;
         get rootComponent(): Parser.IComponent;
         clear(): void;
         private onScreenChanged;
@@ -1265,10 +1343,13 @@ declare module "@scom/scom-designer/designer.tsx" {
         private initBlockPicker;
         private initDesignerProperties;
         private onPropertiesChanged;
+        private onControlEventChanged;
+        private onControlEventDblClick;
         private updatePath;
         renderUI(root: Parser.IComponent): void;
         private handleControlMouseMove;
         private updatePosition;
+        private handleBreakpoint;
         private initEvents;
         init(): void;
         render(): any;
@@ -1318,6 +1399,8 @@ declare module "@scom/scom-designer/interface.ts" {
         control: Control;
     }
     export type onChangedCallback = (prop: string, value: string | number | boolean | object) => void;
+    export type onEventChangedCallback = (prop: string, newValue: string, oldValue: string) => void;
+    export type onEventDblClickCallback = (funcName: string) => void;
     export interface IFileHandler {
         openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
     }
@@ -1361,10 +1444,10 @@ declare module "@scom/scom-designer" {
         }
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
+        private designTabs;
         private formDesigner;
         private codeEditor;
         private pnlMessage;
-        private fileTabs;
         private compiler;
         private contentChangeTimer;
         private _data;

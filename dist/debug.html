@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/libs/@ijstech/components/index.js"></script>
+</head>
+<html>
+
+<body>
+  <script>
+    async function init() {
+      window.addEventListener('message', async function (e) {
+        if (e.type == 'message' && typeof(e.data) == 'string'){
+            let script = e.data;
+            await application.initModule("@scom/demo-module", script);
+            let module = await application.newModule("@scom/demo-module");
+            document.body.append(module);
+        }
+      });
+    };
+    init();
+  </script>
+</body>
+
+</html>

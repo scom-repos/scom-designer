@@ -144,11 +144,13 @@ export default class DesignerComponents extends Module {
           onClick={(target: Control, event: MouseEvent) => onShowActions(target, event, elm)}
         />
       );
+      const isHidden = elm.props?.visible === "{false}";
       hStackActions.appendChild(
         <i-icon
-          name="eye"
+          name={isHidden ? 'eye-slash' : 'eye'}
           width={'0.875rem'} height={'0.875rem'}
-          opacity={0} cursor="pointer"
+          opacity={isHidden ? 1 : 0}
+          cursor="pointer"
           onClick={(icon: Icon) => this.onHideComponent(icon, elm)}
         />
       );
@@ -182,6 +184,7 @@ export default class DesignerComponents extends Module {
 
   private onHideComponent(icon: Icon, component: IComponent) {
     icon.name = icon.name === 'eye' ? 'eye-slash' : 'eye';
+    if (icon.name === 'eye-slash') icon.opacity = 1
     if (this.onVisible) this.onVisible(component, icon.name === 'eye');
   }
 

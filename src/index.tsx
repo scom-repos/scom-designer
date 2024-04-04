@@ -34,26 +34,16 @@ declare global {
   }
 }
 
-interface IFileTab {
-  fileName: string
-  tab: Tab
-  editor: CodeEditor
-  editorTab: Tab
-  designer?: any
-  designerTab?: Tab
-  updateDesigner?: boolean
-}
-
 interface IDesigner {
   url: string;
 }
 
 @customElements('i-scom-designer')
 export class ScomDesigner extends Module implements IFileHandler, IStudio {
+  private designTabs: Tabs
   private formDesigner: ScomDesignerForm
   private codeEditor: CodeEditor
-  private pnlMessage: Panel;
-  private fileTabs: { [fileName: string]: IFileTab } = {}
+  private pnlMessage: Panel
   private compiler: Compiler
 
   private contentChangeTimer: any
@@ -72,9 +62,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     funcName: string
   ): void {
     let control = designer.selectedControl?.control
-    let fileName = designer.selectedControl?.name
-    let fileTab = this.fileTabs[fileName]
-    let editor = fileTab.editor
+    let fileName = this.fileName
+    let editor = this.codeEditor
     let code = this.updateDesignerCode(fileName, true)
     this.compiler.updateFile(fileName, code)
     let propInfo = control._getCustomProperties()
@@ -95,22 +84,21 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       funcName,
       params
     )
+    this.codeEditor.focus()
     if (result && result.code) {
       this.compiler.updateFile(fileName, result.code)
       editor.value = result.code
       if (result.lineNumber)
         editor.setCursor(result.lineNumber, result.columnNumber)
     }
-    fileTab.editorTab.active()
-    fileTab.editor.focus()
+    this.designTabs.activeTabIndex = 0
   }
   locateMethod(designer: ScomDesignerForm, funcName: string): void {
-    let fileName = designer.selectedControl?.name
-    let fileTab = this.fileTabs[fileName]
+    let fileName = this.fileName
     let result = this.compiler.locateMethod(fileName, funcName)
-    fileTab.editor.setCursor(result.lineNumber, result.columnNumber)
-    fileTab.editorTab.active()
-    fileTab.editor.focus()
+    this.designTabs.activeTabIndex = 0
+    this.codeEditor.focus()
+    this.codeEditor.setCursor(result.lineNumber, result.columnNumber)
   }
   removeComponent(designer: ScomDesignerForm): void {}
   renameComponent(
@@ -119,8 +107,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     newId: string
   ): boolean {
     let control = designer.selectedControl?.control
-    let fileName = designer.selectedControl?.name
-    let fileTab = this.fileTabs[fileName]
+    let fileName = this.fileName
     let code = this.updateDesignerCode(fileName, true)
     this.compiler.updateFile(fileName, code)
     let propInfo = control._getCustomProperties()
@@ -131,7 +118,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       newId
     )
     this.compiler.updateFile(fileName, result)
-    fileTab.editor.value = result
+    this.codeEditor.value = result
     return true
   }
   renameEventHandler(
@@ -139,13 +126,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     funcName: string,
     newFuncName: string
   ): boolean {
-    let fileName = designer.selectedControl?.name
-    let fileTab = this.fileTabs[fileName]
+    let fileName = this.fileName
     let code = this.updateDesignerCode(fileName, true)
     this.compiler.updateFile(fileName, code)
     let result = this.compiler.renameMethod(fileName, funcName, newFuncName)
     this.compiler.updateFile(fileName, result)
-    fileTab.editor.value = result
+    this.codeEditor.value = result
     return true
   }
 
@@ -223,7 +209,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         }
       }
     } else if (tab.id === 'codeTab') {
-      this.updateDesignerCode(fileName, true)
+      this.updateDesignerCode(fileName)
     }
   }
 
@@ -442,6 +428,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         background={{ color: '#202020' }}
       >
         <i-tabs
+          id="designTabs"
           class={codeTabsStyle}
           dock='fill'
           draggable={false}
