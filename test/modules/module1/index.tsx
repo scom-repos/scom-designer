@@ -18,9 +18,7 @@ export default class Module1 extends Module {
         this.scomDesigner.onShow();
     }
 
-    onChanged(value: string) {
-        console.log('content: ', value)
-    }
+    onChanged(value: string) {}
 
     onButton() {
         const value = this.scomDesigner.value;

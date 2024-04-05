@@ -189,7 +189,8 @@ export default class DesignerToolBorders extends Module {
                     padding={{ left: 4, right: 4 }}
                     font={{ size: '0.675rem' }}
                     class={`${textInputRight} ${bgInputTransparent}`}
-                    onChanged={(target: Input) => this.onPropChanged(target, 'width')}
+                    onBlur={(target: Input) => this.onPropChanged(target, 'width')}
+                    onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onPropChanged(target, 'width')}
                   />
                 </i-hstack>
               </i-grid-layout>
@@ -207,7 +208,8 @@ export default class DesignerToolBorders extends Module {
                     padding={{ left: 4, right: 4 }}
                     font={{ size: '0.675rem' }}
                     class={`${textInputRight} ${bgInputTransparent}`}
-                    onChanged={(target: Input) => this.onPropChanged(target, 'radius')}
+                    onBlur={(target: Input) => this.onPropChanged(target, 'radius')}
+                    onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onPropChanged(target, 'radius')}
                   />
                 </i-hstack>
               </i-grid-layout>

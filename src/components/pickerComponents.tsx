@@ -9,7 +9,6 @@ import {
   Panel,
   Container,
   Control,
-  Image
 } from '@ijstech/components'
 import { IComponentItem } from '../interface';
 import { blockItemHoverStyled } from '../index.css';

@@ -1,7 +1,4 @@
-import { IconName } from "@ijstech/components";
 import assets from "../assets";
-
-const captionElements = ['i-label', 'i-button', 'i-menu-item'];
 
 const enum BREAKPOINTS {
   MOBILE,
@@ -48,22 +45,26 @@ const breakpointsMap = {
   [BREAKPOINTS.MOBILE]: {
     minWidth: '320px',
     maxWidth: '767px',
-    width: '320px'
+    properties: {}
   },
   [BREAKPOINTS.TABLET]: {
     minWidth: '768px',
-    maxWidth: '1024px'
+    maxWidth: '1024px',
+    properties: {}
   },
   [BREAKPOINTS.LAPTOP]: {
     minWidth: '1025px',
-    maxWidth: '1440px'
+    maxWidth: '1440px',
+    properties: {}
   },
   [BREAKPOINTS.DESKTOP]: {
     minWidth: '1441px',
-    maxWidth: '1920px'
+    maxWidth: '1920px',
+    properties: {}
   },
   [BREAKPOINTS.BIG_SCREEN]: {
-    minWidth: '1921px'
+    minWidth: '1921px',
+    properties: {}
   }
 }
 
@@ -111,9 +112,35 @@ const previews = [
   }
 ]
 
+const getMediaQueries = () => {
+  return Object.values(breakpointsMap);
+}
+
+const getDefaultMediaQuery = (breakpoint: number) => {
+  return breakpointsMap[breakpoint] || {};
+}
+
+const GroupMetadata = {
+  'Layout': {
+    name: 'Layout',
+    tooltipText: 'The layout of your screen'
+  },
+  'Basic': {
+    name: 'Basic',
+    tooltipText: 'The most simple & essential components to build a screen'
+  },
+  'Fields': {
+    name: 'Fields',
+    tooltipText: 'The content of your screen'
+  }
+}
+
 export {
   BREAKPOINTS,
   breakpoints,
   previews,
-  breakpointsMap
+  breakpointsMap,
+  getMediaQueries,
+  getDefaultMediaQuery,
+  GroupMetadata
 }

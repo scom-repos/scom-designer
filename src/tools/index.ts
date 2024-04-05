@@ -11,6 +11,7 @@ import DesignerSelector from './selector';
 import DesignerToolContent from './content';
 import DesignerToolGroup from './group';
 import DesignerToolInput from './numberInput';
+import DesignerToolMediaQuery from './mediaQuery';
 
 export * from "./index.css";
 
@@ -27,5 +28,6 @@ export {
   DesignerSelector,
   DesignerToolContent,
   DesignerToolGroup,
-  DesignerToolInput
+  DesignerToolInput,
+  DesignerToolMediaQuery
 }

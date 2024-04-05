@@ -16,6 +16,7 @@ import {
 import { hoverFullOpacity, iconButtonStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
 import './index.css';
+import { getBreakpoint } from '../helpers/store';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -144,7 +145,16 @@ export default class DesignerComponents extends Module {
           onClick={(target: Control, event: MouseEvent) => onShowActions(target, event, elm)}
         />
       );
-      const isHidden = elm.props?.visible === "{false}";
+      const breakpoint = getBreakpoint();
+      const queriesStr = elm.props?.mediaQueries;
+      const mediaQueries = typeof queriesStr === 'string' ? JSON.parse(queriesStr.substring(1, queriesStr.length - 1)) : [];
+      const breakpointProps = mediaQueries[breakpoint]?.properties || {};
+      let isHidden = false;
+      if (Object.hasOwnProperty.call(breakpointProps, 'visible')) {
+        isHidden = breakpointProps['visible'] === "{false}" || breakpointProps['visible'] === false;
+      } else {
+        isHidden = elm.props?.visible === "{false}" || elm.props?.visible === false;
+      }
       hStackActions.appendChild(
         <i-icon
           name={isHidden ? 'eye-slash' : 'eye'}
@@ -180,6 +190,10 @@ export default class DesignerComponents extends Module {
         input.visible = false;
       }
     }
+  }
+
+  onRefresh() {
+    this.renderUI();
   }
 
   private onHideComponent(icon: Icon, component: IComponent) {
