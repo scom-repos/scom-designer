@@ -112,7 +112,8 @@ export default class DesignerToolModalSpacing extends Module {
             padding={{ left: 4, right: 2 }}
             font={{ size: '0.675rem' }}
             class={`${textInputRight} ${bgInputTransparent}`}
-            onChanged={onValueChanged}
+            onBlur={onValueChanged}
+            onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && onValueChanged(target)}
             onClick={() => { this.vStackIndUnits.visible = false }}
           />
           <i-label

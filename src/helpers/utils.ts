@@ -1,4 +1,5 @@
 import assets from "../assets";
+import { getBreakpoint } from "./store";
 
 export const backgroundOptions = [
   {
@@ -268,15 +269,29 @@ export const extractFileName = (path: string): string => {
 
 export const parseProps = (props: any) => {
   if (!props) return null;
+  const breakpoint = getBreakpoint();
+  let newProps = {...(props || {})};
+  if (breakpoint !== undefined) {
+    newProps.mediaQueries = newProps.mediaQueries || [];
+    const mediaQueries = newProps.mediaQueries;
+    if (typeof mediaQueries === 'string') {
+      let value = mediaQueries;
+      if (mediaQueries.startsWith('{') && mediaQueries.endsWith('}')) {
+        value = mediaQueries.substring(1, mediaQueries.length - 1);
+      }
+      try {
+        newProps.mediaQueries = JSON.parse(value);
+      } catch {}
+    };
+  }
   const newObj = {};
-  if (props) {
-    for (let key in props) {
-      const value = props[key];
-      newObj[key] = typeof value === "string" ? parsePropValue(props[key]) : value;
-    }
+  for (let key in newProps) {
+    const value = newProps[key];
+    newObj[key] = typeof value === "string" ? parsePropValue(newProps[key]) : value;
   }
   return newObj;
 }
+
 export const parsePropValue = (value: any) => {
   if (value.startsWith('{') && value.endsWith('}')) {
     value = value.substring(1, value.length - 1);

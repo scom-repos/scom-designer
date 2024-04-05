@@ -124,7 +124,7 @@ export default class DesignerToolLayout extends Module {
     this.alignSelfSelector.visible = isStack;
     this.alignContentSelector.visible = isStack;
     this.pnlFlexItems.visible = isStack;
-    this.pnlFlexContent.visible = true;
+    this.pnlFlexContent.visible = isStack;
     this.pnlSelectedItem.visible = !isStack;
   }
 
@@ -259,7 +259,8 @@ export default class DesignerToolLayout extends Module {
                     padding={{ left: 4, right: 4 }}
                     font={{ size: '0.75rem' }}
                     class={textInputRight}
-                    onChanged={this.onBasicFlexChanged}
+                    onBlur={this.onBasicFlexChanged}
+                    onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onBasicFlexChanged(target)}
                   />
                   <i-grid-layout id="wrapperAdvancedFlex" visible={false} gap={{ column: 4 }} templateColumns={['1fr', '1fr', '1fr']} maxWidth={254} verticalAlignment="center">
                     <i-vstack gap={8} horizontalAlignment="center">
@@ -276,7 +277,8 @@ export default class DesignerToolLayout extends Module {
                         padding={{ left: 4, right: 4 }}
                         font={{ size: '0.75rem' }}
                         class={textInputRight}
-                        onChanged={(target: Input) => this.onAdvFlexChanged(target, 'basis')}
+                        onBlur={(target: Input) => this.onAdvFlexChanged(target, 'basis')}
+                        onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onAdvFlexChanged(target, 'basis')}
                       />
                       <i-label caption="Basis" font={{ size: '0.75rem' }} opacity={0.7} />
                     </i-vstack>
@@ -294,7 +296,8 @@ export default class DesignerToolLayout extends Module {
                         padding={{ left: 4, right: 4 }}
                         font={{ size: '0.75rem' }}
                         class={textInputRight}
-                        onChanged={(target: Input) => this.onAdvFlexChanged(target, 'grow')}
+                        onBlur={(target: Input) => this.onAdvFlexChanged(target, 'grow')}
+                        onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onAdvFlexChanged(target, 'grow')}
                       />
                       <i-label caption="Grow" font={{ size: '0.75rem' }} opacity={0.7} />
                     </i-vstack>
@@ -312,7 +315,8 @@ export default class DesignerToolLayout extends Module {
                         padding={{ left: 4, right: 4 }}
                         font={{ size: '0.75rem' }}
                         class={textInputRight}
-                        onChanged={(target: Input) => this.onAdvFlexChanged(target, 'shrink')}
+                        onBlur={(target: Input) => this.onAdvFlexChanged(target, 'shrink')}
+                        onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onAdvFlexChanged(target, 'shrink')}
                       />
                       <i-label caption="Shrink" font={{ size: '0.75rem' }} opacity={0.7} />
                     </i-vstack>

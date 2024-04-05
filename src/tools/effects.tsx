@@ -100,7 +100,8 @@ export default class DesignerToolEffects extends Module {
                   padding={{ left: 4, right: 2 }}
                   font={{ size: '0.725rem' }}
                   class={`${textInputRight} ${bgInputTransparent}`}
-                  onChanged={this.onInputEffectChanged}
+                  onBlur={this.onInputEffectChanged}
+                  onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onInputEffectChanged()}
                 />
                 <i-label
                   caption="%"

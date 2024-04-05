@@ -35,7 +35,8 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
 import { parseProps } from './helpers/utils'
-import { breakpointsMap } from './helpers/config'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueries } from './helpers/config'
+import { getBreakpoint } from './helpers/store'
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -43,22 +44,6 @@ enum TABS {
   RECENT,
   BITS,
   BLOCKS,
-}
-
-export function createControl(parent: Control, name: string, options?: any): Control {
-  const controlConstructor: any = window.customElements.get(name);
-  if (name === 'i-stack') {
-    options = options || {};
-    options = {direction: 'vertical', ...options};
-  }
-  const control: Control = new controlConstructor(parent, options);
-  if (options) control._setDesignProps(options);
-  return control;
-}
-
-export function addControl(parent: any, name: string, options?: any) {
-  const control = parent.add(options);
-  return control;
 }
 
 class ControlResizer {
@@ -156,13 +141,8 @@ export class ScomDesignerForm extends Module {
         items: [...this.recentComponents]
       }]
     } else {
-      components = [
-        {
-          name: 'Basic',
-          tooltipText: 'The most simple & essential components to build a screen',
-          items: this.getComponents()
-        }
-      ]
+      const group = this.getComponents();
+      components = Object.values(group);
     }
     if (this.inputSearch.value) {
       const val = this.inputSearch.value.toLowerCase()
@@ -182,14 +162,18 @@ export class ScomDesignerForm extends Module {
   }
 
   private getComponents() {
-    let result: IComponentItem[] = [];
+    let result: {[name: string]: IComponentPicker} = {};
+    for (let group in GroupMetadata) {
+      result[group] = {...GroupMetadata[group], items: []};
+    }
     let components = getCustomElements();
     for (let name in components) {
       const component = components[name];
       const icon: any = component?.icon as IconName;
       const className = component?.className;
+      const group = component?.group ?? 'Basic';
       if (icon && className) {
-        result.push({
+        result[group]['items'].push({
           ...component,
           icon,
           path: '',
@@ -209,9 +193,29 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
+  get breakpointProps() {
+    const breakpoint = getBreakpoint();
+    return this.selectedControl?.control?._getDesignPropValue('mediaQueries')?.[breakpoint]?.properties || {};
+  }
+
+  private createControl(parent: Control, name: string, options?: any): Control {
+    const controlConstructor: any = window.customElements.get(name);
+    options = options || {}
+    if (name === 'i-stack') {
+      options = {direction: 'vertical', ...options};
+    }
+    const newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
+    const control: Control = new controlConstructor(parent, {...newOptions});
+    const breakpoint = getBreakpoint();
+    const breakpointProps = options?.mediaQueries?.[breakpoint]?.properties || this.breakpointProps;
+    control._setDesignProps(options, breakpointProps);
+    return control;
+  }
+
   private updateDesignProps(component: Parser.IComponent) {
+    if (!component) return;
     const control = this.pathMapping.get((component as IComponent).path);
-    const props = control?.control?._getDesignProps() || {};
+    const props = JSON.parse(JSON.stringify(control?.control?._getDesignProps() || '{}'));
     for (let prop in props) {
       component.props[prop] = this.formatDesignProp(prop, props[prop], control);
     }
@@ -318,9 +322,13 @@ export class ScomDesignerForm extends Module {
     if (path) {
       const control = this.pathMapping.get(path);
       if (control?.control) {
-        control.control.visible = visible;
-        control.control._setDesignPropValue("visible", visible);
-        control.props.visible = `{${visible}}`;
+        let mediaQueries = control?.control._getDesignPropValue('mediaQueries');
+        if (!mediaQueries) mediaQueries = [];
+        const breakpoint = getBreakpoint();
+        if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
+        mediaQueries[breakpoint]['properties']['visible'] = visible;
+        control.control._setDesignPropValue("mediaQueries", mediaQueries);
+        control.control._setDesignPropValue("visible", true, visible);
       }
     }
   }
@@ -350,16 +358,16 @@ export class ScomDesignerForm extends Module {
   }
 
   private renderControl(parent: Control, component: IControl) {
-    const options = parseProps(component.props);
+    const options: any = parseProps(component.props);
     let control = null;
     let isTab = component.name === 'i-tab' && parent instanceof Tabs;
     let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
     let isRadio = component.name === 'i-radio' && parent instanceof RadioGroup;
     let isTree = component.name === 'i-tree-node' && parent instanceof TreeView;
     if (isTab || isMenu || isRadio || isTree) {
-      control = (parent as any).add(options);
+      control = (parent as any).add({...(options || {})});
     } else {
-      control = createControl(parent, component.name, options);
+      control = this.createControl(parent, component.name, options);
     }
     return control;
   }
@@ -408,7 +416,6 @@ export class ScomDesignerForm extends Module {
   }
 
   private showDesignProperties() {
-    if (!this.selectedControl) return;
     this.designerProperties.component = this.selectedControl;
   }
 
@@ -418,7 +425,6 @@ export class ScomDesignerForm extends Module {
 
   private handleAddControl(event: MouseEvent, parent?: Control) {
     event.stopPropagation();
-    this.onCloseComponentPicker();
     let pos = { x: event.offsetX, y: event.offsetY };
     if (this.selectedComponent) {
       let com: IControl = {
@@ -426,7 +432,8 @@ export class ScomDesignerForm extends Module {
         path: IdUtils.generateUUID(),
         props: {
           width: `{${100}}`,
-          height: `{${20}}`
+          height: `{${20}}`,
+          mediaQueries: `{${JSON.stringify(getMediaQueries())}}`
         },
         control: null
       };
@@ -465,6 +472,7 @@ export class ScomDesignerForm extends Module {
         display: 'block',
         margin: { bottom: 1 },
         onSelect: (target: Control, component: IComponentItem) => {
+          this.onCloseComponentPicker();
           if (this.selectedComponent?.control)
             this.selectedComponent.control.classList.remove("selected");
           this.selectedComponent = { ...component, control: target } as any;
@@ -490,14 +498,20 @@ export class ScomDesignerForm extends Module {
   }
 
   private initDesignerProperties() {
-    if (this.selectedControl)
-      this.designerProperties.component = this.selectedControl;
+    this.designerProperties.component = this.selectedControl;
   }
 
-  private onPropertiesChanged(prop: string, value: any) {
+  private onPropertiesChanged(prop: string, value: any, mediaQueryProp?: string) {
+    const control = this.selectedControl?.control
+    if (!control) return;
     this.modified = true;
-    const control = this.selectedControl.control
-    control._setDesignPropValue(prop, value);
+    const breakpointProps = this.breakpointProps;
+    const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+    control._setDesignPropValue(prop, value, hasProp ? breakpointProps[prop] : undefined);
+    if (mediaQueryProp) {
+      const designProp = control._getDesignPropValue(mediaQueryProp);
+      control._setDesignPropValue(mediaQueryProp, designProp, breakpointProps[mediaQueryProp]);
+    }
     if (prop === 'link' && value.href) {
       const linkEl = new Link(control, value);
       control[prop] = linkEl;
@@ -618,6 +632,7 @@ export class ScomDesignerForm extends Module {
         }
       } else {
         if (Math.abs(mouseMoveDelta.x) > 10 || Math.abs(mouseMoveDelta.y) > 10) {
+          this.modified = true;
           let left = (currentControl.left as number) + mouseMoveDelta.x;
           let top = (currentControl.top as number) + mouseMoveDelta.y;
           this.updatePosition({ left, top })
@@ -632,6 +647,7 @@ export class ScomDesignerForm extends Module {
         this.onPropertiesChanged(prop, value[prop]);
       }
     }
+    this.designerProperties.onUpdate();
   }
 
   private handleBreakpoint(value: number) {
@@ -642,6 +658,10 @@ export class ScomDesignerForm extends Module {
     if (maxWidth !== undefined) {
       this.pnlFormDesigner.maxWidth = maxWidth;
     }
+    this.pnlFormDesigner.clearInnerHTML();
+    this.updateDesignProps(this._rootComponent);
+    this.renderComponent(this.pnlFormDesigner, {...this._rootComponent, control: null});
+    this.designerComponents.onRefresh();
   }
 
   private initEvents() {
@@ -729,7 +749,7 @@ export class ScomDesignerForm extends Module {
               overflow={'hidden'}
               showBackdrop={false}
               popupPlacement='rightTop'
-              zIndex={1000}
+              zIndex={2000}
               padding={{top: 0, bottom: 0, left: 0, right: 0}}
             >
               <i-panel
@@ -830,7 +850,7 @@ export class ScomDesignerForm extends Module {
             <i-panel
               id="pnlFormDesigner"
               width={'auto'} minHeight={'100%'}
-              background={{ color: "gray" }}
+              background={{ color: '#26324b' }}
               overflow={'auto'}
               mediaQueries={[
                 {

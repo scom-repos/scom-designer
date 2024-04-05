@@ -169,7 +169,8 @@ export default class DesignerToolPosition extends Module {
                 }}
                 padding={{ left: 4, right: 4 }}
                 font={{ size: '0.75rem' }}
-                onChanged={(target: Input) => this.onZIndexChanged(target, 'zIndex')}
+                onBlur={(target: Input) => this.onZIndexChanged(target, 'zIndex')}
+                onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onZIndexChanged(target, 'zIndex')}
                 class={textInputRight}
               />
             </i-grid-layout>

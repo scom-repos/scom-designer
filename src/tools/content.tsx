@@ -80,7 +80,7 @@ export default class DesignerToolContent extends Module {
         height="100%"
         margin={{ left: "auto", right: "auto" }}
       >
-        <designer-tool-header name="Font" tooltipText="Set font for the element." onCollapse={this.onCollapse} />
+        <designer-tool-header name="Typography" tooltipText="Set font for the element." onCollapse={this.onCollapse} />
         <i-vstack id="vStackContent" padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}>
           <i-vstack gap={'0.5rem'}>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
@@ -107,7 +107,8 @@ export default class DesignerToolContent extends Module {
                   padding={{ left: 4, right: 2 }}
                   font={{ size: '0.675rem' }}
                   class={`${bgInputTransparent}`}
-                  onChanged={(target: Input) => this.onFontChanged(target, 'size')}
+                  onBlur={(target: Input) => this.onFontChanged(target, 'size')}
+                  onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onFontChanged(target, 'size')}
                 />
                 <i-label
                   caption="px"
@@ -142,10 +143,12 @@ export default class DesignerToolContent extends Module {
                   padding={{ left: 4, right: 2 }}
                   font={{ size: '0.675rem' }}
                   class={`${bgInputTransparent}`}
-                  onChanged={(target: Input) => this.onFontChanged(target, 'weight')}
+                  onBlur={(target: Input) => this.onFontChanged(target, 'weight')}
+                  onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onFontChanged(target, 'weight')}
                 />
               </i-hstack>
             </i-grid-layout>
+            {/* TODO: Style, case */}
           </i-vstack>
         </i-vstack>
       </i-vstack>

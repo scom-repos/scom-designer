@@ -5,10 +5,9 @@ import {
   customElements,
   HStack,
   Container,
-  Control
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
-import { IControl, onEventChangedCallback, onEventDblClickCallback } from '../interface';
+import { IControl, onChangedCallback, onEventChangedCallback, onEventDblClickCallback } from '../interface';
 import {
   DesignerToolStylesheet,
   DesignerToolLayout,
@@ -20,7 +19,8 @@ import {
   DesignerToolEffects,
   DesignerToolContent,
   DesignerToolGroup,
-  DesignerSelector
+  DesignerSelector,
+  DesignerToolMediaQuery
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
@@ -28,9 +28,9 @@ import '../setting-data/index';
 import { breakpoints, previews } from '../helpers/config';
 import { parseProps } from '../helpers/utils';
 import { DesignerTrigger } from '../triggers/index';
-const Theme = Styles.Theme.ThemeVars;
+import { setBreakpoint } from '../helpers/store'
 
-type onChangedCallback = (prop: string, value: any) => void
+const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerPropertiesElement extends ControlElement {
   component?: IControl;
@@ -65,6 +65,7 @@ export default class DesignerProperties extends Module {
   private breakpointSelector: DesignerSelector;
   private previewSelector: DesignerSelector;
   private designerTrigger: DesignerTrigger;
+  private designerMedia: DesignerToolMediaQuery;
 
   private _component: IControl;
 
@@ -95,6 +96,10 @@ export default class DesignerProperties extends Module {
     this.renderUI();
   }
 
+  private get designerProps() {
+    return this.component?.control._getDesignProps() || {};
+  }
+
   private renderUI() {
     this.updateInfo();
     this.updateProps();
@@ -105,8 +110,9 @@ export default class DesignerProperties extends Module {
   }
 
   private renderCustomGroup() {
-    const designProps = parseProps(this.component?.control._getDesignProps());
-    const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema || null;
+    const designProps = parseProps(this.designerProps);
+    const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema;
+    this.customGroup.visible = !!dataSchema && Object.keys(dataSchema).length > 0;
 
     this.customGroup.setData({
       title: 'Custom Properties',
@@ -119,8 +125,10 @@ export default class DesignerProperties extends Module {
 
   private updateInfo() {
     if (!this.hStackInfo) return;
-    const { name, image, icon, category } = this.component;
     this.hStackInfo.clearInnerHTML();
+    this.hStackInfo.visible = !!this.component;
+    if (!this.component) return;
+    const { name, image, icon, category } = this.component;
     this.hStackInfo.appendChild(
       <i-hstack gap={8} verticalAlignment="center" width="100%">
         {icon ? <i-icon name={icon} width={'1.5rem'} height={'1.5rem'} /> : image ? <i-image url={image} width={'1.5rem'} height={'1.5rem'} /> : []}
@@ -130,98 +138,90 @@ export default class DesignerProperties extends Module {
     )
   }
 
-  private updateProps() {
-    const control = this.component.control;
+  onUpdate() {
     const {
-      margin,
-      padding,
-      border,
       top,
       right,
       bottom,
-      left
-    } = control;
-    const computedStyle =  window.getComputedStyle(control);
-    const designerProps: any = this.component.control._getDesignProps();
-    this.designerBackground.setData({ color: designerProps?.background?.color || '' });
-    this.designerSize.setData({ width: designerProps?.width, height: designerProps?.height });
-    this.designerEffects.setData({ opacity: designerProps?.opacity || 1 });
-    let marginObj = {}
-    let paddingObj = {}
-    if (margin) {
-      marginObj = {
-        top: this.getValue(margin.top, designerProps?.margin?.top, computedStyle?.marginTop),
-        bottom: this.getValue(margin.bottom, designerProps?.margin?.bottom, computedStyle?.marginBottom),
-        left: this.getValue(margin.left, designerProps?.margin?.left, computedStyle?.marginLeft),
-        right: this.getValue(margin.right, designerProps?.margin?.right, computedStyle?.marginRight),
-      }
-    }
-    if (padding) {
-      paddingObj = {
-        top: this.getValue(padding.top, designerProps?.padding?.top, computedStyle?.paddingTop),
-        bottom: this.getValue(padding.bottom, designerProps?.padding?.bottom, computedStyle?.paddingBottom),
-        left: this.getValue(padding.left, designerProps?.padding?.left, computedStyle?.paddingLeft),
-        right: this.getValue(padding.right, designerProps?.padding?.right, computedStyle?.paddingRight),
-      }
-    }
-    this.designerSpacing.setData({
-      margin: marginObj,
-      padding: paddingObj
-    });
+      left,
+      zIndex,
+      position,
+      width,
+      height,
+      overflow,
+      minHeight,
+      minWidth,
+      maxHeight,
+      maxWidth
+    }: any = this.designerProps;
+    const {
+      position: controlPosition
+    } = this.component?.control;
+    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
     this.designerPosition.setData({
-      position: designerProps?.position,
-      zIndex: designerProps?.zIndex,
-      top: this.getValue(top, designerProps?.top, computedStyle?.top),
-      left: this.getValue(left, designerProps?.left, computedStyle?.left),
-      right: this.getValue(right, designerProps?.right, computedStyle?.right),
-      bottom: this.getValue(bottom, designerProps?.bottom, computedStyle?.bottom),
-      overflow: designerProps?.overflow
-    })
-    let borderObj = {}
-    if (border) {
-      const topObj: any = border.top || {}
-      topObj.width = this.getValue(topObj.width, designerProps?.border?.top?.width, computedStyle?.borderTopWidth)
-      const bottomObj: any = border.bottom || {}
-      bottomObj.width = this.getValue(bottomObj.width, designerProps?.border?.bottom?.width, computedStyle?.borderBottomWidth)
-      const leftObj: any = border.left || {}
-      leftObj.width = this.getValue(leftObj.width, designerProps?.border?.left?.width, computedStyle?.borderLeftWidth)
-      const rightObj: any = border.right || {}
-      rightObj.width = this.getValue(rightObj.width, designerProps?.border?.right?.width, computedStyle?.borderRightWidth)
-      borderObj = {
-        top: topObj,
-        right: rightObj,
-        bottom: bottomObj,
-        left: leftObj,
-        radius: this.getValue(border.radius, designerProps?.border?.radius, computedStyle?.borderRadius),
-        width: this.getValue(border.width, designerProps?.border?.width, computedStyle?.borderWidth),
-        style: border.style,
-        color: border.color
-      }
-    }
-    this.designerBorders.setData({
-      border: borderObj
-    })
+      position: position || controlPosition,
+      zIndex,
+      top,
+      left,
+      right,
+      bottom,
+      overflow
+    });
+  }
+
+  private updateProps() {
+    const control = this.component?.control;
+    const {
+      margin,
+      padding,
+      border = {},
+      top,
+      right,
+      bottom,
+      left,
+      zIndex,
+      position,
+      background,
+      width,
+      height,
+      opacity,
+      overflow,
+      display,
+      stack,
+      direction,
+      font,
+      minHeight,
+      minWidth,
+      maxHeight,
+      maxWidth,
+      mediaQueries
+    }: any = this.designerProps;
+    this.designerBackground.setData({ color: background?.color || '' });
+    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
+    this.designerEffects.setData({ opacity: opacity || 1 });
+    this.designerSpacing.setData({ margin: margin, padding: padding });
+    this.designerPosition.setData({
+      position,
+      zIndex,
+      top,
+      left,
+      right,
+      bottom,
+      overflow
+    });
+    this.designerBorders.setData({ border });
     this.designerLayout.setData({
       name: this.component?.name,
-      display: designerProps?.display || control?.style.display,
-      stack: designerProps?.stack || undefined,
-      direction: designerProps?.direction
+      display: display || control?.style.display,
+      stack: stack || undefined,
+      direction: direction || undefined
     });
-    this.designerContent.setData({ font: designerProps?.font });
+    this.designerContent.setData({ font });
+    this.designerMedia.setData({ mediaQueries });
   }
 
-  private getValue(controlVal: any, designVal: any, computedVal: any) {
-    const hasUnit = (value: string|number) => {
-      if (value === undefined || value === '') return true
-      if (typeof value === 'number') return true
-      return value.includes('px') || value.includes('%')
-    }
-    if (designVal !== undefined) return designVal;
-    return hasUnit(controlVal) ? controlVal : (computedVal || controlVal || undefined)
-  }
-
-  private onPropChanged(prop: string, value: any) {
-    if (this.onChanged) this.onChanged(prop, value);
+  private onPropChanged(prop: string, value: any, mediaQueryProp?: string) {
+    if (this.onChanged) this.onChanged(prop, value, mediaQueryProp);
   }
 
   private onGroupChanged(data: any) {
@@ -234,7 +234,10 @@ export default class DesignerProperties extends Module {
     if (this.onEventChanged) this.onEventChanged(prop, newVal, oldVal);
   }
 
-  private onBreakpointClick(type: string, value: any) {
+  private onBreakpointClick(type: string, value: number) {
+    setBreakpoint(value);
+    const props = this.designerProps;
+    this.designerMedia.setData({ mediaQueries: props.mediaQueries });
     if (this.onBreakpointChanged) this.onBreakpointChanged(value);
   }
 
@@ -313,6 +316,7 @@ export default class DesignerProperties extends Module {
           padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}
           background={{ color: '#26324b' }}
           stack={{shrink: '0'}}
+          visible={false}
         />
         <i-tabs
           mode="horizontal"
@@ -332,6 +336,7 @@ export default class DesignerProperties extends Module {
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
               <designer-tool-content id="designerContent" display="block" onChanged={this.onPropChanged} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-media-query id="designerMedia" display="block" onChanged={this.onPropChanged} />
             </i-vstack>
           </i-tab>
           {/* <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

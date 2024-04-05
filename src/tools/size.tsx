@@ -114,7 +114,8 @@ export default class DesignerToolSize extends Module {
                 font={{ size: '0.675rem' }}
                 class={`${textInputRight} ${bgInputTransparent}`}
                 value={parsedValue.value}
-                onChanged={(target: Input) => this.onValueChanged(target, size.prop)}
+                onBlur={(target: Input) => this.onValueChanged(target, size.prop)}
+                onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onValueChanged(target, size.prop)}
               />
               <i-label
                 caption={parsedValue.unit}

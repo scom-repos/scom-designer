@@ -202,7 +202,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
                     border={{ width: 0 }}
                     padding={{ left: 4, right: 2 }}
                     font={{ size: '0.675rem' }}
-                    onChanged={(target: Input) => this.onOverallChanged(target, 'margin')}
+                    onBlur={(target: Input) => this.onOverallChanged(target, 'margin')}
+                    onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onOverallChanged(target, 'margin')}
                     class={`${textInputRight} ${bgInputTransparent}`}
                   />
                   <i-label
@@ -238,7 +239,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
                     border={{ width: 0 }}
                     padding={{ left: 4, right: 2 }}
                     font={{ size: '0.675rem' }}
-                    onChanged={(target: Input) => this.onOverallChanged(target, 'padding')}
+                    onBlur={(target: Input) => this.onOverallChanged(target, 'padding')}
+                    onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onOverallChanged(target, 'padding')}
                     class={`${textInputRight} ${bgInputTransparent}`}
                   />
                   <i-label
