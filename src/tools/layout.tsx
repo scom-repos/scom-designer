@@ -124,7 +124,7 @@ export default class DesignerToolLayout extends Module {
     this.alignSelfSelector.visible = isStack;
     this.alignContentSelector.visible = isStack;
     this.pnlFlexItems.visible = isStack;
-    this.pnlFlexContent.visible = true;
+    this.pnlFlexContent.visible = isStack;
     this.pnlSelectedItem.visible = !isStack;
   }
 

@@ -111,7 +111,8 @@ export default class DesignerProperties extends Module {
 
   private renderCustomGroup() {
     const designProps = parseProps(this.designerProps);
-    const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema || null;
+    const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema;
+    this.customGroup.visible = !!dataSchema && Object.keys(dataSchema).length > 0;
 
     this.customGroup.setData({
       title: 'Custom Properties',
@@ -153,9 +154,12 @@ export default class DesignerProperties extends Module {
       maxHeight,
       maxWidth
     }: any = this.designerProps;
+    const {
+      position: controlPosition
+    } = this.component?.control;
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
     this.designerPosition.setData({
-      position,
+      position: position || controlPosition,
       zIndex,
       top,
       left,

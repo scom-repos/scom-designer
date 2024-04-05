@@ -1497,7 +1497,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
             this.alignSelfSelector.visible = isStack;
             this.alignContentSelector.visible = isStack;
             this.pnlFlexItems.visible = isStack;
-            this.pnlFlexContent.visible = true;
+            this.pnlFlexContent.visible = isStack;
             this.pnlSelectedItem.visible = !isStack;
         }
         onCollapse(isShown) {
@@ -3213,7 +3213,8 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         renderCustomGroup() {
             const designProps = (0, utils_8.parseProps)(this.designerProps);
-            const dataSchema = this.component?.control._getCustomProperties()?.dataSchema || null;
+            const dataSchema = this.component?.control._getCustomProperties()?.dataSchema;
+            this.customGroup.visible = !!dataSchema && Object.keys(dataSchema).length > 0;
             this.customGroup.setData({
                 title: 'Custom Properties',
                 tooltip: 'Set custom properties for component',
@@ -3237,9 +3238,10 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         onUpdate() {
             const { top, right, bottom, left, zIndex, position, width, height, overflow, minHeight, minWidth, maxHeight, maxWidth } = this.designerProps;
+            const { position: controlPosition } = this.component?.control;
             this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
             this.designerPosition.setData({
-                position,
+                position: position || controlPosition,
                 zIndex,
                 top,
                 left,
