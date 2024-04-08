@@ -49,21 +49,21 @@ const breakpointsMap = {
   },
   [BREAKPOINTS.TABLET]: {
     minWidth: '768px',
-    maxWidth: '1024px',
+    maxWidth: '1023px',
     properties: {}
   },
   [BREAKPOINTS.LAPTOP]: {
-    minWidth: '1025px',
-    maxWidth: '1440px',
+    minWidth: '1024px',
+    maxWidth: '1439px',
     properties: {}
   },
   [BREAKPOINTS.DESKTOP]: {
-    minWidth: '1441px',
-    maxWidth: '1920px',
+    minWidth: '1440px',
+    maxWidth: '1919px',
     properties: {}
   },
   [BREAKPOINTS.BIG_SCREEN]: {
-    minWidth: '1921px',
+    minWidth: '1920px',
     properties: {}
   }
 }

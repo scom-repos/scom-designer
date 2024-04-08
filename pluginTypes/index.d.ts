@@ -12,6 +12,7 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customTabStyled: string;
     export const codeTabsStyle: string;
     export const blockStyle: string;
+    export const customTransition: string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" {
@@ -636,6 +637,7 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private inputWidth;
         private pnlIndividual;
         private styleSelector;
+        private bgColor;
         private _data;
         private radiusObj;
         onChanged: onChangedCallback;
@@ -1197,6 +1199,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private previewSelector;
         private designerTrigger;
         private designerMedia;
+        private inputId;
         private _component;
         onChanged: onChangedCallback;
         onBreakpointChanged: (value: number) => void;
@@ -1215,6 +1218,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private updateProps;
         private onPropChanged;
         private onGroupChanged;
+        private onIDChanged;
         private onControlEventChanged;
         private onBreakpointClick;
         private onPreviewClick;
@@ -1374,7 +1378,9 @@ declare module "@scom/scom-designer/designer.tsx" {
         private currentTab;
         private pnlFormDesigner;
         private mdPicker;
+        private designerWrapper;
         private pnlScreens;
+        private pnlProperties;
         private pathMapping;
         private mouseDown;
         private resizing;
@@ -1426,6 +1432,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleControlMouseMove;
         private updatePosition;
         private handleBreakpoint;
+        private onToggleClick;
         private initEvents;
         init(): void;
         render(): any;
