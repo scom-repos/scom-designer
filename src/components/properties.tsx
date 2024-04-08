@@ -5,6 +5,7 @@ import {
   customElements,
   HStack,
   Container,
+  Input,
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
 import { IControl, onChangedCallback, onEventChangedCallback, onEventDblClickCallback } from '../interface';
@@ -20,7 +21,9 @@ import {
   DesignerToolContent,
   DesignerToolGroup,
   DesignerSelector,
-  DesignerToolMediaQuery
+  DesignerToolMediaQuery,
+  textInputRight,
+  bgInputTransparent
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
@@ -66,6 +69,7 @@ export default class DesignerProperties extends Module {
   private previewSelector: DesignerSelector;
   private designerTrigger: DesignerTrigger;
   private designerMedia: DesignerToolMediaQuery;
+  private inputId: Input;
 
   private _component: IControl;
 
@@ -156,7 +160,7 @@ export default class DesignerProperties extends Module {
     }: any = this.designerProps;
     const {
       position: controlPosition
-    } = this.component?.control;
+    } = this.component?.control || {};
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
     this.designerPosition.setData({
       position: position || controlPosition,
@@ -172,6 +176,7 @@ export default class DesignerProperties extends Module {
   private updateProps() {
     const control = this.component?.control;
     const {
+      id,
       margin,
       padding,
       border = {},
@@ -196,6 +201,10 @@ export default class DesignerProperties extends Module {
       maxWidth,
       mediaQueries
     }: any = this.designerProps;
+    const {
+      id: controlId
+    } = this.component?.control || {};
+    this.inputId.value = id || controlId || '';
     this.designerBackground.setData({ color: background?.color || '' });
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
     this.designerEffects.setData({ opacity: opacity || 1 });
@@ -228,6 +237,11 @@ export default class DesignerProperties extends Module {
     for (let prop in data) {
       this.onPropChanged(prop, data[prop]);
     }
+  }
+
+  private onIDChanged(target: Input) {
+    const value = target.value;
+    this.onPropChanged('id', value);
   }
 
   private onControlEventChanged(prop: string, newVal: string, oldVal: string) {
@@ -326,6 +340,36 @@ export default class DesignerProperties extends Module {
         >
           <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>
             <i-vstack gap={1} width="100%">
+              <i-grid-layout
+                id="gridSelector"
+                templateColumns={['70px', 'auto']}
+                verticalAlignment="center"
+                gap={{column: '0.5rem', row: '0.5rem'}}
+                padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}
+              >
+                <i-label caption="ID" font={{ size: '0.75rem' }} />
+                <i-hstack
+                  verticalAlignment="center"
+                  border={{ radius: 8 }}
+                  background={{ color: Theme.input.background }}
+                  overflow="hidden"
+                >
+                  <i-input
+                    id="inputId"
+                    inputType="text"
+                    placeholder="Enter ID"
+                    background={{ color: 'transparent' }}
+                    width="calc(100% - 1.5rem)"
+                    height={24}
+                    border={{ width: 0 }}
+                    padding={{ left: 4, right: 2 }}
+                    font={{ size: '0.675rem' }}
+                    class={`${textInputRight} ${bgInputTransparent}`}
+                    onBlur={(target: Input) => this.onIDChanged(target)}
+                    onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onIDChanged(target)}
+                  />
+                </i-hstack>
+              </i-grid-layout>
               <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
               <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
               <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
@@ -356,7 +400,7 @@ export default class DesignerProperties extends Module {
               <designer-trigger
                 id="designerTrigger"
                 display="block"
-                width="100%" height={'100%'}
+                width="100%" minHeight={250}
                 onChanged={this.onControlEventChanged}
                 onEventDblClick={(name: string) => this.onEventDblClick && this.onEventDblClick(name)}
               />

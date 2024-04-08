@@ -18,7 +18,8 @@ import {
   Tabs,
   RadioGroup,
   TreeView,
-  Modal
+  Modal,
+  VStack
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -28,7 +29,7 @@ import {
   DesignerPickerBlocks
 } from './components/index'
 import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio } from './interface'
-import { customLabelTabStyled, labelActiveStyled } from './index.css'
+import { customLabelTabStyled, customTransition, labelActiveStyled } from './index.css'
 import {
   blockComponents
 } from './data'
@@ -99,7 +100,9 @@ export class ScomDesignerForm extends Module {
   private currentTab = TABS.BITS
   private pnlFormDesigner: Panel
   private mdPicker: Modal
+  private designerWrapper: VStack
   private pnlScreens: Panel
+  private pnlProperties: Panel
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -505,6 +508,7 @@ export class ScomDesignerForm extends Module {
     const control = this.selectedControl?.control
     if (!control) return;
     this.modified = true;
+    const oldVal: any = control._getDesignPropValue(prop);
     const breakpointProps = this.breakpointProps;
     const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
     control._setDesignPropValue(prop, value, hasProp ? breakpointProps[prop] : undefined);
@@ -522,6 +526,7 @@ export class ScomDesignerForm extends Module {
       const imageEl = new Image(control, {width: '1rem', height: '1rem', display: 'flex', ...value});
       control[prop] = imageEl;
     }
+    if (prop === "id" && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
   }
 
   private onControlEventChanged(prop: string, newValue: string, oldValue: string) {
@@ -651,17 +656,38 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleBreakpoint(value: number) {
-    const { minWidth, maxWidth } = breakpointsMap[value];
+    const { minWidth } = breakpointsMap[value];
     if (minWidth !== undefined) {
       this.pnlFormDesigner.width = minWidth;
     }
-    if (maxWidth !== undefined) {
-      this.pnlFormDesigner.maxWidth = maxWidth;
+    if (value >= 2) {
+      this.pnlScreens.width = 0
+      this.pnlProperties.width = 0
+      this.designerWrapper.alignItems = 'start';
+    } else {
+      this.designerWrapper.alignItems = 'center';
     }
+    this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.pnlFormDesigner.clearInnerHTML();
     this.updateDesignProps(this._rootComponent);
     this.renderComponent(this.pnlFormDesigner, {...this._rootComponent, control: null});
     this.designerComponents.onRefresh();
+  }
+
+  private onToggleClick(target: Panel) {
+    const parentEl = target.parent;
+    const icon = target.children[0] as Icon;
+    if (parentEl) {
+      const parentWidth = Number(parentEl.width || 0);
+      if (parentWidth === 0) {
+        parentEl.width = '100%';
+      } else {
+        parentEl.width = 0;
+      }
+      if (icon) {
+        icon.name = icon.name === 'angle-left' ? 'angle-right' : 'angle-left';
+      }
+    }
   }
 
   private initEvents() {
@@ -724,7 +750,29 @@ export class ScomDesignerForm extends Module {
               top: { width: 1, style: 'solid', color: Theme.divider },
             }}
             maxWidth={300}
+            position='relative'
+            overflow={'visible'}
+            zIndex={10}
+            class={customTransition}
           >
+            <i-panel
+              position='absolute'
+              top={'2.5rem'} right={'-1rem'}
+              width={'2rem'} height={'2rem'}
+              border={{radius: '50%'}}
+              background={{ color: Theme.background.main }}
+              cursor='pointer'
+              boxShadow={Theme.shadows[1]}
+              onClick={this.onToggleClick.bind(this)}
+            >
+              <i-icon
+                name="angle-right"
+                width={'1rem'}
+                height={'1rem'}
+                fill={Theme.text.primary}
+                position='absolute' top={'0.5rem'} right={'0.15rem'}
+              ></i-icon>
+            </i-panel>
             <designer-screens
               id='designerScreens'
               minHeight={160}
@@ -736,6 +784,7 @@ export class ScomDesignerForm extends Module {
               id='designerComponents'
               height='100%'
               minHeight={200}
+              overflow={'hidden'}
               onShowComponentPicker={this.onShowComponentPicker}
               onSelect={this.onSelectComponent}
               onVisible={this.onVisibleComponent}
@@ -842,10 +891,14 @@ export class ScomDesignerForm extends Module {
               </i-panel>
             </i-modal>
           </i-vstack>
-          <i-panel
+          <i-vstack
+            id="designerWrapper"
             stack={{grow: '1'}}
             padding={{top: '1rem', bottom: '1rem', left: '1rem', right: '1rem'}}
             overflow={'auto'}
+            zIndex={0}
+            alignItems='center'
+            position='relative'
           >
             <i-panel
               id="pnlFormDesigner"
@@ -861,15 +914,44 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             ></i-panel>
+          </i-vstack>
+          <i-panel
+            id="pnlProperties"
+            overflow={'visible'}
+            maxWidth={360}
+            width={'100%'}
+            height={'100%'}
+            class={customTransition}
+            zIndex={10}
+          >
+            <i-panel
+              position='absolute'
+              top={'2.5rem'} left={'-1rem'}
+              width={'2rem'} height={'2rem'}
+              border={{radius: '50%'}}
+              background={{ color: Theme.background.main }}
+              cursor='pointer'
+              boxShadow={Theme.shadows[1]}
+              onClick={this.onToggleClick.bind(this)}
+            >
+              <i-icon
+                name="angle-right"
+                width={'1rem'}
+                height={'1rem'}
+                fill={Theme.text.primary}
+                position='absolute' top={'0.5rem'} left={'0.15rem'}
+              ></i-icon>
+            </i-panel>
+            <designer-properties
+              id='designerProperties'
+              display='flex'
+              width={'100%'} height={'100%'}
+              onChanged={this.onPropertiesChanged}
+              onEventChanged={this.onControlEventChanged}
+              onEventDblClick={this.onControlEventDblClick}
+              onBreakpointChanged={this.handleBreakpoint}
+            />
           </i-panel>
-          <designer-properties
-            id='designerProperties'
-            display='flex'
-            onChanged={this.onPropertiesChanged}
-            onEventChanged={this.onControlEventChanged}
-            onEventDblClick={this.onControlEventDblClick}
-            onBreakpointChanged={this.handleBreakpoint}
-          />
         </i-hstack>
       </i-vstack>
     )

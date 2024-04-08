@@ -41,6 +41,7 @@ export default class DesignerToolBorders extends Module {
   private inputWidth: Input;
   private pnlIndividual: VStack;
   private styleSelector: DesignerSelector;
+  private bgColor: ColorPicker;
 
   private _data: IDesignerBorder = {};
   private radiusObj = {
@@ -70,6 +71,7 @@ export default class DesignerToolBorders extends Module {
     const { border } = this._data;
     this.inputRadius.value = border?.radius ?? '';
     this.inputWidth.value = border?.width ?? '';
+    this.bgColor.value = border?.color ?? '';
     const radius = this._data.border?.radius;
     if (radius !== undefined) {
       const radiusStr = typeof radius === 'number' ? `${radius}px` : radius;

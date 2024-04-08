@@ -94,6 +94,7 @@ export default class DesignerTrigger extends Module {
     //   this.vStackContent.appendChild(elm)
     // }
     this.gdEvents.rowCount = 0;
+    this.gdEvents.fixedCol = 1;
     let row = 1;
     for (let name in this.events) {
       this.gdEvents.rowCount = row + 1;
@@ -148,7 +149,7 @@ export default class DesignerTrigger extends Module {
           position='relative'
           stack={{grow: '1', shrink: '1'}}
         >
-          <i-data-grid id="gdEvents" dock='fill' height={'100%'}></i-data-grid>
+          <i-data-grid id="gdEvents" dock='fill'></i-data-grid>
           {/* <i-grid-layout
             templateColumns={['auto', '60px']}
             verticalAlignment="center"

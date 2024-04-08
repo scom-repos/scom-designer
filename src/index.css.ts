@@ -142,3 +142,7 @@ export const blockStyle = Styles.style({
   width: '100%',
   height: '100%'
 })
+
+export const customTransition = Styles.style({
+  transition: 'width 0.2s ease-in-out'
+})
