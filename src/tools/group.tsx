@@ -81,6 +81,9 @@ export default class DesignerToolGroup extends Module {
             hide: false,
             onClick: async () => {
               const data = await this.form.getFormData();
+              Object.keys(data).forEach(key => {
+                if (data[key] === undefined) delete data[key];
+              })
               if (this.onChanged) this.onChanged(data);
             }
           },

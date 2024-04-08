@@ -6,6 +6,7 @@ import {
   HStack,
   Container,
   Input,
+  Menu,
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
 import { IControl, onChangedCallback, onEventChangedCallback, onEventDblClickCallback } from '../interface';
@@ -114,7 +115,7 @@ export default class DesignerProperties extends Module {
   }
 
   private renderCustomGroup() {
-    const designProps = parseProps(this.designerProps);
+    const designProps: any = parseProps(this.designerProps);
     const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema;
     this.customGroup.visible = !!dataSchema && Object.keys(dataSchema).length > 0;
 

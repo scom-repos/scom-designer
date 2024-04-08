@@ -2617,6 +2617,10 @@ define("@scom/scom-designer/tools/group.tsx", ["require", "exports", "@ijstech/c
                         hide: false,
                         onClick: async () => {
                             const data = await this.form.getFormData();
+                            Object.keys(data).forEach(key => {
+                                if (data[key] === undefined)
+                                    delete data[key];
+                            });
                             if (this.onChanged)
                                 this.onChanged(data);
                         }
@@ -2804,7 +2808,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@scom/sc
     };
     exports.getMediaQueries = getMediaQueries;
     const getDefaultMediaQuery = (breakpoint) => {
-        return breakpointsMap[breakpoint] || {};
+        const clonedBreakpointsMap = JSON.parse(JSON.stringify(breakpointsMap));
+        return clonedBreakpointsMap[breakpoint] || {};
     };
     exports.getDefaultMediaQuery = getDefaultMediaQuery;
     const GroupMetadata = {
@@ -3964,12 +3969,33 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 return;
             const control = this.pathMapping.get(component.path);
             const props = JSON.parse(JSON.stringify(control?.control?._getDesignProps() || '{}'));
+            const customProps = control?.control?._getCustomProperties()?.props || {};
+            const newProps = {};
             for (let prop in props) {
-                component.props[prop] = this.formatDesignProp(prop, props[prop], control);
+                const defaultValue = customProps[prop]?.default;
+                if (prop === 'mediaQueries') {
+                    props[prop] = props[prop].filter(v => (v && Object.keys(v.properties).length > 0));
+                    if (props[prop].length === 0) {
+                        continue;
+                    }
+                }
+                if (this.isSameValue(defaultValue, props[prop])) {
+                    continue;
+                }
+                newProps[prop] = this.formatDesignProp(prop, props[prop], control);
             }
+            component.props = { ...newProps };
             component.items?.forEach(item => {
                 this.updateDesignProps(item);
             });
+        }
+        isSameValue(defaultVal, value) {
+            if (defaultVal === value)
+                return true;
+            if (typeof defaultVal === 'object' && typeof value === 'object') {
+                return JSON.stringify(defaultVal) === JSON.stringify(value);
+            }
+            return false;
         }
         formatDesignProp(prop, value, control) {
             if (value === undefined)
@@ -4102,7 +4128,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             control.tag = new ControlResizer(control);
             component.items?.forEach(item => this.renderComponent(control, { ...item, control: null }));
             this.pathMapping.set(component.path, { ...component });
-            if (select)
+            const beforeSelected = this.selectedControl?.path;
+            if (select || (beforeSelected && beforeSelected === component.path))
                 this.handleSelectControl(component);
         }
         renderControl(parent, component) {
@@ -4170,6 +4197,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         handleAddControl(event, parent) {
             event.stopPropagation();
+            this.modified = true;
             let pos = { x: event.offsetX, y: event.offsetY };
             if (this.selectedComponent) {
                 let com = {
@@ -4256,6 +4284,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 const designProp = control._getDesignPropValue(mediaQueryProp);
                 control._setDesignPropValue(mediaQueryProp, designProp, breakpointProps[mediaQueryProp]);
             }
+            if (prop.includes('icon') && this.selectedControl?.name === 'i-combo-box' && (!value.name && !value.image?.url)) {
+                value.name = 'angle-down';
+            }
             if (prop === 'link' && value.href) {
                 const linkEl = new components_31.Link(control, value);
                 control[prop] = linkEl;
@@ -4296,6 +4327,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             });
         }
         renderUI(root) {
+            this.selectedControl = null;
             if (root?.items?.length) {
                 root.items = this.updatePath(root.items);
             }
@@ -4319,59 +4351,62 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
                 this.mouseDownPos = mouseMovePos;
                 const currentControl = this.selectedControl?.control;
+                console.log(currentControl);
                 if (!currentControl)
                     return;
                 if (this.resizing) {
                     this.modified = true;
+                    const currentWidth = (currentControl.width || this.selectedControl?.control?._getDesignPropValue('width'));
+                    const currentHeight = (currentControl.height || this.selectedControl?.control?._getDesignPropValue('height'));
                     switch (this.resizerPos) {
                         case "tl": {
                             let left = currentControl.left + mouseMoveDelta.x;
                             let top = currentControl.top + mouseMoveDelta.y;
-                            let width = currentControl.width - mouseMoveDelta.x;
-                            let height = currentControl.height - mouseMoveDelta.y;
+                            let width = currentWidth - mouseMoveDelta.x;
+                            let height = currentHeight - mouseMoveDelta.y;
                             this.updatePosition({ left, top, width, height });
                             break;
                         }
                         case "tm": {
                             let top = currentControl.top + mouseMoveDelta.y;
-                            let height = currentControl.height - mouseMoveDelta.y;
+                            let height = currentHeight - mouseMoveDelta.y;
                             this.updatePosition({ top, height });
                             this.updatePosition({ top, height });
                             break;
                         }
                         case "tr": {
                             let top = currentControl.top + mouseMoveDelta.y;
-                            let width = currentControl.width + mouseMoveDelta.x;
-                            let height = currentControl.height - mouseMoveDelta.y;
+                            let width = currentWidth + mouseMoveDelta.x;
+                            let height = currentHeight - mouseMoveDelta.y;
                             this.updatePosition({ top, width, height });
                             break;
                         }
                         case "ml": {
                             let left = currentControl.left + mouseMoveDelta.x;
-                            let width = currentControl.width - mouseMoveDelta.x;
+                            let width = currentWidth - mouseMoveDelta.x;
                             this.updatePosition({ left, width });
                             break;
                         }
                         case "mr": {
-                            let width = currentControl.width + mouseMoveDelta.x;
+                            let width = currentWidth + mouseMoveDelta.x;
                             this.updatePosition({ width });
                             break;
                         }
                         case "bl": {
                             let left = currentControl.left + mouseMoveDelta.x;
-                            let width = currentControl.width - mouseMoveDelta.x;
-                            let height = currentControl.height + mouseMoveDelta.y;
+                            let width = currentWidth - mouseMoveDelta.x;
+                            let height = currentHeight + mouseMoveDelta.y;
                             this.updatePosition({ left, width, height });
                             break;
                         }
                         case "bm": {
-                            let height = currentControl.height + mouseMoveDelta.y;
+                            let height = currentHeight + mouseMoveDelta.y;
                             this.updatePosition({ height });
                             break;
                         }
                         case "br": {
-                            let width = currentControl.width + mouseMoveDelta.x;
-                            let height = currentControl.height + mouseMoveDelta.y;
+                            let width = currentWidth + mouseMoveDelta.x;
+                            let height = currentHeight + mouseMoveDelta.y;
                             this.updatePosition({ width, height });
                             break;
                         }
@@ -4403,10 +4438,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (value >= 2) {
                 this.pnlScreens.width = 0;
                 this.pnlProperties.width = 0;
-                this.designerWrapper.alignItems = 'start';
-            }
-            else {
-                this.designerWrapper.alignItems = 'center';
             }
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
             this.pnlFormDesigner.clearInnerHTML();
@@ -4509,7 +4540,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                             }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onChanged: this.onFilterComponent })),
                                     this.$render("i-panel", { id: 'pnlComponentPicker', width: '100%' }),
                                     this.$render("i-panel", { id: 'pnlBlockPicker', width: '100%', visible: false }))))),
-                    this.$render("i-vstack", { id: "designerWrapper", stack: { grow: '1' }, padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, overflow: 'auto', zIndex: 0, alignItems: 'center', position: 'relative' },
+                    this.$render("i-vstack", { id: "designerWrapper", stack: { grow: '1' }, padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, overflow: 'hidden', zIndex: 0, alignItems: 'center', position: 'relative' },
                         this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: 'auto', mediaQueries: [
                                 {
                                     maxWidth: '1024px',

@@ -1401,6 +1401,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         get breakpointProps(): any;
         private createControl;
         private updateDesignProps;
+        private isSameValue;
         private formatDesignProp;
         get rootComponent(): Parser.IComponent;
         clear(): void;
