@@ -117,7 +117,8 @@ const getMediaQueries = () => {
 }
 
 const getDefaultMediaQuery = (breakpoint: number) => {
-  return breakpointsMap[breakpoint] || {};
+  const clonedBreakpointsMap = JSON.parse(JSON.stringify(breakpointsMap));
+  return clonedBreakpointsMap[breakpoint] || {};
 }
 
 const GroupMetadata = {
