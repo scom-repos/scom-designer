@@ -125,6 +125,7 @@ export class ScomDesignerForm extends Module {
     this.onDeleteComponent = this.onDeleteComponent.bind(this);
     this.onVisibleComponent = this.onVisibleComponent.bind(this);
     this.handleBreakpoint = this.handleBreakpoint.bind(this);
+    this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -374,6 +375,7 @@ export class ScomDesignerForm extends Module {
     if (!control) return;
     if (!control.style.position) control.style.position = "relative";
     (component as IControl).control = control;
+    control.onclick = null;
     this.bindControlEvents(component as IControl);
     control.tag = new ControlResizer(control);
     component.items?.forEach(item => this.renderComponent(control, {...item, control: null}));
@@ -406,9 +408,9 @@ export class ScomDesignerForm extends Module {
   }
 
   private bindControlEvents(control: IControl) {
-    control.control.onclick = event => {
+    control.control.onclick = (event) => {
       if (this.isParentGroup(control.control)) {
-        let com = this.handleAddControl(event, control.control);
+        const com = this.handleAddControl(event, control.control);
         if (com) {
           control.items = control.items || [];
           control.items.push(com);
@@ -472,11 +474,10 @@ export class ScomDesignerForm extends Module {
           top: `{${pos.y}}`,
         }
         this.renderComponent(this.pnlFormDesigner, com, true);
-        if (!this._rootComponent.items) this._rootComponent.items = []!
+        if (!this._rootComponent.items) this._rootComponent.items = [];
         this._rootComponent.items.push(com);
         this.updateStructure();
       }
-      this.selectedComponent.control.classList.remove("selected");
       this.selectedComponent = null;
       return com;
     }
@@ -499,11 +500,8 @@ export class ScomDesignerForm extends Module {
         margin: { bottom: 1 },
         onSelect: (target: Control, component: IComponentItem) => {
           this.onCloseComponentPicker();
-          if (this.selectedComponent?.control)
-            this.selectedComponent.control.classList.remove("selected");
           this.selectedComponent = { ...component, control: target } as any;
-          this.selectedComponent.control.classList.add("selected");
-          const finded = this.recentComponents.find(x => x.name === this.selectedComponent.name);
+          const finded = this.recentComponents.find(x => x.name === component.name);
           if (!finded) {
             this.recentComponents.push(this.selectedComponent);
           }
@@ -570,34 +568,26 @@ export class ScomDesignerForm extends Module {
     }
   }
 
-  private updatePath(items: Parser.IComponent[]) {
-    return [...items].map((item) => {
-      (item as IComponent).path = IdUtils.generateUUID();
-      if (item.items?.length) {
-        item.items = this.updatePath(item.items);
-      }
-      return item;
-    })
-  }
-
-  renderUI(root: Parser.IComponent) {
+  renderUI(root: IComponent) {
     this.selectedControl = null;
-    if (root?.items?.length) {
-      root.items = this.updatePath(root.items);
-    }
-    this._rootComponent = {...root, path: IdUtils.generateUUID()} as IComponent;
-    this.pnlFormDesigner.clearInnerHTML();
+    this._rootComponent = root;
     if (this._rootComponent) {
       this.designerComponents.screen = {
         name: 'Screen',
-        id: IdUtils.generateUUID(),
+        id: '',
         elements: [this._rootComponent]
       }
-      this.renderComponent(this.pnlFormDesigner, {
-        ...this._rootComponent,
-        control: null
-      });
+      this.onUpdateDesigner();
     }
+  }
+
+  private onUpdateDesigner() {
+    this.pnlFormDesigner.clearInnerHTML();
+    this.pathMapping = new Map();
+    this.renderComponent(this.pnlFormDesigner, {
+      ...this._rootComponent,
+      control: null
+    });
   }
 
   private handleControlMouseMove(event: MouseEvent) {
@@ -606,7 +596,6 @@ export class ScomDesignerForm extends Module {
       let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
       this.mouseDownPos = mouseMovePos;
       const currentControl = this.selectedControl?.control;
-      console.log(currentControl)
       if (!currentControl) return;
       if (this.resizing) {
         this.modified = true;
@@ -697,8 +686,8 @@ export class ScomDesignerForm extends Module {
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.pnlFormDesigner.clearInnerHTML();
     this.updateDesignProps(this._rootComponent);
-    this.renderComponent(this.pnlFormDesigner, {...this._rootComponent, control: null});
-    this.designerComponents.onRefresh();
+    this.onUpdateDesigner();
+    this.designerComponents.renderUI();
   }
 
   private onToggleClick(target: Panel) {
@@ -816,6 +805,7 @@ export class ScomDesignerForm extends Module {
               onSelect={this.onSelectComponent}
               onVisible={this.onVisibleComponent}
               onDelete={this.onDeleteComponent}
+              onUpdate={this.onUpdateDesigner}
             />
              <i-modal
               id="mdPicker"
@@ -931,7 +921,7 @@ export class ScomDesignerForm extends Module {
               id="pnlFormDesigner"
               width={'auto'} minHeight={'100%'}
               background={{ color: '#26324b' }}
-              overflow={'auto'}
+              overflow={{x: 'visible', y: 'auto'}}
               mediaQueries={[
                 {
                   maxWidth: '1024px',

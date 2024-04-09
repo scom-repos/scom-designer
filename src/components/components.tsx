@@ -13,7 +13,7 @@ import {
   Modal,
   Alert
 } from '@ijstech/components'
-import { hoverFullOpacity, iconButtonStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
+import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
 import './index.css';
 import { getBreakpoint } from '../helpers/store';
@@ -27,6 +27,7 @@ interface DesignerComponentsElement extends ControlElement {
   onSelect?: selectCallback;
   onVisible?: visibleCallback;
   onDelete?: selectCallback;
+  onUpdate?: () => void;
   screen?: IScreen;
 }
 
@@ -47,11 +48,15 @@ export default class DesignerComponents extends Module {
 
   private currentComponent: IComponent = null;
   private _activeComponent: IComponent = null;
+  private dragId: string = '';
+  private activeId: string = '';
+  private elementsMap: Map<string, IComponent> = new Map();
 
   public onShowComponentPicker: () => void;
   onSelect: selectCallback;
   onVisible: visibleCallback;
   onDelete: selectCallback;
+  onUpdate: () => void;
 
   get screen() {
     return this._screen;
@@ -67,15 +72,18 @@ export default class DesignerComponents extends Module {
   }
   set activeComponent(value: IComponent) {
     this._activeComponent = value;
-    const currentElm = this.vStackComponents?.querySelector(`.${rowItemActiveStyled}`);
-    if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
-    if (value) {
-      const elm = this.vStackComponents?.querySelector(`#elm-${value.path}`);
-      if (elm) elm.classList.add(rowItemActiveStyled);
-    }
+    const elm = value?.path &&this.vStackComponents?.querySelector(`#elm-${value.path}`) as Control;
+    this.updateActiveStyle(elm)
   }
 
-  private renderUI() {
+  private updateActiveStyle(el: Control) {
+    const currentElm = this.vStackComponents?.querySelector(`.${rowItemActiveStyled}`);
+    if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
+    if (el) el.classList.add(rowItemActiveStyled);
+  }
+
+  renderUI() {
+    this.elementsMap = new Map();
     if (!this.screen || !this.vStackComponents) return;
     this.vStackComponents.clearInnerHTML();
     this.vStackComponents.appendChild(
@@ -98,8 +106,10 @@ export default class DesignerComponents extends Module {
         verticalAlignment: 'center',
         padding: { left: parentPl + 2, right: 4, top: 6, bottom: 6 }
       });
+      hStack.setAttribute('draggable', 'true');
       hStack.id = `elm-${elm.path}`;
-      hStack.classList.add(rowItemHoverStyled, hoverFullOpacity);
+      this.elementsMap.set(hStack.id, elm);
+      hStack.classList.add('drag-item', rowItemHoverStyled, hoverFullOpacity);
       let icon: Icon;
       if (elm.items?.length) {
         let isShown = true;
@@ -166,9 +176,7 @@ export default class DesignerComponents extends Module {
       );
 
       hStack.onClick = () => {
-        const currentElm = this.vStackComponents.querySelector(`.${rowItemActiveStyled}`);
-        if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
-        hStack.classList.add(rowItemActiveStyled);
+        this.updateActiveStyle(hStack);
         if (this.onSelect) this.onSelect(elm);
       }
       hStack.onDblClick = () => {
@@ -178,7 +186,6 @@ export default class DesignerComponents extends Module {
       }
       input.onBlur = () => {
         if (input.value) {
-          console.log('on blur', input.value)
           label.caption = input.value;
           // TODO - update list
         } else {
@@ -192,8 +199,100 @@ export default class DesignerComponents extends Module {
     }
   }
 
-  onRefresh() {
+  private initEvents() {
+    this.addEventListener('dragstart', (event) => {
+      const target = (event.target as HTMLElement).closest('.drag-item');
+      if (!target) {
+        event.preventDefault()
+        return;
+      }
+      this.dragId = target.id;
+    })
+
+    this.addEventListener('dragend', (event) => {
+      if (!this.dragId) {
+        event.preventDefault();
+        return;
+      }
+      this.changeParent(this.dragId, this.activeId);
+      const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
+      if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
+      this.dragId = null;
+    })
+
+    this.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      if (!this.dragId) {
+        event.preventDefault();
+        return;
+      }
+      this.showHightlight(event.x, event.y);
+    });
+
+    this.addEventListener('drop', (event) => {
+      if (!this.dragId) {
+        event.preventDefault();
+        return;
+      }
+    });
+  }
+
+  private showHightlight(x: number, y: number) {
+    const elms = this.vStackComponents.querySelectorAll('.drag-item');
+    for (let elm of elms) {
+      const rect = elm.getBoundingClientRect();
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
+        if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
+        elm.classList.add(rowDragOverActiveStyled);
+        this.activeId = elm?.id;
+      }
+    }
+  }
+
+  private changeParent(dragId: string, targetId: string) {
+    const targetData = this.elementsMap.get(targetId);
+    const dragData = this.elementsMap.get(dragId);
+    if (!dragData || !targetData) return;
+
+    const parentPath = this.getParentID(this.screen.elements[0], dragId);
+
+    const targetItems = targetData?.items || [];
+    const posProps = ['left', 'top', 'right', 'bottom', 'position'];
+    if (dragData) {
+      for (let prop in dragData.props) {
+        if (posProps.includes(prop))
+          delete dragData.props[prop];
+      }
+      targetItems.push(dragData);
+      targetData.items = [...targetItems];
+      this.elementsMap.set(targetId, targetData);
+      this.elementsMap.delete(dragId);
+    }
+
+    const parentId = parentPath && `elm-${parentPath}`;
+    const parentData = parentId && this.elementsMap.get(parentId);
+    if (parentData) {
+      parentData.items = parentData.items || [];
+      const findedIndex = parentData.items.findIndex(x => x.path === dragId.replace('elm-', ''));
+      parentData.items.splice(findedIndex, 1);
+      this.elementsMap.set(parentId, parentData);
+    }
     this.renderUI();
+    if (this.onUpdate) this.onUpdate();
+  }
+
+  private getParentID(el: IComponent, id: string) {
+    const path = id.replace('elm-', '');
+    if (el.path === path) return null;
+    if (el.items) {
+      for (const item of el.items) {
+        if (item.path === path) return el.path;
+        const parent = this.getParentID(item, id);
+        if (parent) return parent;
+      }
+    }
+    return null;
   }
 
   private onHideComponent(icon: Icon, component: IComponent) {
@@ -296,9 +395,11 @@ export default class DesignerComponents extends Module {
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
     this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
+    this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
     this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
     this.initModalActions();
     this.screen = this.getAttribute('screen', true);
+    this.initEvents();
   }
 
   render() {
