@@ -3,6 +3,7 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const hoverFullOpacity: string;
     export const rowItemHoverStyled: string;
     export const rowItemActiveStyled: string;
+    export const rowDragOverActiveStyled: string;
     export const iconButtonStyled: string;
     export const blockItemHoverStyled: string;
     export const customLabelTabStyled: string;
@@ -43,6 +44,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         onSelect?: selectCallback;
         onVisible?: visibleCallback;
         onDelete?: selectCallback;
+        onUpdate?: () => void;
         screen?: IScreen;
     }
     global {
@@ -59,17 +61,25 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private mdAlert;
         private currentComponent;
         private _activeComponent;
+        private dragId;
+        private activeId;
+        private elementsMap;
         onShowComponentPicker: () => void;
         onSelect: selectCallback;
         onVisible: visibleCallback;
         onDelete: selectCallback;
+        onUpdate: () => void;
         get screen(): IScreen;
         set screen(value: IScreen);
         get activeComponent(): IComponent;
         set activeComponent(value: IComponent);
-        private renderUI;
+        private updateActiveStyle;
+        renderUI(): void;
         private renderTreeItems;
-        onRefresh(): void;
+        private initEvents;
+        private showHightlight;
+        private changeParent;
+        private getParentID;
         private onHideComponent;
         private onShowActions;
         private initModalActions;
@@ -1355,7 +1365,7 @@ declare module "@scom/scom-designer/data.ts" {
 /// <amd-module name="@scom/scom-designer/designer.tsx" />
 declare module "@scom/scom-designer/designer.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { IComponentPicker, IControl, IStudio } from "@scom/scom-designer/interface.ts";
+    import { IComponent, IComponentPicker, IControl, IStudio } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     interface ScomDesignerFormElement extends ControlElement {
     }
@@ -1428,8 +1438,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onPropertiesChanged;
         private onControlEventChanged;
         private onControlEventDblClick;
-        private updatePath;
-        renderUI(root: Parser.IComponent): void;
+        renderUI(root: IComponent): void;
+        private onUpdateDesigner;
         private handleControlMouseMove;
         private updatePosition;
         private handleBreakpoint;
@@ -1556,6 +1566,8 @@ declare module "@scom/scom-designer" {
         private renderUI;
         private addLib;
         private handleTabChanged;
+        private updateRoot;
+        private updatePath;
         private handleCodeEditorChange;
         private updateDesignerCode;
         handleGetChangedFiles(): Promise<void>;

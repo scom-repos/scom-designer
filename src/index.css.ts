@@ -38,6 +38,11 @@ export const rowItemActiveStyled = Styles.style({
   }
 })
 
+export const rowDragOverActiveStyled = Styles.style({
+  background: Theme.colors.info.dark,
+  opacity: 1
+})
+
 export const iconButtonStyled = Styles.style({
   fontSize: '0.75rem',
   justifyContent: 'start',

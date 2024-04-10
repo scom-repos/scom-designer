@@ -21,7 +21,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.customTransition = exports.blockStyle = exports.codeTabsStyle = exports.customTabStyled = exports.customIconTabActiveStyled = exports.customIconTabStyled = exports.labelActiveStyled = exports.customLabelTabStyled = exports.blockItemHoverStyled = exports.iconButtonStyled = exports.rowItemActiveStyled = exports.rowItemHoverStyled = exports.hoverFullOpacity = void 0;
+    exports.customTransition = exports.blockStyle = exports.codeTabsStyle = exports.customTabStyled = exports.customIconTabActiveStyled = exports.customIconTabStyled = exports.labelActiveStyled = exports.customLabelTabStyled = exports.blockItemHoverStyled = exports.iconButtonStyled = exports.rowDragOverActiveStyled = exports.rowItemActiveStyled = exports.rowItemHoverStyled = exports.hoverFullOpacity = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.hoverFullOpacity = components_1.Styles.style({
         $nest: {
@@ -56,6 +56,10 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
                 }
             }
         }
+    });
+    exports.rowDragOverActiveStyled = components_1.Styles.style({
+        background: Theme.colors.info.dark,
+        opacity: 1
     });
     exports.iconButtonStyled = components_1.Styles.style({
         fontSize: '0.75rem',
@@ -566,6 +570,9 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             super(...arguments);
             this.currentComponent = null;
             this._activeComponent = null;
+            this.dragId = '';
+            this.activeId = '';
+            this.elementsMap = new Map();
         }
         get screen() {
             return this._screen;
@@ -579,16 +586,18 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         }
         set activeComponent(value) {
             this._activeComponent = value;
+            const elm = value?.path && this.vStackComponents?.querySelector(`#elm-${value.path}`);
+            this.updateActiveStyle(elm);
+        }
+        updateActiveStyle(el) {
             const currentElm = this.vStackComponents?.querySelector(`.${index_css_1.rowItemActiveStyled}`);
             if (currentElm)
                 currentElm.classList.remove(index_css_1.rowItemActiveStyled);
-            if (value) {
-                const elm = this.vStackComponents?.querySelector(`#elm-${value.path}`);
-                if (elm)
-                    elm.classList.add(index_css_1.rowItemActiveStyled);
-            }
+            if (el)
+                el.classList.add(index_css_1.rowItemActiveStyled);
         }
         renderUI() {
+            this.elementsMap = new Map();
             if (!this.screen || !this.vStackComponents)
                 return;
             this.vStackComponents.clearInnerHTML();
@@ -608,8 +617,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                     verticalAlignment: 'center',
                     padding: { left: parentPl + 2, right: 4, top: 6, bottom: 6 }
                 });
+                hStack.setAttribute('draggable', 'true');
                 hStack.id = `elm-${elm.path}`;
-                hStack.classList.add(index_css_1.rowItemHoverStyled, index_css_1.hoverFullOpacity);
+                this.elementsMap.set(hStack.id, elm);
+                hStack.classList.add('drag-item', index_css_1.rowItemHoverStyled, index_css_1.hoverFullOpacity);
                 let icon;
                 if (elm.items?.length) {
                     let isShown = true;
@@ -658,10 +669,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 }
                 hStackActions.appendChild(this.$render("i-icon", { name: isHidden ? 'eye-slash' : 'eye', width: '0.875rem', height: '0.875rem', opacity: isHidden ? 1 : 0, cursor: "pointer", onClick: (icon) => this.onHideComponent(icon, elm) }));
                 hStack.onClick = () => {
-                    const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowItemActiveStyled}`);
-                    if (currentElm)
-                        currentElm.classList.remove(index_css_1.rowItemActiveStyled);
-                    hStack.classList.add(index_css_1.rowItemActiveStyled);
+                    this.updateActiveStyle(hStack);
                     if (this.onSelect)
                         this.onSelect(elm);
                 };
@@ -673,7 +681,6 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 };
                 input.onBlur = () => {
                     if (input.value) {
-                        console.log('on blur', input.value);
                         label.caption = input.value;
                         // TODO - update list
                     }
@@ -688,8 +695,98 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 };
             }
         }
-        onRefresh() {
+        initEvents() {
+            this.addEventListener('dragstart', (event) => {
+                const target = event.target.closest('.drag-item');
+                if (!target) {
+                    event.preventDefault();
+                    return;
+                }
+                this.dragId = target.id;
+            });
+            this.addEventListener('dragend', (event) => {
+                if (!this.dragId) {
+                    event.preventDefault();
+                    return;
+                }
+                this.changeParent(this.dragId, this.activeId);
+                const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
+                if (currentElm)
+                    currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
+                this.dragId = null;
+            });
+            this.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                if (!this.dragId) {
+                    event.preventDefault();
+                    return;
+                }
+                this.showHightlight(event.x, event.y);
+            });
+            this.addEventListener('drop', (event) => {
+                if (!this.dragId) {
+                    event.preventDefault();
+                    return;
+                }
+            });
+        }
+        showHightlight(x, y) {
+            const elms = this.vStackComponents.querySelectorAll('.drag-item');
+            for (let elm of elms) {
+                const rect = elm.getBoundingClientRect();
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
+                    if (currentElm)
+                        currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
+                    elm.classList.add(index_css_1.rowDragOverActiveStyled);
+                    this.activeId = elm?.id;
+                }
+            }
+        }
+        changeParent(dragId, targetId) {
+            const targetData = this.elementsMap.get(targetId);
+            const dragData = this.elementsMap.get(dragId);
+            if (!dragData || !targetData)
+                return;
+            const parentPath = this.getParentID(this.screen.elements[0], dragId);
+            const targetItems = targetData?.items || [];
+            const posProps = ['left', 'top', 'right', 'bottom', 'position'];
+            if (dragData) {
+                for (let prop in dragData.props) {
+                    if (posProps.includes(prop))
+                        delete dragData.props[prop];
+                }
+                targetItems.push(dragData);
+                targetData.items = [...targetItems];
+                this.elementsMap.set(targetId, targetData);
+                this.elementsMap.delete(dragId);
+            }
+            const parentId = parentPath && `elm-${parentPath}`;
+            const parentData = parentId && this.elementsMap.get(parentId);
+            if (parentData) {
+                parentData.items = parentData.items || [];
+                const findedIndex = parentData.items.findIndex(x => x.path === dragId.replace('elm-', ''));
+                parentData.items.splice(findedIndex, 1);
+                this.elementsMap.set(parentId, parentData);
+            }
             this.renderUI();
+            if (this.onUpdate)
+                this.onUpdate();
+        }
+        getParentID(el, id) {
+            const path = id.replace('elm-', '');
+            if (el.path === path)
+                return null;
+            if (el.items) {
+                for (const item of el.items) {
+                    if (item.path === path)
+                        return el.path;
+                    const parent = this.getParentID(item, id);
+                    if (parent)
+                        return parent;
+                }
+            }
+            return null;
         }
         onHideComponent(icon, component) {
             icon.name = icon.name === 'eye' ? 'eye-slash' : 'eye';
@@ -763,9 +860,11 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
             this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
             this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
+            this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
             this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
             this.initModalActions();
             this.screen = this.getAttribute('screen', true);
+            this.initEvents();
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: Theme.layout.container.maxWidth, margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main } },
@@ -3885,6 +3984,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.onDeleteComponent = this.onDeleteComponent.bind(this);
             this.onVisibleComponent = this.onVisibleComponent.bind(this);
             this.handleBreakpoint = this.handleBreakpoint.bind(this);
+            this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -4124,6 +4224,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (!control.style.position)
                 control.style.position = "relative";
             component.control = control;
+            control.onclick = null;
             this.bindControlEvents(component);
             control.tag = new ControlResizer(control);
             component.items?.forEach(item => this.renderComponent(control, { ...item, control: null }));
@@ -4155,9 +4256,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 control instanceof components_31.TreeView;
         }
         bindControlEvents(control) {
-            control.control.onclick = event => {
+            control.control.onclick = (event) => {
                 if (this.isParentGroup(control.control)) {
-                    let com = this.handleAddControl(event, control.control);
+                    const com = this.handleAddControl(event, control.control);
                     if (com) {
                         control.items = control.items || [];
                         control.items.push(com);
@@ -4225,7 +4326,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     this._rootComponent.items.push(com);
                     this.updateStructure();
                 }
-                this.selectedComponent.control.classList.remove("selected");
                 this.selectedComponent = null;
                 return com;
             }
@@ -4246,11 +4346,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     margin: { bottom: 1 },
                     onSelect: (target, component) => {
                         this.onCloseComponentPicker();
-                        if (this.selectedComponent?.control)
-                            this.selectedComponent.control.classList.remove("selected");
                         this.selectedComponent = { ...component, control: target };
-                        this.selectedComponent.control.classList.add("selected");
-                        const finded = this.recentComponents.find(x => x.name === this.selectedComponent.name);
+                        const finded = this.recentComponents.find(x => x.name === component.name);
                         if (!finded) {
                             this.recentComponents.push(this.selectedComponent);
                         }
@@ -4317,33 +4414,25 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.studio.locateMethod(this, funcName);
             }
         }
-        updatePath(items) {
-            return [...items].map((item) => {
-                item.path = components_31.IdUtils.generateUUID();
-                if (item.items?.length) {
-                    item.items = this.updatePath(item.items);
-                }
-                return item;
-            });
-        }
         renderUI(root) {
             this.selectedControl = null;
-            if (root?.items?.length) {
-                root.items = this.updatePath(root.items);
-            }
-            this._rootComponent = { ...root, path: components_31.IdUtils.generateUUID() };
-            this.pnlFormDesigner.clearInnerHTML();
+            this._rootComponent = root;
             if (this._rootComponent) {
                 this.designerComponents.screen = {
                     name: 'Screen',
-                    id: components_31.IdUtils.generateUUID(),
+                    id: '',
                     elements: [this._rootComponent]
                 };
-                this.renderComponent(this.pnlFormDesigner, {
-                    ...this._rootComponent,
-                    control: null
-                });
+                this.onUpdateDesigner();
             }
+        }
+        onUpdateDesigner() {
+            this.pnlFormDesigner.clearInnerHTML();
+            this.pathMapping = new Map();
+            this.renderComponent(this.pnlFormDesigner, {
+                ...this._rootComponent,
+                control: null
+            });
         }
         handleControlMouseMove(event) {
             if (this.mouseDown) {
@@ -4351,7 +4440,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
                 this.mouseDownPos = mouseMovePos;
                 const currentControl = this.selectedControl?.control;
-                console.log(currentControl);
                 if (!currentControl)
                     return;
                 if (this.resizing) {
@@ -4442,8 +4530,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
             this.pnlFormDesigner.clearInnerHTML();
             this.updateDesignProps(this._rootComponent);
-            this.renderComponent(this.pnlFormDesigner, { ...this._rootComponent, control: null });
-            this.designerComponents.onRefresh();
+            this.onUpdateDesigner();
+            this.designerComponents.renderUI();
         }
         onToggleClick(target) {
             const parentEl = target.parent;
@@ -4511,7 +4599,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', right: '0.15rem' })),
                         this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
-                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent }),
+                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onUpdate: this.onUpdateDesigner }),
                         this.$render("i-modal", { id: "mdPicker", width: '16rem', maxWidth: '100%', height: '100dvh', overflow: 'hidden', showBackdrop: false, popupPlacement: 'rightTop', zIndex: 2000, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
                             this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden' },
                                 this.$render("i-vstack", { id: 'wrapperComponentPicker', width: '100%', height: '100%', border: {
@@ -4541,7 +4629,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                     this.$render("i-panel", { id: 'pnlComponentPicker', width: '100%' }),
                                     this.$render("i-panel", { id: 'pnlBlockPicker', width: '100%', visible: false }))))),
                     this.$render("i-vstack", { id: "designerWrapper", stack: { grow: '1' }, padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, overflow: 'hidden', zIndex: 0, alignItems: 'center', position: 'relative' },
-                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: 'auto', mediaQueries: [
+                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: { x: 'visible', y: 'auto' }, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
                                     properties: {
@@ -16770,7 +16858,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     try {
                         this.compiler.addFile(fileName, code);
                         const ui = this.compiler.parseUI(fileName);
-                        this.formDesigner.renderUI(ui);
+                        this.formDesigner.renderUI(this.updateRoot(ui));
                     }
                     catch (error) {
                         console.log(error);
@@ -16780,6 +16868,21 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             else if (tab.id === 'codeTab') {
                 this.updateDesignerCode(fileName);
             }
+        }
+        updateRoot(root) {
+            if (root?.items?.length) {
+                root.items = this.updatePath(root.items);
+            }
+            return { ...root, path: components_33.IdUtils.generateUUID() };
+        }
+        updatePath(items) {
+            return [...items].map((item) => {
+                item.path = components_33.IdUtils.generateUUID();
+                if (item.items?.length) {
+                    item.items = this.updatePath(item.items);
+                }
+                return item;
+            });
         }
         handleCodeEditorChange(target, event) {
             this.updateDesigner = true;

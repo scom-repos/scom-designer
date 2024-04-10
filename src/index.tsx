@@ -5,6 +5,7 @@ import {
   ControlElement,
   customElements,
   IDataSchema,
+  IdUtils,
   IUISchema,
   Module,
   Panel,
@@ -12,10 +13,10 @@ import {
   Tabs,
 } from '@ijstech/components'
 import { blockStyle, codeTabsStyle } from './index.css'
-import { IFileHandler, IIPFSData, IStudio } from './interface'
+import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import * as Dts from './types/index'
-import { Compiler } from '@ijstech/compiler'
+import { Compiler, Parser } from '@ijstech/compiler'
 import { extractFileName, getFileContent } from './helpers/utils'
 
 type onSaveCallback = (path: string, content: string) => void;
@@ -203,7 +204,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         try {
           this.compiler.addFile(fileName, code)
           const ui = this.compiler.parseUI(fileName)
-          this.formDesigner.renderUI(ui)
+          this.formDesigner.renderUI(this.updateRoot(ui))
         } catch(error) {
           console.log(error)
         }
@@ -211,6 +212,23 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     } else if (tab.id === 'codeTab') {
       this.updateDesignerCode(fileName)
     }
+  }
+
+  private updateRoot(root: Parser.IComponent) {
+    if (root?.items?.length) {
+      root.items = this.updatePath(root.items);
+    }
+    return {...root, path: IdUtils.generateUUID()} as IComponent;
+  }
+
+  private updatePath(items: Parser.IComponent[]) {
+    return [...items].map((item) => {
+      (item as IComponent).path = IdUtils.generateUUID();
+      if (item.items?.length) {
+        item.items = this.updatePath(item.items);
+      }
+      return item;
+    })
   }
 
   private handleCodeEditorChange(target: CodeEditor, event: any) {
