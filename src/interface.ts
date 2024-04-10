@@ -49,6 +49,8 @@ export interface IControl extends IComponent {
 
 export type onChangedCallback = (prop: string, value: string|number|boolean|object, mediaQueryProp?: string) => void;
 
+export type onUpdateCallback = (isChecked: boolean, props: string[]) => void;
+
 export type onEventChangedCallback = (prop: string, newValue: string, oldValue: string) => void;
 
 export type onEventDblClickCallback = (funcName: string) => void;

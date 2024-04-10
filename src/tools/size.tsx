@@ -205,7 +205,7 @@ export default class DesignerToolSize extends Module {
         position="relative"
       >
         <designer-tool-header name="Size" tooltipText="Specify minimum, maximum, or specifically set heights and widths for the element." onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
+        <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout id="pnlSizes" gap={{column: '1rem', row: '0.5rem'}} columnsPerRow={2}></i-grid-layout>
         </i-vstack>
       </i-vstack>

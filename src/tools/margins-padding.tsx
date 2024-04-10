@@ -185,7 +185,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
         position="relative"
       >
         <designer-tool-header name="Margins And Padding" tooltipText="Margins create extra space around an element, while padding creates extra space within an element." onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
+        <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
             <i-label caption="OVERALL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-hstack gap={16} verticalAlignment="center">

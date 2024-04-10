@@ -84,7 +84,7 @@ export default class DesignerToolEffects extends Module {
         position="relative"
       >
         <designer-tool-header name="Effects" tooltipText="Set elevation and opacity for the element." onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" gap={8} padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
+        <i-vstack id="vStackContent" gap={8} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
             <i-label caption="Opacity" font={{ size: '0.75rem' }} />
             <i-hstack gap={16} verticalAlignment="center">

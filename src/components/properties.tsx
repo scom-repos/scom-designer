@@ -5,8 +5,7 @@ import {
   customElements,
   HStack,
   Container,
-  Input,
-  Menu,
+  Input
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
 import { IControl, onChangedCallback, onEventChangedCallback, onEventDblClickCallback } from '../interface';
@@ -22,17 +21,16 @@ import {
   DesignerToolContent,
   DesignerToolGroup,
   DesignerSelector,
-  DesignerToolMediaQuery,
   textInputRight,
   bgInputTransparent
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
-import { breakpoints, previews } from '../helpers/config';
+import { breakpoints, getDefaultMediaQuery, previews } from '../helpers/config';
 import { parseProps } from '../helpers/utils';
 import { DesignerTrigger } from '../triggers/index';
-import { setBreakpoint } from '../helpers/store'
+import { getBreakpoint, setBreakpoint } from '../helpers/store'
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -69,7 +67,6 @@ export default class DesignerProperties extends Module {
   private breakpointSelector: DesignerSelector;
   private previewSelector: DesignerSelector;
   private designerTrigger: DesignerTrigger;
-  private designerMedia: DesignerToolMediaQuery;
   private inputId: Input;
 
   private _component: IControl;
@@ -83,6 +80,7 @@ export default class DesignerProperties extends Module {
   constructor(parent?: Container, options?: any) {
     super(parent, options)
     this.onPropChanged = this.onPropChanged.bind(this);
+    this.onUpdateUI = this.onUpdateUI.bind(this);
     this.onControlEventChanged = this.onControlEventChanged.bind(this);
   }
 
@@ -103,6 +101,11 @@ export default class DesignerProperties extends Module {
 
   private get designerProps() {
     return this.component?.control._getDesignProps() || {};
+  }
+
+  clear() {
+    this.component = null;
+    this.renderUI();
   }
 
   private renderUI() {
@@ -157,26 +160,18 @@ export default class DesignerProperties extends Module {
       minHeight,
       minWidth,
       maxHeight,
-      maxWidth
+      maxWidth,
+      mediaQueries
     }: any = this.designerProps;
-    const {
-      position: controlPosition
-    } = this.component?.control || {};
+    const breakpoint = getBreakpoint();
+    if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
-    this.designerPosition.setData({
-      position: position || controlPosition,
-      zIndex,
-      top,
-      left,
-      right,
-      bottom,
-      overflow
-    });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries });
   }
 
   private updateProps() {
     const control = this.component?.control;
-    const {
+    let {
       id,
       margin,
       padding,
@@ -191,7 +186,7 @@ export default class DesignerProperties extends Module {
       width,
       height,
       opacity,
-      overflow,
+      overflow = {x: '', y: ''},
       display,
       stack,
       direction,
@@ -200,26 +195,21 @@ export default class DesignerProperties extends Module {
       minWidth,
       maxHeight,
       maxWidth,
-      mediaQueries
+      mediaQueries = []
     }: any = this.designerProps;
     const {
       id: controlId
     } = this.component?.control || {};
+    const breakpoint = getBreakpoint();
+    if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
     this.inputId.value = id || controlId || '';
-    this.designerBackground.setData({ color: background?.color || '' });
+
+    this.designerBackground.setData({ background, mediaQueries });
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
     this.designerEffects.setData({ opacity: opacity || 1 });
     this.designerSpacing.setData({ margin: margin, padding: padding });
-    this.designerPosition.setData({
-      position,
-      zIndex,
-      top,
-      left,
-      right,
-      bottom,
-      overflow
-    });
-    this.designerBorders.setData({ border });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries });
+    this.designerBorders.setData({ border, mediaQueries });
     this.designerLayout.setData({
       name: this.component?.name,
       display: display || control?.style.display,
@@ -227,7 +217,6 @@ export default class DesignerProperties extends Module {
       direction: direction || undefined
     });
     this.designerContent.setData({ font });
-    this.designerMedia.setData({ mediaQueries });
   }
 
   private onPropChanged(prop: string, value: any, mediaQueryProp?: string) {
@@ -237,6 +226,22 @@ export default class DesignerProperties extends Module {
   private onGroupChanged(data: any) {
     for (let prop in data) {
       this.onPropChanged(prop, data[prop]);
+    }
+  }
+
+  private onUpdateUI(isChecked: boolean, props: string[]) {
+    if (!this.component?.control) return;
+    const designProps = this.component?.control._getDesignProps();
+    const breakpoint = getBreakpoint();
+    if (!designProps?.mediaQueries?.[breakpoint]) return;
+    const breakpointProps: any = designProps?.mediaQueries?.[breakpoint]?.properties || {};
+    const customProps = this.component?.control?._getCustomProperties();
+    for (let prop in breakpointProps) {
+      const hasProp = props.includes(prop);
+      if (hasProp) {
+        this.component.control[prop] = isChecked ? breakpointProps[prop] : (designProps[prop] ?? customProps[prop].default);
+        console.log(this.component.control[prop], breakpointProps[prop], designProps[prop], prop)
+      }
     }
   }
 
@@ -251,8 +256,7 @@ export default class DesignerProperties extends Module {
 
   private onBreakpointClick(type: string, value: number) {
     setBreakpoint(value);
-    const props = this.designerProps;
-    this.designerMedia.setData({ mediaQueries: props.mediaQueries });
+    this.updateProps();
     if (this.onBreakpointChanged) this.onBreakpointChanged(value);
   }
 
@@ -374,14 +378,14 @@ export default class DesignerProperties extends Module {
               <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
               <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
               <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
-              <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-size id="designerSize" display="block" onChanged={this.onPropChanged} />
               <designer-tool-margins-padding id="designerSpacing" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
+              <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-content id="designerContent" display="block" onChanged={this.onPropChanged} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-media-query id="designerMedia" display="block" onChanged={this.onPropChanged} />
+              {/* <designer-tool-media-query id="designerMedia" display="block" onChanged={this.onPropChanged} /> */}
             </i-vstack>
           </i-tab>
           {/* <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

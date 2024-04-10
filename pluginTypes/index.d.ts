@@ -73,6 +73,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         set screen(value: IScreen);
         get activeComponent(): IComponent;
         set activeComponent(value: IComponent);
+        private get isContainer();
         private updateActiveStyle;
         renderUI(): void;
         private renderTreeItems;
@@ -394,14 +395,57 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/tools/header.tsx" />
+declare module "@scom/scom-designer/tools/header.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    interface DesignerToolHeaderElement extends ControlElement {
+        name: string;
+        tooltipText?: string;
+        hasMediaQuery?: boolean;
+        onCollapse: (isShown: boolean) => void;
+        onToggleMediaQuery?: (value: boolean) => void;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-header']: DesignerToolHeaderElement;
+            }
+        }
+    }
+    export default class DesignerToolHeader extends Module {
+        private _name;
+        private _tooltipText;
+        private _hasMediaQuery;
+        private isShown;
+        private lbName;
+        private iconArrow;
+        private iconTooltip;
+        private querySwitch;
+        onCollapse: (isShown: boolean) => void;
+        onToggleMediaQuery: (value: boolean) => void;
+        constructor(parent?: Container, options?: DesignerToolHeaderElement);
+        get name(): string;
+        set name(value: string);
+        get tooltipText(): string;
+        set tooltipText(value: string);
+        get hasMediaQuery(): boolean;
+        set hasMediaQuery(value: boolean);
+        get checked(): boolean;
+        set checked(value: boolean);
+        private renderUI;
+        private _onCollapse;
+        private onQueryChanged;
+        init(): void;
+        render(): any;
+    }
+}
 /// <amd-module name="@scom/scom-designer/tools/background.tsx" />
 declare module "@scom/scom-designer/tools/background.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolBackgroundElement extends ControlElement {
-        color?: string;
-        type?: string;
         onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
     }
     global {
         namespace JSX {
@@ -411,26 +455,32 @@ declare module "@scom/scom-designer/tools/background.tsx" {
         }
     }
     interface IDesignerBackground {
-        color?: string;
-        type?: string;
+        background?: {
+            color?: string;
+            image?: string;
+        };
+        mediaQueries?: any[];
     }
     export default class DesignerToolBackground extends Module {
         private vStackContent;
-        private bgSelect;
         private bgColor;
+        private designerHeader;
+        private lblColor;
         private _data;
         onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolBackgroundElement);
         static create(options?: DesignerToolBackgroundElement, parent?: Container): Promise<DesignerToolBackground>;
-        get type(): string;
-        set type(value: string);
-        get color(): string;
-        set color(value: string);
+        private get isChecked();
+        private hasMediaQuery;
         setData(value: IDesignerBackground): void;
         private renderUI;
         private onCollapse;
         private onTypeChanged;
         private onColorChanged;
+        private handleValueChanged;
+        private handleMediaQuery;
+        private onToggleMediaQuery;
         init(): void;
         render(): any;
     }
@@ -578,9 +628,10 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/position.tsx" />
 declare module "@scom/scom-designer/tools/position.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolPositionElement extends ControlElement {
         onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
     }
     interface IDesignerPosition {
         position?: string;
@@ -593,6 +644,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
             y?: string;
         };
         zIndex?: string;
+        mediaQueries?: any[];
     }
     global {
         namespace JSX {
@@ -608,17 +660,24 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private pnlPosition;
         private overflowSelector;
         private posSelector;
+        private designerHeader;
+        private spacingBtn;
         private _data;
         onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolPositionElement);
+        private get isChecked();
+        private hasMediaQuery;
         setData(data: IDesignerPosition): void;
         private onCollapse;
         private renderUI;
         private updateButtons;
         private onShowModal;
-        private onZIndexChanged;
         private onSelectChanged;
         private onSpacingChanged;
+        private handleValueChanged;
+        private handleMediaQuery;
+        private onToggleMediaQuery;
         init(): void;
         render(): any;
     }
@@ -626,12 +685,14 @@ declare module "@scom/scom-designer/tools/position.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/borders.tsx" />
 declare module "@scom/scom-designer/tools/borders.tsx" {
     import { Module, ControlElement, Container, IBorder } from '@ijstech/components';
-    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolBordersElement extends ControlElement {
         onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
     }
     interface IDesignerBorder {
         border?: IBorder;
+        mediaQueries?: any[];
     }
     global {
         namespace JSX {
@@ -648,10 +709,15 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private pnlIndividual;
         private styleSelector;
         private bgColor;
+        private designerHeader;
+        private spacingBtn;
         private _data;
         private radiusObj;
         onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolBordersElement);
+        private get isChecked();
+        private hasMediaQuery;
         setData(value: IDesignerBorder): void;
         private onCollapse;
         private renderUI;
@@ -660,7 +726,9 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private setRadiusByPosition;
         private onPropChanged;
         private onSpacingChanged;
-        private onStyleChanged;
+        private handleValueChanged;
+        private handleMediaQuery;
+        private onToggleMediaQuery;
         init(): void;
         render(): any;
     }
@@ -694,40 +762,6 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
         private renderUI;
         private onInputEffectChanged;
         private onRangeChanged;
-        init(): void;
-        render(): any;
-    }
-}
-/// <amd-module name="@scom/scom-designer/tools/header.tsx" />
-declare module "@scom/scom-designer/tools/header.tsx" {
-    import { Module, ControlElement, Container } from '@ijstech/components';
-    interface DesignerToolHeaderElement extends ControlElement {
-        name: string;
-        tooltipText?: string;
-        onCollapse: (isShown: boolean) => void;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['designer-tool-header']: DesignerToolHeaderElement;
-            }
-        }
-    }
-    export default class DesignerToolHeader extends Module {
-        private _name;
-        private _tooltipText;
-        private isShown;
-        private lbName;
-        private iconArrow;
-        private iconTooltip;
-        onCollapse: (isShown: boolean) => void;
-        constructor(parent?: Container, options?: DesignerToolHeaderElement);
-        get name(): string;
-        set name(value: string);
-        get tooltipText(): string;
-        set tooltipText(value: string);
-        private renderUI;
-        private _onCollapse;
         init(): void;
         render(): any;
     }
@@ -1208,7 +1242,6 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private breakpointSelector;
         private previewSelector;
         private designerTrigger;
-        private designerMedia;
         private inputId;
         private _component;
         onChanged: onChangedCallback;
@@ -1221,6 +1254,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         get component(): IControl;
         set component(value: IControl);
         private get designerProps();
+        clear(): void;
         private renderUI;
         private renderCustomGroup;
         private updateInfo;
@@ -1228,6 +1262,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private updateProps;
         private onPropChanged;
         private onGroupChanged;
+        private onUpdateUI;
         private onIDChanged;
         private onControlEventChanged;
         private onBreakpointClick;
@@ -1434,7 +1469,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         private updateStructure;
         private initComponentPicker;
         private initBlockPicker;
-        private initDesignerProperties;
         private onPropertiesChanged;
         private onControlEventChanged;
         private onControlEventDblClick;
@@ -1493,6 +1527,7 @@ declare module "@scom/scom-designer/interface.ts" {
         control: Control;
     }
     export type onChangedCallback = (prop: string, value: string | number | boolean | object, mediaQueryProp?: string) => void;
+    export type onUpdateCallback = (isChecked: boolean, props: string[]) => void;
     export type onEventChangedCallback = (prop: string, newValue: string, oldValue: string) => void;
     export type onEventDblClickCallback = (funcName: string) => void;
     export interface IFileHandler {

@@ -589,6 +589,9 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             const elm = value?.path && this.vStackComponents?.querySelector(`#elm-${value.path}`);
             this.updateActiveStyle(elm);
         }
+        get isContainer() {
+            return this.currentComponent?.name && ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout'].includes(this.currentComponent?.name);
+        }
         updateActiveStyle(el) {
             const currentElm = this.vStackComponents?.querySelector(`.${index_css_1.rowItemActiveStyled}`);
             if (currentElm)
@@ -799,6 +802,9 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             const mdWrapper = this.mdActions.querySelector('.modal-wrapper');
             mdWrapper.style.top = `${top}px`;
             mdWrapper.style.left = `${left}px`;
+            const firstChild = this.mdActions.item.children?.[0];
+            if (firstChild)
+                firstChild.visible = this.isContainer;
             this.mdActions.visible = true;
         }
         async initModalActions() {
@@ -810,9 +816,39 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 popupPlacement: 'bottomRight'
             });
             const itemActions = new components_3.VStack(undefined, { gap: 8, border: { radius: 8 } });
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'save', width: 12, height: 12 }, caption: "Save Custom Block", class: index_css_1.iconButtonStyled }));
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'copy', width: 12, height: 12 }, caption: "Duplicate", class: index_css_1.iconButtonStyled }));
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'trash', width: 12, height: 12 }, caption: "Delete", class: index_css_1.iconButtonStyled, onClick: this.handleDelete.bind(this) }));
+            const buttonList = [
+                {
+                    caption: 'Add Component',
+                    icon: 'plus-circle',
+                    visible: false,
+                    onClick: () => {
+                        this.mdActions.visible = false;
+                        if (this.onShowComponentPicker)
+                            this.onShowComponentPicker();
+                    }
+                },
+                {
+                    caption: 'Save Custom Block',
+                    icon: 'save',
+                    visible: true,
+                    onClick: () => { }
+                },
+                {
+                    caption: 'Duplicate',
+                    icon: 'copy',
+                    visible: true,
+                    onClick: () => { }
+                },
+                {
+                    caption: 'Delete',
+                    icon: 'trash',
+                    visible: true,
+                    onClick: () => this.handleDelete()
+                }
+            ];
+            for (let button of buttonList) {
+                itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: button.icon, width: 12, height: 12 }, caption: button.caption, class: index_css_1.iconButtonStyled, visible: button.visible, onClick: button.onClick }));
+            }
             this.mdActions.item = itemActions;
             document.body.appendChild(this.mdActions);
         }
@@ -879,7 +915,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                             } }),
                         this.$render("i-icon", { name: "plus-circle", class: index_css_1.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, tooltip: {
                                 content: 'Add Component'
-                            }, onClick: () => this.onShowComponentPicker() }))),
+                            }, visible: false, onClick: () => this.onShowComponentPicker() }))),
                 this.$render("i-vstack", { id: "vStackComponents", gap: 4, overflow: "auto", maxHeight: "calc(100% - 32px)" }),
                 this.$render("i-alert", { id: "mdAlert", title: 'Confirm', status: 'confirm', content: 'Are you sure to delete this component?', onConfirm: this.onConfirm.bind(this), onClose: this.onClose.bind(this) })));
         }
@@ -1036,7 +1072,7 @@ define("@scom/scom-designer/tools/stylesheet.tsx", ["require", "exports", "@ijst
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Stylesheet", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
+                this.$render("i-vstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }, visible: false },
                     this.$render("i-hstack", { gap: 4, verticalAlignment: "center" },
                         this.$render("i-combo-box", { id: "stylesSelect", items: [], placeholder: "Select or Create New..." }),
                         this.$render("i-icon", { name: "pen", width: '1.5rem', height: '1.5rem', class: index_css_2.customIconBorderStyled, onClick: this.handleEdit }),
@@ -1653,7 +1689,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Layout", tooltipText: "With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-vstack", { id: "pnlFlexItems", gap: 8 },
                         this.$render("i-label", { caption: "FLEX ITEMS", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-vstack", { gap: 12 },
@@ -1717,85 +1753,188 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
     ], DesignerToolLayout);
     exports.default = DesignerToolLayout;
 });
-define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_9, index_css_6, utils_2) {
+define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_9) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    let DesignerToolBackground = class DesignerToolBackground extends components_9.Module {
+    const Theme = components_9.Styles.Theme.ThemeVars;
+    let DesignerToolHeader = class DesignerToolHeader extends components_9.Module {
+        constructor(parent, options) {
+            super(parent, options);
+            this._name = '';
+            this._tooltipText = '';
+            this._hasMediaQuery = false;
+            this.isShown = false;
+        }
+        get name() {
+            return this._name ?? '';
+        }
+        set name(value) {
+            this._name = value ?? '';
+            this.lbName.caption = this.name;
+        }
+        get tooltipText() {
+            return this._tooltipText ?? '';
+        }
+        set tooltipText(value) {
+            this._tooltipText = value ?? '';
+            this.iconTooltip.visible = !!this.tooltipText;
+            this.iconTooltip.tooltip.content = this.tooltipText || '';
+        }
+        get hasMediaQuery() {
+            return this._hasMediaQuery ?? false;
+        }
+        set hasMediaQuery(value) {
+            this._hasMediaQuery = value ?? false;
+        }
+        get checked() {
+            return this.hasMediaQuery ? this.querySwitch.checked : false;
+        }
+        set checked(value) {
+            this.querySwitch.checked = value ?? false;
+        }
+        renderUI() {
+            this.lbName.caption = this.name;
+            this.iconArrow.name = 'angle-down';
+            this.iconTooltip.visible = !!this.tooltipText;
+            this.iconTooltip.tooltip.content = this.tooltipText || '';
+            this.querySwitch.visible = this.hasMediaQuery;
+            // this.lbName.font = { size: '0.75rem', bold: true, color: this.isShown ? Theme.colors.primary.main : Theme.text.primary };
+        }
+        _onCollapse() {
+            this.isShown = !this.isShown;
+            this.iconArrow.name = this.isShown ? 'angle-down' : 'angle-right';
+            this.onCollapse(this.isShown);
+            // this.lbName.font = { size: '0.75rem', bold: true, color: this.isShown ? Theme.colors.primary.main : Theme.text.primary};
+        }
+        onQueryChanged() {
+            if (this.onToggleMediaQuery)
+                this.onToggleMediaQuery(this.checked);
+        }
+        init() {
+            super.init();
+            this.name = this.getAttribute('name', true) || '';
+            this.tooltipText = this.getAttribute('tooltipText', true);
+            this.hasMediaQuery = this.getAttribute('hasMediaQuery', true, false);
+            this.onCollapse = this.getAttribute('onCollapse', true);
+            this.renderUI();
+        }
+        render() {
+            return (this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, background: { color: '#26324b' }, onClick: this._onCollapse },
+                this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
+                this.$render("i-label", { id: "lbName", font: { size: '0.75rem', bold: true } }),
+                this.$render("i-icon", { id: "iconTooltip", name: "exclamation-circle", width: 14, height: 14, opacity: 0.8 }),
+                this.$render("i-panel", { margin: { left: 'auto' } },
+                    this.$render("i-hstack", { verticalAlignment: 'center', horizontalAlignment: 'end' },
+                        this.$render("i-switch", { id: "querySwitch", onChanged: this.onQueryChanged.bind(this) })))));
+        }
+    };
+    DesignerToolHeader = __decorate([
+        (0, components_9.customElements)('designer-tool-header')
+    ], DesignerToolHeader);
+    exports.default = DesignerToolHeader;
+});
+define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_10, index_css_6, utils_2, store_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_10.Styles.Theme.ThemeVars;
+    const DESIGNER_PROPS = ['background'];
+    let DesignerToolBackground = class DesignerToolBackground extends components_10.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {};
             this.onTypeChanged = this.onTypeChanged.bind(this);
             this.onColorChanged = this.onColorChanged.bind(this);
+            this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
             await self.ready();
             return self;
         }
-        get type() {
-            return this._data.type ?? '';
+        get isChecked() {
+            return this.designerHeader.checked;
         }
-        set type(value) {
-            this._data.type = value ?? '';
-        }
-        get color() {
-            return this._data.color ?? '';
-        }
-        set color(value) {
-            this._data.color = value ?? '';
+        hasMediaQuery() {
+            const breakpointProps = this._data.mediaQueries?.[(0, store_3.getBreakpoint)()]?.properties || {};
+            return Object.hasOwnProperty.call(breakpointProps, 'background');
         }
         setData(value) {
             this._data = value;
-            this.renderUI();
+            const olChecked = this.designerHeader.checked;
+            this.designerHeader.checked = !!this.hasMediaQuery();
+            this.renderUI(olChecked !== this.designerHeader.checked);
         }
-        renderUI() {
-            const typeItem = this.type ? utils_2.backgroundOptions.find(item => item.value === this.type) : null;
-            this.bgSelect.selectedItem = typeItem || null;
-            this.bgColor.value = this.color || undefined;
+        renderUI(needUpdate) {
+            let data = JSON.parse(JSON.stringify(this._data));
+            if (this.isChecked) {
+                const mediaBg = this._data.mediaQueries?.[(0, store_3.getBreakpoint)()]?.properties?.background;
+                if (mediaBg)
+                    data.background = mediaBg;
+            }
+            const { background = {} } = data;
+            this.bgColor.value = background?.color || undefined;
+            if (this.onUpdate && needUpdate)
+                this.onUpdate(this.isChecked, DESIGNER_PROPS);
+            // const typeItem = this.type ? backgroundOptions.find(item => item.value === this.type) : null;
+            // this.bgSelect.selectedItem = typeItem || null;
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
         onTypeChanged(target) {
-            const selectedValue = target.selectedItem.value;
-            this.type = selectedValue;
-            if (this.onChanged)
-                this.onChanged('background', { color: this.color });
+            // const selectedValue = (target.selectedItem as IComboItem).value;
+            // this.type = selectedValue;
+            // if (this.onChanged) this.onChanged('background', { color: this.color });
         }
         onColorChanged(target) {
-            const color = target.value;
-            this.color = color;
+            const value = target.value;
+            this.handleValueChanged('background', { color: value });
+            this.lblColor.font = { size: '0.75rem', color: value ? Theme.colors.success.main : Theme.text.primary };
+        }
+        handleValueChanged(type, value) {
+            const inQuery = this.designerHeader.checked;
+            if (inQuery) {
+                this.handleMediaQuery(type, value);
+            }
+            else {
+                this._data[type] = value;
+                if (this.onChanged)
+                    this.onChanged(type, value);
+            }
+        }
+        handleMediaQuery(prop, value) {
+            this._data.mediaQueries[(0, store_3.getBreakpoint)()]['properties'][prop] = value;
             if (this.onChanged)
-                this.onChanged('background', { color: this.color });
+                this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+        }
+        onToggleMediaQuery(isChecked) {
+            this.renderUI(true);
         }
         init() {
             super.init();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
-            const color = this.getAttribute('color', true);
-            const type = this.getAttribute('type', true);
-            if (color || type)
-                this.setData({ color, type });
+            this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
-                this.$render("designer-tool-header", { name: "Background", tooltipText: "Set a background color or image for the element.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("designer-tool-header", { id: "designerHeader", name: "Background", hasMediaQuery: true, tooltipText: "Set a background color or image for the element.", onCollapse: this.onCollapse, onToggleMediaQuery: this.onToggleMediaQuery }),
+                this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
-                        this.$render("i-label", { caption: "Color", font: { size: '0.75rem' } }),
+                        this.$render("i-label", { id: "lblColor", caption: "Color", font: { size: '0.75rem' } }),
                         this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
                             this.$render("i-color", { id: "bgColor", onChanged: this.onColorChanged, class: index_css_6.customColorStyled }),
                             this.$render("i-combo-box", { id: "bgSelect", width: "calc(100% - 28px)", items: utils_2.backgroundOptions, placeholder: "Type or select a color...", onChanged: this.onTypeChanged }))))));
         }
     };
     DesignerToolBackground = __decorate([
-        (0, components_9.customElements)('designer-tool-background')
+        (0, components_10.customElements)('designer-tool-background')
     ], DesignerToolBackground);
     exports.default = DesignerToolBackground;
 });
-define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_10, index_css_7, utils_3) {
+define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_11, index_css_7, utils_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_10.Styles.Theme.ThemeVars;
+    const Theme = components_11.Styles.Theme.ThemeVars;
     const sizes = [
         {
             id: 'inputWidth',
@@ -1828,7 +1967,7 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
             prop: 'maxHeight'
         }
     ];
-    let DesignerToolSize = class DesignerToolSize extends components_10.Module {
+    let DesignerToolSize = class DesignerToolSize extends components_11.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {};
@@ -1880,7 +2019,7 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
             this.mdUnits.visible = true;
         }
         async initModalUnits() {
-            this.mdUnits = await components_10.Modal.create({
+            this.mdUnits = await components_11.Modal.create({
                 visible: false,
                 showBackdrop: false,
                 minWidth: '1.5rem',
@@ -1900,7 +2039,7 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
                 this.currentLabel.caption = value;
                 this.mdUnits.visible = false;
             };
-            const itemUnits = new components_10.VStack(undefined, { gap: 8, border: { radius: 8 } });
+            const itemUnits = new components_11.VStack(undefined, { gap: 8, border: { radius: 8 } });
             itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "px", font: { size: '0.625rem' }, onClick: () => onUnitChanged('px') }));
             itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "%", font: { size: '0.625rem' }, onClick: () => onUnitChanged('%') }));
             this.mdUnits.item = itemUnits;
@@ -1914,20 +2053,20 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Size", tooltipText: "Specify minimum, maximum, or specifically set heights and widths for the element.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-grid-layout", { id: "pnlSizes", gap: { column: '1rem', row: '0.5rem' }, columnsPerRow: 2 }))));
         }
     };
     DesignerToolSize = __decorate([
-        (0, components_10.customElements)('designer-tool-size')
+        (0, components_11.customElements)('designer-tool-size')
     ], DesignerToolSize);
     exports.default = DesignerToolSize;
 });
-define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_11, index_css_8, utils_4) {
+define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_12, index_css_8, utils_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_11.Styles.Theme.ThemeVars;
-    let DesignerToolModalSpacing = class DesignerToolModalSpacing extends components_11.Module {
+    const Theme = components_12.Styles.Theme.ThemeVars;
+    let DesignerToolModalSpacing = class DesignerToolModalSpacing extends components_12.Module {
         constructor(parent, options) {
             super(parent, options);
             this.unit = 'px';
@@ -1935,7 +2074,7 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
             this.config = {};
         }
         async initModal() {
-            this.modal = await components_11.Modal.create({
+            this.modal = await components_12.Modal.create({
                 visible: false,
                 showBackdrop: false,
                 minWidth: '16rem',
@@ -1962,7 +2101,7 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
                 if (this.onChanged)
                     this.onChanged(type, position, valueStr);
             };
-            const item = new components_11.VStack(undefined, { gap: 8, border: { radius: 8 } });
+            const item = new components_12.VStack(undefined, { gap: 8, border: { radius: 8 } });
             const { breakpointText, iconName } = this.config;
             item.appendChild(this.$render("i-vstack", { gap: 12 },
                 this.$render("i-hstack", { gap: 8, verticalAlignment: "center" },
@@ -2040,15 +2179,15 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
         }
     };
     DesignerToolModalSpacing = __decorate([
-        (0, components_11.customElements)('designer-tool-modal-spacing')
+        (0, components_12.customElements)('designer-tool-modal-spacing')
     ], DesignerToolModalSpacing);
     exports.default = DesignerToolModalSpacing;
 });
-define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_12, index_css_9, utils_5) {
+define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_13, index_css_9, utils_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_12.Styles.Theme.ThemeVars;
-    let DesignerToolMarginsAndPadding = class DesignerToolMarginsAndPadding extends components_12.Module {
+    const Theme = components_13.Styles.Theme.ThemeVars;
+    let DesignerToolMarginsAndPadding = class DesignerToolMarginsAndPadding extends components_13.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {};
@@ -2105,7 +2244,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             this.mdUnits.visible = true;
         }
         async initModalUnits() {
-            this.mdUnits = await components_12.Modal.create({
+            this.mdUnits = await components_13.Modal.create({
                 visible: false,
                 showBackdrop: false,
                 minWidth: '1.5rem',
@@ -2130,7 +2269,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                 }
                 this.mdUnits.visible = false;
             };
-            const itemUnits = new components_12.VStack(undefined, { gap: 8, border: { radius: 8 } });
+            const itemUnits = new components_13.VStack(undefined, { gap: 8, border: { radius: 8 } });
             itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "px", font: { size: '0.625rem' }, onClick: () => onUnitChanged('px') }));
             itemUnits.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", caption: "%", font: { size: '0.625rem' }, onClick: () => onUnitChanged('%') }));
             this.mdUnits.item = itemUnits;
@@ -2165,7 +2304,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Margins And Padding", tooltipText: "Margins create extra space around an element, while padding creates extra space within an element.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-vstack", { gap: 8 },
                         this.$render("i-label", { caption: "OVERALL", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-hstack", { gap: 16, verticalAlignment: "center" },
@@ -2214,41 +2353,61 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
         }
     };
     DesignerToolMarginsAndPadding = __decorate([
-        (0, components_12.customElements)('designer-tool-margins-padding')
+        (0, components_13.customElements)('designer-tool-margins-padding')
     ], DesignerToolMarginsAndPadding);
     exports.default = DesignerToolMarginsAndPadding;
 });
-define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_13, index_css_10, utils_6) {
+define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_14, index_css_10, utils_6, store_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_13.Styles.Theme.ThemeVars;
-    let DesignerToolPosition = class DesignerToolPosition extends components_13.Module {
+    const Theme = components_14.Styles.Theme.ThemeVars;
+    const DESIGNER_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'];
+    let DesignerToolPosition = class DesignerToolPosition extends components_14.Module {
         constructor(parent, options) {
             super(parent, options);
+            this.spacingBtn = undefined;
             this._data = {};
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
             this.onSelectChanged = this.onSelectChanged.bind(this);
+            this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+        }
+        get isChecked() {
+            return this.designerHeader.checked;
+        }
+        hasMediaQuery() {
+            const breakpointProps = this._data.mediaQueries?.[(0, store_4.getBreakpoint)()]?.properties || {};
+            return Object.keys(breakpointProps).some(prop => ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'].includes(prop));
         }
         setData(data) {
+            this.spacingBtn = undefined;
             this._data = data;
-            this.renderUI();
+            const olChecked = this.designerHeader.checked;
+            this.designerHeader.checked = !!this.hasMediaQuery();
+            this.renderUI(olChecked !== this.designerHeader.checked);
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
-        renderUI() {
-            const { zIndex, position, overflow } = this._data;
+        renderUI(needUpdate = false) {
+            let data = this._data;
+            if (this.isChecked) {
+                const breakpointProps = this._data.mediaQueries?.[(0, store_4.getBreakpoint)()]?.properties || {};
+                data = { ...data, ...breakpointProps };
+            }
+            const { zIndex, position, overflow } = data;
             this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
             this.posSelector.activeItem = position || '';
             this.overflowSelector.activeItem = overflow?.y || '';
-            this.updateButtons();
+            this.updateButtons(data);
+            if (this.onUpdate && needUpdate)
+                this.onUpdate(this.isChecked, DESIGNER_PROPS);
         }
-        updateButtons() {
+        updateButtons(data) {
             const buttons = this.pnlPosition.querySelectorAll('i-button');
             for (let i = 0; i < buttons.length; i++) {
                 const button = buttons[i];
                 const id = button.id || '';
-                const parseData = (0, utils_6.parseNumberValue)(this._data[id]);
+                const parseData = (0, utils_6.parseNumberValue)(data[id]);
                 button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
             }
         }
@@ -2264,18 +2423,27 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                 breakpointText: 'Configure a value for Mobile screen sizes or larger'
             };
             this.mdSpacing.onShowModal(target, spacing, config);
-        }
-        onZIndexChanged(input, prop) {
-            const value = input.value;
-            this._data[prop] = value;
-            if (this.onChanged)
-                this.onChanged(prop, value);
+            this.spacingBtn = target;
         }
         onSelectChanged(type, value) {
+            let updated = value;
             if (type === 'overflow') {
-                this._data[type] = { y: value };
-                if (this.onChanged)
-                    this.onChanged(type, { x: 'hidden', y: value });
+                updated = { x: 'hidden', y: value };
+            }
+            this.handleValueChanged(type, updated);
+        }
+        onSpacingChanged(type, position, value) {
+            this.handleValueChanged(position, value);
+            if (this.spacingBtn) {
+                const parseData = (0, utils_6.parseNumberValue)(value);
+                this.spacingBtn.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
+            }
+            this.spacingBtn = undefined;
+        }
+        handleValueChanged(type, value) {
+            const inQuery = this.designerHeader.checked;
+            if (inQuery) {
+                this.handleMediaQuery(type, value);
             }
             else {
                 this._data[type] = value;
@@ -2283,20 +2451,24 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                     this.onChanged(type, value);
             }
         }
-        onSpacingChanged(type, position, value) {
-            this._data[position] = value;
-            this.updateButtons();
+        handleMediaQuery(prop, value) {
+            this._data.mediaQueries[(0, store_4.getBreakpoint)()]['properties'][prop] = value;
             if (this.onChanged)
-                this.onChanged(position, value);
+                this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+        }
+        onToggleMediaQuery(value) {
+            this.renderUI(true);
         }
         init() {
             super.init();
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
             this.position = 'relative';
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
-                this.$render("designer-tool-header", { name: "Position", tooltipText: "Define a relative or absolute position from the parent element.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("designer-tool-header", { id: "designerHeader", name: "Position", tooltipText: "Define a relative or absolute position from the parent element.", hasMediaQuery: true, onCollapse: this.onCollapse, onToggleMediaQuery: this.onToggleMediaQuery }),
+                this.$render("i-vstack", { id: "vStackContent", padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-vstack", { gap: 8 },
                         this.$render("designer-selector", { id: "posSelector", title: "Position", items: [
                                 { value: 'relative', caption: 'Relative', type: 'position' },
@@ -2314,7 +2486,7 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                             this.$render("i-input", { id: "zIndexInput", inputType: "number", placeholder: "auto", width: "100%", height: 24, border: {
                                     radius: 8,
                                     width: 0
-                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onBlur: (target) => this.onZIndexChanged(target, 'zIndex'), onKeyUp: (target, event) => event.key === 'Enter' && this.onZIndexChanged(target, 'zIndex'), class: index_css_10.textInputRight })),
+                                }, padding: { left: 4, right: 4 }, font: { size: '0.75rem' }, onBlur: (target) => this.onSelectChanged('zIndex', target.value), onKeyUp: (target, event) => event.key === 'Enter' && this.onSelectChanged('zIndex', target.value), class: index_css_10.textInputRight })),
                         this.$render("designer-selector", { id: "overflowSelector", title: "Overflow", items: [
                                 { value: 'auto', caption: 'Visible', type: 'overflow' },
                                 { value: 'hidden', caption: 'Hidden', type: 'overflow' },
@@ -2323,17 +2495,19 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
         }
     };
     DesignerToolPosition = __decorate([
-        (0, components_13.customElements)('designer-tool-position')
+        (0, components_14.customElements)('designer-tool-position')
     ], DesignerToolPosition);
     exports.default = DesignerToolPosition;
 });
-define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_14, index_css_11, utils_7) {
+define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_15, index_css_11, utils_7, store_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_14.Styles.Theme.ThemeVars;
-    let DesignerToolBorders = class DesignerToolBorders extends components_14.Module {
+    const Theme = components_15.Styles.Theme.ThemeVars;
+    const DESIGNER_PROPS = ['border'];
+    let DesignerToolBorders = class DesignerToolBorders extends components_15.Module {
         constructor(parent, options) {
             super(parent, options);
+            this.spacingBtn = undefined;
             this._data = {};
             this.radiusObj = {
                 topLeft: '',
@@ -2342,29 +2516,48 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 bottomRight: ''
             };
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
+            this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+        }
+        get isChecked() {
+            return this.designerHeader.checked;
+        }
+        hasMediaQuery() {
+            const breakpointProps = this._data.mediaQueries?.[(0, store_5.getBreakpoint)()]?.properties || {};
+            return Object.hasOwnProperty.call(breakpointProps, 'border');
         }
         setData(value) {
+            this.spacingBtn = undefined;
             this._data = value;
-            this.renderUI();
+            const olChecked = this.designerHeader.checked;
+            this.designerHeader.checked = !!this.hasMediaQuery();
+            this.renderUI(olChecked !== this.designerHeader.checked);
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
-        renderUI() {
-            const { border } = this._data;
-            this.inputRadius.value = border?.radius ?? '';
-            this.inputWidth.value = border?.width ?? '';
+        renderUI(needUpdate = false) {
+            let data = this._data;
+            if (this.isChecked) {
+                const breakpointProps = this._data.mediaQueries?.[(0, store_5.getBreakpoint)()]?.properties || {};
+                data = { ...data, ...breakpointProps };
+            }
+            const { border = {} } = data;
+            const parsedRadius = border?.radius && (0, utils_7.parseNumberValue)(border.radius);
+            this.inputRadius.value = parsedRadius ? parsedRadius.value : '';
+            const parsedWidth = border?.width && (0, utils_7.parseNumberValue)(border.width);
+            this.inputWidth.value = parsedWidth ? parsedWidth.value : '';
             this.bgColor.value = border?.color ?? '';
-            const radius = this._data.border?.radius;
+            const radius = data?.border?.radius;
             if (radius !== undefined) {
                 const radiusStr = typeof radius === 'number' ? `${radius}px` : radius;
                 this.setRadiusByPosition(radiusStr);
             }
-            this.updateButtons();
-            border.style = border?.style || 'solid';
-            this.styleSelector.activeItem = border.style;
+            this.updateButtons(data);
+            this.styleSelector.activeItem = border?.style || '';
+            if (this.onUpdate && needUpdate)
+                this.onUpdate(this.isChecked, DESIGNER_PROPS);
         }
-        updateButtons() {
+        updateButtons(data) {
             const buttons = this.pnlIndividual.querySelectorAll('i-button');
             for (let i = 0; i < buttons.length; i++) {
                 const button = buttons[i];
@@ -2374,11 +2567,12 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                     continue;
                 const type = result[2];
                 const position = result[1];
-                const value = type === 'width' ? this._data.border?.[position]?.[type] : this.radiusObj[position];
+                const value = type === 'width' ? data.border?.[position]?.[type] : this.radiusObj[position];
                 button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
             }
         }
         onShowSpacingModal(target, type, position) {
+            this.spacingBtn = target;
             let value = '';
             if (type === 'width') {
                 value = this._data.border?.[position]?.width ?? '';
@@ -2416,43 +2610,77 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
         }
         onPropChanged(target, prop) {
             const value = target.value;
-            this._data.border[prop] = `${value}px`;
-            if (this.onChanged)
-                this.onChanged('border', this._data.border);
+            const isNotNumber = Number.isNaN(Number(value)) || value === '';
+            const newVal = isNotNumber ? value : `${value}px`;
+            this.handleValueChanged(prop, newVal);
+            const label = target.parentElement?.previousSibling;
+            if (label)
+                label.font = { size: '0.75rem', color: value ? Theme.colors.success.main : Theme.text.primary };
+            this.updateButtons(this._data);
         }
         onSpacingChanged(type, position, value) {
             if (type === 'width') {
-                if (!this._data.border[position])
-                    this._data.border[position] = {};
-                this._data.border[position].width = value;
+                this.handleValueChanged('width', value, position);
             }
             else {
                 this.radiusObj[position] = value;
                 const radiusText = `${this.radiusObj.topLeft} ${this.radiusObj.topRight} ${this.radiusObj.bottomRight} ${this.radiusObj.bottomLeft}`;
-                this._data.border.radius = radiusText;
+                this.handleValueChanged('radius', radiusText);
             }
-            this.updateButtons();
-            if (this.onChanged)
-                this.onChanged('border', this._data.border);
+            if (this.spacingBtn) {
+                const parseData = (0, utils_7.parseNumberValue)(value);
+                this.spacingBtn.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
+            }
+            this.spacingBtn = undefined;
         }
-        onStyleChanged(type, value) {
-            const border = {
-                ...(this._data.border || {}),
-                [type]: value
-            };
-            this._data.border = border;
+        handleValueChanged(type, value, position) {
+            const inQuery = this.designerHeader.checked;
+            if (inQuery) {
+                this.handleMediaQuery(type, value, position);
+            }
+            else {
+                if (position) {
+                    if (!this._data.border[position])
+                        this._data.border[position] = {};
+                    this._data.border[position][type] = value;
+                }
+                else {
+                    this._data.border[type] = value;
+                }
+                if (this.onChanged)
+                    this.onChanged('border', this._data.border);
+            }
+            this.renderUI();
+        }
+        handleMediaQuery(prop, value, position) {
+            let border = this._data.mediaQueries[(0, store_5.getBreakpoint)()]['properties']['border'];
+            if (!border)
+                border = JSON.parse(JSON.stringify(this._data.border || {}));
+            if (position) {
+                if (!border[position])
+                    border[position] = {};
+                border[position][prop] = value;
+            }
+            else {
+                border[prop] = value;
+            }
+            this._data.mediaQueries[(0, store_5.getBreakpoint)()]['properties']['border'] = border;
             if (this.onChanged)
-                this.onChanged('border', border);
+                this.onChanged('mediaQueries', this._data.mediaQueries, 'border');
+        }
+        onToggleMediaQuery(value) {
+            this.renderUI(true);
         }
         init() {
             super.init();
-            this.onChanged = this.getAttribute('onChanged', true);
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
             this.position = 'relative';
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
-                this.$render("designer-tool-header", { name: "Borders", tooltipText: "Define the border size and styles.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("designer-tool-header", { id: "designerHeader", name: "Borders", hasMediaQuery: true, tooltipText: "Define the border size and styles.", onCollapse: this.onCollapse, onToggleMediaQuery: this.onToggleMediaQuery }),
+                this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-vstack", { gap: 8 },
                         this.$render("i-label", { caption: "OVERALL", font: { size: '0.875rem' }, letterSpacing: "0.2em", opacity: 0.8 }),
                         this.$render("i-hstack", { gap: 16, verticalAlignment: "center" },
@@ -2489,22 +2717,22 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                         this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Color", font: { size: '0.75rem' } }),
                             this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
-                                this.$render("i-color", { id: "bgColor", onChanged: (target) => this.onStyleChanged('color', target.value), class: index_css_11.customColorStyled }),
+                                this.$render("i-color", { id: "bgColor", onChanged: (target) => this.handleValueChanged('color', target.value), class: index_css_11.customColorStyled }),
                                 this.$render("i-combo-box", { width: "calc(100% - 28px)", items: utils_7.backgroundOptions, placeholder: "Type or select a color..." }))),
-                        this.$render("designer-selector", { id: "styleSelector", title: "Style", items: utils_7.borderStyles, onChanged: this.onStyleChanged }))),
+                        this.$render("designer-selector", { id: "styleSelector", title: "Style", items: utils_7.borderStyles, onChanged: this.handleValueChanged }))),
                 this.$render("designer-tool-modal-spacing", { id: "mdSpacing", onChanged: this.onSpacingChanged })));
         }
     };
     DesignerToolBorders = __decorate([
-        (0, components_14.customElements)('designer-tool-borders')
+        (0, components_15.customElements)('designer-tool-borders')
     ], DesignerToolBorders);
     exports.default = DesignerToolBorders;
 });
-define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_15, index_css_12) {
+define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_16, index_css_12) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_15.Styles.Theme.ThemeVars;
-    let DesignerToolEffects = class DesignerToolEffects extends components_15.Module {
+    const Theme = components_16.Styles.Theme.ThemeVars;
+    let DesignerToolEffects = class DesignerToolEffects extends components_16.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {};
@@ -2540,7 +2768,7 @@ define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { name: "Effects", tooltipText: "Set elevation and opacity for the element.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: 8, padding: { top: 16, bottom: 16, left: 12, right: 12 } },
+                this.$render("i-vstack", { id: "vStackContent", gap: 8, padding: { top: 16, bottom: 16, left: 12, right: 12 }, visible: false },
                     this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                         this.$render("i-label", { caption: "Opacity", font: { size: '0.75rem' } }),
                         this.$render("i-hstack", { gap: 16, verticalAlignment: "center" },
@@ -2558,63 +2786,9 @@ define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech
         }
     };
     DesignerToolEffects = __decorate([
-        (0, components_15.customElements)('designer-tool-effects')
+        (0, components_16.customElements)('designer-tool-effects')
     ], DesignerToolEffects);
     exports.default = DesignerToolEffects;
-});
-define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_16) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    let DesignerToolHeader = class DesignerToolHeader extends components_16.Module {
-        constructor(parent, options) {
-            super(parent, options);
-            this._name = '';
-            this.isShown = true;
-        }
-        get name() {
-            return this._name ?? '';
-        }
-        set name(value) {
-            this._name = value ?? '';
-            this.lbName.caption = this.name;
-        }
-        get tooltipText() {
-            return this._tooltipText ?? '';
-        }
-        set tooltipText(value) {
-            this._tooltipText = value ?? '';
-            this.iconTooltip.visible = !!this.tooltipText;
-            this.iconTooltip.tooltip.content = this.tooltipText || '';
-        }
-        renderUI() {
-            this.lbName.caption = this.name;
-            this.iconArrow.name = 'angle-down';
-            this.iconTooltip.visible = !!this.tooltipText;
-            this.iconTooltip.tooltip.content = this.tooltipText || '';
-        }
-        _onCollapse() {
-            this.isShown = !this.isShown;
-            this.iconArrow.name = this.isShown ? 'angle-down' : 'angle-right';
-            this.onCollapse(this.isShown);
-        }
-        init() {
-            super.init();
-            this.name = this.getAttribute('name', true) || '';
-            this.tooltipText = this.getAttribute('tooltipText', true);
-            this.onCollapse = this.getAttribute('onCollapse', true);
-            this.renderUI();
-        }
-        render() {
-            return (this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, background: { color: '#26324b' }, onClick: this._onCollapse },
-                this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
-                this.$render("i-label", { id: "lbName", font: { size: '0.75rem', bold: true } }),
-                this.$render("i-icon", { id: "iconTooltip", name: "exclamation-circle", width: 14, height: 14, opacity: 0.8 })));
-        }
-    };
-    DesignerToolHeader = __decorate([
-        (0, components_16.customElements)('designer-tool-header')
-    ], DesignerToolHeader);
-    exports.default = DesignerToolHeader;
 });
 define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_17, index_css_13) {
     "use strict";
@@ -2655,7 +2829,7 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" } },
                 this.$render("designer-tool-header", { name: "Typography", tooltipText: "Set font for the element.", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
+                this.$render("i-vstack", { id: "vStackContent", padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }, visible: false },
                     this.$render("i-vstack", { gap: '0.5rem' },
                         this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { caption: "Color", font: { size: '0.75rem' } }),
@@ -2750,7 +2924,7 @@ define("@scom/scom-designer/tools/group.tsx", ["require", "exports", "@ijstech/c
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { id: "designerHeader", name: "", tooltipText: "", onCollapse: this.onCollapse }),
-                this.$render("i-vstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
+                this.$render("i-vstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }, visible: false },
                     this.$render("i-form", { id: "form", class: index_css_14.customFormStyle, visible: false }))));
         }
     };
@@ -2927,7 +3101,7 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@scom/sc
     };
     exports.GroupMetadata = GroupMetadata;
 });
-define("@scom/scom-designer/tools/mediaQuery.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/helpers/config.ts"], function (require, exports, components_20, store_3, config_1) {
+define("@scom/scom-designer/tools/mediaQuery.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/helpers/config.ts"], function (require, exports, components_20, store_6, config_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     let DesignerToolMediaQuery = class DesignerToolMediaQuery extends components_20.Module {
@@ -2947,7 +3121,7 @@ define("@scom/scom-designer/tools/mediaQuery.tsx", ["require", "exports", "@ijst
         }
         renderUI() {
             const { mediaQueries = [] } = this._data;
-            const { properties = {} } = mediaQueries[(0, store_3.getBreakpoint)()] || {};
+            const { properties = {} } = mediaQueries[(0, store_6.getBreakpoint)()] || {};
             this.designerSize.setData({
                 width: properties?.width,
                 height: properties?.height,
@@ -2960,7 +3134,7 @@ define("@scom/scom-designer/tools/mediaQuery.tsx", ["require", "exports", "@ijst
         onPropChanged(prop, value) {
             if (!this._data.mediaQueries)
                 this._data.mediaQueries = [];
-            const breakpoint = (0, store_3.getBreakpoint)();
+            const breakpoint = (0, store_6.getBreakpoint)();
             if (!this._data.mediaQueries[breakpoint])
                 this._data.mediaQueries[breakpoint] = (0, config_1.getDefaultMediaQuery)(breakpoint);
             this._data.mediaQueries[breakpoint]['properties'][prop] = value;
@@ -3287,7 +3461,7 @@ define("@scom/scom-designer/setting-data/index.tsx", ["require", "exports", "@sc
     exports.DesignerDataParams = params_1.default;
     exports.DesignerDataLinking = linking_1.default;
 });
-define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/settings/index.ts", "@scom/scom-designer/triggers/index.ts", "@scom/scom-designer/setting-data/index.tsx"], function (require, exports, components_26, index_css_17, index_2, config_2, utils_8, store_4) {
+define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/settings/index.ts", "@scom/scom-designer/triggers/index.ts", "@scom/scom-designer/setting-data/index.tsx"], function (require, exports, components_26, index_css_17, index_2, config_2, utils_8, store_7) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_26.Styles.Theme.ThemeVars;
@@ -3295,6 +3469,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         constructor(parent, options) {
             super(parent, options);
             this.onPropChanged = this.onPropChanged.bind(this);
+            this.onUpdateUI = this.onUpdateUI.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
         }
         static async create(options, parent) {
@@ -3311,6 +3486,10 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         get designerProps() {
             return this.component?.control._getDesignProps() || {};
+        }
+        clear() {
+            this.component = null;
+            this.renderUI();
         }
         renderUI() {
             this.updateInfo();
@@ -3346,38 +3525,27 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 this.$render("i-label", { caption: category || '', opacity: 0.6, font: { size: '0.625rem' }, margin: { left: 'auto' }, display: "flex" })));
         }
         onUpdate() {
-            const { top, right, bottom, left, zIndex, position, width, height, overflow, minHeight, minWidth, maxHeight, maxWidth } = this.designerProps;
-            const { position: controlPosition } = this.component?.control || {};
+            const { top, right, bottom, left, zIndex, position, width, height, overflow, minHeight, minWidth, maxHeight, maxWidth, mediaQueries } = this.designerProps;
+            const breakpoint = (0, store_7.getBreakpoint)();
+            if (!mediaQueries[breakpoint])
+                mediaQueries[breakpoint] = (0, config_2.getDefaultMediaQuery)(breakpoint);
             this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
-            this.designerPosition.setData({
-                position: position || controlPosition,
-                zIndex,
-                top,
-                left,
-                right,
-                bottom,
-                overflow
-            });
+            this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries });
         }
         updateProps() {
             const control = this.component?.control;
-            const { id, margin, padding, border = {}, top, right, bottom, left, zIndex, position, background, width, height, opacity, overflow, display, stack, direction, font, minHeight, minWidth, maxHeight, maxWidth, mediaQueries } = this.designerProps;
+            let { id, margin, padding, border = {}, top, right, bottom, left, zIndex, position, background, width, height, opacity, overflow = { x: '', y: '' }, display, stack, direction, font, minHeight, minWidth, maxHeight, maxWidth, mediaQueries = [] } = this.designerProps;
             const { id: controlId } = this.component?.control || {};
+            const breakpoint = (0, store_7.getBreakpoint)();
+            if (!mediaQueries[breakpoint])
+                mediaQueries[breakpoint] = (0, config_2.getDefaultMediaQuery)(breakpoint);
             this.inputId.value = id || controlId || '';
-            this.designerBackground.setData({ color: background?.color || '' });
+            this.designerBackground.setData({ background, mediaQueries });
             this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
             this.designerEffects.setData({ opacity: opacity || 1 });
             this.designerSpacing.setData({ margin: margin, padding: padding });
-            this.designerPosition.setData({
-                position,
-                zIndex,
-                top,
-                left,
-                right,
-                bottom,
-                overflow
-            });
-            this.designerBorders.setData({ border });
+            this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries });
+            this.designerBorders.setData({ border, mediaQueries });
             this.designerLayout.setData({
                 name: this.component?.name,
                 display: display || control?.style.display,
@@ -3385,7 +3553,6 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 direction: direction || undefined
             });
             this.designerContent.setData({ font });
-            this.designerMedia.setData({ mediaQueries });
         }
         onPropChanged(prop, value, mediaQueryProp) {
             if (this.onChanged)
@@ -3394,6 +3561,23 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         onGroupChanged(data) {
             for (let prop in data) {
                 this.onPropChanged(prop, data[prop]);
+            }
+        }
+        onUpdateUI(isChecked, props) {
+            if (!this.component?.control)
+                return;
+            const designProps = this.component?.control._getDesignProps();
+            const breakpoint = (0, store_7.getBreakpoint)();
+            if (!designProps?.mediaQueries?.[breakpoint])
+                return;
+            const breakpointProps = designProps?.mediaQueries?.[breakpoint]?.properties || {};
+            const customProps = this.component?.control?._getCustomProperties();
+            for (let prop in breakpointProps) {
+                const hasProp = props.includes(prop);
+                if (hasProp) {
+                    this.component.control[prop] = isChecked ? breakpointProps[prop] : (designProps[prop] ?? customProps[prop].default);
+                    console.log(this.component.control[prop], breakpointProps[prop], designProps[prop], prop);
+                }
             }
         }
         onIDChanged(target) {
@@ -3405,9 +3589,8 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 this.onEventChanged(prop, newVal, oldVal);
         }
         onBreakpointClick(type, value) {
-            (0, store_4.setBreakpoint)(value);
-            const props = this.designerProps;
-            this.designerMedia.setData({ mediaQueries: props.mediaQueries });
+            (0, store_7.setBreakpoint)(value);
+            this.updateProps();
             if (this.onBreakpointChanged)
                 this.onBreakpointChanged(value);
         }
@@ -3444,14 +3627,13 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                             this.$render("designer-tool-group", { id: "customGroup", display: 'block', onChanged: this.onGroupChanged }),
                             this.$render("designer-tool-stylesheet", { id: "designerStylesheet", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-layout", { id: 'designerLayout', display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-background", { id: "designerBackground", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-background", { id: "designerBackground", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }),
                             this.$render("designer-tool-size", { id: "designerSize", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-margins-padding", { id: "designerSpacing", display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-position", { id: "designerPosition", display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-borders", { id: "designerBorders", display: "block", onChanged: this.onPropChanged }),
+                            this.$render("designer-tool-position", { id: "designerPosition", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }),
+                            this.$render("designer-tool-borders", { id: "designerBorders", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }),
                             this.$render("designer-tool-content", { id: "designerContent", display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-effects", { id: "designerEffects", display: "block", onChanged: this.onPropChanged }),
-                            this.$render("designer-tool-media-query", { id: "designerMedia", display: "block", onChanged: this.onPropChanged }))),
+                            this.$render("designer-tool-effects", { id: "designerEffects", display: "block", onChanged: this.onPropChanged }))),
                     this.$render("i-tab", { icon: { name: 'magic', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%", height: '100%' },
                             this.$render("designer-trigger", { id: "designerTrigger", display: "block", width: "100%", minHeight: 250, onChanged: this.onControlEventChanged, onEventDblClick: (name) => this.onEventDblClick && this.onEventDblClick(name) }))))));
@@ -3930,7 +4112,7 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
         ]
     };
 });
-define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_31, index_3, index_css_21, data_1, index_4, utils_9, config_3, store_5) {
+define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_31, index_3, index_css_21, data_1, index_4, utils_9, config_3, store_8) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerForm = void 0;
@@ -4048,7 +4230,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             return data_1.blockComponents;
         }
         get breakpointProps() {
-            const breakpoint = (0, store_5.getBreakpoint)();
+            const breakpoint = (0, store_8.getBreakpoint)();
             return this.selectedControl?.control?._getDesignPropValue('mediaQueries')?.[breakpoint]?.properties || {};
         }
         createControl(parent, name, options) {
@@ -4059,8 +4241,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             const newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
             const control = new controlConstructor(parent, { ...newOptions });
-            const breakpoint = (0, store_5.getBreakpoint)();
-            const breakpointProps = options?.mediaQueries?.[breakpoint]?.properties || this.breakpointProps;
+            const breakpointProps = options.mediaQueries?.[(0, store_8.getBreakpoint)()]?.properties;
             control._setDesignProps(options, breakpointProps);
             return control;
         }
@@ -4196,7 +4377,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     let mediaQueries = control?.control._getDesignPropValue('mediaQueries');
                     if (!mediaQueries)
                         mediaQueries = [];
-                    const breakpoint = (0, store_5.getBreakpoint)();
+                    const breakpoint = (0, store_8.getBreakpoint)();
                     if (!mediaQueries[breakpoint])
                         mediaQueries[breakpoint] = (0, config_3.getDefaultMediaQuery)(breakpoint);
                     mediaQueries[breakpoint]['properties']['visible'] = visible;
@@ -4365,9 +4546,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.pnlBlockPicker.clearInnerHTML();
             this.pnlBlockPicker.append(pickerElm);
         }
-        initDesignerProperties() {
-            this.designerProperties.component = this.selectedControl;
-        }
         onPropertiesChanged(prop, value, mediaQueryProp) {
             const control = this.selectedControl?.control;
             if (!control)
@@ -4424,6 +4602,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     elements: [this._rootComponent]
                 };
                 this.onUpdateDesigner();
+                this.designerProperties.clear();
             }
         }
         onUpdateDesigner() {
@@ -4528,7 +4707,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.pnlProperties.width = 0;
             }
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
-            this.pnlFormDesigner.clearInnerHTML();
             this.updateDesignProps(this._rootComponent);
             this.onUpdateDesigner();
             this.designerComponents.renderUI();
@@ -4587,11 +4765,14 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.wrapperComponentPicker.style.borderBottom = 'none';
             this.initComponentPicker();
             this.initBlockPicker();
-            this.initDesignerProperties();
+            this.showDesignProperties();
             this.initEvents();
         }
         render() {
-            return (this.$render("i-vstack", { width: '100%', height: '100%', maxWidth: Theme.layout.container.maxWidth, margin: { left: 'auto', right: 'auto' }, position: 'relative' },
+            return (this.$render("i-vstack", { width: '100%', height: '100%', 
+                // maxWidth={Theme.layout.container.maxWidth}
+                // margin={{ left: 'auto', right: 'auto' }}
+                position: 'relative' },
                 this.$render("i-hstack", { width: '100%', height: '100%' },
                     this.$render("i-vstack", { id: "pnlScreens", width: '100%', height: '100%', border: {
                             top: { width: 1, style: 'solid', color: Theme.divider },
