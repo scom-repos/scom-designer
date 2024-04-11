@@ -11,7 +11,8 @@ import {
   Label,
   Image,
   Modal,
-  Alert
+  Alert,
+  IconName
 } from '@ijstech/components'
 import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
@@ -74,6 +75,10 @@ export default class DesignerComponents extends Module {
     this._activeComponent = value;
     const elm = value?.path &&this.vStackComponents?.querySelector(`#elm-${value.path}`) as Control;
     this.updateActiveStyle(elm)
+  }
+
+  private get isContainer() {
+    return this.currentComponent?.name && ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout'].includes(this.currentComponent?.name)
   }
 
   private updateActiveStyle(el: Control) {
@@ -305,6 +310,8 @@ export default class DesignerComponents extends Module {
     const mdWrapper = this.mdActions.querySelector('.modal-wrapper') as HTMLElement;
     mdWrapper.style.top = `${top}px`;
     mdWrapper.style.left = `${left}px`;
+    const firstChild = this.mdActions.item.children?.[0] as Control;
+    if (firstChild) firstChild.visible = this.isContainer;
     this.mdActions.visible = true;
   }
 
@@ -317,33 +324,48 @@ export default class DesignerComponents extends Module {
       popupPlacement: 'bottomRight'
     });
     const itemActions = new VStack(undefined, { gap: 8, border: { radius: 8 } });
-    itemActions.appendChild(
-      <i-button
-        background={{ color: 'transparent' }}
-        boxShadow="none"
-        icon={{ name: 'save', width: 12, height: 12 }}
-        caption="Save Custom Block"
-        class={iconButtonStyled}
-      />
-    );
-    itemActions.appendChild(
-      <i-button
-        background={{ color: 'transparent' }}
-        boxShadow="none"
-        icon={{ name: 'copy', width: 12, height: 12 }}
-        caption="Duplicate"
-        class={iconButtonStyled} />
+    const buttonList = [
+      {
+        caption: 'Add Component',
+        icon: 'plus-circle',
+        visible: false,
+        onClick: () => {
+          this.mdActions.visible = false;
+          if (this.onShowComponentPicker) this.onShowComponentPicker();
+        }
+      },
+      {
+        caption: 'Save Custom Block',
+        icon: 'save',
+        visible: true,
+        onClick: () => {}
+      },
+      {
+        caption: 'Duplicate',
+        icon: 'copy',
+        visible: true,
+        onClick: () => {}
+      },
+      {
+        caption: 'Delete',
+        icon: 'trash',
+        visible: true,
+        onClick: () => this.handleDelete()
+      }
+    ]
+    for (let button of buttonList) {
+      itemActions.appendChild(
+        <i-button
+          background={{ color: 'transparent' }}
+          boxShadow="none"
+          icon={{ name: button.icon as IconName, width: 12, height: 12 }}
+          caption={button.caption}
+          class={iconButtonStyled}
+          visible={button.visible}
+          onClick={button.onClick}
+        />
       );
-    itemActions.appendChild(
-      <i-button
-        background={{ color: 'transparent' }}
-        boxShadow="none"
-        icon={{ name: 'trash', width: 12, height: 12 }}
-        caption="Delete"
-        class={iconButtonStyled}
-        onClick={this.handleDelete.bind(this)}
-      />
-    );
+    }
     this.mdActions.item = itemActions;
     document.body.appendChild(this.mdActions);
   }
@@ -448,6 +470,7 @@ export default class DesignerComponents extends Module {
               tooltip={{
                 content: 'Add Component'
               }}
+              visible={false}
               onClick={() => this.onShowComponentPicker()}
             />
           </i-hstack>

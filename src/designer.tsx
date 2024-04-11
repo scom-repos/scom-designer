@@ -210,8 +210,7 @@ export class ScomDesignerForm extends Module {
     }
     const newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     const control: Control = new controlConstructor(parent, {...newOptions});
-    const breakpoint = getBreakpoint();
-    const breakpointProps = options?.mediaQueries?.[breakpoint]?.properties || this.breakpointProps;
+    const breakpointProps = options.mediaQueries?.[getBreakpoint()]?.properties;
     control._setDesignProps(options, breakpointProps);
     return control;
   }
@@ -521,10 +520,6 @@ export class ScomDesignerForm extends Module {
     this.pnlBlockPicker.append(pickerElm)
   }
 
-  private initDesignerProperties() {
-    this.designerProperties.component = this.selectedControl;
-  }
-
   private onPropertiesChanged(prop: string, value: any, mediaQueryProp?: string) {
     const control = this.selectedControl?.control
     if (!control) return;
@@ -578,6 +573,7 @@ export class ScomDesignerForm extends Module {
         elements: [this._rootComponent]
       }
       this.onUpdateDesigner();
+      this.designerProperties.clear();
     }
   }
 
@@ -684,7 +680,6 @@ export class ScomDesignerForm extends Module {
       this.pnlProperties.width = 0
     }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
-    this.pnlFormDesigner.clearInnerHTML();
     this.updateDesignProps(this._rootComponent);
     this.onUpdateDesigner();
     this.designerComponents.renderUI();
@@ -744,7 +739,7 @@ export class ScomDesignerForm extends Module {
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
     this.initBlockPicker()
-    this.initDesignerProperties()
+    this.showDesignProperties()
     this.initEvents()
   }
 
@@ -753,8 +748,8 @@ export class ScomDesignerForm extends Module {
       <i-vstack
         width='100%'
         height='100%'
-        maxWidth={Theme.layout.container.maxWidth}
-        margin={{ left: 'auto', right: 'auto' }}
+        // maxWidth={Theme.layout.container.maxWidth}
+        // margin={{ left: 'auto', right: 'auto' }}
         position='relative'
       >
         <i-hstack width='100%' height='100%'>

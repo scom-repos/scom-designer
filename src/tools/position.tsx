@@ -11,13 +11,16 @@ import {
 } from '@ijstech/components'
 import { buttonAutoStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
-import { onChangedCallback } from '../interface';
+import { onChangedCallback, onUpdateCallback } from '../interface';
 import { parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
+import DesignerToolHeader from './header';
+import { getBreakpoint } from '../helpers/store';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {
   onChanged?: onChangedCallback;
+  onUpdate?: onUpdateCallback;
 }
 
 interface IDesignerPosition {
@@ -28,7 +31,10 @@ interface IDesignerPosition {
   left?: number | string;
   overflow?: {x?: string, y?: string};
   zIndex?: string;
+  mediaQueries?: any[];
 }
+
+const DESIGNER_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'];
 
 declare global {
   namespace JSX {
@@ -46,40 +52,62 @@ export default class DesignerToolPosition extends Module {
   private pnlPosition: Panel;
   private overflowSelector: DesignerSelector;
   private posSelector: DesignerSelector;
+  private designerHeader: DesignerToolHeader;
+  private spacingBtn: Button|undefined = undefined;
 
   private _data: IDesignerPosition = {};
 
   onChanged: onChangedCallback;
+  onUpdate: onUpdateCallback;
 
   constructor(parent?: Container, options?: DesignerToolPositionElement) {
     super(parent, options);
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
     this.onSelectChanged = this.onSelectChanged.bind(this);
+    this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+  }
+
+  private get isChecked() {
+    return this.designerHeader.checked;
+  }
+
+  private hasMediaQuery() {
+    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    return Object.keys(breakpointProps).some(prop => ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'].includes(prop));
   }
 
   setData(data: IDesignerPosition) {
+    this.spacingBtn = undefined;
     this._data = data;
-    this.renderUI();
+    const olChecked = this.designerHeader.checked;
+    this.designerHeader.checked = !!this.hasMediaQuery();
+    this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
   private onCollapse(isShown: boolean) {
     this.vStackContent.visible = isShown;
   }
 
-  private renderUI() {
-    const { zIndex, position, overflow } = this._data;
+  private renderUI(needUpdate = false) {
+    let data = this._data;
+    if (this.isChecked) {
+      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      data = {...data, ...breakpointProps};
+    }
+    const { zIndex, position, overflow } = data;
     this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
     this.posSelector.activeItem = position || '';
     this.overflowSelector.activeItem = overflow?.y || '';
-    this.updateButtons();
+    this.updateButtons(data);
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_PROPS);
   }
 
-  private updateButtons() {
+  private updateButtons(data: IDesignerPosition) {
     const buttons = this.pnlPosition.querySelectorAll('i-button');
     for (let i = 0; i < buttons.length; i++) {
       const button = buttons[i] as Button;
       const id = button.id || '';
-      const parseData = parseNumberValue(this._data[id]);
+      const parseData = parseNumberValue(data[id]);
       button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
     }
   }
@@ -96,32 +124,49 @@ export default class DesignerToolPosition extends Module {
       breakpointText: 'Configure a value for Mobile screen sizes or larger'
     }
     this.mdSpacing.onShowModal(target, spacing, config);
-  }
-
-  private onZIndexChanged(input: Input, prop: string) {
-    const value = input.value;
-    this._data[prop] = value;
-    if (this.onChanged) this.onChanged(prop, value);
+    this.spacingBtn = target;
   }
 
   private onSelectChanged(type: string, value: string) {
+    let updated: any = value;
     if (type === 'overflow') {
-      this._data[type] = { y: value };
-      if (this.onChanged) this.onChanged(type, {x: 'hidden', y: value});
+      updated = {x: 'hidden', y: value};
+    }
+    this.handleValueChanged(type, updated);
+  }
+
+  private onSpacingChanged(type: string, position: string, value: string) {
+    this.handleValueChanged(position, value);
+    if (this.spacingBtn) {
+      const parseData = parseNumberValue(value);
+      this.spacingBtn.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
+    }
+    this.spacingBtn = undefined;
+  }
+
+  private handleValueChanged(type: string, value: any) {
+    const inQuery = this.designerHeader.checked;
+    if (inQuery) {
+      this.handleMediaQuery(type, value);
     } else {
       this._data[type] = value;
       if (this.onChanged) this.onChanged(type, value);
     }
   }
 
-  private onSpacingChanged(type: string, position: string, value: string) {
-    this._data[position] = value;
-    this.updateButtons();
-    if (this.onChanged) this.onChanged(position, value);
+  private handleMediaQuery(prop: string, value: any) {
+    this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+  }
+
+  private onToggleMediaQuery(value: boolean) {
+    this.renderUI(true);
   }
 
   init() {
     super.init();
+    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
     this.position = 'relative';
   }
 
@@ -133,8 +178,15 @@ export default class DesignerToolPosition extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Position" tooltipText="Define a relative or absolute position from the parent element." onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
+        <designer-tool-header
+          id="designerHeader"
+          name="Position"
+          tooltipText="Define a relative or absolute position from the parent element."
+          hasMediaQuery={true}
+          onCollapse={this.onCollapse}
+          onToggleMediaQuery={this.onToggleMediaQuery}
+        />
+        <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
             <designer-selector
               id="posSelector"
@@ -169,8 +221,8 @@ export default class DesignerToolPosition extends Module {
                 }}
                 padding={{ left: 4, right: 4 }}
                 font={{ size: '0.75rem' }}
-                onBlur={(target: Input) => this.onZIndexChanged(target, 'zIndex')}
-                onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onZIndexChanged(target, 'zIndex')}
+                onBlur={(target: Input) => this.onSelectChanged('zIndex', target.value)}
+                onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onSelectChanged('zIndex', target.value)}
                 class={textInputRight}
               />
             </i-grid-layout>

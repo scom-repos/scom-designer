@@ -186,7 +186,7 @@ export default class DesignerToolLayout extends Module {
         position="relative"
       >
         <designer-tool-header name="Layout" tooltipText="With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes." onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }}>
+        <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack
             id="pnlFlexItems"
             gap={8}

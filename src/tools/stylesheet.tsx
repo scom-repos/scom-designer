@@ -93,7 +93,7 @@ export default class DesignerToolStylesheet extends Module {
         position="relative"
       >
         <designer-tool-header name="Stylesheet" onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" gap={'0.5rem'} padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}>
+        <i-vstack id="vStackContent" gap={'0.5rem'} padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }} visible={false}>
           <i-hstack gap={4} verticalAlignment="center">
             <i-combo-box
               id="stylesSelect"

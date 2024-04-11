@@ -119,8 +119,13 @@ export default class DesignerToolGroup extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header id ="designerHeader" name="" tooltipText="" onCollapse={this.onCollapse} />
-        <i-vstack id="vStackContent" gap={'0.5rem'} padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }}>
+        <designer-tool-header
+          id ="designerHeader"
+          name=""
+          tooltipText=""
+          onCollapse={this.onCollapse}
+        />
+        <i-vstack id="vStackContent" gap={'0.5rem'} padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }} visible={false}>
           <i-form id="form" class={customFormStyle} visible={false}></i-form>
         </i-vstack>
       </i-vstack>
