@@ -7,15 +7,17 @@ import {
   VStack,
   Button,
   Input,
-  Panel
+  Panel,
+  Label
 } from '@ijstech/components'
 import { buttonAutoStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback, onUpdateCallback } from '../interface';
-import { parseNumberValue } from '../helpers/utils';
+import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
+import { getBreakpointInfo } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {
@@ -32,9 +34,10 @@ interface IDesignerPosition {
   overflow?: {x?: string, y?: string};
   zIndex?: string;
   mediaQueries?: any[];
+  default?: {[name: string]: any};
 }
 
-const DESIGNER_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'];
+export const DESIGNER_POSITION_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'];
 
 declare global {
   namespace JSX {
@@ -53,6 +56,7 @@ export default class DesignerToolPosition extends Module {
   private overflowSelector: DesignerSelector;
   private posSelector: DesignerSelector;
   private designerHeader: DesignerToolHeader;
+  private lblZIndex: Label;
   private spacingBtn: Button|undefined = undefined;
 
   private _data: IDesignerPosition = {};
@@ -71,9 +75,18 @@ export default class DesignerToolPosition extends Module {
     return this.designerHeader.checked;
   }
 
+  private get currentData() {
+    let data = this._data;
+    if (this.isChecked) {
+      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      data = {...data, ...breakpointProps};
+    }
+    return data;
+  }
+
   private hasMediaQuery() {
     const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
-    return Object.keys(breakpointProps).some(prop => ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'].includes(prop));
+    return Object.keys(breakpointProps).some(prop => DESIGNER_POSITION_PROPS.includes(prop));
   }
 
   setData(data: IDesignerPosition) {
@@ -89,17 +102,34 @@ export default class DesignerToolPosition extends Module {
   }
 
   private renderUI(needUpdate = false) {
-    let data = this._data;
-    if (this.isChecked) {
-      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
-      data = {...data, ...breakpointProps};
-    }
+    let data = this.currentData;
     const { zIndex, position, overflow } = data;
     this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
     this.posSelector.activeItem = position || '';
     this.overflowSelector.activeItem = overflow?.y || '';
     this.updateButtons(data);
-    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_PROPS);
+    this.updateHighlight();
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_POSITION_PROPS);
+  }
+
+  private updateHighlight() {
+    const pValue = this.posSelector.activeItem;
+    this.posSelector.isChanged = !this.checkValues('position', pValue);
+    const oValue = this.overflowSelector.activeItem;
+    this.overflowSelector.isChanged = !this.checkValues('overflow', oValue);
+    const zIndexVal = this.zIndexInput.value;
+    const zChanged = !this.checkValues('zIndex', zIndexVal);
+    this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
+  }
+
+  private checkValues(prop: string, newVal: any) {
+    let pResult = false;
+    if (this.isChecked) {
+      pResult = isSameValue((prop === 'overflow' ? this._data[prop]?.y : this._data[prop]) || '', newVal);
+    } else {
+      pResult = isSameValue((prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop]) || '', newVal);
+    }
+    return pResult;
   }
 
   private updateButtons(data: IDesignerPosition) {
@@ -113,15 +143,17 @@ export default class DesignerToolPosition extends Module {
   }
 
   private onShowModal(target: Button, position: string) {
+    let data = this.currentData;
     const spacing = {
       type: '',
       position,
-      value: this._data[position] || ''
+      value: data[position] || ''
     }
+    const breakpoint = getBreakpointInfo(getBreakpoint())
     const config = {
       title: `${position}`,
-      icon: 'mobile-alt',
-      breakpointText: 'Configure a value for Mobile screen sizes or larger'
+      iconName: breakpoint?.icon,
+      breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
     }
     this.mdSpacing.onShowModal(target, spacing, config);
     this.spacingBtn = target;
@@ -145,13 +177,13 @@ export default class DesignerToolPosition extends Module {
   }
 
   private handleValueChanged(type: string, value: any) {
-    const inQuery = this.designerHeader.checked;
-    if (inQuery) {
+    if (this.isChecked) {
       this.handleMediaQuery(type, value);
     } else {
       this._data[type] = value;
       if (this.onChanged) this.onChanged(type, value);
     }
+    this.renderUI();
   }
 
   private handleMediaQuery(prop: string, value: any) {
@@ -208,7 +240,7 @@ export default class DesignerToolPosition extends Module {
               </i-vstack>
             </i-panel>
             <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption="Z-Index" font={{ size: '0.75rem' }} />
+              <i-label id="lblZIndex" caption="Z-Index" font={{ size: '0.75rem' }} />
               <i-input
                 id="zIndexInput"
                 inputType="number"

@@ -86,7 +86,7 @@ export default class DesignerToolModalSpacing extends Module {
     const onValueChanged = (target: Input) => {
       const value = target.value;
       const { type, position } = this.spacing;
-      const valueStr = value !== '' ? `${value}${this.unit}` : 'auto';
+      const valueStr = value !== '' ? `${value}${this.unit}` : '';
       if (this.onChanged) this.onChanged(type, position, valueStr);
     }
     const item = new VStack(undefined, { gap: 8, border: { radius: 8 } });

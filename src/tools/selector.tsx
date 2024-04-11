@@ -1,6 +1,7 @@
-import { Control, ControlElement, GridLayout, HStack, Icon, Label, Module, customElements, Image } from "@ijstech/components";
+import { Control, ControlElement, GridLayout, HStack, Icon, Label, Module, customElements, Image, Styles } from "@ijstech/components";
 import { borderRadiusLeft, borderRadiusRight, customIconLayoutActiveStyled, customIconLayoutStyled } from "./index.css";
 import { customIconTabActiveStyled } from "../index.css";
+const Theme = Styles.Theme.ThemeVars;
 
 type selectorChanged = (type: string, value: string|number) => void;
 interface DesignerSelectorElement extends ControlElement {
@@ -8,6 +9,7 @@ interface DesignerSelectorElement extends ControlElement {
   title?: string;
   direction?: 'horizontal' | 'vertical';
   activeItem?: string;
+  isChanged?: boolean;
   onChanged?: selectorChanged;
 }
 
@@ -27,6 +29,7 @@ interface ISelector {
   title?: string;
   direction?: 'horizontal' | 'vertical';
   activeItem?: string|number;
+  isChanged?: boolean;
 }
 
 declare global {
@@ -49,7 +52,8 @@ export default class DesignerSelector extends Module {
 
   private _data: ISelector = {
     items: [],
-    direction: 'horizontal'
+    direction: 'horizontal',
+    isChanged: false
   }
 
   get items() {
@@ -67,10 +71,10 @@ export default class DesignerSelector extends Module {
   }
 
   get activeItem() {
-    return this._data.activeItem;
+    return this._data.activeItem ?? '';
   }
   set activeItem(value: string|number) {
-    this._data.activeItem = value;
+    this._data.activeItem = value ?? '';
     const target = this.listMap.get(value)
     if (target) {
       this.updateActiveItem(target);
@@ -88,6 +92,16 @@ export default class DesignerSelector extends Module {
     this._data.direction = value ?? 'horizontal';
   }
 
+  get isChanged() {
+    return this._data.isChanged ?? false;
+  }
+  set isChanged(value: boolean) {
+    this._data.isChanged = value ?? false;
+    if (this.lblTitle) {
+      this.lblTitle.font = { size: '0.75rem', color: this._data.isChanged ? Theme.colors.success.main : Theme.text.primary };
+    }
+  }
+
   setData(value: ISelector) {
     this._data = value;
     this.renderUI();
@@ -95,6 +109,7 @@ export default class DesignerSelector extends Module {
 
   private renderUI() {
     this.lblTitle.caption = this.title;
+    this.lblTitle.font = { size: '0.75rem', color: this.isChanged ? Theme.colors.success.main : Theme.text.primary };
     this.gridSelector.templateColumns = this.direction === 'horizontal' ? ['70px', 'auto'] : ['auto'];
     this.pnlList.clearInnerHTML();
     const length = this.items.length;
@@ -167,7 +182,8 @@ export default class DesignerSelector extends Module {
     const items = this.getAttribute('items', true, []);
     const title = this.getAttribute('title', true, '');
     const direction = this.getAttribute('direction', true, 'horizontal');
-    this.setData({ items, title, direction });
+    const isChanged = this.getAttribute('isChanged', true, false);
+    this.setData({ items, title, direction, isChanged });
   }
 
   render(): void {

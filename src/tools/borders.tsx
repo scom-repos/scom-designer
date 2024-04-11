@@ -9,15 +9,16 @@ import {
   IBorder,
   Input,
   ColorPicker,
-  Label,
+  Label
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback, onUpdateCallback } from '../interface';
-import { backgroundOptions, borderStyles, parseNumberValue } from '../helpers/utils';
+import { backgroundOptions, borderStyles, isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
+import { getBreakpointInfo } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolBordersElement extends ControlElement {
@@ -28,8 +29,10 @@ interface DesignerToolBordersElement extends ControlElement {
 interface IDesignerBorder {
   border?: IBorder;
   mediaQueries?: any[];
+  default?: {[name: string]: any};
 }
-const DESIGNER_PROPS = ['border'];
+
+export const DESIGNER_BORDER_PROPS = ['border'];
 
 declare global {
   namespace JSX {
@@ -50,6 +53,8 @@ export default class DesignerToolBorders extends Module {
   private bgColor: ColorPicker;
   private designerHeader: DesignerToolHeader;
   private spacingBtn: Button|undefined = undefined;
+  private lblWidth: Label;
+  private lblRadius: Label;
 
   private _data: IDesignerBorder = {};
   private radiusObj = {
@@ -72,6 +77,15 @@ export default class DesignerToolBorders extends Module {
     return this.designerHeader.checked;
   }
 
+  private get currentData() {
+    let data = this._data;
+    if (this.isChecked) {
+      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      data = {...data, ...breakpointProps};
+    }
+    return data;
+  }
+
   private hasMediaQuery() {
     const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
     return Object.hasOwnProperty.call(breakpointProps, 'border');
@@ -90,11 +104,7 @@ export default class DesignerToolBorders extends Module {
   }
 
   private renderUI(needUpdate = false) {
-    let data = this._data;
-    if (this.isChecked) {
-      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
-      data = {...data, ...breakpointProps};
-    }
+    let data = this.currentData;
     const { border = {} } = data;
     const parsedRadius = border?.radius && parseNumberValue(border.radius);
     this.inputRadius.value = parsedRadius ? parsedRadius.value : '';
@@ -108,7 +118,24 @@ export default class DesignerToolBorders extends Module {
     }
     this.updateButtons(data);
     this.styleSelector.activeItem = border?.style || '';
-    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_PROPS);
+    this.updateHighlight();
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_BORDER_PROPS);
+  }
+
+  private updateHighlight() {
+    let wResult = false;
+    let rResult = false;
+    const wValue = this.inputWidth.value;
+    const rValue = this.inputRadius.value;
+    if (this.isChecked) {
+      wResult = isSameValue(this._data.border.width, wValue ? `${wValue}px` : '');
+      rResult = isSameValue(this._data.border.radius, rValue ? `${rValue}px` : '');
+    } else {
+      wResult = isSameValue(this._data.default?.border?.width || '', wValue);
+      rResult = isSameValue(this._data.default?.border?.radius || '', rValue);
+    }
+    this.lblWidth.font = { size: '0.75rem', color: wResult ? Theme.text.primary : Theme.colors.success.main };
+    this.lblRadius.font = { size: '0.75rem', color: rResult ? Theme.text.primary : Theme.colors.success.main };
   }
 
   private updateButtons(data: IDesignerBorder) {
@@ -126,10 +153,11 @@ export default class DesignerToolBorders extends Module {
   }
 
   private onShowSpacingModal(target: Button, type: string, position: string) {
+    let data = this.currentData;
     this.spacingBtn = target;
     let value = '';
     if (type === 'width') {
-      value = this._data.border?.[position]?.width ?? '';
+      value = data.border?.[position]?.width ?? '';
     } else {
       value = this.radiusObj[position];
     }
@@ -138,10 +166,11 @@ export default class DesignerToolBorders extends Module {
       type,
       position
     }
+    const breakpoint = getBreakpointInfo(getBreakpoint())
     const config = {
       title: `Border ${position} ${type}`,
-      icon: 'mobile-alt',
-      breakpointText: 'Configure a value for Mobile screen sizes or larger'
+      iconName: breakpoint?.icon,
+      breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
     }
     this.mdSpacing.onShowModal(target, spacing, config);
   }
@@ -165,9 +194,6 @@ export default class DesignerToolBorders extends Module {
     const isNotNumber = Number.isNaN(Number(value)) || value === '';
     const newVal = isNotNumber ? value : `${value}px`;
     this.handleValueChanged(prop, newVal);
-    const label = target.parentElement?.previousSibling as Label;
-    if (label) label.font = { size: '0.75rem', color: value ? Theme.colors.success.main : Theme.text.primary };
-    this.updateButtons(this._data);
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {
@@ -186,8 +212,7 @@ export default class DesignerToolBorders extends Module {
   }
 
   private handleValueChanged(type: string, value: any, position?: string) {
-    const inQuery = this.designerHeader.checked;
-    if (inQuery) {
+    if (this.isChecked) {
       this.handleMediaQuery(type, value, position);
     } else {
       if (position) {
@@ -246,7 +271,7 @@ export default class DesignerToolBorders extends Module {
             <i-label caption="OVERALL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-hstack gap={16} verticalAlignment="center">
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Width" font={{ size: '0.75rem' }} />
+                <i-label id="lblWidth" caption="Width" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="inputWidth"
@@ -265,7 +290,7 @@ export default class DesignerToolBorders extends Module {
                 </i-hstack>
               </i-grid-layout>
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Radius" font={{ size: '0.75rem' }} />
+                <i-label id="lblRadius" caption="Radius" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="inputRadius"

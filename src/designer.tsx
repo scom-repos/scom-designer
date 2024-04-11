@@ -675,10 +675,10 @@ export class ScomDesignerForm extends Module {
     if (minWidth !== undefined) {
       this.pnlFormDesigner.width = minWidth;
     }
-    if (value >= 2) {
-      this.pnlScreens.width = 0
-      this.pnlProperties.width = 0
-    }
+    // if (value >= 2) {
+    //   this.pnlScreens.width = 0
+    //   this.pnlProperties.width = 0
+    // }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.updateDesignProps(this._rootComponent);
     this.onUpdateDesigner();

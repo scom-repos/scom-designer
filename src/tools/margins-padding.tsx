@@ -12,12 +12,16 @@ import {
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
-import { onChangedCallback } from '../interface';
-import { parseNumberValue } from '../helpers/utils';
+import { onChangedCallback, onUpdateCallback } from '../interface';
+import { isSameValue, parseNumberValue } from '../helpers/utils';
+import DesignerToolHeader from './header';
+import { getBreakpoint } from '../helpers/store';
+import { getBreakpointInfo } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {
   onChanged?: onChangedCallback;
+  onUpdate?: onUpdateCallback;
 }
 
 interface IDesignerSpacing {
@@ -33,7 +37,11 @@ interface IDesignerSpacing {
     bottom?: string|number;
     left?: string|number;
   };
+  mediaQueries?: any;
+  default?: {[name: string]: any};
 }
+
+export const DESIGNER_SPACING_PROPS = ['margin', 'padding'];
 
 declare global {
   namespace JSX {
@@ -52,33 +60,78 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private marginInput: Input;
   private paddingInput: Input;
   private vStackIndividual: VStack;
+  private designerHeader: DesignerToolHeader;
+  private lblPadding: Label;
+  private lblMargin: Label;
 
   private _data: IDesignerSpacing = {};
   private currentProp: string = '';
 
   onChanged: onChangedCallback;
+  onUpdate: onUpdateCallback;
 
   constructor(parent?: Container, options?: DesignerToolMarginsAndPaddingElement) {
     super(parent, options);
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
+    this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+  }
+
+  private get isChecked() {
+    return this.designerHeader.checked;
+  }
+
+  private get currentData() {
+    let data = this._data;
+    if (this.isChecked) {
+      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      data = {...data, ...breakpointProps};
+    }
+    return data;
+  }
+
+  private hasMediaQuery() {
+    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    return Object.keys(breakpointProps).some(prop => DESIGNER_SPACING_PROPS.includes(prop));
   }
 
   setData(data: IDesignerSpacing) {
     this._data = data;
-    this.renderUI();
+    const olChecked = this.designerHeader.checked;
+    this.designerHeader.checked = !!this.hasMediaQuery();
+    this.marginInput.value = '';
+    this.paddingInput.value = '';
+    this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
   private onCollapse(isShown: boolean) {
     this.vStackContent.visible = isShown;
   }
 
-  private renderUI() {
-    this.marginInput.value = '';
-    this.paddingInput.value = '';
-    this.updateButtons();
+  private renderUI(needUpdate = false) {
+    let data = this.currentData;
+    this.updateButtons(data);
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SPACING_PROPS);
+    this.updateHighlight(data);
   }
 
-  private updateButtons() {
+  private updateHighlight(data: IDesignerSpacing) {
+    const isSameMargin = this.checkValues('margin', data.margin) || this.marginInput.value === '';
+    const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
+    this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
+    this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
+  }
+
+  private checkValues(prop: string, newVal: any) {
+    let result = false;
+    if (this.isChecked) {
+      result = isSameValue(this._data[prop] || '', newVal);
+    } else {
+      result = isSameValue(this._data.default?.[prop] || '', newVal);
+    }
+    return result;
+  }
+
+  private updateButtons(data: IDesignerSpacing) {
     const buttons = this.vStackIndividual.querySelectorAll('i-button');
     for (let i = 0; i < buttons.length; i++) {
       const button = buttons[i] as Button;
@@ -86,7 +139,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
       const match = /^(margin|padding)(.*)/.exec(id);
       if (match?.length) {
         const position = (match[2] || '').toLowerCase();
-        const parseData = parseNumberValue(this._data[match[1]]?.[position]);
+        const parseData = parseNumberValue(data[match[1]]?.[position]);
         button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
       }
     }
@@ -95,15 +148,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private onOverallChanged(target: Input, prop: 'padding' | 'margin') {
     const nextLabel = target.nextSibling as Label;
     const unit = nextLabel?.caption || 'px';
-    const value = target.value !== '' ? `${target.value}${unit}` : 'auto';
-    this._data[prop] = {
-      top: value,
-      right: value,
-      bottom: value,
-      left: value
-    }
-    this.updateButtons();
-    if (this.onChanged) this.onChanged(prop, this._data[prop]);
+    const value = target.value !== '' ? `${target.value}${unit}` : '';
+    this.handleValueChanged(prop, { top: value, right: value, bottom: value, left: value});
   }
 
   private onShowUnitsModal(target: Label, prop: string) {
@@ -134,11 +180,9 @@ export default class DesignerToolMarginsAndPadding extends Module {
       if (valueObj) {
         for (let prop in valueObj) {
           const numValue = parseNumberValue(valueObj[prop])?.value;
-          const valueStr = numValue !== '' ? `${numValue}${value}` : 'auto';
-          this._data[this.currentProp][prop] = valueStr
+          const valueStr = numValue !== '' ? `${numValue}${value}` : '';
+          this.handleValueChanged(this.currentProp, valueStr, prop);
         }
-        this.updateButtons()
-        if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
       }
       this.mdUnits.visible = false;
     }
@@ -150,24 +194,55 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private onShowSpacingModal(target: Button, type: 'margin'|'padding', position: 'left' | 'right' | 'top' | 'bottom') {
+    const data = this.currentData;
     const spacing = {
       type,
       position,
-      value: this._data[type]?.[position] || ''
+      value: data[type]?.[position] || ''
     }
+    const breakpoint = getBreakpointInfo(getBreakpoint())
     const config = {
       title: `${type} ${position}`,
-      icon: 'mobile-alt',
-      breakpointText: 'Configure a value for Mobile screen sizes or larger'
+      iconName: breakpoint?.icon,
+      breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
     }
     this.mdSpacing.onShowModal(target, spacing, config);
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {
-    if (!this._data[type]) this._data[type] = {};
-    this._data[type][position] = value;
-    this.updateButtons();
-    if (this.onChanged) this.onChanged(type, this._data[type]);
+    // TODO: check
+    this.handleValueChanged(type, value, position);
+  }
+
+  private handleValueChanged(type: string, value: any, position?: string) {
+    if (this.isChecked) {
+      this.handleMediaQuery(type, value, position);
+    } else {
+      if (position) {
+        if (!this._data[type]) this._data[type] = {}
+        this._data[type][position] = value;
+      } else {
+        this._data[type] = value;
+      }
+      if (this.onChanged) this.onChanged(type, this._data[type]);
+    }
+    this.renderUI();
+  }
+
+  private handleMediaQuery(prop: string, value: any, position?: string) {
+    if (position) {
+      let propObj = this._data.mediaQueries[getBreakpoint()]['properties'][prop];
+      if (!propObj) propObj = JSON.parse(JSON.stringify(this._data[prop] || {}));
+      propObj[position] = value;
+      this._data.mediaQueries[getBreakpoint()]['properties'][prop] = propObj;
+    } else {
+      this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
+    }
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+  }
+
+  private onToggleMediaQuery(value: boolean) {
+    this.renderUI(true);
   }
 
   init() {
@@ -184,13 +259,20 @@ export default class DesignerToolMarginsAndPadding extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Margins And Padding" tooltipText="Margins create extra space around an element, while padding creates extra space within an element." onCollapse={this.onCollapse} />
+        <designer-tool-header
+          id="designerHeader"
+          name="Margins And Padding"
+          hasMediaQuery={true}
+          tooltipText="Margins create extra space around an element, while padding creates extra space within an element."
+          onCollapse={this.onCollapse}
+          onToggleMediaQuery={this.onToggleMediaQuery}
+        />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
             <i-label caption="OVERALL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-hstack gap={16} verticalAlignment="center">
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Margin" font={{ size: '0.75rem' }} />
+                <i-label id="lblMargin" caption="Margin" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="marginInput"
@@ -227,7 +309,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                 </i-hstack>
               </i-grid-layout>
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label caption="Padding" font={{ size: '0.75rem' }} />
+                <i-label id="lblPadding" caption="Padding" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="paddingInput"

@@ -22,7 +22,12 @@ import {
   DesignerToolGroup,
   DesignerSelector,
   textInputRight,
-  bgInputTransparent
+  bgInputTransparent,
+  DESIGNER_BACKGROUND_PROPS,
+  DESIGNER_POSITION_PROPS,
+  DESIGNER_BORDER_PROPS,
+  DESIGNER_SIZE_PROPS,
+  DESIGNER_SPACING_PROPS
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
@@ -165,16 +170,16 @@ export default class DesignerProperties extends Module {
     }: any = this.designerProps;
     const breakpoint = getBreakpoint();
     if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
-    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries });
+    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQueries, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
   }
 
   private updateProps() {
     const control = this.component?.control;
     let {
       id,
-      margin,
-      padding,
+      margin = {top: '', right: '', bottom: '', left: ''},
+      padding = {top: '', right: '', bottom: '', left: ''},
       border = {},
       top,
       right,
@@ -204,12 +209,12 @@ export default class DesignerProperties extends Module {
     if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
     this.inputId.value = id || controlId || '';
 
-    this.designerBackground.setData({ background, mediaQueries });
-    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth });
+    this.designerBackground.setData({ background, mediaQueries, default: this.getDefaultValues(DESIGNER_BACKGROUND_PROPS) });
+    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQueries, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
     this.designerEffects.setData({ opacity: opacity || 1 });
-    this.designerSpacing.setData({ margin: margin, padding: padding });
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries });
-    this.designerBorders.setData({ border, mediaQueries });
+    this.designerSpacing.setData({ margin, padding, mediaQueries, default: this.getDefaultValues(DESIGNER_SPACING_PROPS) });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
+    this.designerBorders.setData({ border, mediaQueries, default: this.getDefaultValues(DESIGNER_BORDER_PROPS) });
     this.designerLayout.setData({
       name: this.component?.name,
       display: display || control?.style.display,
@@ -217,6 +222,18 @@ export default class DesignerProperties extends Module {
       direction: direction || undefined
     });
     this.designerContent.setData({ font });
+  }
+
+  private getDefaultValues(props: string[]) {
+    let result: any = {};
+    const customProps = this.component?.control?._getCustomProperties()?.props;
+    if (!customProps) return result;
+    for (let prop of props) {
+      if (customProps.hasOwnProperty(prop)) {
+        result[prop] = customProps[prop].default || undefined;
+      }
+    }
+    return result;
   }
 
   private onPropChanged(prop: string, value: any, mediaQueryProp?: string) {
@@ -240,7 +257,7 @@ export default class DesignerProperties extends Module {
       const hasProp = props.includes(prop);
       if (hasProp) {
         this.component.control[prop] = isChecked ? breakpointProps[prop] : (designProps[prop] ?? customProps[prop].default);
-        console.log(this.component.control[prop], breakpointProps[prop], designProps[prop], prop)
+        console.log(this.component.control[prop], breakpointProps[prop], designProps[prop]);
       }
     }
   }
@@ -376,16 +393,15 @@ export default class DesignerProperties extends Module {
                 </i-hstack>
               </i-grid-layout>
               <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
-              <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
-              <designer-tool-size id="designerSize" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-margins-padding id="designerSpacing" display="block" onChanged={this.onPropChanged} />
-              <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
-              <designer-tool-content id="designerContent" display="block" onChanged={this.onPropChanged} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
-              {/* <designer-tool-media-query id="designerMedia" display="block" onChanged={this.onPropChanged} /> */}
+              <designer-tool-layout id='designerLayout' display="block" onChanged={this.onPropChanged} />
+              <designer-tool-margins-padding id="designerSpacing" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
+              <designer-tool-position id="designerPosition" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
+              <designer-tool-size id="designerSize" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
+              <designer-tool-stylesheet id="designerStylesheet" display="block" onChanged={this.onPropChanged} />
+              <designer-tool-content id="designerContent" display="block" onChanged={this.onPropChanged} />
             </i-vstack>
           </i-tab>
           {/* <i-tab icon={{ name: 'sliders-h', width: '1.5rem', height: '1.5rem' }}>

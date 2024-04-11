@@ -11,7 +11,7 @@ import {
 } from '@ijstech/components'
 import DesignerToolHeader from './header';
 import { customColorStyled } from './index.css';
-import { backgroundOptions } from '../helpers/utils';
+import { backgroundOptions, isSameValue } from '../helpers/utils';
 import { onChangedCallback, onUpdateCallback } from '../interface';
 import { getBreakpoint } from '../helpers/store';
 const Theme = Styles.Theme.ThemeVars;
@@ -32,9 +32,10 @@ declare global {
 interface IDesignerBackground {
   background?: {color?: string; image?: string};
   mediaQueries?: any[];
+  default?: {[name: string]: any};
 }
 
-const DESIGNER_PROPS = ['background'];
+export const DESIGNER_BACKGROUND_PROPS = ['background'];
 
 @customElements('designer-tool-background')
 export default class DesignerToolBackground extends Module {
@@ -86,10 +87,21 @@ export default class DesignerToolBackground extends Module {
     }
     const { background = {} } = data;
     this.bgColor.value = background?.color || undefined;
-    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_PROPS);
+    this.updateHighlight();
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_BACKGROUND_PROPS);
 
     // const typeItem = this.type ? backgroundOptions.find(item => item.value === this.type) : null;
     // this.bgSelect.selectedItem = typeItem || null;
+  }
+
+  private updateHighlight() {
+    let result = false;
+    if (this.isChecked) {
+      result = isSameValue(this._data.background?.color, this.bgColor.value);
+    } else {
+      result = isSameValue(this._data.default?.background?.color, this.bgColor.value);
+    }
+    this.lblColor.font = { size: '0.75rem', color: result ? Theme.text.primary : Theme.colors.success.main };
   }
 
   private onCollapse(isShown: boolean) {
@@ -105,17 +117,16 @@ export default class DesignerToolBackground extends Module {
   private onColorChanged(target: ColorPicker) {
     const value = target.value;
     this.handleValueChanged('background', { color: value });
-    this.lblColor.font = { size: '0.75rem', color: value ? Theme.colors.success.main : Theme.text.primary };
   }
 
   private handleValueChanged(type: string, value: any) {
-    const inQuery = this.designerHeader.checked;
-    if (inQuery) {
+    if (this.isChecked) {
       this.handleMediaQuery(type, value);
     } else {
       this._data[type] = value;
       if (this.onChanged) this.onChanged(type, value);
     }
+    this.updateHighlight();
   }
 
   private handleMediaQuery(prop: string, value: any) {
