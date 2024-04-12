@@ -55,6 +55,7 @@ export default class DesignerToolBackground extends Module {
     this.onTypeChanged = this.onTypeChanged.bind(this);
     this.onColorChanged = this.onColorChanged.bind(this);
     this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   static async create(options?: DesignerToolBackgroundElement, parent?: Container) {
@@ -102,6 +103,7 @@ export default class DesignerToolBackground extends Module {
       result = isSameValue(this._data.default?.background?.color, this.bgColor.value);
     }
     this.lblColor.font = { size: '0.75rem', color: result ? Theme.text.primary : Theme.colors.success.main };
+    this.designerHeader.isChanged = !result;
   }
 
   private onCollapse(isShown: boolean) {
@@ -138,6 +140,22 @@ export default class DesignerToolBackground extends Module {
     this.renderUI(true);
   }
 
+  private onResetData() {
+    if (this.isChecked) {
+      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
+      this._data.mediaQueries[getBreakpoint()].properties = (({ background, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+    } else {
+      const clonedData = JSON.parse(JSON.stringify(this._data));
+      const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+      this._data = { ...clonedData, ...cloneDefault };
+      for (let prop of DESIGNER_BACKGROUND_PROPS) {
+        if (this.onChanged) this.onChanged(prop, this._data[prop]);
+      }
+    }
+    this.renderUI(true);
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -159,6 +177,7 @@ export default class DesignerToolBackground extends Module {
           tooltipText="Set a background color or image for the element."
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
+          onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">

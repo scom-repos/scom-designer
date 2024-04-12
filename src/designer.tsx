@@ -566,15 +566,13 @@ export class ScomDesignerForm extends Module {
   renderUI(root: IComponent) {
     this.selectedControl = null;
     this._rootComponent = root;
-    if (this._rootComponent) {
-      this.designerComponents.screen = {
-        name: 'Screen',
-        id: '',
-        elements: [this._rootComponent]
-      }
-      this.onUpdateDesigner();
-      this.designerProperties.clear();
+    this.designerComponents.screen = {
+      name: 'Screen',
+      id: '',
+      elements: [this._rootComponent]
     }
+    this.onUpdateDesigner();
+    this.designerProperties.clear();
   }
 
   private onUpdateDesigner() {

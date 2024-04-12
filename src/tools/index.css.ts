@@ -106,3 +106,21 @@ export const customFormStyle = Styles.style({
     }
   }
 })
+
+export const customSwitchStyle = Styles.style({
+  $nest: {
+    '> .wrapper': {
+      width: '2.25rem',
+      height: '1.25rem',
+      $nest: {
+        '.thumb': {
+          width: '0.875rem',
+          height: '0.875rem'
+        },
+        '.switch-base.checked': {
+          transform: 'translateX(85%)'
+        }
+      }
+    }
+  }
+})

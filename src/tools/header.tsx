@@ -6,8 +6,10 @@ import {
   Label,
   Container,
   Switch,
-  Styles
+  Styles,
+  Control
 } from '@ijstech/components'
+import { customSwitchStyle } from './index.css';
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -16,6 +18,7 @@ interface DesignerToolHeaderElement extends ControlElement {
   tooltipText?: string;
   hasMediaQuery?: boolean;
   onCollapse: (isShown: boolean) => void;
+  onReset?: () => void;
   onToggleMediaQuery?: (value: boolean) => void;
 }
 
@@ -38,8 +41,10 @@ export default class DesignerToolHeader extends Module {
   private iconArrow: Icon;
   private iconTooltip: Icon;
   private querySwitch: Switch;
+  private lblSwitch: Label;
 
   onCollapse: (isShown: boolean) => void;
+  onReset: () => void;
   onToggleMediaQuery: (value: boolean) => void;
 
   constructor(parent?: Container, options?: DesignerToolHeaderElement) {
@@ -77,20 +82,36 @@ export default class DesignerToolHeader extends Module {
     this.querySwitch.checked = value ?? false;
   }
 
+  set isChanged(value: boolean) {
+    if (this.lbName) {
+      this.lbName.font = { size: '0.75rem', bold: true, color: value ? Theme.colors.success.main : Theme.text.primary };
+    }
+  }
+
+  set isQueryChanged(value: boolean) {
+    if (this.lblSwitch) {
+      this.lblSwitch.font = { size: '0.75rem', bold: true, color: value ? Theme.colors.success.main : Theme.text.primary };
+    }
+  }
+
   private renderUI() {
     this.lbName.caption = this.name;
     this.iconArrow.name = 'angle-down';
     this.iconTooltip.visible = !!this.tooltipText;
     this.iconTooltip.tooltip.content = this.tooltipText || '';
     this.querySwitch.visible = this.hasMediaQuery;
-    // this.lbName.font = { size: '0.75rem', bold: true, color: this.isShown ? Theme.colors.primary.main : Theme.text.primary };
   }
 
   private _onCollapse() {
     this.isShown = !this.isShown;
     this.iconArrow.name = this.isShown ? 'angle-down' : 'angle-right';
     this.onCollapse(this.isShown);
-    // this.lbName.font = { size: '0.75rem', bold: true, color: this.isShown ? Theme.colors.primary.main : Theme.text.primary};
+  }
+
+  private _onClear(target: Control, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.onReset) this.onReset();
   }
 
   private onQueryChanged() {
@@ -102,7 +123,9 @@ export default class DesignerToolHeader extends Module {
     this.name = this.getAttribute('name', true) || '';
     this.tooltipText = this.getAttribute('tooltipText', true);
     this.hasMediaQuery = this.getAttribute('hasMediaQuery', true, false);
-    this.onCollapse = this.getAttribute('onCollapse', true);
+    this.onCollapse = this.getAttribute('onCollapse', true) || this.onCollapse;
+    this.onToggleMediaQuery = this.getAttribute('onToggleMediaQuery', true) || this.onToggleMediaQuery;
+    this.onReset = this.getAttribute('onReset', true) || this.onReset;
     this.renderUI();
   }
 
@@ -114,13 +137,31 @@ export default class DesignerToolHeader extends Module {
         <i-icon id="iconTooltip" name="exclamation-circle" width={14} height={14} opacity={0.8} />
         <i-panel margin={{ left: 'auto' }}>
           <i-hstack
-            verticalAlignment='center' horizontalAlignment='end'
+            verticalAlignment='center'
+            horizontalAlignment='end'
+            gap="0.5rem"
           >
-            <i-switch
-              id="querySwitch"
-              tooltip={{ content: 'Media Query Toggle', placement: 'bottom' }}
-              onChanged={this.onQueryChanged.bind(this)}
-            ></i-switch>
+            <i-hstack verticalAlignment='center' horizontalAlignment='end' gap="0.5rem" stack={{shrink: '0'}}>
+              <i-label id="lblSwitch" caption='Media Query' font={{size: '0.75rem'}}></i-label>
+              <i-switch
+                id="querySwitch"
+                class={customSwitchStyle}
+                onChanged={this.onQueryChanged.bind(this)}
+              ></i-switch>
+            </i-hstack>
+            <i-panel hover={{opacity: 1}}>
+              <i-button
+                icon={{ name: 'times', width: '0.75rem', height: '0.75rem', fill: Theme.text.primary }}
+                boxShadow='none'
+                border={{radius: '50%', width: '1px', style: 'solid', color: Theme.divider}}
+                padding={{top: '0.125rem', bottom: '0.125rem', left: '0.125rem', right: '0.125rem'}}
+                background={{color: 'transparent'}}
+                cursor='pointer'
+                opacity={0.8}
+                tooltip={{ content: 'Reset values', placement: 'topRight' }}
+                onClick={this._onClear}
+              ></i-button>
+            </i-panel>
           </i-hstack>
         </i-panel>
       </i-hstack>

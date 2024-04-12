@@ -31,6 +31,7 @@ interface IDesignerGroup {
   dataSchema?: IDataSchema;
   props?: any;
   customControls?: any;
+  default?: {[name: string]: any};
 }
 
 declare global {
@@ -53,6 +54,7 @@ export default class DesignerToolGroup extends Module {
 
   constructor(parent?: Container, options?: DesignerToolGroupElement) {
     super(parent, options);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   setData(value: IDesignerGroup) {
@@ -100,6 +102,10 @@ export default class DesignerToolGroup extends Module {
     }
   }
 
+  private onResetData() {
+    this.form.setFormData({...this._data.default || {}});
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -124,6 +130,7 @@ export default class DesignerToolGroup extends Module {
           name=""
           tooltipText=""
           onCollapse={this.onCollapse}
+          onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" gap={'0.5rem'} padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }} visible={false}>
           <i-form id="form" class={customFormStyle} visible={false}></i-form>

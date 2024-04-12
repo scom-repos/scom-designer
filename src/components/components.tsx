@@ -312,6 +312,9 @@ export default class DesignerComponents extends Module {
     mdWrapper.style.left = `${left}px`;
     const firstChild = this.mdActions.item.children?.[0] as Control;
     if (firstChild) firstChild.visible = this.isContainer;
+    const lastChild = this.mdActions.item.children?.[3] as Control;
+    const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
+    if (lastChild) lastChild.visible = !isTopPanel;
     this.mdActions.visible = true;
   }
 
@@ -373,16 +376,16 @@ export default class DesignerComponents extends Module {
   private onConfirm() {
     const screen = this.screen?.elements[0]
     if (screen && this.currentComponent) {
-      if (this.onDelete) this.onDelete({...this.currentComponent});
       if (screen.path === this.currentComponent.path) {
-        screen.items = []
-        this.screen = {
-          ...this.screen,
-          elements: []
-        }
-        this.currentComponent = null;
+        // screen.items = []
+        // this.screen = {
+        //   ...this.screen,
+        //   elements: []
+        // }
+        // this.currentComponent = null;
         return
       }
+      if (this.onDelete) this.onDelete({...this.currentComponent});
       this.removeElements(screen.items);
       this.currentComponent = null;
       this.renderUI();

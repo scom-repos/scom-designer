@@ -69,6 +69,7 @@ export default class DesignerToolPosition extends Module {
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
     this.onSelectChanged = this.onSelectChanged.bind(this);
     this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   private get isChecked() {
@@ -120,6 +121,7 @@ export default class DesignerToolPosition extends Module {
     const zIndexVal = this.zIndexInput.value;
     const zChanged = !this.checkValues('zIndex', zIndexVal);
     this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
+    this.designerHeader.isChanged = zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -138,6 +140,13 @@ export default class DesignerToolPosition extends Module {
       const button = buttons[i] as Button;
       const id = button.id || '';
       const parseData = parseNumberValue(data[id]);
+      let isSame = true;
+      if (this.isChecked) {
+        isSame = isSameValue(this._data[id] || '', data[id] || '');
+      } else {
+        isSame = !data[id];
+      }
+      button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
       button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
     }
   }
@@ -195,6 +204,22 @@ export default class DesignerToolPosition extends Module {
     this.renderUI(true);
   }
 
+  private onResetData() {
+    if (this.isChecked) {
+      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
+      this._data.mediaQueries[getBreakpoint()].properties = (({ position, top, right, bottom, left, overflow, zIndex, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+    } else {
+      const clonedData = JSON.parse(JSON.stringify(this._data));
+      const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+      this._data = { ...clonedData, ...cloneDefault };
+      for (let prop of DESIGNER_POSITION_PROPS) {
+        if (this.onChanged) this.onChanged(prop, this._data[prop]);
+      }
+    }
+    this.renderUI(true);
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -217,6 +242,7 @@ export default class DesignerToolPosition extends Module {
           hasMediaQuery={true}
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
+          onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>

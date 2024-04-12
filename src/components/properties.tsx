@@ -27,7 +27,10 @@ import {
   DESIGNER_POSITION_PROPS,
   DESIGNER_BORDER_PROPS,
   DESIGNER_SIZE_PROPS,
-  DESIGNER_SPACING_PROPS
+  DESIGNER_SPACING_PROPS,
+  DESIGNER_LAYOUT_PROPS,
+  DESIGNER_CONTENT_PROPS,
+  DESIGNER_EFFECT_PROPS
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
@@ -126,13 +129,19 @@ export default class DesignerProperties extends Module {
     const designProps: any = parseProps(this.designerProps);
     const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema;
     this.customGroup.visible = !!dataSchema && Object.keys(dataSchema).length > 0;
-
+    const properties = dataSchema?.properties;
+    let defaultValue = {};
+    if (properties) {
+      const keys = Object.keys(properties);
+      defaultValue = this.getDefaultValues(keys);
+    }
     this.customGroup.setData({
       title: 'Custom Properties',
       tooltip: 'Set custom properties for component',
       uiSchema: null,
       dataSchema: dataSchema,
-      props: {...designProps}
+      props: {...designProps},
+      default: defaultValue
     })
   }
 
@@ -211,7 +220,7 @@ export default class DesignerProperties extends Module {
 
     this.designerBackground.setData({ background, mediaQueries, default: this.getDefaultValues(DESIGNER_BACKGROUND_PROPS) });
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQueries, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
-    this.designerEffects.setData({ opacity: opacity || 1 });
+    this.designerEffects.setData({ opacity: opacity || 1, default: this.getDefaultValues(DESIGNER_EFFECT_PROPS) });
     this.designerSpacing.setData({ margin, padding, mediaQueries, default: this.getDefaultValues(DESIGNER_SPACING_PROPS) });
     this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
     this.designerBorders.setData({ border, mediaQueries, default: this.getDefaultValues(DESIGNER_BORDER_PROPS) });
@@ -219,9 +228,11 @@ export default class DesignerProperties extends Module {
       name: this.component?.name,
       display: display || control?.style.display,
       stack: stack || undefined,
-      direction: direction || undefined
+      direction: direction || undefined,
+      mediaQueries,
+      default: this.getDefaultValues(DESIGNER_LAYOUT_PROPS)
     });
-    this.designerContent.setData({ font });
+    this.designerContent.setData({ font, default: this.getDefaultValues(DESIGNER_CONTENT_PROPS) });
   }
 
   private getDefaultValues(props: string[]) {
@@ -230,7 +241,7 @@ export default class DesignerProperties extends Module {
     if (!customProps) return result;
     for (let prop of props) {
       if (customProps.hasOwnProperty(prop)) {
-        result[prop] = customProps[prop].default || undefined;
+        result[prop] = customProps[prop].default ?? undefined;
       }
     }
     return result;
@@ -248,16 +259,17 @@ export default class DesignerProperties extends Module {
 
   private onUpdateUI(isChecked: boolean, props: string[]) {
     if (!this.component?.control) return;
-    const designProps = this.component?.control._getDesignProps();
+    const designerProps = this.component?.control?._getDesignProps() || {};
     const breakpoint = getBreakpoint();
-    if (!designProps?.mediaQueries?.[breakpoint]) return;
-    const breakpointProps: any = designProps?.mediaQueries?.[breakpoint]?.properties || {};
-    const customProps = this.component?.control?._getCustomProperties();
-    for (let prop in breakpointProps) {
-      const hasProp = props.includes(prop);
-      if (hasProp) {
-        this.component.control[prop] = isChecked ? breakpointProps[prop] : (designProps[prop] ?? customProps[prop].default);
-        console.log(this.component.control[prop], breakpointProps[prop], designProps[prop]);
+    if (!designerProps?.mediaQueries?.[breakpoint]) return;
+    const breakpointProps: any = designerProps?.mediaQueries?.[breakpoint]?.properties || {};
+    const customProps = this.component?.control?._getCustomProperties()?.props || {};
+    for (let prop of props) {
+      if (isChecked) {
+        this.component.control[prop] = breakpointProps?.[prop] ?? designerProps?.[prop] ?? customProps?.[prop]?.default;
+      } else {
+        this.component.control[prop] = designerProps?.[prop] ?? customProps?.[prop]?.default;
+        console.log('onUpdateUI', designerProps?.[prop], customProps?.[prop]?.default)
       }
     }
   }

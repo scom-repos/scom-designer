@@ -14,7 +14,7 @@ import {
 import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { onChangedCallback, onUpdateCallback } from '../interface';
-import { backgroundOptions, borderStyles, isSameValue, parseNumberValue } from '../helpers/utils';
+import { backgroundOptions, borderStyles, isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
@@ -51,6 +51,7 @@ export default class DesignerToolBorders extends Module {
   private pnlIndividual: VStack;
   private styleSelector: DesignerSelector;
   private bgColor: ColorPicker;
+  private lblColor: Label;
   private designerHeader: DesignerToolHeader;
   private spacingBtn: Button|undefined = undefined;
   private lblWidth: Label;
@@ -63,6 +64,12 @@ export default class DesignerToolBorders extends Module {
     bottomLeft: '',
     bottomRight: ''
   }
+  private _overallData = {
+    width: '',
+    radius: '',
+    radiusMedia: '',
+    widthMedia: '',
+  }
 
   onChanged: onChangedCallback;
   onUpdate: onUpdateCallback;
@@ -71,6 +78,7 @@ export default class DesignerToolBorders extends Module {
     super(parent, options);
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
     this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   private get isChecked() {
@@ -78,10 +86,12 @@ export default class DesignerToolBorders extends Module {
   }
 
   private get currentData() {
-    let data = this._data;
+    let data = JSON.parse(JSON.stringify(this._data));
     if (this.isChecked) {
-      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
-      data = {...data, ...breakpointProps};
+      const border = this._data.mediaQueries?.[getBreakpoint()]?.properties?.border;
+      if (border) {
+        data.border = border;
+      }
     }
     return data;
   }
@@ -106,40 +116,54 @@ export default class DesignerToolBorders extends Module {
   private renderUI(needUpdate = false) {
     let data = this.currentData;
     const { border = {} } = data;
-    const parsedRadius = border?.radius && parseNumberValue(border.radius);
-    this.inputRadius.value = parsedRadius ? parsedRadius.value : '';
-    const parsedWidth = border?.width && parseNumberValue(border.width);
-    this.inputWidth.value = parsedWidth ? parsedWidth.value : '';
-    this.bgColor.value = border?.color ?? '';
     const radius = data?.border?.radius;
-    if (radius !== undefined) {
-      const radiusStr = typeof radius === 'number' ? `${radius}px` : radius;
-      this.setRadiusByPosition(radiusStr);
+    const radiusStr = isNumber(radius) ? `${radius}px` : radius;
+    this.radiusObj = this.radiusByPosition(radiusStr as string);
+    const values = Object.values(this.radiusObj);
+    const sameValue = values.every(v => v === values[0]);
+    if (sameValue) {
+      const parsedRadius = parseNumberValue(values[0])?.value;
+      this.isChecked ? this._overallData.radiusMedia = parsedRadius : this._overallData.radius = parsedRadius;
     }
-    this.updateButtons(data);
+    this.inputRadius.value = this.isChecked ? this._overallData.radiusMedia : this._overallData.radius;
+    this.inputWidth.value = this.isChecked ? this._overallData.widthMedia : this._overallData.width;
     this.styleSelector.activeItem = border?.style || '';
+    this.bgColor.value = border?.color ?? '';
+
+    this.updateButtons(data);
     this.updateHighlight();
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_BORDER_PROPS);
   }
 
   private updateHighlight() {
-    let wResult = false;
-    let rResult = false;
     const wValue = this.inputWidth.value;
     const rValue = this.inputRadius.value;
-    if (this.isChecked) {
-      wResult = isSameValue(this._data.border.width, wValue ? `${wValue}px` : '');
-      rResult = isSameValue(this._data.border.radius, rValue ? `${rValue}px` : '');
-    } else {
-      wResult = isSameValue(this._data.default?.border?.width || '', wValue);
-      rResult = isSameValue(this._data.default?.border?.radius || '', rValue);
-    }
+    let wResult = this.checkValues('width', wValue ? `${wValue}px` : '');
+    let rResult = this.checkValues('radius', rValue ? `${rValue}px` : '');
     this.lblWidth.font = { size: '0.75rem', color: wResult ? Theme.text.primary : Theme.colors.success.main };
     this.lblRadius.font = { size: '0.75rem', color: rResult ? Theme.text.primary : Theme.colors.success.main };
+    const styleValue = this.styleSelector.activeItem;
+    this.styleSelector.isChanged = !this.checkValues('style', styleValue);
+    const cResult = this.checkValues('color', this.bgColor.value);
+    this.lblColor.font = { size: '0.75rem', color: cResult ? Theme.text.primary : Theme.colors.success.main };
+    this.designerHeader.isChanged = !wResult || !rResult || !cResult || this.styleSelector.isChanged;
+  }
+
+  private checkValues(prop: string, newVal: any) {
+    let result = false;
+    if (this.isChecked) {
+      result = isSameValue(this._data.border?.[prop] || '', newVal);
+    } else {
+      result = isSameValue(this._data.default.border?.[prop] || '', newVal);
+    }
+    return result;
   }
 
   private updateButtons(data: IDesignerBorder) {
     const buttons = this.pnlIndividual.querySelectorAll('i-button');
+    const oldRadiusVal = this._data.border?.radius;
+    const radiusStr = isNumber(oldRadiusVal) ? `${oldRadiusVal}px` : oldRadiusVal;
+    const oldRadius = this.radiusByPosition(radiusStr as string);
     for (let i = 0; i < buttons.length; i++) {
       const button = buttons[i] as Button;
       const id = button.id || '';
@@ -148,7 +172,15 @@ export default class DesignerToolBorders extends Module {
       const type = result[2];
       const position = result[1];
       const value = type === 'width' ? data.border?.[position]?.[type] : this.radiusObj[position];
+      const oldVal = type === 'width' ? this._data.border?.[position]?.[type] : oldRadius[position];
+      let isSame = true;
+      if (this.isChecked) {
+        isSame = isSameValue(value || '', oldVal || '');
+      } else {
+        isSame = !value;
+      }
       button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
+      button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
     }
   }
 
@@ -175,24 +207,28 @@ export default class DesignerToolBorders extends Module {
     this.mdSpacing.onShowModal(target, spacing, config);
   }
 
-  private setRadiusByPosition(radius: string) {
+  private radiusByPosition(radius: string) {
+    if (!radius) return {topLeft: '', topRight: '', bottomRight: '', bottomLeft: ''};
     const arr = radius.split(' ');
     if (arr?.length) {
       let [topLeft, topRight, bottomRight, bottomLeft] = arr;
       if (topRight === undefined) topRight = topLeft;
       if (bottomLeft === undefined) bottomLeft = topRight;
       if (bottomRight === undefined) bottomRight = bottomLeft;
-      this.radiusObj.topLeft = topLeft;
-      this.radiusObj.topRight = topRight;
-      this.radiusObj.bottomRight = bottomRight;
-      this.radiusObj.bottomLeft = bottomLeft;
+      return {topLeft, topRight, bottomRight, bottomLeft};
     }
+    return {topLeft: '', topRight: '', bottomRight: '', bottomLeft: ''};
   }
 
   private onPropChanged(target: Input, prop: string) {
     const value = target.value;
-    const isNotNumber = Number.isNaN(Number(value)) || value === '';
-    const newVal = isNotNumber ? value : `${value}px`;
+    if (this.isChecked) {
+      this._overallData[`${prop}Media`] = value;
+    } else {
+      this._overallData[prop] = value;
+      if (this._overallData[`${prop}Media`] === '') this._overallData[`${prop}Media`] = value;
+    }
+    const newVal = isNumber(value) ? `${value}px` : value;
     this.handleValueChanged(prop, newVal);
   }
 
@@ -243,6 +279,28 @@ export default class DesignerToolBorders extends Module {
     this.renderUI(true);
   }
 
+  private onResetData() {
+    if (this.isChecked) {
+      this._overallData.widthMedia = this._overallData.width || '';
+      this._overallData.radiusMedia = this._overallData.radius || '';
+      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
+      this._data.mediaQueries[getBreakpoint()].properties = (({ border, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+    } else {
+      const clonedData = JSON.parse(JSON.stringify(this._data));
+      const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+      this._data = { ...clonedData, ...cloneDefault };
+      for (let prop of DESIGNER_BORDER_PROPS) {
+        if (this.onChanged) this.onChanged(prop, this._data[prop]);
+      }
+      if (this._overallData.widthMedia === this._overallData.width) this._overallData.widthMedia = '';
+      if (this._overallData.radiusMedia === this._overallData.radius) this._overallData.radiusMedia = '';
+      this._overallData.width = '';
+      this._overallData.radius = '';
+    }
+    this.renderUI(true);
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -265,6 +323,7 @@ export default class DesignerToolBorders extends Module {
           tooltipText="Define the border size and styles."
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
+          onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
@@ -340,7 +399,7 @@ export default class DesignerToolBorders extends Module {
           <i-vstack gap={8}>
             <i-label caption="DECORATION" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label caption="Color" font={{ size: '0.75rem' }} />
+              <i-label id="lblColor" caption="Color" font={{ size: '0.75rem' }} />
               <i-hstack gap={4} width="100%" verticalAlignment="center">
                 <i-color
                   id="bgColor"

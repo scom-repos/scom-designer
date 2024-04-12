@@ -215,6 +215,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private updateRoot(root: Parser.IComponent) {
+    if (!root) {
+      root = {
+        name: 'i-panel',
+        props: {},
+        items: []
+      }
+    }
     if (root?.items?.length) {
       root.items = this.updatePath(root.items);
     }

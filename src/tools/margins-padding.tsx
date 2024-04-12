@@ -16,7 +16,7 @@ import { onChangedCallback, onUpdateCallback } from '../interface';
 import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
-import { getBreakpointInfo } from '../helpers/config';
+import { getBreakpointInfo, getDefaultMediaQuery } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {
@@ -65,6 +65,12 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private lblMargin: Label;
 
   private _data: IDesignerSpacing = {};
+  private _overallData = {
+    margin: '',
+    padding: '',
+    paddingMedia: '',
+    marginMedia: '',
+  }
   private currentProp: string = '';
 
   onChanged: onChangedCallback;
@@ -74,6 +80,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     super(parent, options);
     this.onSpacingChanged = this.onSpacingChanged.bind(this);
     this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   private get isChecked() {
@@ -98,8 +105,6 @@ export default class DesignerToolMarginsAndPadding extends Module {
     this._data = data;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
-    this.marginInput.value = '';
-    this.paddingInput.value = '';
     this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
@@ -108,10 +113,29 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private renderUI(needUpdate = false) {
-    let data = this.currentData;
+    const data = this.currentData;
     this.updateButtons(data);
-    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SPACING_PROPS);
+    this.resetInputs(data);
     this.updateHighlight(data);
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SPACING_PROPS);
+  }
+
+  private resetInputs(data: IDesignerSpacing) {
+    const { padding, margin } = data;
+    const paddingValues = Object.values(padding || {});
+    const marginValues = Object.values(margin || {});
+    const samePValue = paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0]);
+    const sameMValue = marginValues.length === 4 && marginValues.every(v => v === marginValues[0]);
+    if (samePValue) {
+      const pProp = this.isChecked ? 'paddingMedia' : 'padding';
+      this._overallData[pProp] = `${parseNumberValue(paddingValues[0])?.value || ''}`;
+    }
+    if (sameMValue) {
+      const mProp = this.isChecked ? 'marginMedia' : 'margin';
+      this._overallData[mProp] = `${parseNumberValue(marginValues[0])?.value || ''}`;
+    }
+    this.marginInput.value = this.isChecked ? this._overallData.marginMedia : this._overallData.margin;
+    this.paddingInput.value = this.isChecked ? this._overallData.paddingMedia : this._overallData.padding;
   }
 
   private updateHighlight(data: IDesignerSpacing) {
@@ -119,6 +143,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
     this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
     this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
+    this.designerHeader.isChanged = !isSameMargin || !isSamePadding;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -139,7 +164,15 @@ export default class DesignerToolMarginsAndPadding extends Module {
       const match = /^(margin|padding)(.*)/.exec(id);
       if (match?.length) {
         const position = (match[2] || '').toLowerCase();
-        const parseData = parseNumberValue(data[match[1]]?.[position]);
+        const valueStr = data[match[1]]?.[position];
+        const parseData = parseNumberValue(valueStr);
+        let isSame = true;
+        if (this.isChecked) {
+          isSame = isSameValue(this._data[match[1]]?.[position] || '', valueStr || '');
+        } else {
+          isSame = !valueStr;
+        }
+        button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
         button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
       }
     }
@@ -147,8 +180,15 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private onOverallChanged(target: Input, prop: 'padding' | 'margin') {
     const nextLabel = target.nextSibling as Label;
+    const targetVal = target.value;
     const unit = nextLabel?.caption || 'px';
-    const value = target.value !== '' ? `${target.value}${unit}` : '';
+    const value = targetVal !== '' ? `${targetVal}${unit}` : '';
+    if (this.isChecked) {
+      this._overallData[`${prop}Media`] = targetVal;
+    } else {
+      this._overallData[prop] = targetVal;
+      if (this._overallData[`${prop}Media`] === '') this._overallData[`${prop}Media`] = targetVal;
+    }
     this.handleValueChanged(prop, { top: value, right: value, bottom: value, left: value});
   }
 
@@ -210,7 +250,6 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {
-    // TODO: check
     this.handleValueChanged(type, value, position);
   }
 
@@ -245,6 +284,28 @@ export default class DesignerToolMarginsAndPadding extends Module {
     this.renderUI(true);
   }
 
+  private onResetData() {
+    if (this.isChecked) {
+      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
+      this._data.mediaQueries[getBreakpoint()].properties = (({ margin, padding, ...o }) => o)(breakpoint);
+      this._overallData.marginMedia = this._overallData.margin || '';
+      this._overallData.paddingMedia = this._overallData.padding || '';
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+    } else {
+      const clonedData = JSON.parse(JSON.stringify(this._data));
+      const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+      this._data = { ...clonedData, ...cloneDefault };
+      for (let prop of DESIGNER_SPACING_PROPS) {
+        if (this.onChanged) this.onChanged(prop, this._data[prop]);
+      }
+      if (this._overallData.marginMedia === this._overallData.margin) this._overallData.marginMedia = '';
+      if (this._overallData.paddingMedia === this._overallData.padding) this._overallData.paddingMedia = '';
+      this._overallData.margin = '';
+      this._overallData.padding = '';
+    }
+    this.renderUI(true);
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -266,6 +327,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
           tooltipText="Margins create extra space around an element, while padding creates extra space within an element."
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
+          onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
