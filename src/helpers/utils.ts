@@ -342,3 +342,11 @@ export const parseNumberValue = (value: string | number) => {
   }
   return result;
 };
+
+export const isSameValue = (defaultVal: any, value: any) => {
+  if (defaultVal === value) return true;
+  if (typeof defaultVal === 'object' && typeof value === 'object') {
+    return JSON.stringify(defaultVal) === JSON.stringify(value);
+  }
+  return false;
+}

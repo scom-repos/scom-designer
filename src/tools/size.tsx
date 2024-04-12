@@ -11,8 +11,10 @@ import {
   GridLayout
 } from '@ijstech/components'
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
-import { onChangedCallback } from '../interface';
-import { parseNumberValue } from '../helpers/utils';
+import { onChangedCallback, onUpdateCallback } from '../interface';
+import { isSameValue, parseNumberValue } from '../helpers/utils';
+import { getBreakpoint } from '../helpers/store';
+import DesignerToolHeader from './header';
 const Theme = Styles.Theme.ThemeVars;
 
 const sizes = [
@@ -50,6 +52,7 @@ const sizes = [
 
 interface DesignerToolSizeElement extends ControlElement {
   onChanged?: onChangedCallback;
+  onUpdate?: onUpdateCallback;
 }
 
 interface IDesignerSize {
@@ -59,7 +62,11 @@ interface IDesignerSize {
   minHeight?: number|string;
   maxWidth?: number|string;
   maxHeight?: number|string;
+  mediaQueries?: any[];
+  default?: {[name: string]: any};
 }
+
+export const DESIGNER_SIZE_PROPS = ['width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight'];
 
 declare global {
   namespace JSX {
@@ -75,33 +82,53 @@ export default class DesignerToolSize extends Module {
   private mdUnits: Modal;
   private currentLabel: Label;
   private pnlSizes: GridLayout;
+  private designerHeader: DesignerToolHeader;
 
   private _data: IDesignerSize = {};
   private currentProp: string = '';
 
   onChanged: onChangedCallback;
+  onUpdate: onUpdateCallback;
 
   constructor(parent?: Container, options?: DesignerToolSizeElement) {
     super(parent, options);
+    this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+  }
+
+  private get isChecked() {
+    return this.designerHeader.checked;
+  }
+
+  private hasMediaQuery() {
+    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    return Object.keys(breakpointProps).some(prop => DESIGNER_SIZE_PROPS.includes(prop));
   }
 
   setData(value: IDesignerSize) {
     this._data = value;
-    this.renderUI();
+    const olChecked = this.designerHeader.checked;
+    this.designerHeader.checked = !!this.hasMediaQuery();
+    this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
   private onCollapse(isShown: boolean) {
     this.vStackContent.visible = isShown;
   }
 
-  private renderUI() {
+  private renderUI(needUpdate = false) {
+    let data = this._data;
+    if (this.isChecked) {
+      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      data = {...data, ...breakpointProps};
+    }
     this.pnlSizes.clearInnerHTML()
     for (let size of sizes) {
-      const parsedValue = parseNumberValue(this._data[size.prop]);
+      const parsedValue = parseNumberValue(data[size.prop]);
+      const isSame = this.checkValues(size.prop, data[size.prop] ?? '');
       const elm = (
         <i-hstack verticalAlignment="center">
           <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-            <i-label caption={size.caption} font={{ size: '0.75rem' }} />
+            <i-label caption={size.caption} font={{ size: '0.75rem', color: isSame ? Theme.text.primary : Theme.colors.success.main }} />
             <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
               <i-input
                 inputType="number"
@@ -141,15 +168,44 @@ export default class DesignerToolSize extends Module {
       )
       this.pnlSizes.append(elm)
     }
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SIZE_PROPS);
+  }
+
+  private checkValues(prop: string, newVal: any) {
+    let result = false;
+    if (this.isChecked) {
+      result = isSameValue(this._data[prop] || '', newVal);
+    } else {
+      result = isSameValue(this._data.default?.[prop] || '', newVal);
+    }
+    return result;
   }
 
   private onValueChanged(target: Input, prop: string) {
     const nextLabel = target.nextSibling as Label;
     const unit = nextLabel?.caption || 'px';
     const newValue = target.value;
-    const valueStr = newValue !== '' ? `${newValue}${unit}` : 'auto';
-    this._data[prop] = valueStr;
-    if (this.onChanged) this.onChanged(prop, this._data[prop]);
+    const valueStr = newValue !== '' ? `${newValue}${unit}` : '';
+    this.handleValueChanged(prop, valueStr);
+  }
+
+  private handleValueChanged(type: string, value: any) {
+    if (this.isChecked) {
+      this.handleMediaQuery(type, value);
+    } else {
+      this._data[type] = value;
+      if (this.onChanged) this.onChanged(type, value);
+    }
+    this.renderUI();
+  }
+
+  private handleMediaQuery(prop: string, value: any) {
+    this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+  }
+
+  private onToggleMediaQuery(value: boolean) {
+    this.renderUI(true);
   }
 
   private onShowUnits(target: Label, event: MouseEvent, prop: string) {
@@ -177,7 +233,7 @@ export default class DesignerToolSize extends Module {
     const onUnitChanged = (value: 'px' | '%') => {
       const input = this.currentLabel.previousSibling as Input;
       const num = input?.value ?? parseNumberValue(this._data[this.currentProp])?.value;
-      const valueStr = num !== '' ? `${num}${value}` : 'auto';
+      const valueStr = num !== '' ? `${num}${value}` : '';
       this._data[this.currentProp] = valueStr;
       if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
       this.currentLabel.caption = value;
@@ -204,7 +260,14 @@ export default class DesignerToolSize extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Size" tooltipText="Specify minimum, maximum, or specifically set heights and widths for the element." onCollapse={this.onCollapse} />
+        <designer-tool-header
+          id="designerHeader"
+          name="Size"
+          tooltipText="Specify minimum, maximum, or specifically set heights and widths for the element."
+          hasMediaQuery={true}
+          onCollapse={this.onCollapse}
+          onToggleMediaQuery={this.onToggleMediaQuery}
+        />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout id="pnlSizes" gap={{column: '1rem', row: '0.5rem'}} columnsPerRow={2}></i-grid-layout>
         </i-vstack>

@@ -118,6 +118,7 @@ export default class DesignerToolHeader extends Module {
           >
             <i-switch
               id="querySwitch"
+              tooltip={{ content: 'Media Query Toggle', placement: 'bottom' }}
               onChanged={this.onQueryChanged.bind(this)}
             ></i-switch>
           </i-hstack>

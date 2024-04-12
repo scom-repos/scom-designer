@@ -1,3 +1,4 @@
+import { IconName } from "@ijstech/components";
 import assets from "../assets";
 
 const enum BREAKPOINTS {
@@ -8,7 +9,7 @@ const enum BREAKPOINTS {
   BIG_SCREEN
 }
 const iconProps = {width: '1.5rem', height: '1.5rem', padding: {top: 6, left: 6, right: 6, bottom: 6}}
-const breakpoints= [
+const breakpoints = [
   {
     tooltip: 'Mobile',
     type: 'breakpoint',
@@ -40,6 +41,15 @@ const breakpoints= [
     value: BREAKPOINTS.BIG_SCREEN
   }
 ]
+
+const getBreakpointInfo = (index: number) => {
+  const breakpoint = breakpoints[index];
+  if (!breakpoint) return {};
+  return {
+    icon: breakpoint.icon.name as IconName,
+    name: breakpoint.tooltip,
+  }
+}
 
 const breakpointsMap = {
   [BREAKPOINTS.MOBILE]: {
@@ -143,5 +153,6 @@ export {
   breakpointsMap,
   getMediaQueries,
   getDefaultMediaQuery,
-  GroupMetadata
+  GroupMetadata,
+  getBreakpointInfo
 }
