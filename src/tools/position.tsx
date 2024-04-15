@@ -104,6 +104,7 @@ export default class DesignerToolPosition extends Module {
 
   private renderUI(needUpdate = false) {
     let data = this.currentData;
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     const { zIndex, position, overflow } = data;
     this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
     this.posSelector.activeItem = position || '';
@@ -121,7 +122,7 @@ export default class DesignerToolPosition extends Module {
     const zIndexVal = this.zIndexInput.value;
     const zChanged = !this.checkValues('zIndex', zIndexVal);
     this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
-    this.designerHeader.isChanged = zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged;
+    this.designerHeader.isChanged = !this.isChecked && (zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
   }
 
   private checkValues(prop: string, newVal: any) {

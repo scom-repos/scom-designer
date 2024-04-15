@@ -105,6 +105,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
     this._data = data;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
+    this._overallData.margin = this._overallData.marginMedia = '';
+    this._overallData.padding = this._overallData.paddingMedia = '';
     this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
@@ -114,6 +116,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private renderUI(needUpdate = false) {
     const data = this.currentData;
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     this.updateButtons(data);
     this.resetInputs(data);
     this.updateHighlight(data);
@@ -143,7 +146,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
     this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
     this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !isSameMargin || !isSamePadding;
+    this.designerHeader.isChanged = !this.isChecked && (!isSameMargin || !isSamePadding);
   }
 
   private checkValues(prop: string, newVal: any) {

@@ -122,6 +122,7 @@ export default class DesignerToolSize extends Module {
       const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
       data = {...data, ...breakpointProps};
     }
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     this.pnlSizes.clearInnerHTML();
     let hasChanged = false;
     for (let size of sizes) {
@@ -171,7 +172,7 @@ export default class DesignerToolSize extends Module {
       )
       this.pnlSizes.append(elm)
     }
-    this.designerHeader.isChanged = hasChanged;
+    this.designerHeader.isChanged = !this.isChecked && hasChanged;
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SIZE_PROPS);
   }
 
@@ -189,7 +190,7 @@ export default class DesignerToolSize extends Module {
     const nextLabel = target.nextSibling as Label;
     const unit = nextLabel?.caption || 'px';
     const newValue = target.value;
-    const valueStr = newValue !== '' ? `${newValue}${unit}` : '';
+    const valueStr = newValue !== '' ? `${newValue}${unit}` : 'auto';
     this.handleValueChanged(prop, valueStr);
   }
 
@@ -253,7 +254,7 @@ export default class DesignerToolSize extends Module {
     const onUnitChanged = (value: 'px' | '%') => {
       const input = this.currentLabel.previousSibling as Input;
       const num = input?.value ?? parseNumberValue(this._data[this.currentProp])?.value;
-      const valueStr = num !== '' ? `${num}${value}` : '';
+      const valueStr = num !== '' ? `${num}${value}` : 'auto';
       this._data[this.currentProp] = valueStr;
       if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
       this.currentLabel.caption = value;

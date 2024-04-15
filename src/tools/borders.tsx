@@ -106,6 +106,8 @@ export default class DesignerToolBorders extends Module {
     this._data = value;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
+    this._overallData.widthMedia = this._overallData.width = '';
+    this._overallData.radiusMedia = this._overallData.radius = '';
     this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
@@ -115,6 +117,7 @@ export default class DesignerToolBorders extends Module {
 
   private renderUI(needUpdate = false) {
     let data = this.currentData;
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     const { border = {} } = data;
     const radius = data?.border?.radius;
     const radiusStr = isNumber(radius) ? `${radius}px` : radius;
@@ -146,7 +149,7 @@ export default class DesignerToolBorders extends Module {
     this.styleSelector.isChanged = !this.checkValues('style', styleValue);
     const cResult = this.checkValues('color', this.bgColor.value);
     this.lblColor.font = { size: '0.75rem', color: cResult ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !wResult || !rResult || !cResult || this.styleSelector.isChanged;
+    this.designerHeader.isChanged = !this.isChecked && (!wResult || !rResult || !cResult || this.styleSelector.isChanged);
   }
 
   private checkValues(prop: string, newVal: any) {

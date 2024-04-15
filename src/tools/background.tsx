@@ -82,10 +82,10 @@ export default class DesignerToolBackground extends Module {
 
   private renderUI(needUpdate?: boolean) {
     let data = JSON.parse(JSON.stringify(this._data));
-    if (this.isChecked) {
-      const mediaBg = this._data.mediaQueries?.[getBreakpoint()]?.properties?.background;
-      if (mediaBg) data.background = mediaBg;
-    }
+    const mediaBg = this._data.mediaQueries?.[getBreakpoint()]?.properties?.background;
+    if (this.isChecked && mediaBg) data.background = mediaBg;
+    this.designerHeader.isQueryChanged = !!mediaBg?.color;
+
     const { background = {} } = data;
     this.bgColor.value = background?.color || undefined;
     this.updateHighlight();
@@ -98,12 +98,12 @@ export default class DesignerToolBackground extends Module {
   private updateHighlight() {
     let result = false;
     if (this.isChecked) {
-      result = isSameValue(this._data.background?.color, this.bgColor.value);
+      result = isSameValue(this._data.background?.color || '', this.bgColor.value);
     } else {
-      result = isSameValue(this._data.default?.background?.color, this.bgColor.value);
+      result = isSameValue(this._data.default?.background?.color || '', this.bgColor.value);
+      this.designerHeader.isChanged = !result;
     }
     this.lblColor.font = { size: '0.75rem', color: result ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !result;
   }
 
   private onCollapse(isShown: boolean) {
@@ -126,9 +126,9 @@ export default class DesignerToolBackground extends Module {
       this.handleMediaQuery(type, value);
     } else {
       this._data[type] = value;
-      if (this.onChanged) this.onChanged(type, value);
+      if (this.onChanged) this.onChanged(type, {color: value?.color || ''}, undefined);
     }
-    this.updateHighlight();
+    this.renderUI();
   }
 
   private handleMediaQuery(prop: string, value: any) {
