@@ -8,8 +8,9 @@ import {
   Input,
   Range
 } from '@ijstech/components'
-import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
+import { bgInputTransparent, textInputRight } from './index.css';
 import { onChangedCallback } from '../interface';
+import DesignerToolHeader from './header';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -19,7 +20,10 @@ interface DesignerToolEffectsElement extends ControlElement {
 
 interface IDesignerEffect {
   opacity?: number|string;
+  default?: {[name: string]: any};
 }
+
+export const DESIGNER_EFFECT_PROPS = ['opacity'];
 
 declare global {
   namespace JSX {
@@ -34,6 +38,7 @@ export default class DesignerToolEffects extends Module {
   private vStackContent: VStack;
   private inputEffect: Input;
   private rangeEffect: Range;
+  private designerHeader: DesignerToolHeader;
 
   private _data: IDesignerEffect = {};
 
@@ -41,6 +46,7 @@ export default class DesignerToolEffects extends Module {
 
   constructor(parent?: Container, options?: DesignerToolEffectsElement) {
     super(parent, options);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   setData(value: IDesignerEffect) {
@@ -55,18 +61,29 @@ export default class DesignerToolEffects extends Module {
   private renderUI() {
     const { opacity = 1 } = this._data;
     this.inputEffect.value = this.rangeEffect.value = Number(opacity) * 100;
+    this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
   }
 
   private onInputEffectChanged() {
     this.rangeEffect.value = this.inputEffect.value;
     this._data.opacity = this.rangeEffect.value / 100;
+    this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
     if (this.onChanged) this.onChanged('opacity', `${this._data.opacity}`);
   }
 
   private onRangeChanged() {
     this.inputEffect.value = this.rangeEffect.value;
     this._data.opacity = this.rangeEffect.value / 100;
+    this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
     if (this.onChanged) this.onChanged('opacity', `${this._data.opacity}`);
+  }
+
+  private onResetData() {
+    const clonedData = JSON.parse(JSON.stringify(this._data));
+    const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+    this._data = { ...clonedData, ...cloneDefault };
+    if (this.onChanged) this.onChanged('opacity', this._data['opacity']);
+    this.renderUI();
   }
 
   init() {
@@ -83,7 +100,13 @@ export default class DesignerToolEffects extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Effects" tooltipText="Set elevation and opacity for the element." onCollapse={this.onCollapse} />
+        <designer-tool-header
+          id="designerHeader"
+          name="Effects"
+          tooltipText="Set elevation and opacity for the element."
+          onCollapse={this.onCollapse}
+          onReset={this.onResetData}
+        />
         <i-vstack id="vStackContent" gap={8} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
             <i-label caption="Opacity" font={{ size: '0.75rem' }} />

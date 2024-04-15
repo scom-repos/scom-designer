@@ -11,6 +11,7 @@ import {
 } from '@ijstech/components'
 import { bgInputTransparent, customColorStyled, unitStyled } from './index.css';
 import { onChangedCallback } from '../interface';
+import DesignerToolHeader from './header';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolContentElement extends ControlElement {
@@ -19,7 +20,10 @@ interface DesignerToolContentElement extends ControlElement {
 
 interface IDesignerContent {
   font?: IFont;
+  default?: {[name: string]: any};
 }
+
+export const DESIGNER_CONTENT_PROPS = ['font'];
 
 declare global {
   namespace JSX {
@@ -35,6 +39,7 @@ export default class DesignerToolContent extends Module {
   private inputFontSize: Input;
   private inputFontWeight: Input;
   private inputFontColor: ColorPicker;
+  private designerHeader: DesignerToolHeader;
 
   private _data: IDesignerContent = {};
 
@@ -43,6 +48,7 @@ export default class DesignerToolContent extends Module {
   constructor(parent?: Container, options?: DesignerToolContentElement) {
     super(parent, options);
     this.onFontChanged = this.onFontChanged.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   setData(value: IDesignerContent) {
@@ -59,13 +65,23 @@ export default class DesignerToolContent extends Module {
     this.inputFontColor.value = font.color;
     this.inputFontSize.value = font.size;
     this.inputFontWeight.value = font.weight;
+    this.designerHeader.isChanged = !!(font.color || font.size || font.weight);
   }
 
   private onFontChanged(target: any, prop: string) {
     if (!this._data.font) this._data.font = {};
     this._data.font[prop] = target.value;
     if (prop === 'size') this._data.font[prop] = `${this._data.font[prop]}px`;
+    this.designerHeader.isChanged = !!(this._data.font.color || this._data.font.size || this._data.font.weight);
     if (this.onChanged) this.onChanged('font', this._data.font);
+  }
+
+  private onResetData() {
+    const clonedData = JSON.parse(JSON.stringify(this._data));
+    const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+    this._data = { ...clonedData, ...cloneDefault };
+    if (this.onChanged) this.onChanged('font', this._data['font']);
+    this.renderUI();
   }
 
   init() {
@@ -80,7 +96,13 @@ export default class DesignerToolContent extends Module {
         height="100%"
         margin={{ left: "auto", right: "auto" }}
       >
-        <designer-tool-header name="Typography" tooltipText="Set font for the element." onCollapse={this.onCollapse} />
+        <designer-tool-header
+          id="designerHeader"
+          name="Typography"
+          tooltipText="Set font for the element."
+          onCollapse={this.onCollapse}
+          onReset={this.onResetData}
+        />
         <i-vstack id="vStackContent" padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }} visible={false}>
           <i-vstack gap={'0.5rem'}>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">

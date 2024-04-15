@@ -27,8 +27,12 @@ interface IDesignerLayout {
   display?: string;
   name?: string;
   stack?: IStack;
-  reverse?: boolean
+  reverse?: boolean;
+  mediaQueries?: any[];
+  default?: {[name: string]: any};
 }
+
+export const DESIGNER_LAYOUT_PROPS = ['stack', 'direction', 'wrap', 'alignItems', 'justifyContent', 'alignSelf', 'alignContent', 'reverse'];
 
 interface IStack {
   basis?: string;
@@ -79,6 +83,7 @@ export default class DesignerToolLayout extends Module {
     this.onSelectChanged = this.onSelectChanged.bind(this);
     this.onReverseSwitch = this.onReverseSwitch.bind(this);
     this.onAdvFlexChanged = this.onAdvFlexChanged.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   get name() {
@@ -113,6 +118,7 @@ export default class DesignerToolLayout extends Module {
     this.basisInput.value = basis || '';
     this.shrinkInput.value = shrink || '';
     this.growInput.value = grow || '';
+    this.inputBasicFlex.value = !shrink && !grow ? '0' : '1';
   }
 
   private togglePanels() {
@@ -172,6 +178,16 @@ export default class DesignerToolLayout extends Module {
     if (this.onChanged) this.onChanged('stack', this._data.stack);
   }
 
+  private onResetData() {
+    const clonedData = JSON.parse(JSON.stringify(this._data));
+    const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+    this._data = { ...clonedData, ...cloneDefault };
+    for (let prop of DESIGNER_LAYOUT_PROPS) {
+      if (this.onChanged) this.onChanged(prop, this._data[prop]);
+    }
+    this.renderUI();
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -185,7 +201,13 @@ export default class DesignerToolLayout extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Layout" tooltipText="With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes." onCollapse={this.onCollapse} />
+        <designer-tool-header
+          id="designerHeader"
+          name="Layout"
+          tooltipText="With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes."
+          onCollapse={this.onCollapse}
+          onReset={this.onResetData}
+        />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack
             id="pnlFlexItems"

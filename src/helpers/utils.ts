@@ -343,10 +343,30 @@ export const parseNumberValue = (value: string | number) => {
   return result;
 };
 
-export const isSameValue = (defaultVal: any, value: any) => {
-  if (defaultVal === value) return true;
+export const isSameValue = (defaultVal: any, value: any): boolean => {
+  const deepEqual = (a: any, b: any): boolean => {
+    if (Object.is(a, b)) return true;
+    if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+    for (const key of keysA) {
+      if (!keysB.includes(key) || !deepEqual(a[key], b[key])) return false;
+    }
+    return true;
+  };
+
+  if (Object.is(defaultVal, value)) return true;
   if (typeof defaultVal === 'object' && typeof value === 'object') {
-    return JSON.stringify(defaultVal) === JSON.stringify(value);
+    return deepEqual(defaultVal, value);
   }
+
   return false;
+};
+
+export const isNumber = (value: string|number) => {
+  return typeof value === 'number' || (value !== '' && !Number.isNaN(Number(value)));
 }

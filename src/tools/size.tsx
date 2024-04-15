@@ -93,6 +93,7 @@ export default class DesignerToolSize extends Module {
   constructor(parent?: Container, options?: DesignerToolSizeElement) {
     super(parent, options);
     this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
+    this.onResetData = this.onResetData.bind(this);
   }
 
   private get isChecked() {
@@ -121,10 +122,12 @@ export default class DesignerToolSize extends Module {
       const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
       data = {...data, ...breakpointProps};
     }
-    this.pnlSizes.clearInnerHTML()
+    this.pnlSizes.clearInnerHTML();
+    let hasChanged = false;
     for (let size of sizes) {
       const parsedValue = parseNumberValue(data[size.prop]);
-      const isSame = this.checkValues(size.prop, data[size.prop] ?? '');
+      const isSame = this.checkValues(size.prop, data[size.prop]);
+      if (!isSame && !hasChanged) hasChanged = true;
       const elm = (
         <i-hstack verticalAlignment="center">
           <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
@@ -168,15 +171,16 @@ export default class DesignerToolSize extends Module {
       )
       this.pnlSizes.append(elm)
     }
+    this.designerHeader.isChanged = hasChanged;
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SIZE_PROPS);
   }
 
   private checkValues(prop: string, newVal: any) {
     let result = false;
     if (this.isChecked) {
-      result = isSameValue(this._data[prop] || '', newVal);
+      result = isSameValue(this._data[prop] || 'auto', newVal || 'auto');
     } else {
-      result = isSameValue(this._data.default?.[prop] || '', newVal);
+      result = isSameValue(this._data.default?.[prop], newVal || 'auto');
     }
     return result;
   }
@@ -205,6 +209,22 @@ export default class DesignerToolSize extends Module {
   }
 
   private onToggleMediaQuery(value: boolean) {
+    this.renderUI(true);
+  }
+
+  private onResetData() {
+    if (this.isChecked) {
+      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
+      this._data.mediaQueries[getBreakpoint()].properties = (({ width, height, minWidth, minHeight, maxWidth, maxHeight, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+    } else {
+      const clonedData = JSON.parse(JSON.stringify(this._data));
+      const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+      this._data = { ...clonedData, ...cloneDefault };
+      for (let prop of DESIGNER_SIZE_PROPS) {
+        if (this.onChanged) this.onChanged(prop, this._data[prop]);
+      }
+    }
     this.renderUI(true);
   }
 
@@ -267,6 +287,7 @@ export default class DesignerToolSize extends Module {
           hasMediaQuery={true}
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
+          onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout id="pnlSizes" gap={{column: '1rem', row: '0.5rem'}} columnsPerRow={2}></i-grid-layout>
