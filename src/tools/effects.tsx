@@ -54,6 +54,10 @@ export default class DesignerToolEffects extends Module {
     this.renderUI();
   }
 
+  private get defaultOpacity() {
+    return Number(this._data?.default?.['opacity'] || '1')
+  }
+
   private onCollapse(isShown: boolean) {
     this.vStackContent.visible = isShown;
   }
@@ -61,20 +65,24 @@ export default class DesignerToolEffects extends Module {
   private renderUI() {
     const { opacity = 1 } = this._data;
     this.inputEffect.value = this.rangeEffect.value = Number(opacity) * 100;
-    this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
+    this.updateHighlight();
+  }
+
+  private updateHighlight() {
+    this.designerHeader.isChanged = Number(this._data?.opacity || 1) !== this.defaultOpacity;
   }
 
   private onInputEffectChanged() {
     this.rangeEffect.value = this.inputEffect.value;
     this._data.opacity = this.rangeEffect.value / 100;
-    this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
+    this.updateHighlight();
     if (this.onChanged) this.onChanged('opacity', `${this._data.opacity}`);
   }
 
   private onRangeChanged() {
     this.inputEffect.value = this.rangeEffect.value;
     this._data.opacity = this.rangeEffect.value / 100;
-    this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
+    this.updateHighlight();
     if (this.onChanged) this.onChanged('opacity', `${this._data.opacity}`);
   }
 

@@ -39,7 +39,7 @@ export const rowItemActiveStyled = Styles.style({
 })
 
 export const rowDragOverActiveStyled = Styles.style({
-  background: Theme.colors.info.dark,
+  background: Theme.colors.info.light,
   opacity: 1
 })
 

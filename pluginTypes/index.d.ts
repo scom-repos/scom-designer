@@ -59,10 +59,11 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private _screen;
         private mdActions;
         private mdAlert;
+        private pnlSide;
         private currentComponent;
         private _activeComponent;
         private dragId;
-        private activeId;
+        private targetConfig;
         private elementsMap;
         onShowComponentPicker: () => void;
         onSelect: selectCallback;
@@ -78,7 +79,11 @@ declare module "@scom/scom-designer/components/components.tsx" {
         renderUI(): void;
         private renderTreeItems;
         private initEvents;
+        private isRootPanel;
         private showHightlight;
+        private clearHoverStyle;
+        private handleDragEnd;
+        private appendItem;
         private changeParent;
         private getParentID;
         private onHideComponent;
@@ -982,8 +987,10 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolEffectsElement);
         setData(value: IDesignerEffect): void;
+        private get defaultOpacity();
         private onCollapse;
         private renderUI;
+        private updateHighlight;
         private onInputEffectChanged;
         private onRangeChanged;
         private onResetData;
@@ -1473,7 +1480,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         private mdPicker;
         private designerWrapper;
         private pnlScreens;
-        private pnlProperties;
         private pathMapping;
         private mouseDown;
         private resizing;
@@ -1482,6 +1488,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private recentComponents;
         private _rootComponent;
         private selectedComponent;
+        private designingPos;
         selectedControl: IControl;
         modified: boolean;
         studio: IStudio;
@@ -1524,9 +1531,11 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onUpdateDesigner;
         private handleControlMouseMove;
         private updatePosition;
+        private updateDesignPosition;
         private handleBreakpoint;
         private onToggleClick;
         private initEvents;
+        private handleControlMouseUp;
         init(): void;
         render(): any;
     }
