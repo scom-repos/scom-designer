@@ -7,7 +7,8 @@ import {
   Container,
   Switch,
   Styles,
-  Control
+  Control,
+  Panel
 } from '@ijstech/components'
 import { customSwitchStyle } from './index.css';
 
@@ -42,6 +43,7 @@ export default class DesignerToolHeader extends Module {
   private iconTooltip: Icon;
   private querySwitch: Switch;
   private lblSwitch: Label;
+  private pnlSwitch: Panel;
 
   onCollapse: (isShown: boolean) => void;
   onReset: () => void;
@@ -99,7 +101,7 @@ export default class DesignerToolHeader extends Module {
     this.iconArrow.name = 'angle-down';
     this.iconTooltip.visible = !!this.tooltipText;
     this.iconTooltip.tooltip.content = this.tooltipText || '';
-    this.querySwitch.visible = this.hasMediaQuery;
+    this.pnlSwitch.visible = this.hasMediaQuery;
   }
 
   private _onCollapse() {
@@ -141,7 +143,14 @@ export default class DesignerToolHeader extends Module {
             horizontalAlignment='end'
             gap="0.5rem"
           >
-            <i-hstack verticalAlignment='center' horizontalAlignment='end' gap="0.5rem" stack={{shrink: '0'}}>
+            <i-hstack
+              id="pnlSwitch"
+              verticalAlignment='center'
+              horizontalAlignment='end'
+              gap="0.5rem"
+              stack={{shrink: '0'}}
+              visible={false}
+            >
               <i-label id="lblSwitch" caption='Media Query' font={{size: '0.75rem'}}></i-label>
               <i-switch
                 id="querySwitch"

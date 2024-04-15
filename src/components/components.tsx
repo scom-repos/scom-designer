@@ -256,6 +256,7 @@ export default class DesignerComponents extends Module {
   }
 
   private changeParent(dragId: string, targetId: string) {
+    // TODO: st component is hidden
     const targetData = this.elementsMap.get(targetId);
     const dragData = this.elementsMap.get(dragId);
     if (!dragData || !targetData) return;

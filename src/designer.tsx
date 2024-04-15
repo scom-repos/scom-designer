@@ -526,8 +526,7 @@ export class ScomDesignerForm extends Module {
     this.modified = true;
     const oldVal: any = control._getDesignPropValue(prop);
     const breakpointProps = this.breakpointProps;
-    const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
-    control._setDesignPropValue(prop, value, hasProp ? breakpointProps[prop] : undefined);
+    control._setDesignPropValue(prop, value);
     if (mediaQueryProp) {
       const designProp = control._getDesignPropValue(mediaQueryProp);
       control._setDesignPropValue(mediaQueryProp, designProp, breakpointProps[mediaQueryProp]);

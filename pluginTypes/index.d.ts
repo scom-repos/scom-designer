@@ -435,6 +435,8 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         private iconArrow;
         private iconTooltip;
         private querySwitch;
+        private lblSwitch;
+        private pnlSwitch;
         onCollapse: (isShown: boolean) => void;
         onReset: () => void;
         onToggleMediaQuery: (value: boolean) => void;
@@ -447,6 +449,8 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         set hasMediaQuery(value: boolean);
         get checked(): boolean;
         set checked(value: boolean);
+        set isChanged(value: boolean);
+        set isQueryChanged(value: boolean);
         private renderUI;
         private _onCollapse;
         private _onClear;
@@ -454,142 +458,6 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         init(): void;
         render(): any;
     }
-}
-/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
-declare module "@scom/scom-designer/helpers/config.ts" {
-    import { IconName } from "@ijstech/components";
-    const enum BREAKPOINTS {
-        MOBILE = 0,
-        TABLET = 1,
-        LAPTOP = 2,
-        DESKTOP = 3,
-        BIG_SCREEN = 4
-    }
-    const breakpoints: {
-        tooltip: string;
-        type: string;
-        icon: {
-            width: string;
-            height: string;
-            padding: {
-                top: number;
-                left: number;
-                right: number;
-                bottom: number;
-            };
-            name: string;
-        };
-        value: BREAKPOINTS;
-    }[];
-    const getBreakpointInfo: (index: number) => {
-        icon?: undefined;
-        name?: undefined;
-    } | {
-        icon: IconName;
-        name: string;
-    };
-    const breakpointsMap: {
-        0: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        1: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        2: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        3: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        4: {
-            minWidth: string;
-            properties: {};
-        };
-    };
-    const enum PREVIEWS {
-        DRAFT = 0,
-        WEB = 1,
-        IOS = 2,
-        ANDROID = 3
-    }
-    const previews: ({
-        tooltip: string;
-        icon: {
-            width: string;
-            height: string;
-            padding: {
-                top: number;
-                left: number;
-                right: number;
-                bottom: number;
-            };
-            name: string;
-            image?: undefined;
-        };
-        type: string;
-        value: PREVIEWS;
-    } | {
-        tooltip: string;
-        icon: {
-            image: {
-                width: string;
-                height: string;
-                padding: {
-                    top: number;
-                    left: number;
-                    right: number;
-                    bottom: number;
-                };
-                url: string;
-            };
-        };
-        type: string;
-        value: PREVIEWS;
-    })[];
-    const getMediaQueries: () => ({
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        properties: {};
-    })[];
-    const getDefaultMediaQuery: (breakpoint: number) => any;
-    const GroupMetadata: {
-        Layout: {
-            name: string;
-            tooltipText: string;
-        };
-        Basic: {
-            name: string;
-            tooltipText: string;
-        };
-        Fields: {
-            name: string;
-            tooltipText: string;
-        };
-    };
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo };
 }
 /// <amd-module name="@scom/scom-designer/tools/background.tsx" />
 declare module "@scom/scom-designer/tools/background.tsx" {
@@ -744,6 +612,142 @@ declare module "@scom/scom-designer/tools/modal-spacing.tsx" {
         init(): void;
         render(): any;
     }
+}
+/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
+declare module "@scom/scom-designer/helpers/config.ts" {
+    import { IconName } from "@ijstech/components";
+    const enum BREAKPOINTS {
+        MOBILE = 0,
+        TABLET = 1,
+        LAPTOP = 2,
+        DESKTOP = 3,
+        BIG_SCREEN = 4
+    }
+    const breakpoints: {
+        tooltip: string;
+        type: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+        };
+        value: BREAKPOINTS;
+    }[];
+    const getBreakpointInfo: (index: number) => {
+        icon?: undefined;
+        name?: undefined;
+    } | {
+        icon: IconName;
+        name: string;
+    };
+    const breakpointsMap: {
+        0: {
+            minWidth: string;
+            maxWidth: string;
+            properties: {};
+        };
+        1: {
+            minWidth: string;
+            maxWidth: string;
+            properties: {};
+        };
+        2: {
+            minWidth: string;
+            maxWidth: string;
+            properties: {};
+        };
+        3: {
+            minWidth: string;
+            maxWidth: string;
+            properties: {};
+        };
+        4: {
+            minWidth: string;
+            properties: {};
+        };
+    };
+    const enum PREVIEWS {
+        DRAFT = 0,
+        WEB = 1,
+        IOS = 2,
+        ANDROID = 3
+    }
+    const previews: ({
+        tooltip: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+            image?: undefined;
+        };
+        type: string;
+        value: PREVIEWS;
+    } | {
+        tooltip: string;
+        icon: {
+            image: {
+                width: string;
+                height: string;
+                padding: {
+                    top: number;
+                    left: number;
+                    right: number;
+                    bottom: number;
+                };
+                url: string;
+            };
+        };
+        type: string;
+        value: PREVIEWS;
+    })[];
+    const getMediaQueries: () => ({
+        minWidth: string;
+        maxWidth: string;
+        properties: {};
+    } | {
+        minWidth: string;
+        maxWidth: string;
+        properties: {};
+    } | {
+        minWidth: string;
+        maxWidth: string;
+        properties: {};
+    } | {
+        minWidth: string;
+        maxWidth: string;
+        properties: {};
+    } | {
+        minWidth: string;
+        properties: {};
+    })[];
+    const getDefaultMediaQuery: (breakpoint: number) => any;
+    const GroupMetadata: {
+        Layout: {
+            name: string;
+            tooltipText: string;
+        };
+        Basic: {
+            name: string;
+            tooltipText: string;
+        };
+        Fields: {
+            name: string;
+            tooltipText: string;
+        };
+    };
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo };
 }
 /// <amd-module name="@scom/scom-designer/tools/margins-padding.tsx" />
 declare module "@scom/scom-designer/tools/margins-padding.tsx" {
@@ -973,6 +977,7 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
         private vStackContent;
         private inputEffect;
         private rangeEffect;
+        private designerHeader;
         private _data;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolEffectsElement);
@@ -1012,6 +1017,7 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         private inputFontSize;
         private inputFontWeight;
         private inputFontColor;
+        private designerHeader;
         private _data;
         onChanged: onChangedCallback;
         constructor(parent?: Container, options?: DesignerToolContentElement);
