@@ -35,7 +35,7 @@ import {
 import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
-import { breakpoints, getDefaultMediaQuery, previews } from '../helpers/config';
+import { breakpoints, getDefaultMediaQuery, getMediaQuery, previews } from '../helpers/config';
 import { parseProps } from '../helpers/utils';
 import { DesignerTrigger } from '../triggers/index';
 import { getBreakpoint, setBreakpoint } from '../helpers/store'
@@ -90,6 +90,7 @@ export default class DesignerProperties extends Module {
     this.onPropChanged = this.onPropChanged.bind(this);
     this.onUpdateUI = this.onUpdateUI.bind(this);
     this.onControlEventChanged = this.onControlEventChanged.bind(this);
+    this.onBreakpointClick = this.onBreakpointClick.bind(this);
   }
 
   static async create(options?: DesignerPropertiesElement, parent?: Container) {
@@ -177,10 +178,9 @@ export default class DesignerProperties extends Module {
       maxWidth,
       mediaQueries = []
     }: any = this.designerProps;
-    const breakpoint = getBreakpoint();
-    if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
-    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQueries, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
+    const mediaQuery = getMediaQuery(mediaQueries);
+    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQuery, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQuery, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
   }
 
   private updateProps() {
@@ -214,16 +214,15 @@ export default class DesignerProperties extends Module {
     const {
       id: controlId
     } = this.component?.control || {};
-    const breakpoint = getBreakpoint();
-    if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
+    const mediaQuery = getMediaQuery(mediaQueries);
     this.inputId.value = id || controlId || '';
 
-    this.designerBackground.setData({ background, mediaQueries, default: this.getDefaultValues(DESIGNER_BACKGROUND_PROPS) });
-    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQueries, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
+    this.designerBackground.setData({ background, mediaQuery, default: this.getDefaultValues(DESIGNER_BACKGROUND_PROPS) });
+    this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQuery, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
     this.designerEffects.setData({ opacity: opacity || 1, default: this.getDefaultValues(DESIGNER_EFFECT_PROPS) });
-    this.designerSpacing.setData({ margin, padding, mediaQueries, default: this.getDefaultValues(DESIGNER_SPACING_PROPS) });
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQueries, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
-    this.designerBorders.setData({ border, mediaQueries, default: this.getDefaultValues(DESIGNER_BORDER_PROPS) });
+    this.designerSpacing.setData({ margin, padding, mediaQuery, default: this.getDefaultValues(DESIGNER_SPACING_PROPS) });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQuery, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
+    this.designerBorders.setData({ border, mediaQuery, default: this.getDefaultValues(DESIGNER_BORDER_PROPS) });
     this.designerLayout.setData({
       name: this.component?.name,
       display: display || control?.style.display,
@@ -261,8 +260,10 @@ export default class DesignerProperties extends Module {
     if (!this.component?.control) return;
     const designerProps = this.component?.control?._getDesignProps() || {};
     const breakpoint = getBreakpoint();
-    if (!designerProps?.mediaQueries?.[breakpoint]) return;
-    const breakpointProps: any = designerProps?.mediaQueries?.[breakpoint]?.properties || {};
+    const defaultBreakpoint = getDefaultMediaQuery(breakpoint);
+    const findedBreakpoint = (designerProps?.mediaQueries as any[] || []).find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
+    if (!findedBreakpoint) return;
+    const breakpointProps: any = findedBreakpoint?.properties || {};
     const customProps = this.component?.control?._getCustomProperties()?.props || {};
     for (let prop of props) {
       if (isChecked) {
@@ -285,7 +286,6 @@ export default class DesignerProperties extends Module {
 
   private onBreakpointClick(type: string, value: number) {
     setBreakpoint(value);
-    this.updateProps();
     if (this.onBreakpointChanged) this.onBreakpointChanged(value);
   }
 
@@ -332,7 +332,7 @@ export default class DesignerProperties extends Module {
             items={breakpoints}
             direction='vertical'
             stack={{grow: '1', shrink: '1'}}
-            onChanged={this.onBreakpointClick.bind(this)}
+            onChanged={this.onBreakpointClick}
           />
           <designer-selector
             id="previewSelector"

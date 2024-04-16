@@ -13,7 +13,7 @@ import {
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
-import { onChangedCallback, onUpdateCallback } from '../interface';
+import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { backgroundOptions, borderStyles, isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
@@ -28,7 +28,7 @@ interface DesignerToolBordersElement extends ControlElement {
 
 interface IDesignerBorder {
   border?: IBorder;
-  mediaQueries?: any[];
+  mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
@@ -64,12 +64,6 @@ export default class DesignerToolBorders extends Module {
     bottomLeft: '',
     bottomRight: ''
   }
-  private _overallData = {
-    width: '',
-    radius: '',
-    radiusMedia: '',
-    widthMedia: '',
-  }
   private _idvChanged: boolean = false;
 
   onChanged: onChangedCallback;
@@ -89,7 +83,7 @@ export default class DesignerToolBorders extends Module {
   private get currentData() {
     let data = JSON.parse(JSON.stringify(this._data));
     if (this.isChecked) {
-      const border = this._data.mediaQueries?.[getBreakpoint()]?.properties?.border;
+      const border = this._data.mediaQuery?.properties?.border;
       if (border) {
         data.border = border;
       }
@@ -98,7 +92,7 @@ export default class DesignerToolBorders extends Module {
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    const breakpointProps = this._data.mediaQuery?.properties|| {};
     return Object.hasOwnProperty.call(breakpointProps, 'border');
   }
 
@@ -107,8 +101,6 @@ export default class DesignerToolBorders extends Module {
     this._data = value;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
-    this._overallData.widthMedia = this._overallData.width = '';
-    this._overallData.radiusMedia = this._overallData.radius = '';
     this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
@@ -121,23 +113,26 @@ export default class DesignerToolBorders extends Module {
     this._idvChanged = false;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     const { border = {} } = data;
-    const radius = data?.border?.radius;
-    const radiusStr = isNumber(radius) ? `${radius}px` : radius;
-    this.radiusObj = this.radiusByPosition(radiusStr as string);
-    const values = Object.values(this.radiusObj);
-    const sameValue = values.every(v => v === values[0]);
-    if (sameValue) {
-      const parsedRadius = parseNumberValue(values[0])?.value;
-      this.isChecked ? this._overallData.radiusMedia = parsedRadius : this._overallData.radius = parsedRadius;
-    }
-    this.inputRadius.value = this.isChecked ? this._overallData.radiusMedia : this._overallData.radius;
-    this.inputWidth.value = this.isChecked ? this._overallData.widthMedia : this._overallData.width;
+    this.updateOverall(border?.radius, border?.width);
     this.styleSelector.activeItem = border?.style || '';
     this.bgColor.value = border?.color ?? '';
 
     this.updateButtons(data);
     this.updateHighlight();
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_BORDER_PROPS);
+  }
+
+  private updateOverall(radius: number|string, width: number|string) {
+    const radiusStr = isNumber(radius) ? `${radius}px` : radius;
+    this.radiusObj = this.radiusByPosition(radiusStr as string);
+    const values = Object.values(this.radiusObj);
+    const sameValue = values.every(v => v === values[0]);
+    if (sameValue) {
+      const parsedRadius = parseNumberValue(values[0])?.value;
+      this.inputRadius.value = parsedRadius;
+    }
+    const widthStr = parseNumberValue(width)?.value || '';
+    this.inputWidth.value = widthStr;
   }
 
   private updateHighlight() {
@@ -151,7 +146,8 @@ export default class DesignerToolBorders extends Module {
     this.styleSelector.isChanged = !this.checkValues('style', styleValue);
     const cResult = this.checkValues('color', this.bgColor.value);
     this.lblColor.font = { size: '0.75rem', color: cResult ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged);
+    const hasChanged = !this.isChecked && (this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged);
+    if (hasChanged) this.designerHeader.isChanged = true;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -228,12 +224,6 @@ export default class DesignerToolBorders extends Module {
 
   private onPropChanged(target: Input, prop: string) {
     const value = target.value;
-    if (this.isChecked) {
-      this._overallData[`${prop}Media`] = value;
-    } else {
-      this._overallData[prop] = value;
-      if (this._overallData[`${prop}Media`] === '') this._overallData[`${prop}Media`] = value;
-    }
     const newVal = isNumber(value) ? `${value}px` : value;
     this.handleValueChanged(prop, newVal);
   }
@@ -269,7 +259,7 @@ export default class DesignerToolBorders extends Module {
   }
 
   private handleMediaQuery(prop: string, value: any, position?: string) {
-    let border = this._data.mediaQueries[getBreakpoint()]['properties']['border'];
+    let border = this._data.mediaQuery['properties']['border'];
     if (!border) border = JSON.parse(JSON.stringify(this._data.border || {}));
     if (position) {
       if (!border[position]) border[position] = {};
@@ -277,8 +267,8 @@ export default class DesignerToolBorders extends Module {
     } else {
       border[prop] = value;
     }
-    this._data.mediaQueries[getBreakpoint()]['properties']['border'] = border;
-    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, 'border');
+    this._data.mediaQuery['properties']['border'] = border;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery, 'border');
   }
 
   private onToggleMediaQuery(value: boolean) {
@@ -287,11 +277,9 @@ export default class DesignerToolBorders extends Module {
 
   private onResetData() {
     if (this.isChecked) {
-      this._overallData.widthMedia = this._overallData.width || '';
-      this._overallData.radiusMedia = this._overallData.radius || '';
-      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
-      this._data.mediaQueries[getBreakpoint()].properties = (({ border, ...o }) => o)(breakpoint);
-      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+      const breakpoint = this._data.mediaQuery.properties;
+      this._data.mediaQuery.properties = (({ border, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery);
     } else {
       const clonedData = JSON.parse(JSON.stringify(this._data));
       const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
@@ -299,10 +287,6 @@ export default class DesignerToolBorders extends Module {
       for (let prop of DESIGNER_BORDER_PROPS) {
         if (this.onChanged) this.onChanged(prop, this._data[prop]);
       }
-      if (this._overallData.widthMedia === this._overallData.width) this._overallData.widthMedia = '';
-      if (this._overallData.radiusMedia === this._overallData.radius) this._overallData.radiusMedia = '';
-      this._overallData.width = '';
-      this._overallData.radius = '';
     }
     this.renderUI(true);
   }

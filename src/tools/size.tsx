@@ -11,9 +11,8 @@ import {
   GridLayout
 } from '@ijstech/components'
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
-import { onChangedCallback, onUpdateCallback } from '../interface';
+import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { isSameValue, parseNumberValue } from '../helpers/utils';
-import { getBreakpoint } from '../helpers/store';
 import DesignerToolHeader from './header';
 const Theme = Styles.Theme.ThemeVars;
 
@@ -62,7 +61,7 @@ interface IDesignerSize {
   minHeight?: number|string;
   maxWidth?: number|string;
   maxHeight?: number|string;
-  mediaQueries?: any[];
+  mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
@@ -101,7 +100,7 @@ export default class DesignerToolSize extends Module {
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    const breakpointProps = this._data.mediaQuery?.properties|| {};
     return Object.keys(breakpointProps).some(prop => DESIGNER_SIZE_PROPS.includes(prop));
   }
 
@@ -119,7 +118,7 @@ export default class DesignerToolSize extends Module {
   private renderUI(needUpdate = false) {
     let data = this._data;
     if (this.isChecked) {
-      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      const breakpointProps = this._data.mediaQuery?.properties|| {};
       data = {...data, ...breakpointProps};
     }
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
@@ -172,7 +171,9 @@ export default class DesignerToolSize extends Module {
       )
       this.pnlSizes.append(elm)
     }
-    this.designerHeader.isChanged = !this.isChecked && hasChanged;
+    if (!this.isChecked && hasChanged) {
+      this.designerHeader.isChanged = true;
+    }
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SIZE_PROPS);
   }
 
@@ -205,8 +206,8 @@ export default class DesignerToolSize extends Module {
   }
 
   private handleMediaQuery(prop: string, value: any) {
-    this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
-    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+    this._data.mediaQuery['properties'][prop] = value;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery, prop);
   }
 
   private onToggleMediaQuery(value: boolean) {
@@ -215,9 +216,9 @@ export default class DesignerToolSize extends Module {
 
   private onResetData() {
     if (this.isChecked) {
-      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
-      this._data.mediaQueries[getBreakpoint()].properties = (({ width, height, minWidth, minHeight, maxWidth, maxHeight, ...o }) => o)(breakpoint);
-      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+      const breakpoint = this._data.mediaQuery.properties;
+      this._data.mediaQuery.properties = (({ width, height, minWidth, minHeight, maxWidth, maxHeight, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery);
     } else {
       const clonedData = JSON.parse(JSON.stringify(this._data));
       const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));

@@ -19,6 +19,7 @@ import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemAct
 import { IComponent, IScreen } from '../interface';
 import './index.css';
 import { getBreakpoint } from '../helpers/store';
+import { getDefaultMediaQuery, getMediaQueryProps } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -174,10 +175,9 @@ export default class DesignerComponents extends Module {
           onClick={(target: Control, event: MouseEvent) => onShowActions(target, event, elm)}
         />
       );
-      const breakpoint = getBreakpoint();
       const queriesStr = elm.props?.mediaQueries;
       const mediaQueries = typeof queriesStr === 'string' ? JSON.parse(queriesStr.substring(1, queriesStr.length - 1)) : [];
-      const breakpointProps = mediaQueries[breakpoint]?.properties || {};
+      const breakpointProps = getMediaQueryProps(mediaQueries);
       let isHidden = false;
       if (Object.hasOwnProperty.call(breakpointProps, 'visible')) {
         isHidden = breakpointProps['visible'] === "{false}" || breakpointProps['visible'] === false;

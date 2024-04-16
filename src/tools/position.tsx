@@ -12,7 +12,7 @@ import {
 } from '@ijstech/components'
 import { buttonAutoStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
-import { onChangedCallback, onUpdateCallback } from '../interface';
+import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
@@ -33,7 +33,7 @@ interface IDesignerPosition {
   left?: number | string;
   overflow?: {x?: string, y?: string};
   zIndex?: string;
-  mediaQueries?: any[];
+  mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
@@ -80,14 +80,14 @@ export default class DesignerToolPosition extends Module {
   private get currentData() {
     let data = this._data;
     if (this.isChecked) {
-      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      const breakpointProps = this._data.mediaQuery?.properties|| {};
       data = {...data, ...breakpointProps};
     }
     return data;
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    const breakpointProps = this._data.mediaQuery?.properties|| {};
     return Object.keys(breakpointProps).some(prop => DESIGNER_POSITION_PROPS.includes(prop));
   }
 
@@ -124,7 +124,8 @@ export default class DesignerToolPosition extends Module {
     const zIndexVal = this.zIndexInput.value;
     const zChanged = !this.checkValues('zIndex', zIndexVal);
     this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
-    this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
+    const hasChanged = !this.isChecked && (this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
+    if (hasChanged) this.designerHeader.isChanged = true;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -200,8 +201,8 @@ export default class DesignerToolPosition extends Module {
   }
 
   private handleMediaQuery(prop: string, value: any) {
-    this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
-    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+    this._data.mediaQuery['properties'][prop] = value;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery, prop);
   }
 
   private onToggleMediaQuery(value: boolean) {
@@ -210,9 +211,9 @@ export default class DesignerToolPosition extends Module {
 
   private onResetData() {
     if (this.isChecked) {
-      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
-      this._data.mediaQueries[getBreakpoint()].properties = (({ position, top, right, bottom, left, overflow, zIndex, ...o }) => o)(breakpoint);
-      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+      const breakpoint = this._data.mediaQuery.properties;
+      this._data.mediaQuery.properties = (({ position, top, right, bottom, left, overflow, zIndex, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery);
     } else {
       const clonedData = JSON.parse(JSON.stringify(this._data));
       const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));

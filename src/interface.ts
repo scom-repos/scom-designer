@@ -69,3 +69,9 @@ export interface IIPFSData {
   sort?: 'asc' | 'desc';
   root?: boolean;
 }
+
+export interface IMediaQuery {
+  minWidth: string;
+  maxWidth?: string;
+  properties: any;
+}

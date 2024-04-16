@@ -36,7 +36,7 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
 import { parseProps } from './helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueries } from './helpers/config'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueries, getMediaQueryProps } from './helpers/config'
 import { getBreakpoint } from './helpers/store'
 
 const Theme = Styles.Theme.ThemeVars
@@ -197,11 +197,6 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
-  get breakpointProps() {
-    const breakpoint = getBreakpoint();
-    return this.selectedControl?.control?._getDesignPropValue('mediaQueries')?.[breakpoint]?.properties || {};
-  }
-
   private createControl(parent: Control, name: string, options?: any): Control {
     const controlConstructor: any = window.customElements.get(name);
     options = options || {}
@@ -210,7 +205,7 @@ export class ScomDesignerForm extends Module {
     }
     const newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     const control: Control = new controlConstructor(parent, {...newOptions});
-    const breakpointProps = options.mediaQueries?.[getBreakpoint()]?.properties;
+    const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
     return control;
   }
@@ -346,12 +341,13 @@ export class ScomDesignerForm extends Module {
     if (path) {
       const control = this.pathMapping.get(path);
       if (control?.control) {
-        let mediaQueries = control?.control._getDesignPropValue('mediaQueries');
+        let mediaQueries = control?.control._getDesignPropValue('mediaQueries') as any[];
         if (!mediaQueries) mediaQueries = [];
-        const breakpoint = getBreakpoint();
-        if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);
-        mediaQueries[breakpoint]['properties']['visible'] = visible;
-        control.control._setDesignPropValue("mediaQueries", mediaQueries);
+        const defaultBreakpoint = getDefaultMediaQuery(getBreakpoint());
+        const findedBreakpoint = mediaQueries.find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
+        const currentMediaQuery = findedBreakpoint || defaultBreakpoint;
+        currentMediaQuery['properties']['visible'] = visible;
+        control.control._setDesignPropValue("mediaQueries", currentMediaQuery);
         control.control._setDesignPropValue("visible", true, visible);
       }
     }
@@ -413,7 +409,6 @@ export class ScomDesignerForm extends Module {
         if (com) {
           control.items = control.items || [];
           control.items.push(com);
-          console.log(control, this._rootComponent)
           this.updateStructure();
         }
       }
@@ -526,11 +521,23 @@ export class ScomDesignerForm extends Module {
     if (!control) return;
     this.modified = true;
     const oldVal: any = control._getDesignPropValue(prop);
-    const breakpointProps = this.breakpointProps;
-    control._setDesignPropValue(prop, value);
+    if (prop === 'mediaQueries') {
+      const mediaQueries: any = control._getDesignPropValue(prop) || [];
+      const findedIndex = mediaQueries.findIndex((v: any) => v && v.minWidth === value.minWidth);
+      if (findedIndex !== -1) {
+        mediaQueries[findedIndex] = value;
+      } else {
+        mediaQueries.push(value);
+      }
+      control._setDesignPropValue(prop, mediaQueries);
+    } else {
+      control._setDesignPropValue(prop, value);
+    }
+
     if (mediaQueryProp) {
+      const breakpointProps = getMediaQueryProps(control._getDesignPropValue('mediaQueries'));
       const designProp = control._getDesignPropValue(mediaQueryProp);
-      control._setDesignPropValue(mediaQueryProp, designProp, breakpointProps[mediaQueryProp]);
+      control._setDesignPropValue(mediaQueryProp, designProp, breakpointProps?.[mediaQueryProp]);
     }
     if (prop.includes('icon') &&this.selectedControl?.name === 'i-combo-box' && (!value.name && !value.image?.url)) {
       value.name = 'angle-down';
@@ -649,7 +656,7 @@ export class ScomDesignerForm extends Module {
           }
         }
       } else {
-        if (Math.abs(mouseMoveDelta.x) > 10 || Math.abs(mouseMoveDelta.y) > 10) {
+        if (Math.abs(mouseMoveDelta.x) > 5 || Math.abs(mouseMoveDelta.y) > 5) {
           this.modified = true;
           let left = (currentControl.left as number) + mouseMoveDelta.x;
           let top = (currentControl.top as number) + mouseMoveDelta.y;
@@ -682,7 +689,6 @@ export class ScomDesignerForm extends Module {
     if (minWidth !== undefined) {
       this.pnlFormDesigner.width = minWidth;
     }
-
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.updateDesignProps(this._rootComponent);
     this.onUpdateDesigner();
@@ -718,8 +724,8 @@ export class ScomDesignerForm extends Module {
       let currentResizer = null;
       for (let i = 0; i < resizers.length; i++) {
         const resizer = resizers[i] as HTMLElement;
-        const resizerRect = resizer.getBoundingClientRect();
-        if (resizerRect.left <= event.clientX && event.clientX <= resizerRect.right && resizerRect.top <= event.clientY && event.clientY <= resizerRect.bottom) {
+        const { left, right, top, bottom } = resizer.getBoundingClientRect();
+        if (left <= event.clientX && event.clientX <= right && top <= event.clientY && event.clientY <= bottom) {
           currentResizer = resizer;
           break;
         }

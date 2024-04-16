@@ -1,5 +1,7 @@
 import { IconName } from "@ijstech/components";
 import assets from "../assets";
+import { IMediaQuery } from "../interface";
+import { getBreakpoint } from "./store";
 
 const enum BREAKPOINTS {
   MOBILE,
@@ -51,7 +53,7 @@ const getBreakpointInfo = (index: number) => {
   }
 }
 
-const breakpointsMap = {
+const breakpointsMap: {[key: number]: IMediaQuery} = {
   [BREAKPOINTS.MOBILE]: {
     minWidth: '320px',
     maxWidth: '767px',
@@ -131,6 +133,17 @@ const getDefaultMediaQuery = (breakpoint: number) => {
   return clonedBreakpointsMap[breakpoint] || {};
 }
 
+const getMediaQuery = (mediaQueries: any) => {
+  const breakpoint = getBreakpoint();
+  const mediaQuery = getDefaultMediaQuery(breakpoint);
+  const findedItem = (mediaQueries || []).find((v) => v && v.minWidth === mediaQuery.minWidth);
+  return findedItem || mediaQuery;
+}
+
+const getMediaQueryProps = (mediaQueries: any) => {
+  return getMediaQuery(mediaQueries)?.properties || {};
+}
+
 const GroupMetadata = {
   'Layout': {
     name: 'Layout',
@@ -154,5 +167,7 @@ export {
   getMediaQueries,
   getDefaultMediaQuery,
   GroupMetadata,
-  getBreakpointInfo
+  getBreakpointInfo,
+  getMediaQueryProps,
+  getMediaQuery
 }
