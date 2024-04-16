@@ -181,7 +181,7 @@ export default class DesignerToolSize extends Module {
     if (this.isChecked) {
       result = isSameValue(this._data[prop] || 'auto', newVal || 'auto');
     } else {
-      result = isSameValue(this._data.default?.[prop], newVal || 'auto');
+      result = isSameValue(this._data.default?.[prop] || 'auto', newVal || 'auto');
     }
     return result;
   }

@@ -102,7 +102,6 @@ export class ScomDesignerForm extends Module {
   private mdPicker: Modal
   private designerWrapper: VStack
   private pnlScreens: Panel
-  private pnlProperties: Panel
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -112,6 +111,7 @@ export class ScomDesignerForm extends Module {
   private recentComponents: IComponent[] = [];
   private _rootComponent: IComponent
   private selectedComponent: IControl
+  private designingPos: any = {};
 
   selectedControl: IControl
   modified: boolean;
@@ -659,9 +659,18 @@ export class ScomDesignerForm extends Module {
   }
 
   private updatePosition(value: any) {
+    this.designingPos = {...value};
+    const control = this.selectedControl?.control
+    if (!control) return;
     for (let prop in value) {
-      if (value.hasOwnProperty(prop)) {
-        this.onPropertiesChanged(prop, value[prop]);
+      control[prop] = value[prop];
+    }
+  }
+
+  private updateDesignPosition() {
+    for (let prop in this.designingPos) {
+      if (this.designingPos.hasOwnProperty(prop)) {
+        this.onPropertiesChanged(prop, this.designingPos[prop]);
       }
     }
     this.designerProperties.onUpdate();
@@ -672,10 +681,7 @@ export class ScomDesignerForm extends Module {
     if (minWidth !== undefined) {
       this.pnlFormDesigner.width = minWidth;
     }
-    // if (value >= 2) {
-    //   this.pnlScreens.width = 0
-    //   this.pnlProperties.width = 0
-    // }
+
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.updateDesignProps(this._rootComponent);
     this.onUpdateDesigner();
@@ -703,6 +709,7 @@ export class ScomDesignerForm extends Module {
       this.mouseDown = false;
     };
     this.pnlFormDesigner.onmousedown = event => {
+      this.designingPos = {};
       this.mouseDown = true;
       this.mouseDownPos = { x: event.clientX, y: event.clientY };
       let elm = event.target as HTMLElement;
@@ -725,10 +732,14 @@ export class ScomDesignerForm extends Module {
       }
     };
     this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
-    this.pnlFormDesigner.onmouseup = event => {
-      this.mouseDown = false;
-    };
+    this.pnlFormDesigner.onmouseup = this.handleControlMouseUp.bind(this);
     this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
+  }
+
+  private handleControlMouseUp() {
+    this.mouseDown = false;
+    this.updateDesignPosition();
+    this.designingPos = {};
   }
 
   init() {

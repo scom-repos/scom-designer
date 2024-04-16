@@ -58,7 +58,7 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
         }
     });
     exports.rowDragOverActiveStyled = components_1.Styles.style({
-        background: Theme.colors.info.dark,
+        background: Theme.colors.info.light,
         opacity: 1
     });
     exports.iconButtonStyled = components_1.Styles.style({
@@ -571,7 +571,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.currentComponent = null;
             this._activeComponent = null;
             this.dragId = '';
-            this.activeId = '';
+            this.targetConfig = {
+                side: '',
+                id: ''
+            };
             this.elementsMap = new Map();
         }
         get screen() {
@@ -607,9 +610,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.vStackComponents.appendChild(this.$render("i-hstack", { visible: false, gap: 4, verticalAlignment: "center", padding: { top: 4, bottom: 4 } },
                 this.$render("i-icon", { name: "mobile-alt", width: 14, height: 14 }),
                 this.$render("i-label", { caption: this.screen.name, font: { size: '0.75rem' } })));
-            if (this.screen.elements?.length) {
+            if (this.screen?.elements?.length) {
                 this.renderTreeItems(this.screen.elements, this.vStackComponents, 0);
             }
+            this.vStackComponents.appendChild(this.$render("i-panel", { id: "pnlSide", width: '100%', height: 2, background: { color: Theme.colors.info.light }, visible: false, position: 'fixed' }));
         }
         renderTreeItems(elements, parentElm, parentPl) {
             const vStack1 = new components_3.VStack(parentElm);
@@ -701,22 +705,26 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         initEvents() {
             this.addEventListener('dragstart', (event) => {
                 const target = event.target.closest('.drag-item');
-                if (!target) {
+                const isDragRoot = this.isRootPanel(target?.id);
+                if (!target || isDragRoot) {
                     event.preventDefault();
                     return;
                 }
                 this.dragId = target.id;
             });
             this.addEventListener('dragend', (event) => {
-                if (!this.dragId) {
+                const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
+                if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
                     event.preventDefault();
                     return;
                 }
-                this.changeParent(this.dragId, this.activeId);
+                this.handleDragEnd(this.dragId);
                 const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
                 if (currentElm)
                     currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
+                this.pnlSide.visible = false;
                 this.dragId = null;
+                this.targetConfig = { id: '', side: '' };
             });
             this.addEventListener('dragover', (event) => {
                 event.preventDefault();
@@ -733,21 +741,105 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 }
             });
         }
+        isRootPanel(id) {
+            return id ? this.screen?.elements[0]?.path === id.replace('elm-', '') : false;
+        }
         showHightlight(x, y) {
             const elms = this.vStackComponents.querySelectorAll('.drag-item');
+            this.clearHoverStyle();
+            const edgeThreshold = 10;
             for (let elm of elms) {
                 const rect = elm.getBoundingClientRect();
-                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                    const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
-                    if (currentElm)
-                        currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
-                    elm.classList.add(index_css_1.rowDragOverActiveStyled);
-                    this.activeId = elm?.id;
+                if (x >= rect.left && x <= rect.right) {
+                    if (y >= rect.top && y < rect.top + edgeThreshold) {
+                        this.pnlSide.visible = true;
+                        this.pnlSide.style.top = `${rect.top}px`;
+                        this.pnlSide.style.left = `${rect.left}px`;
+                        this.pnlSide.width = rect.width;
+                        this.targetConfig = {
+                            id: elm.id,
+                            side: 'top'
+                        };
+                    }
+                    else if (y > rect.bottom - edgeThreshold && y <= rect.bottom) {
+                        this.pnlSide.visible = true;
+                        this.pnlSide.style.top = `${rect.bottom}px`;
+                        this.pnlSide.style.left = `${rect.left}px`;
+                        this.pnlSide.width = rect.width;
+                        this.targetConfig = {
+                            id: elm.id,
+                            side: 'bottom'
+                        };
+                    }
+                    else if (y >= rect.top + edgeThreshold && y <= rect.bottom - edgeThreshold) {
+                        elm.classList.add(index_css_1.rowDragOverActiveStyled);
+                        this.pnlSide.visible = false;
+                        this.targetConfig = {
+                            id: elm.id,
+                            side: ''
+                        };
+                    }
                 }
             }
         }
+        clearHoverStyle() {
+            const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
+            if (currentElm)
+                currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
+        }
+        handleDragEnd(dragId) {
+            const { side, id } = this.targetConfig;
+            if (dragId === id)
+                return;
+            if (side) {
+                this.appendItem(dragId, id, side);
+            }
+            else {
+                this.changeParent(dragId, id);
+            }
+        }
+        appendItem(dragId, targetId, postion) {
+            if (postion === 'top' || postion === 'bottom') {
+                const targetData = this.elementsMap.get(targetId);
+                const dragData = this.elementsMap.get(dragId);
+                if (!dragData || !targetData)
+                    return;
+                const parentDragPath = this.getParentID(this.screen.elements[0], dragId);
+                const parentTargetPath = this.getParentID(this.screen.elements[0], targetId);
+                const posProps = ['left', 'top', 'right', 'bottom', 'position'];
+                if (dragData) {
+                    for (let prop in dragData.props) {
+                        if (posProps.includes(prop))
+                            delete dragData.props[prop];
+                    }
+                }
+                const parentId = parentDragPath && `elm-${parentDragPath}`;
+                const parentData = parentId && this.elementsMap.get(parentId);
+                if (parentData) {
+                    parentData.items = parentData.items || [];
+                    const findedIndex = parentData.items.findIndex(x => x.path === dragId.replace('elm-', ''));
+                    parentData.items.splice(findedIndex, 1);
+                    this.elementsMap.set(parentId, parentData);
+                }
+                const parentTargetId = parentTargetPath && `elm-${parentTargetPath}`;
+                const parentTargetData = parentTargetId && this.elementsMap.get(parentTargetId);
+                if (parentTargetData) {
+                    parentTargetData.items = parentTargetData.items || [];
+                    const findedIndex = parentTargetData.items.findIndex(x => x.path === targetId.replace('elm-', ''));
+                    if (postion === 'top') {
+                        parentTargetData.items.splice(findedIndex, 0, dragData);
+                    }
+                    else {
+                        parentTargetData.items.splice(findedIndex + 1, 0, dragData);
+                    }
+                    this.elementsMap.set(parentTargetId, parentTargetData);
+                }
+                this.renderUI();
+                if (this.onUpdate)
+                    this.onUpdate();
+            }
+        }
         changeParent(dragId, targetId) {
-            // TODO: st component is hidden
             const targetData = this.elementsMap.get(targetId);
             const dragData = this.elementsMap.get(dragId);
             if (!dragData || !targetData)
@@ -921,7 +1013,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                         this.$render("i-icon", { name: "plus-circle", class: index_css_1.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, tooltip: {
                                 content: 'Add Component'
                             }, visible: false, onClick: () => this.onShowComponentPicker() }))),
-                this.$render("i-vstack", { id: "vStackComponents", gap: 4, overflow: "auto", maxHeight: "calc(100% - 32px)" }),
+                this.$render("i-vstack", { id: "vStackComponents", gap: 4, overflow: "auto", position: 'relative', height: "100%", maxHeight: "calc(100% - 32px)" }),
                 this.$render("i-alert", { id: "mdAlert", title: 'Confirm', status: 'confirm', content: 'Are you sure to delete this component?', onConfirm: this.onConfirm.bind(this), onClose: this.onClose.bind(this) })));
         }
     };
@@ -2159,7 +2251,7 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
                 result = (0, utils_3.isSameValue)(this._data[prop] || 'auto', newVal || 'auto');
             }
             else {
-                result = (0, utils_3.isSameValue)(this._data.default?.[prop], newVal || 'auto');
+                result = (0, utils_3.isSameValue)(this._data.default?.[prop] || 'auto', newVal || 'auto');
             }
             return result;
         }
@@ -3353,25 +3445,31 @@ define("@scom/scom-designer/tools/effects.tsx", ["require", "exports", "@ijstech
             this._data = value;
             this.renderUI();
         }
+        get defaultOpacity() {
+            return Number(this._data?.default?.['opacity'] || '1');
+        }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
         }
         renderUI() {
             const { opacity = 1 } = this._data;
             this.inputEffect.value = this.rangeEffect.value = Number(opacity) * 100;
-            this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
+            this.updateHighlight();
+        }
+        updateHighlight() {
+            this.designerHeader.isChanged = Number(this._data?.opacity || 1) !== this.defaultOpacity;
         }
         onInputEffectChanged() {
             this.rangeEffect.value = this.inputEffect.value;
             this._data.opacity = this.rangeEffect.value / 100;
-            this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
+            this.updateHighlight();
             if (this.onChanged)
                 this.onChanged('opacity', `${this._data.opacity}`);
         }
         onRangeChanged() {
             this.inputEffect.value = this.rangeEffect.value;
             this._data.opacity = this.rangeEffect.value / 100;
-            this.designerHeader.isChanged = this.rangeEffect.value !== this._data.default['opacity'] * 100;
+            this.updateHighlight();
             if (this.onChanged)
                 this.onChanged('opacity', `${this._data.opacity}`);
         }
@@ -4605,6 +4703,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.resizing = false;
             this.resizerPos = "";
             this.recentComponents = [];
+            this.designingPos = {};
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
@@ -5132,9 +5231,18 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
         }
         updatePosition(value) {
+            this.designingPos = { ...value };
+            const control = this.selectedControl?.control;
+            if (!control)
+                return;
             for (let prop in value) {
-                if (value.hasOwnProperty(prop)) {
-                    this.onPropertiesChanged(prop, value[prop]);
+                control[prop] = value[prop];
+            }
+        }
+        updateDesignPosition() {
+            for (let prop in this.designingPos) {
+                if (this.designingPos.hasOwnProperty(prop)) {
+                    this.onPropertiesChanged(prop, this.designingPos[prop]);
                 }
             }
             this.designerProperties.onUpdate();
@@ -5144,10 +5252,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (minWidth !== undefined) {
                 this.pnlFormDesigner.width = minWidth;
             }
-            // if (value >= 2) {
-            //   this.pnlScreens.width = 0
-            //   this.pnlProperties.width = 0
-            // }
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
             this.updateDesignProps(this._rootComponent);
             this.onUpdateDesigner();
@@ -5174,6 +5278,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.mouseDown = false;
             };
             this.pnlFormDesigner.onmousedown = event => {
+                this.designingPos = {};
                 this.mouseDown = true;
                 this.mouseDownPos = { x: event.clientX, y: event.clientY };
                 let elm = event.target;
@@ -5197,10 +5302,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 }
             };
             this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
-            this.pnlFormDesigner.onmouseup = event => {
-                this.mouseDown = false;
-            };
+            this.pnlFormDesigner.onmouseup = this.handleControlMouseUp.bind(this);
             this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
+        }
+        handleControlMouseUp() {
+            this.mouseDown = false;
+            this.updateDesignPosition();
+            this.designingPos = {};
         }
         init() {
             super.init();

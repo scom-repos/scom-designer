@@ -12,7 +12,8 @@ import {
   Image,
   Modal,
   Alert,
-  IconName
+  IconName,
+  Panel
 } from '@ijstech/components'
 import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
@@ -46,11 +47,15 @@ export default class DesignerComponents extends Module {
   private _screen: IScreen;
   private mdActions: Modal;
   private mdAlert: Alert;
+  private pnlSide: Panel;
 
   private currentComponent: IComponent = null;
   private _activeComponent: IComponent = null;
   private dragId: string = '';
-  private activeId: string = '';
+  private targetConfig = {
+    side: '',
+    id: ''
+  }
   private elementsMap: Map<string, IComponent> = new Map();
 
   public onShowComponentPicker: () => void;
@@ -97,9 +102,18 @@ export default class DesignerComponents extends Module {
         <i-label caption={this.screen.name} font={{ size: '0.75rem' }} />
       </i-hstack>
     );
-    if (this.screen.elements?.length) {
+    if (this.screen?.elements?.length) {
       this.renderTreeItems(this.screen.elements, this.vStackComponents, 0);
     }
+    this.vStackComponents.appendChild(
+      <i-panel
+        id="pnlSide"
+        width={'100%'} height={2}
+        background={{ color: Theme.colors.info.light }}
+        visible={false}
+        position='fixed'
+      ></i-panel>
+    )
   }
 
   private renderTreeItems(elements: IComponent[], parentElm: VStack, parentPl: number) {
@@ -207,7 +221,8 @@ export default class DesignerComponents extends Module {
   private initEvents() {
     this.addEventListener('dragstart', (event) => {
       const target = (event.target as HTMLElement).closest('.drag-item');
-      if (!target) {
+      const isDragRoot = this.isRootPanel(target?.id);
+      if (!target || isDragRoot) {
         event.preventDefault()
         return;
       }
@@ -215,14 +230,17 @@ export default class DesignerComponents extends Module {
     })
 
     this.addEventListener('dragend', (event) => {
-      if (!this.dragId) {
+      const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
+      if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
         event.preventDefault();
         return;
       }
-      this.changeParent(this.dragId, this.activeId);
+      this.handleDragEnd(this.dragId);
       const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
       if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
+      this.pnlSide.visible = false;
       this.dragId = null;
+      this.targetConfig = {id: '', side: ''}; 
     })
 
     this.addEventListener('dragover', (event) => {
@@ -242,21 +260,109 @@ export default class DesignerComponents extends Module {
     });
   }
 
+  private isRootPanel(id: string) {
+    return id ? this.screen?.elements[0]?.path === id.replace('elm-', '') : false;
+  }
+
   private showHightlight(x: number, y: number) {
     const elms = this.vStackComponents.querySelectorAll('.drag-item');
+    this.clearHoverStyle();
+    const edgeThreshold = 10;
+  
     for (let elm of elms) {
       const rect = elm.getBoundingClientRect();
-      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-        const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
-        if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
-        elm.classList.add(rowDragOverActiveStyled);
-        this.activeId = elm?.id;
+  
+      if (x >= rect.left && x <= rect.right) {
+        if (y >= rect.top && y < rect.top + edgeThreshold) {
+          this.pnlSide.visible = true;
+          this.pnlSide.style.top = `${rect.top}px`;
+          this.pnlSide.style.left = `${rect.left}px`;
+          this.pnlSide.width = rect.width;
+          this.targetConfig = {
+            id: elm.id,
+            side: 'top'
+          };
+        } else if (y > rect.bottom - edgeThreshold && y <= rect.bottom) {
+          this.pnlSide.visible = true;
+          this.pnlSide.style.top = `${rect.bottom}px`;
+          this.pnlSide.style.left = `${rect.left}px`;
+          this.pnlSide.width = rect.width;
+          this.targetConfig = {
+            id: elm.id,
+            side: 'bottom'
+          };
+        } else if (y >= rect.top + edgeThreshold && y <= rect.bottom - edgeThreshold) {
+          elm.classList.add(rowDragOverActiveStyled);
+          this.pnlSide.visible = false;
+          this.targetConfig = {
+            id: elm.id,
+            side: ''
+          };
+        }
       }
     }
   }
 
+  private clearHoverStyle() {
+    const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
+    if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
+  }
+
+  private handleDragEnd(dragId: string) {
+    const { side, id } = this.targetConfig;
+    if (dragId === id) return;
+    if (side) {
+      this.appendItem(dragId, id, side);
+    } else {
+      this.changeParent(dragId, id);
+    }
+  }
+
+  private appendItem(dragId: string, targetId: string, postion: string) {
+    if (postion === 'top' || postion === 'bottom') {
+      const targetData = this.elementsMap.get(targetId);
+      const dragData = this.elementsMap.get(dragId);
+      if (!dragData || !targetData) return;
+
+      const parentDragPath = this.getParentID(this.screen.elements[0], dragId);
+      const parentTargetPath = this.getParentID(this.screen.elements[0], targetId);
+
+      const posProps = ['left', 'top', 'right', 'bottom', 'position'];
+      if (dragData) {
+        for (let prop in dragData.props) {
+          if (posProps.includes(prop))
+            delete dragData.props[prop];
+        }
+      }
+
+      const parentId = parentDragPath && `elm-${parentDragPath}`;
+      const parentData = parentId && this.elementsMap.get(parentId);
+      if (parentData) {
+        parentData.items = parentData.items || [];
+        const findedIndex = parentData.items.findIndex(x => x.path === dragId.replace('elm-', ''));
+        parentData.items.splice(findedIndex, 1);
+        this.elementsMap.set(parentId, parentData);
+      }
+
+      const parentTargetId = parentTargetPath && `elm-${parentTargetPath}`;
+      const parentTargetData = parentTargetId && this.elementsMap.get(parentTargetId);
+      if (parentTargetData) {
+        parentTargetData.items = parentTargetData.items || [];
+        const findedIndex = parentTargetData.items.findIndex(x => x.path === targetId.replace('elm-', ''));
+        if (postion === 'top') {
+          parentTargetData.items.splice(findedIndex, 0, dragData);
+        } else {
+          parentTargetData.items.splice(findedIndex + 1, 0, dragData);
+        }
+        this.elementsMap.set(parentTargetId, parentTargetData);
+      }
+
+      this.renderUI();
+      if (this.onUpdate) this.onUpdate();
+    }
+  }
+
   private changeParent(dragId: string, targetId: string) {
-    // TODO: st component is hidden
     const targetData = this.elementsMap.get(targetId);
     const dragData = this.elementsMap.get(dragId);
     if (!dragData || !targetData) return;
@@ -284,6 +390,7 @@ export default class DesignerComponents extends Module {
       parentData.items.splice(findedIndex, 1);
       this.elementsMap.set(parentId, parentData);
     }
+
     this.renderUI();
     if (this.onUpdate) this.onUpdate();
   }
@@ -479,8 +586,14 @@ export default class DesignerComponents extends Module {
             />
           </i-hstack>
         </i-hstack>
-        <i-vstack id="vStackComponents" gap={4} overflow="auto" maxHeight="calc(100% - 32px)" />
-
+        <i-vstack
+          id="vStackComponents"
+          gap={4}
+          overflow="auto"
+          position='relative'
+          height="100%"
+          maxHeight="calc(100% - 32px)"
+        />
         <i-alert
           id="mdAlert"
           title='Confirm'
