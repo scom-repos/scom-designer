@@ -32,6 +32,111 @@ declare module "@scom/scom-designer/helpers/store.ts" {
     const getBreakpoint: () => number;
     export { setBreakpoint, getBreakpoint };
 }
+/// <amd-module name="@scom/scom-designer/assets.ts" />
+declare module "@scom/scom-designer/assets.ts" {
+    function fullPath(path: string): string;
+    const _default: {
+        fullPath: typeof fullPath;
+    };
+    export default _default;
+}
+/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
+declare module "@scom/scom-designer/helpers/config.ts" {
+    import { IconName } from "@ijstech/components";
+    import { IMediaQuery } from "@scom/scom-designer/interface.ts";
+    const enum BREAKPOINTS {
+        MOBILE = 0,
+        TABLET = 1,
+        LAPTOP = 2,
+        DESKTOP = 3,
+        BIG_SCREEN = 4
+    }
+    const breakpoints: {
+        tooltip: string;
+        type: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+        };
+        value: BREAKPOINTS;
+    }[];
+    const getBreakpointInfo: (index: number) => {
+        icon?: undefined;
+        name?: undefined;
+    } | {
+        icon: IconName;
+        name: string;
+    };
+    const breakpointsMap: {
+        [key: number]: IMediaQuery;
+    };
+    const enum PREVIEWS {
+        DRAFT = 0,
+        WEB = 1,
+        IOS = 2,
+        ANDROID = 3
+    }
+    const previews: ({
+        tooltip: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+            image?: undefined;
+        };
+        type: string;
+        value: PREVIEWS;
+    } | {
+        tooltip: string;
+        icon: {
+            image: {
+                width: string;
+                height: string;
+                padding: {
+                    top: number;
+                    left: number;
+                    right: number;
+                    bottom: number;
+                };
+                url: string;
+            };
+        };
+        type: string;
+        value: PREVIEWS;
+    })[];
+    const getMediaQueries: () => IMediaQuery[];
+    const getDefaultMediaQuery: (breakpoint: number) => any;
+    const getMediaQuery: (mediaQueries: any) => any;
+    const getMediaQueryProps: (mediaQueries: any) => any;
+    const GroupMetadata: {
+        Layout: {
+            name: string;
+            tooltipText: string;
+        };
+        Basic: {
+            name: string;
+            tooltipText: string;
+        };
+        Fields: {
+            name: string;
+            tooltipText: string;
+        };
+    };
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery };
+}
 /// <amd-module name="@scom/scom-designer/components/components.tsx" />
 declare module "@scom/scom-designer/components/components.tsx" {
     import { Module, ControlElement } from '@ijstech/components';
@@ -82,6 +187,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private isRootPanel;
         private showHightlight;
         private clearHoverStyle;
+        private resetData;
         private handleDragEnd;
         private appendItem;
         private changeParent;
@@ -145,14 +251,6 @@ declare module "@scom/scom-designer/tools/stylesheet.tsx" {
         init(): void;
         render(): any;
     }
-}
-/// <amd-module name="@scom/scom-designer/assets.ts" />
-declare module "@scom/scom-designer/assets.ts" {
-    function fullPath(path: string): string;
-    const _default: {
-        fullPath: typeof fullPath;
-    };
-    export default _default;
 }
 /// <amd-module name="@scom/scom-designer/helpers/utils.ts" />
 declare module "@scom/scom-designer/helpers/utils.ts" {
@@ -420,6 +518,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         name: string;
         tooltipText?: string;
         hasMediaQuery?: boolean;
+        hasClear?: boolean;
         onCollapse: (isShown: boolean) => void;
         onReset?: () => void;
         onToggleMediaQuery?: (value: boolean) => void;
@@ -435,6 +534,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         private _name;
         private _tooltipText;
         private _hasMediaQuery;
+        private _hasClear;
         private isShown;
         private lbName;
         private iconArrow;
@@ -442,6 +542,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         private querySwitch;
         private lblSwitch;
         private pnlSwitch;
+        private pnlClear;
         onCollapse: (isShown: boolean) => void;
         onReset: () => void;
         onToggleMediaQuery: (value: boolean) => void;
@@ -455,6 +556,8 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         get checked(): boolean;
         set checked(value: boolean);
         set isChanged(value: boolean);
+        get hasClear(): boolean;
+        set hasClear(value: boolean);
         set isQueryChanged(value: boolean);
         private renderUI;
         private _onCollapse;
@@ -467,7 +570,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/background.tsx" />
 declare module "@scom/scom-designer/tools/background.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolBackgroundElement extends ControlElement {
         onChanged?: onChangedCallback;
         onUpdate?: onUpdateCallback;
@@ -484,7 +587,7 @@ declare module "@scom/scom-designer/tools/background.tsx" {
             color?: string;
             image?: string;
         };
-        mediaQueries?: any[];
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -519,7 +622,7 @@ declare module "@scom/scom-designer/tools/background.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/size.tsx" />
 declare module "@scom/scom-designer/tools/size.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolSizeElement extends ControlElement {
         onChanged?: onChangedCallback;
         onUpdate?: onUpdateCallback;
@@ -531,7 +634,7 @@ declare module "@scom/scom-designer/tools/size.tsx" {
         minHeight?: number | string;
         maxWidth?: number | string;
         maxHeight?: number | string;
-        mediaQueries?: any[];
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -618,146 +721,10 @@ declare module "@scom/scom-designer/tools/modal-spacing.tsx" {
         render(): any;
     }
 }
-/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
-declare module "@scom/scom-designer/helpers/config.ts" {
-    import { IconName } from "@ijstech/components";
-    const enum BREAKPOINTS {
-        MOBILE = 0,
-        TABLET = 1,
-        LAPTOP = 2,
-        DESKTOP = 3,
-        BIG_SCREEN = 4
-    }
-    const breakpoints: {
-        tooltip: string;
-        type: string;
-        icon: {
-            width: string;
-            height: string;
-            padding: {
-                top: number;
-                left: number;
-                right: number;
-                bottom: number;
-            };
-            name: string;
-        };
-        value: BREAKPOINTS;
-    }[];
-    const getBreakpointInfo: (index: number) => {
-        icon?: undefined;
-        name?: undefined;
-    } | {
-        icon: IconName;
-        name: string;
-    };
-    const breakpointsMap: {
-        0: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        1: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        2: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        3: {
-            minWidth: string;
-            maxWidth: string;
-            properties: {};
-        };
-        4: {
-            minWidth: string;
-            properties: {};
-        };
-    };
-    const enum PREVIEWS {
-        DRAFT = 0,
-        WEB = 1,
-        IOS = 2,
-        ANDROID = 3
-    }
-    const previews: ({
-        tooltip: string;
-        icon: {
-            width: string;
-            height: string;
-            padding: {
-                top: number;
-                left: number;
-                right: number;
-                bottom: number;
-            };
-            name: string;
-            image?: undefined;
-        };
-        type: string;
-        value: PREVIEWS;
-    } | {
-        tooltip: string;
-        icon: {
-            image: {
-                width: string;
-                height: string;
-                padding: {
-                    top: number;
-                    left: number;
-                    right: number;
-                    bottom: number;
-                };
-                url: string;
-            };
-        };
-        type: string;
-        value: PREVIEWS;
-    })[];
-    const getMediaQueries: () => ({
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        maxWidth: string;
-        properties: {};
-    } | {
-        minWidth: string;
-        properties: {};
-    })[];
-    const getDefaultMediaQuery: (breakpoint: number) => any;
-    const GroupMetadata: {
-        Layout: {
-            name: string;
-            tooltipText: string;
-        };
-        Basic: {
-            name: string;
-            tooltipText: string;
-        };
-        Fields: {
-            name: string;
-            tooltipText: string;
-        };
-    };
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo };
-}
 /// <amd-module name="@scom/scom-designer/tools/margins-padding.tsx" />
 declare module "@scom/scom-designer/tools/margins-padding.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolMarginsAndPaddingElement extends ControlElement {
         onChanged?: onChangedCallback;
         onUpdate?: onUpdateCallback;
@@ -775,7 +742,7 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
             bottom?: string | number;
             left?: string | number;
         };
-        mediaQueries?: any;
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -800,8 +767,8 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
         private lblPadding;
         private lblMargin;
         private _data;
-        private _overallData;
         private currentProp;
+        private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolMarginsAndPaddingElement);
@@ -831,7 +798,7 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/position.tsx" />
 declare module "@scom/scom-designer/tools/position.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolPositionElement extends ControlElement {
         onChanged?: onChangedCallback;
         onUpdate?: onUpdateCallback;
@@ -847,7 +814,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
             y?: string;
         };
         zIndex?: string;
-        mediaQueries?: any[];
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -871,6 +838,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private lblZIndex;
         private spacingBtn;
         private _data;
+        private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolPositionElement);
@@ -897,14 +865,14 @@ declare module "@scom/scom-designer/tools/position.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/borders.tsx" />
 declare module "@scom/scom-designer/tools/borders.tsx" {
     import { Module, ControlElement, Container, IBorder } from '@ijstech/components';
-    import { onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolBordersElement extends ControlElement {
         onChanged?: onChangedCallback;
         onUpdate?: onUpdateCallback;
     }
     interface IDesignerBorder {
         border?: IBorder;
-        mediaQueries?: any[];
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -932,7 +900,7 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private lblRadius;
         private _data;
         private radiusObj;
-        private _overallData;
+        private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolBordersElement);
@@ -942,6 +910,7 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         setData(value: IDesignerBorder): void;
         private onCollapse;
         private renderUI;
+        private updateOverall;
         private updateHighlight;
         private checkValues;
         private updateButtons;
@@ -1498,7 +1467,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
-        get breakpointProps(): any;
         private createControl;
         private updateDesignProps;
         private isSameValue;
@@ -1599,6 +1567,11 @@ declare module "@scom/scom-designer/interface.ts" {
         path?: string;
         sort?: 'asc' | 'desc';
         root?: boolean;
+    }
+    export interface IMediaQuery {
+        minWidth: string;
+        maxWidth?: string;
+        properties: any;
     }
 }
 /// <amd-module name="@scom/scom-designer/types/components.ts" />

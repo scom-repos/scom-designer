@@ -19,6 +19,7 @@ import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemAct
 import { IComponent, IScreen } from '../interface';
 import './index.css';
 import { getBreakpoint } from '../helpers/store';
+import { getDefaultMediaQuery, getMediaQueryProps } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -174,10 +175,9 @@ export default class DesignerComponents extends Module {
           onClick={(target: Control, event: MouseEvent) => onShowActions(target, event, elm)}
         />
       );
-      const breakpoint = getBreakpoint();
       const queriesStr = elm.props?.mediaQueries;
       const mediaQueries = typeof queriesStr === 'string' ? JSON.parse(queriesStr.substring(1, queriesStr.length - 1)) : [];
-      const breakpointProps = mediaQueries[breakpoint]?.properties || {};
+      const breakpointProps = getMediaQueryProps(mediaQueries);
       let isHidden = false;
       if (Object.hasOwnProperty.call(breakpointProps, 'visible')) {
         isHidden = breakpointProps['visible'] === "{false}" || breakpointProps['visible'] === false;
@@ -233,14 +233,11 @@ export default class DesignerComponents extends Module {
       const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
       if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
         event.preventDefault();
+        this.resetData();
         return;
       }
       this.handleDragEnd(this.dragId);
-      const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
-      if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
-      this.pnlSide.visible = false;
-      this.dragId = null;
-      this.targetConfig = {id: '', side: ''}; 
+      this.resetData();
     })
 
     this.addEventListener('dragover', (event) => {
@@ -273,20 +270,24 @@ export default class DesignerComponents extends Module {
       const rect = elm.getBoundingClientRect();
   
       if (x >= rect.left && x <= rect.right) {
+        const paddingLeft = window.getComputedStyle(elm).paddingLeft || '';
+        const parsedLeft = parseInt(paddingLeft.substring(0, paddingLeft.length - 2));
         if (y >= rect.top && y < rect.top + edgeThreshold) {
+          if (this.isRootPanel(elm.id)) return;
           this.pnlSide.visible = true;
           this.pnlSide.style.top = `${rect.top}px`;
-          this.pnlSide.style.left = `${rect.left}px`;
-          this.pnlSide.width = rect.width;
+          this.pnlSide.style.left = `${rect.left + parsedLeft}px`;
+          this.pnlSide.width = rect.width - parsedLeft;
           this.targetConfig = {
             id: elm.id,
             side: 'top'
           };
         } else if (y > rect.bottom - edgeThreshold && y <= rect.bottom) {
+          if (this.isRootPanel(elm.id)) return;
           this.pnlSide.visible = true;
           this.pnlSide.style.top = `${rect.bottom}px`;
-          this.pnlSide.style.left = `${rect.left}px`;
-          this.pnlSide.width = rect.width;
+          this.pnlSide.style.left = `${rect.left + parsedLeft}px`;
+          this.pnlSide.width = rect.width - parsedLeft;
           this.targetConfig = {
             id: elm.id,
             side: 'bottom'
@@ -306,6 +307,13 @@ export default class DesignerComponents extends Module {
   private clearHoverStyle() {
     const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
     if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
+    this.pnlSide.visible = false;
+  }
+
+  private resetData() {
+    this.clearHoverStyle();
+    this.dragId = null;
+    this.targetConfig = {id: '', side: ''}; 
   }
 
   private handleDragEnd(dragId: string) {

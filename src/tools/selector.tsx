@@ -124,7 +124,7 @@ export default class DesignerSelector extends Module {
         stack={{grow: '1', shrink: '1'}}
         class={`${customIconLayoutStyled} ${i === 0 ? borderRadiusLeft : i === length - 1 ? borderRadiusRight : ''} ${item.isActive ? customIconLayoutActiveStyled : ''}`}
         tooltip={{ content: item.tooltip || '', placement: item.placement as 'left' }}
-        onClick={(target: Control) => this.onActiveChanged(target, item.type, item.value)}
+        onClick={(target: Control, event: MouseEvent) => this.onActiveChanged(target, event, item.type, item.value)}
       ></i-hstack> as HStack;
       if (item.tooltip) {
         elm.tooltip.content = item.tooltip;
@@ -165,7 +165,8 @@ export default class DesignerSelector extends Module {
     }
   }
 
-  private onActiveChanged(target: Control, type: string, value: string|number) {
+  private onActiveChanged(target: Control, event: MouseEvent, type: string, value: string|number) {
+    event.preventDefault();
     this.updateActiveItem(target);
     if (this.onChanged) this.onChanged(type, value);
   }

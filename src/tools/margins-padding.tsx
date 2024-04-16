@@ -12,11 +12,11 @@ import {
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
-import { onChangedCallback, onUpdateCallback } from '../interface';
+import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerToolHeader from './header';
+import { getBreakpointInfo } from '../helpers/config';
 import { getBreakpoint } from '../helpers/store';
-import { getBreakpointInfo, getDefaultMediaQuery } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {
@@ -37,7 +37,7 @@ interface IDesignerSpacing {
     bottom?: string|number;
     left?: string|number;
   };
-  mediaQueries?: any;
+  mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
@@ -65,13 +65,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private lblMargin: Label;
 
   private _data: IDesignerSpacing = {};
-  private _overallData = {
-    margin: '',
-    padding: '',
-    paddingMedia: '',
-    marginMedia: '',
-  }
   private currentProp: string = '';
+  private _idvChanged: boolean = false;
 
   onChanged: onChangedCallback;
   onUpdate: onUpdateCallback;
@@ -90,14 +85,14 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private get currentData() {
     let data = this._data;
     if (this.isChecked) {
-      const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+      const breakpointProps = this._data.mediaQuery?.properties|| {};
       data = {...data, ...breakpointProps};
     }
     return data;
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    const breakpointProps = this._data.mediaQuery?.properties|| {};
     return Object.keys(breakpointProps).some(prop => DESIGNER_SPACING_PROPS.includes(prop));
   }
 
@@ -105,8 +100,6 @@ export default class DesignerToolMarginsAndPadding extends Module {
     this._data = data;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
-    this._overallData.margin = this._overallData.marginMedia = '';
-    this._overallData.padding = this._overallData.paddingMedia = '';
     this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
@@ -116,6 +109,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private renderUI(needUpdate = false) {
     const data = this.currentData;
+    this._idvChanged = false;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     this.updateButtons(data);
     this.resetInputs(data);
@@ -130,15 +124,11 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const samePValue = paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0]);
     const sameMValue = marginValues.length === 4 && marginValues.every(v => v === marginValues[0]);
     if (samePValue) {
-      const pProp = this.isChecked ? 'paddingMedia' : 'padding';
-      this._overallData[pProp] = `${parseNumberValue(paddingValues[0])?.value || ''}`;
+      this.paddingInput.value = `${parseNumberValue(paddingValues[0])?.value || ''}`;
     }
     if (sameMValue) {
-      const mProp = this.isChecked ? 'marginMedia' : 'margin';
-      this._overallData[mProp] = `${parseNumberValue(marginValues[0])?.value || ''}`;
+      this.marginInput.value =  `${parseNumberValue(marginValues[0])?.value || ''}`;
     }
-    this.marginInput.value = this.isChecked ? this._overallData.marginMedia : this._overallData.margin;
-    this.paddingInput.value = this.isChecked ? this._overallData.paddingMedia : this._overallData.padding;
   }
 
   private updateHighlight(data: IDesignerSpacing) {
@@ -146,7 +136,8 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
     this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
     this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !this.isChecked && (!isSameMargin || !isSamePadding);
+    const hasChanged = !this.isChecked && (this._idvChanged || !isSameMargin || !isSamePadding);
+    if (hasChanged) this.designerHeader.isChanged = true;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -174,6 +165,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
           isSame = isSameValue(this._data[match[1]]?.[position] || '', valueStr || '');
         } else {
           isSame = !valueStr;
+          if (!isSame && !this._idvChanged) this._idvChanged = true;
         }
         button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
         button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
@@ -186,12 +178,6 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const targetVal = target.value;
     const unit = nextLabel?.caption || 'px';
     const value = targetVal !== '' ? `${targetVal}${unit}` : '';
-    if (this.isChecked) {
-      this._overallData[`${prop}Media`] = targetVal;
-    } else {
-      this._overallData[prop] = targetVal;
-      if (this._overallData[`${prop}Media`] === '') this._overallData[`${prop}Media`] = targetVal;
-    }
     this.handleValueChanged(prop, { top: value, right: value, bottom: value, left: value});
   }
 
@@ -273,14 +259,14 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private handleMediaQuery(prop: string, value: any, position?: string) {
     if (position) {
-      let propObj = this._data.mediaQueries[getBreakpoint()]['properties'][prop];
+      let propObj = this._data.mediaQuery['properties'][prop];
       if (!propObj) propObj = JSON.parse(JSON.stringify(this._data[prop] || {}));
       propObj[position] = value;
-      this._data.mediaQueries[getBreakpoint()]['properties'][prop] = propObj;
+      this._data.mediaQuery['properties'][prop] = propObj;
     } else {
-      this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
+      this._data.mediaQuery['properties'][prop] = value;
     }
-    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery, prop);
   }
 
   private onToggleMediaQuery(value: boolean) {
@@ -289,11 +275,9 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private onResetData() {
     if (this.isChecked) {
-      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
-      this._data.mediaQueries[getBreakpoint()].properties = (({ margin, padding, ...o }) => o)(breakpoint);
-      this._overallData.marginMedia = this._overallData.margin || '';
-      this._overallData.paddingMedia = this._overallData.padding || '';
-      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+      const breakpoint = this._data.mediaQuery.properties;
+      this._data.mediaQuery.properties = (({ margin, padding, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery);
     } else {
       const clonedData = JSON.parse(JSON.stringify(this._data));
       const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
@@ -301,10 +285,6 @@ export default class DesignerToolMarginsAndPadding extends Module {
       for (let prop of DESIGNER_SPACING_PROPS) {
         if (this.onChanged) this.onChanged(prop, this._data[prop]);
       }
-      if (this._overallData.marginMedia === this._overallData.margin) this._overallData.marginMedia = '';
-      if (this._overallData.paddingMedia === this._overallData.padding) this._overallData.paddingMedia = '';
-      this._overallData.margin = '';
-      this._overallData.padding = '';
     }
     this.renderUI(true);
   }

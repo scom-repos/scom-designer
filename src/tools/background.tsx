@@ -12,8 +12,8 @@ import {
 import DesignerToolHeader from './header';
 import { customColorStyled } from './index.css';
 import { backgroundOptions, isSameValue } from '../helpers/utils';
-import { onChangedCallback, onUpdateCallback } from '../interface';
-import { getBreakpoint } from '../helpers/store';
+import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
+
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolBackgroundElement extends ControlElement {
@@ -31,7 +31,7 @@ declare global {
 
 interface IDesignerBackground {
   background?: {color?: string; image?: string};
-  mediaQueries?: any[];
+  mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
@@ -69,7 +69,7 @@ export default class DesignerToolBackground extends Module {
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQueries?.[getBreakpoint()]?.properties|| {};
+    const breakpointProps = this._data?.mediaQuery?.properties|| {};
     return Object.hasOwnProperty.call(breakpointProps, 'background');
   }
 
@@ -82,7 +82,7 @@ export default class DesignerToolBackground extends Module {
 
   private renderUI(needUpdate?: boolean) {
     let data = JSON.parse(JSON.stringify(this._data));
-    const mediaBg = this._data.mediaQueries?.[getBreakpoint()]?.properties?.background;
+    const mediaBg = this._data.mediaQuery?.properties?.background;
     if (this.isChecked && mediaBg) data.background = mediaBg;
     this.designerHeader.isQueryChanged = !!mediaBg?.color;
 
@@ -132,8 +132,8 @@ export default class DesignerToolBackground extends Module {
   }
 
   private handleMediaQuery(prop: string, value: any) {
-    this._data.mediaQueries[getBreakpoint()]['properties'][prop] = value;
-    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries, prop);
+    this._data.mediaQuery['properties'][prop] = value;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery, prop);
   }
 
   private onToggleMediaQuery(isChecked: boolean) {
@@ -142,9 +142,9 @@ export default class DesignerToolBackground extends Module {
 
   private onResetData() {
     if (this.isChecked) {
-      const breakpoint = this._data.mediaQueries[getBreakpoint()].properties;
-      this._data.mediaQueries[getBreakpoint()].properties = (({ background, ...o }) => o)(breakpoint);
-      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQueries);
+      const breakpoint = this._data.mediaQuery.properties;
+      this._data.mediaQuery.properties = (({ background, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery);
     } else {
       const clonedData = JSON.parse(JSON.stringify(this._data));
       const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));

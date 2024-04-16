@@ -18,6 +18,7 @@ interface DesignerToolHeaderElement extends ControlElement {
   name: string;
   tooltipText?: string;
   hasMediaQuery?: boolean;
+  hasClear?: boolean;
   onCollapse: (isShown: boolean) => void;
   onReset?: () => void;
   onToggleMediaQuery?: (value: boolean) => void;
@@ -36,6 +37,7 @@ export default class DesignerToolHeader extends Module {
   private _name: string = '';
   private _tooltipText: string = '';
   private _hasMediaQuery: boolean = false;
+  private _hasClear: boolean = true;
   private isShown = false;
 
   private lbName: Label;
@@ -44,6 +46,7 @@ export default class DesignerToolHeader extends Module {
   private querySwitch: Switch;
   private lblSwitch: Label;
   private pnlSwitch: Panel;
+  private pnlClear: Panel;
 
   onCollapse: (isShown: boolean) => void;
   onReset: () => void;
@@ -90,6 +93,13 @@ export default class DesignerToolHeader extends Module {
     }
   }
 
+  get hasClear() {
+    return this._hasClear ?? true;
+  }
+  set hasClear(value: boolean) {
+    this._hasClear = value ?? true;
+  }
+
   set isQueryChanged(value: boolean) {
     if (this.lblSwitch) {
       this.lblSwitch.font = { size: '0.75rem', bold: true, color: value ? Theme.colors.success.main : Theme.text.primary };
@@ -102,6 +112,7 @@ export default class DesignerToolHeader extends Module {
     this.iconTooltip.visible = !!this.tooltipText;
     this.iconTooltip.tooltip.content = this.tooltipText || '';
     this.pnlSwitch.visible = this.hasMediaQuery;
+    this.pnlClear.visible = this.hasClear;
   }
 
   private _onCollapse() {
@@ -125,6 +136,7 @@ export default class DesignerToolHeader extends Module {
     this.name = this.getAttribute('name', true) || '';
     this.tooltipText = this.getAttribute('tooltipText', true);
     this.hasMediaQuery = this.getAttribute('hasMediaQuery', true, false);
+    this.hasClear = this.getAttribute('hasClear', true, true);
     this.onCollapse = this.getAttribute('onCollapse', true) || this.onCollapse;
     this.onToggleMediaQuery = this.getAttribute('onToggleMediaQuery', true) || this.onToggleMediaQuery;
     this.onReset = this.getAttribute('onReset', true) || this.onReset;
@@ -158,7 +170,7 @@ export default class DesignerToolHeader extends Module {
                 onChanged={this.onQueryChanged.bind(this)}
               ></i-switch>
             </i-hstack>
-            <i-panel hover={{opacity: 1}}>
+            <i-panel id="pnlClear" hover={{opacity: 1}} visible={false}>
               <i-button
                 icon={{ name: 'times', width: '0.75rem', height: '0.75rem', fill: Theme.text.primary }}
                 boxShadow='none'
