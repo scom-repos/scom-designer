@@ -70,6 +70,7 @@ export default class DesignerToolBorders extends Module {
     radiusMedia: '',
     widthMedia: '',
   }
+  private _idvChanged: boolean = false;
 
   onChanged: onChangedCallback;
   onUpdate: onUpdateCallback;
@@ -117,6 +118,7 @@ export default class DesignerToolBorders extends Module {
 
   private renderUI(needUpdate = false) {
     let data = this.currentData;
+    this._idvChanged = false;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     const { border = {} } = data;
     const radius = data?.border?.radius;
@@ -149,7 +151,7 @@ export default class DesignerToolBorders extends Module {
     this.styleSelector.isChanged = !this.checkValues('style', styleValue);
     const cResult = this.checkValues('color', this.bgColor.value);
     this.lblColor.font = { size: '0.75rem', color: cResult ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !this.isChecked && (!wResult || !rResult || !cResult || this.styleSelector.isChanged);
+    this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged);
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -181,6 +183,7 @@ export default class DesignerToolBorders extends Module {
         isSame = isSameValue(value || '', oldVal || '');
       } else {
         isSame = !value;
+        if (!isSame && !this._idvChanged) this._idvChanged = true;
       }
       button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
       button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;

@@ -82,6 +82,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private isRootPanel;
         private showHightlight;
         private clearHoverStyle;
+        private resetData;
         private handleDragEnd;
         private appendItem;
         private changeParent;
@@ -420,6 +421,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         name: string;
         tooltipText?: string;
         hasMediaQuery?: boolean;
+        hasClear?: boolean;
         onCollapse: (isShown: boolean) => void;
         onReset?: () => void;
         onToggleMediaQuery?: (value: boolean) => void;
@@ -435,6 +437,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         private _name;
         private _tooltipText;
         private _hasMediaQuery;
+        private _hasClear;
         private isShown;
         private lbName;
         private iconArrow;
@@ -442,6 +445,7 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         private querySwitch;
         private lblSwitch;
         private pnlSwitch;
+        private pnlClear;
         onCollapse: (isShown: boolean) => void;
         onReset: () => void;
         onToggleMediaQuery: (value: boolean) => void;
@@ -455,6 +459,8 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         get checked(): boolean;
         set checked(value: boolean);
         set isChanged(value: boolean);
+        get hasClear(): boolean;
+        set hasClear(value: boolean);
         set isQueryChanged(value: boolean);
         private renderUI;
         private _onCollapse;
@@ -802,6 +808,7 @@ declare module "@scom/scom-designer/tools/margins-padding.tsx" {
         private _data;
         private _overallData;
         private currentProp;
+        private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolMarginsAndPaddingElement);
@@ -871,6 +878,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private lblZIndex;
         private spacingBtn;
         private _data;
+        private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolPositionElement);
@@ -933,6 +941,7 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private _data;
         private radiusObj;
         private _overallData;
+        private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolBordersElement);

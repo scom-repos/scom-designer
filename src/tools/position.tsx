@@ -60,6 +60,7 @@ export default class DesignerToolPosition extends Module {
   private spacingBtn: Button|undefined = undefined;
 
   private _data: IDesignerPosition = {};
+  private _idvChanged: boolean = false;
 
   onChanged: onChangedCallback;
   onUpdate: onUpdateCallback;
@@ -105,6 +106,7 @@ export default class DesignerToolPosition extends Module {
   private renderUI(needUpdate = false) {
     let data = this.currentData;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
+    this._idvChanged = false;
     const { zIndex, position, overflow } = data;
     this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
     this.posSelector.activeItem = position || '';
@@ -122,7 +124,7 @@ export default class DesignerToolPosition extends Module {
     const zIndexVal = this.zIndexInput.value;
     const zChanged = !this.checkValues('zIndex', zIndexVal);
     this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
-    this.designerHeader.isChanged = !this.isChecked && (zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
+    this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -146,6 +148,7 @@ export default class DesignerToolPosition extends Module {
         isSame = isSameValue(this._data[id] || '', data[id] || '');
       } else {
         isSame = !data[id];
+        if (!isSame && !this._idvChanged) this._idvChanged = true;
       }
       button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
       button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';

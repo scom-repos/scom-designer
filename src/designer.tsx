@@ -413,6 +413,7 @@ export class ScomDesignerForm extends Module {
         if (com) {
           control.items = control.items || [];
           control.items.push(com);
+          console.log(control, this._rootComponent)
           this.updateStructure();
         }
       }

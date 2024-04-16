@@ -716,15 +716,11 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
                 if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
                     event.preventDefault();
+                    this.resetData();
                     return;
                 }
                 this.handleDragEnd(this.dragId);
-                const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
-                if (currentElm)
-                    currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
-                this.pnlSide.visible = false;
-                this.dragId = null;
-                this.targetConfig = { id: '', side: '' };
+                this.resetData();
             });
             this.addEventListener('dragover', (event) => {
                 event.preventDefault();
@@ -751,21 +747,27 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             for (let elm of elms) {
                 const rect = elm.getBoundingClientRect();
                 if (x >= rect.left && x <= rect.right) {
+                    const paddingLeft = window.getComputedStyle(elm).paddingLeft || '';
+                    const parsedLeft = parseInt(paddingLeft.substring(0, paddingLeft.length - 2));
                     if (y >= rect.top && y < rect.top + edgeThreshold) {
+                        if (this.isRootPanel(elm.id))
+                            return;
                         this.pnlSide.visible = true;
                         this.pnlSide.style.top = `${rect.top}px`;
-                        this.pnlSide.style.left = `${rect.left}px`;
-                        this.pnlSide.width = rect.width;
+                        this.pnlSide.style.left = `${rect.left + parsedLeft}px`;
+                        this.pnlSide.width = rect.width - parsedLeft;
                         this.targetConfig = {
                             id: elm.id,
                             side: 'top'
                         };
                     }
                     else if (y > rect.bottom - edgeThreshold && y <= rect.bottom) {
+                        if (this.isRootPanel(elm.id))
+                            return;
                         this.pnlSide.visible = true;
                         this.pnlSide.style.top = `${rect.bottom}px`;
-                        this.pnlSide.style.left = `${rect.left}px`;
-                        this.pnlSide.width = rect.width;
+                        this.pnlSide.style.left = `${rect.left + parsedLeft}px`;
+                        this.pnlSide.width = rect.width - parsedLeft;
                         this.targetConfig = {
                             id: elm.id,
                             side: 'bottom'
@@ -786,6 +788,12 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
             if (currentElm)
                 currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
+            this.pnlSide.visible = false;
+        }
+        resetData() {
+            this.clearHoverStyle();
+            this.dragId = null;
+            this.targetConfig = { id: '', side: '' };
         }
         handleDragEnd(dragId) {
             const { side, id } = this.targetConfig;
@@ -1933,6 +1941,7 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
             this._name = '';
             this._tooltipText = '';
             this._hasMediaQuery = false;
+            this._hasClear = true;
             this.isShown = false;
         }
         get name() {
@@ -1967,6 +1976,12 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
                 this.lbName.font = { size: '0.75rem', bold: true, color: value ? Theme.colors.success.main : Theme.text.primary };
             }
         }
+        get hasClear() {
+            return this._hasClear ?? true;
+        }
+        set hasClear(value) {
+            this._hasClear = value ?? true;
+        }
         set isQueryChanged(value) {
             if (this.lblSwitch) {
                 this.lblSwitch.font = { size: '0.75rem', bold: true, color: value ? Theme.colors.success.main : Theme.text.primary };
@@ -1978,6 +1993,7 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
             this.iconTooltip.visible = !!this.tooltipText;
             this.iconTooltip.tooltip.content = this.tooltipText || '';
             this.pnlSwitch.visible = this.hasMediaQuery;
+            this.pnlClear.visible = this.hasClear;
         }
         _onCollapse() {
             this.isShown = !this.isShown;
@@ -1999,6 +2015,7 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
             this.name = this.getAttribute('name', true) || '';
             this.tooltipText = this.getAttribute('tooltipText', true);
             this.hasMediaQuery = this.getAttribute('hasMediaQuery', true, false);
+            this.hasClear = this.getAttribute('hasClear', true, true);
             this.onCollapse = this.getAttribute('onCollapse', true) || this.onCollapse;
             this.onToggleMediaQuery = this.getAttribute('onToggleMediaQuery', true) || this.onToggleMediaQuery;
             this.onReset = this.getAttribute('onReset', true) || this.onReset;
@@ -2014,7 +2031,7 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
                         this.$render("i-hstack", { id: "pnlSwitch", verticalAlignment: 'center', horizontalAlignment: 'end', gap: "0.5rem", stack: { shrink: '0' }, visible: false },
                             this.$render("i-label", { id: "lblSwitch", caption: 'Media Query', font: { size: '0.75rem' } }),
                             this.$render("i-switch", { id: "querySwitch", class: index_css_6.customSwitchStyle, onChanged: this.onQueryChanged.bind(this) })),
-                        this.$render("i-panel", { hover: { opacity: 1 } },
+                        this.$render("i-panel", { id: "pnlClear", hover: { opacity: 1 }, visible: false },
                             this.$render("i-button", { icon: { name: 'times', width: '0.75rem', height: '0.75rem', fill: Theme.text.primary }, boxShadow: 'none', border: { radius: '50%', width: '1px', style: 'solid', color: Theme.divider }, padding: { top: '0.125rem', bottom: '0.125rem', left: '0.125rem', right: '0.125rem' }, background: { color: 'transparent' }, cursor: 'pointer', opacity: 0.8, tooltip: { content: 'Reset values', placement: 'topRight' }, onClick: this._onClear }))))));
         }
     };
@@ -2628,6 +2645,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                 marginMedia: '',
             };
             this.currentProp = '';
+            this._idvChanged = false;
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
             this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
             this.onResetData = this.onResetData.bind(this);
@@ -2660,6 +2678,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
         }
         renderUI(needUpdate = false) {
             const data = this.currentData;
+            this._idvChanged = false;
             this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
             this.updateButtons(data);
             this.resetInputs(data);
@@ -2689,7 +2708,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
             this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
             this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
-            this.designerHeader.isChanged = !this.isChecked && (!isSameMargin || !isSamePadding);
+            this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || !isSameMargin || !isSamePadding);
         }
         checkValues(prop, newVal) {
             let result = false;
@@ -2717,6 +2736,8 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
                     }
                     else {
                         isSame = !valueStr;
+                        if (!isSame && !this._idvChanged)
+                            this._idvChanged = true;
                     }
                     button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
                     button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
@@ -2928,6 +2949,7 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
             super(parent, options);
             this.spacingBtn = undefined;
             this._data = {};
+            this._idvChanged = false;
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
             this.onSelectChanged = this.onSelectChanged.bind(this);
             this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
@@ -2961,6 +2983,7 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
         renderUI(needUpdate = false) {
             let data = this.currentData;
             this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
+            this._idvChanged = false;
             const { zIndex, position, overflow } = data;
             this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
             this.posSelector.activeItem = position || '';
@@ -2978,7 +3001,7 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
             const zIndexVal = this.zIndexInput.value;
             const zChanged = !this.checkValues('zIndex', zIndexVal);
             this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
-            this.designerHeader.isChanged = !this.isChecked && (zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
+            this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
         }
         checkValues(prop, newVal) {
             let pResult = false;
@@ -3002,6 +3025,8 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                 }
                 else {
                     isSame = !data[id];
+                    if (!isSame && !this._idvChanged)
+                        this._idvChanged = true;
                 }
                 button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
                 button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
@@ -3138,6 +3163,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 radiusMedia: '',
                 widthMedia: '',
             };
+            this._idvChanged = false;
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
             this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
             this.onResetData = this.onResetData.bind(this);
@@ -3173,6 +3199,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
         }
         renderUI(needUpdate = false) {
             let data = this.currentData;
+            this._idvChanged = false;
             this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
             const { border = {} } = data;
             const radius = data?.border?.radius;
@@ -3204,7 +3231,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             this.styleSelector.isChanged = !this.checkValues('style', styleValue);
             const cResult = this.checkValues('color', this.bgColor.value);
             this.lblColor.font = { size: '0.75rem', color: cResult ? Theme.text.primary : Theme.colors.success.main };
-            this.designerHeader.isChanged = !this.isChecked && (!wResult || !rResult || !cResult || this.styleSelector.isChanged);
+            this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged);
         }
         checkValues(prop, newVal) {
             let result = false;
@@ -3237,6 +3264,8 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 }
                 else {
                     isSame = !value;
+                    if (!isSame && !this._idvChanged)
+                        this._idvChanged = true;
                 }
                 button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
                 button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
@@ -3882,7 +3911,7 @@ define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijst
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
-                this.$render("designer-tool-header", { name: "Trigger", tooltipText: "Add a trigger for an action.", onCollapse: this.onCollapse }),
+                this.$render("designer-tool-header", { name: "Trigger", tooltipText: "Add a trigger for an action.", onCollapse: this.onCollapse, hasClear: false }),
                 this.$render("i-vstack", { id: "vStackContent", gap: 16, padding: { top: 16, bottom: 16, left: 12, right: 12 }, position: 'relative', stack: { grow: '1', shrink: '1' } },
                     this.$render("i-data-grid", { id: "gdEvents", dock: 'fill' }))));
         }
@@ -4052,7 +4081,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 this.$render("i-label", { caption: category || '', opacity: 0.6, font: { size: '0.625rem' }, margin: { left: 'auto' }, display: "flex" })));
         }
         onUpdate() {
-            const { top, right, bottom, left, zIndex, position, width, height, overflow, minHeight, minWidth, maxHeight, maxWidth, mediaQueries } = this.designerProps;
+            const { top, right, bottom, left, zIndex, position, width, height, overflow, minHeight, minWidth, maxHeight, maxWidth, mediaQueries = [] } = this.designerProps;
             const breakpoint = (0, store_8.getBreakpoint)();
             if (!mediaQueries[breakpoint])
                 mediaQueries[breakpoint] = (0, config_4.getDefaultMediaQuery)(breakpoint);
@@ -4987,6 +5016,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     if (com) {
                         control.items = control.items || [];
                         control.items.push(com);
+                        console.log(control, this._rootComponent);
                         this.updateStructure();
                     }
                 }

@@ -175,7 +175,7 @@ export default class DesignerProperties extends Module {
       minWidth,
       maxHeight,
       maxWidth,
-      mediaQueries
+      mediaQueries = []
     }: any = this.designerProps;
     const breakpoint = getBreakpoint();
     if (!mediaQueries[breakpoint]) mediaQueries[breakpoint] = getDefaultMediaQuery(breakpoint);

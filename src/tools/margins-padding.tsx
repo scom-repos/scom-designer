@@ -72,6 +72,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     marginMedia: '',
   }
   private currentProp: string = '';
+  private _idvChanged: boolean = false;
 
   onChanged: onChangedCallback;
   onUpdate: onUpdateCallback;
@@ -116,6 +117,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private renderUI(needUpdate = false) {
     const data = this.currentData;
+    this._idvChanged = false;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     this.updateButtons(data);
     this.resetInputs(data);
@@ -146,7 +148,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
     this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
     this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
-    this.designerHeader.isChanged = !this.isChecked && (!isSameMargin || !isSamePadding);
+    this.designerHeader.isChanged = !this.isChecked && (this._idvChanged || !isSameMargin || !isSamePadding);
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -174,6 +176,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
           isSame = isSameValue(this._data[match[1]]?.[position] || '', valueStr || '');
         } else {
           isSame = !valueStr;
+          if (!isSame && !this._idvChanged) this._idvChanged = true;
         }
         button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
         button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';

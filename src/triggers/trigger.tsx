@@ -141,7 +141,7 @@ export default class DesignerTrigger extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Trigger" tooltipText="Add a trigger for an action." onCollapse={this.onCollapse} />
+        <designer-tool-header name="Trigger" tooltipText="Add a trigger for an action." onCollapse={this.onCollapse} hasClear={false} />
         <i-vstack
           id="vStackContent"
           gap={16}
