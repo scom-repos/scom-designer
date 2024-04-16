@@ -1,7 +1,8 @@
-import { IconName } from "@ijstech/components";
+import { IconName, Styles } from "@ijstech/components";
 import assets from "../assets";
 import { IMediaQuery } from "../interface";
 import { getBreakpoint } from "./store";
+const Theme = Styles.Theme.ThemeVars;
 
 const enum BREAKPOINTS {
   MOBILE,
@@ -144,6 +145,8 @@ const getMediaQueryProps = (mediaQueries: any) => {
   return getMediaQuery(mediaQueries)?.properties || {};
 }
 
+const getFont = (value: boolean) => ({ size: '0.75rem', color: value ? Theme.text.primary : Theme.colors.success.main });
+
 const GroupMetadata = {
   'Layout': {
     name: 'Layout',
@@ -169,5 +172,6 @@ export {
   GroupMetadata,
   getBreakpointInfo,
   getMediaQueryProps,
-  getMediaQuery
+  getMediaQuery,
+  getFont
 }

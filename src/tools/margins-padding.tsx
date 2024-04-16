@@ -15,7 +15,7 @@ import DesignerToolModalSpacing from './modal-spacing';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerToolHeader from './header';
-import { getBreakpointInfo } from '../helpers/config';
+import { getBreakpointInfo, getFont } from '../helpers/config';
 import { getBreakpoint } from '../helpers/store';
 const Theme = Styles.Theme.ThemeVars;
 
@@ -83,10 +83,11 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private get currentData() {
-    let data = this._data;
+    let data = JSON.parse(JSON.stringify(this._data));
     if (this.isChecked) {
-      const breakpointProps = this._data.mediaQuery?.properties|| {};
-      data = {...data, ...breakpointProps};
+      const { margin, padding } = this._data.mediaQuery?.properties|| {};
+      if (margin) data.margin = {...(data?.margin || {}), ...margin};
+      if (padding) data.padding = {...(data?.padding || {}), ...padding};
     }
     return data;
   }
@@ -134,10 +135,10 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private updateHighlight(data: IDesignerSpacing) {
     const isSameMargin = this.checkValues('margin', data.margin) || this.marginInput.value === '';
     const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
-    this.lblMargin.font = { size: '0.75rem', color: isSameMargin ? Theme.text.primary : Theme.colors.success.main };
-    this.lblPadding.font = { size: '0.75rem', color: isSamePadding ? Theme.text.primary : Theme.colors.success.main };
-    const hasChanged = !this.isChecked && (this._idvChanged || !isSameMargin || !isSamePadding);
-    if (hasChanged) this.designerHeader.isChanged = true;
+    this.lblMargin.font = getFont(isSameMargin);
+    this.lblPadding.font = getFont(isSamePadding);
+    const hasChanged = this._idvChanged || !isSameMargin || !isSamePadding;
+    if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -247,7 +248,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
       this.handleMediaQuery(type, value, position);
     } else {
       if (position) {
-        if (!this._data[type]) this._data[type] = {}
+        if (!this._data[type]) this._data[type] = {};
         this._data[type][position] = value;
       } else {
         this._data[type] = value;
@@ -259,8 +260,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
 
   private handleMediaQuery(prop: string, value: any, position?: string) {
     if (position) {
-      let propObj = this._data.mediaQuery['properties'][prop];
-      if (!propObj) propObj = JSON.parse(JSON.stringify(this._data[prop] || {}));
+      const propObj = this._data.mediaQuery['properties'][prop] || {};
       propObj[position] = value;
       this._data.mediaQuery['properties'][prop] = propObj;
     } else {

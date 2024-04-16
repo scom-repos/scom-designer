@@ -12,7 +12,7 @@ import {
 } from '@ijstech/components'
 import { textInputRight } from './index.css';
 import assets from '../assets';
-import { onChangedCallback } from '../interface';
+import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { alignContentProps, getAlignProps, justifyProps } from '../helpers/utils';
 import DesignerSelector from './selector';
 const Theme = Styles.Theme.ThemeVars;
@@ -28,7 +28,7 @@ interface IDesignerLayout {
   name?: string;
   stack?: IStack;
   reverse?: boolean;
-  mediaQueries?: any[];
+  mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
@@ -42,6 +42,7 @@ interface IStack {
 
 interface DesignerToolLayoutElement extends ControlElement {
   onChanged?: onChangedCallback;
+  onUpdate?: onUpdateCallback;
 }
 
 declare global {
@@ -77,6 +78,7 @@ export default class DesignerToolLayout extends Module {
   private _data: IDesignerLayout = {};
   private isBasicFlex: boolean = true;
   onChanged: onChangedCallback;
+  onUpdate: onUpdateCallback;
 
   constructor(parent?: Container, options?: DesignerToolLayoutElement) {
     super(parent, options);
@@ -84,6 +86,7 @@ export default class DesignerToolLayout extends Module {
     this.onReverseSwitch = this.onReverseSwitch.bind(this);
     this.onAdvFlexChanged = this.onAdvFlexChanged.bind(this);
     this.onResetData = this.onResetData.bind(this);
+    this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
   }
 
   get name() {
@@ -102,7 +105,7 @@ export default class DesignerToolLayout extends Module {
     this.renderUI();
   }
 
-  private renderUI() {
+  private renderUI(needUpdate = false) {
     this.togglePanels();
     const { wrap, alignItems, justifyContent, alignSelf, alignContent, direction, stack } = this._data;
     this.directionSelector.activeItem = direction;
@@ -178,6 +181,10 @@ export default class DesignerToolLayout extends Module {
     if (this.onChanged) this.onChanged('stack', this._data.stack);
   }
 
+  private onToggleMediaQuery(value: boolean) {
+    this.renderUI(true);
+  }
+
   private onResetData() {
     const clonedData = JSON.parse(JSON.stringify(this._data));
     const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
@@ -191,6 +198,7 @@ export default class DesignerToolLayout extends Module {
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
   }
 
   render() {
@@ -206,7 +214,9 @@ export default class DesignerToolLayout extends Module {
           name="Layout"
           tooltipText="With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes."
           onCollapse={this.onCollapse}
+          // hasMediaQuery={true}
           onReset={this.onResetData}
+          onToggleMediaQuery={this.onToggleMediaQuery}
         />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack

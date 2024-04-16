@@ -26,7 +26,7 @@ type visibleCallback = (component: IComponent, visible: boolean) => void;
 type selectCallback = (component: IComponent) => void;
 
 interface DesignerComponentsElement extends ControlElement {
-  onShowComponentPicker: () => void;
+  onShowComponentPicker: selectCallback;
   onSelect?: selectCallback;
   onVisible?: visibleCallback;
   onDelete?: selectCallback;
@@ -59,7 +59,7 @@ export default class DesignerComponents extends Module {
   }
   private elementsMap: Map<string, IComponent> = new Map();
 
-  public onShowComponentPicker: () => void;
+  onShowComponentPicker: selectCallback;
   onSelect: selectCallback;
   onVisible: visibleCallback;
   onDelete: selectCallback;
@@ -450,7 +450,7 @@ export default class DesignerComponents extends Module {
         visible: false,
         onClick: () => {
           this.mdActions.visible = false;
-          if (this.onShowComponentPicker) this.onShowComponentPicker();
+          if (this.onShowComponentPicker) this.onShowComponentPicker({...this.currentComponent});
         }
       },
       {
@@ -577,20 +577,6 @@ export default class DesignerComponents extends Module {
               tooltip={{
                 content: 'View Deleted Components'
               }}
-            />
-            <i-icon
-              name="plus-circle"
-              class={hoverFullOpacity}
-              opacity={0.8}
-              cursor="pointer"
-              width={28}
-              height={24}
-              padding={{ top: 4, bottom: 4, left: 6, right: 6 }}
-              tooltip={{
-                content: 'Add Component'
-              }}
-              visible={false}
-              onClick={() => this.onShowComponentPicker()}
             />
           </i-hstack>
         </i-hstack>

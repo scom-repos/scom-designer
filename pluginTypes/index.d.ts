@@ -121,6 +121,10 @@ declare module "@scom/scom-designer/helpers/config.ts" {
     const getDefaultMediaQuery: (breakpoint: number) => any;
     const getMediaQuery: (mediaQueries: any) => any;
     const getMediaQueryProps: (mediaQueries: any) => any;
+    const getFont: (value: boolean) => {
+        size: string;
+        color: string;
+    };
     const GroupMetadata: {
         Layout: {
             name: string;
@@ -135,7 +139,7 @@ declare module "@scom/scom-designer/helpers/config.ts" {
             tooltipText: string;
         };
     };
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery };
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont };
 }
 /// <amd-module name="@scom/scom-designer/components/components.tsx" />
 declare module "@scom/scom-designer/components/components.tsx" {
@@ -145,7 +149,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
     type visibleCallback = (component: IComponent, visible: boolean) => void;
     type selectCallback = (component: IComponent) => void;
     interface DesignerComponentsElement extends ControlElement {
-        onShowComponentPicker: () => void;
+        onShowComponentPicker: selectCallback;
         onSelect?: selectCallback;
         onVisible?: visibleCallback;
         onDelete?: selectCallback;
@@ -170,7 +174,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private dragId;
         private targetConfig;
         private elementsMap;
-        onShowComponentPicker: () => void;
+        onShowComponentPicker: selectCallback;
         onSelect: selectCallback;
         onVisible: visibleCallback;
         onDelete: selectCallback;
@@ -439,7 +443,7 @@ declare module "@scom/scom-designer/tools/selector.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/layout.tsx" />
 declare module "@scom/scom-designer/tools/layout.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
-    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface IDesignerLayout {
         wrap?: string;
         direction?: string;
@@ -451,7 +455,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         name?: string;
         stack?: IStack;
         reverse?: boolean;
-        mediaQueries?: any[];
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -464,6 +468,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
     }
     interface DesignerToolLayoutElement extends ControlElement {
         onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
     }
     global {
         namespace JSX {
@@ -493,6 +498,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         private _data;
         private isBasicFlex;
         onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolLayoutElement);
         get name(): string;
         set name(value: string);
@@ -506,6 +512,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         private onReverseSwitch;
         private onBasicFlexChanged;
         private onAdvFlexChanged;
+        private onToggleMediaQuery;
         private onResetData;
         init(): void;
         render(): any;
@@ -970,12 +977,14 @@ declare module "@scom/scom-designer/tools/effects.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/content.tsx" />
 declare module "@scom/scom-designer/tools/content.tsx" {
     import { Module, ControlElement, Container, IFont } from '@ijstech/components';
-    import { onChangedCallback } from "@scom/scom-designer/interface.ts";
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
     interface DesignerToolContentElement extends ControlElement {
         onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
     }
     interface IDesignerContent {
         font?: IFont;
+        mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
         };
@@ -994,13 +1003,25 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         private inputFontWeight;
         private inputFontColor;
         private designerHeader;
+        private lblColor;
+        private lblWeight;
+        private lblSize;
         private _data;
         onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolContentElement);
+        private get isChecked();
+        private hasMediaQuery;
         setData(value: IDesignerContent): void;
         private onCollapse;
         private renderUI;
+        private updateHighlight;
+        private checkValues;
         private onFontChanged;
+        private onColorChanged;
+        private handleValueChanged;
+        private handleMediaQuery;
+        private onToggleMediaQuery;
         private onResetData;
         init(): void;
         render(): any;
@@ -1457,6 +1478,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private recentComponents;
         private _rootComponent;
         private selectedComponent;
+        private currentParent;
         private designingPos;
         selectedControl: IControl;
         modified: boolean;
@@ -1491,6 +1513,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleAddControl;
         private updateStructure;
         private initComponentPicker;
+        private onAddComponent;
         private initBlockPicker;
         private onPropertiesChanged;
         private onControlEventChanged;

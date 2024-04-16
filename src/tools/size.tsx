@@ -171,9 +171,7 @@ export default class DesignerToolSize extends Module {
       )
       this.pnlSizes.append(elm)
     }
-    if (!this.isChecked && hasChanged) {
-      this.designerHeader.isChanged = true;
-    }
+    if (!this.isChecked) this.designerHeader.checked = hasChanged;
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SIZE_PROPS);
   }
 
