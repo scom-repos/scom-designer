@@ -231,7 +231,7 @@ export default class DesignerToolLayout extends Module {
       this.shrinkInput.value = '1';
       this.growInput.value = value;
     } else {
-      stack = undefined;
+      stack = { basis: '', shrink: '', grow: '' };
       this.basisInput.value = '';
       this.shrinkInput.value = '';
       this.growInput.value = '';

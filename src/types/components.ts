@@ -3702,6 +3702,7 @@ declare module "packages/base/src/observable" {
     export function Observables(target: any, propertyName?: string): any;
 }
 declare module "packages/base/src/component" {
+    import { IDataSchema } from "packages/application/src/index";
     export interface IFont {
         name?: string;
         size?: string;
@@ -3763,6 +3764,11 @@ declare module "packages/base/src/component" {
         values?: any[];
         default?: string | number | boolean | object;
     }
+    export enum GroupType {
+        'BASIC' = "Basic",
+        'LAYOUT' = "Layout",
+        'FIELDS' = "Fields"
+    }
     export interface ICustomProperties {
         icon?: string;
         tagName?: string;
@@ -3773,6 +3779,8 @@ declare module "packages/base/src/component" {
         events: {
             [name: string]: ICustomEventParam[];
         };
+        dataSchema?: IDataSchema;
+        group?: GroupType;
     }
     export const ComponentProperty: ICustomProperties;
     export class Component extends HTMLElement {
@@ -3799,9 +3807,11 @@ declare module "packages/base/src/component" {
         connectedCallback(): void;
         disconnectedCallback(): void;
         protected parseDesignPropValue(value: string): any;
-        _getDesignPropValue(prop: string): string | number | boolean | object;
-        _setDesignPropValue(prop: string, value: string | number | boolean | object): void;
+        _getDesignPropValue(prop: string): string | number | boolean | object | any[];
+        _setDesignPropValue(prop: string, value: string | number | boolean | object, breakpointProp?: any): void;
         _setDesignProps(props: {
+            [prop: string]: string;
+        }, breakpoint?: {
             [prop: string]: string;
         }): void;
         _getDesignProps(): {
@@ -3831,7 +3841,7 @@ declare module "packages/base/src/style/base.css" {
         background: string;
     };
     export const getBackgroundStyleClass: (value: IBackground) => string;
-    export const getSpacingValue: (value: string | number) => string;
+    export const getSpacingValue: (value: string | number) => string | number;
     export const getMediaQueryRule: (mediaQuery: IMediaQuery<any>) => string | undefined;
     interface IProps {
         display?: DisplayType;
@@ -3893,7 +3903,7 @@ declare module "packages/base/src/control" {
     import { notifyEventCallback, notifyMouseEventCallback, notifyKeyboardEventCallback, notifyGestureEventCallback } from "@ijstech/components/base";
     export type DockStyle = 'none' | 'bottom' | 'center' | 'fill' | 'left' | 'right' | 'top';
     export type LineHeightType = string | number | 'normal' | 'initial' | 'inherit';
-    export type DisplayType = 'inline-block' | 'block' | 'inline-flex' | 'flex' | 'inline' | 'initial' | 'inherit' | 'none' | '-webkit-box';
+    export type DisplayType = 'inline-block' | 'block' | 'inline-flex' | 'flex' | 'inline' | 'initial' | 'inherit' | 'none' | '-webkit-box' | 'grid' | 'inline-grid';
     export interface IMediaQuery<T> {
         minWidth?: string | number;
         maxWidth?: string | number;
@@ -3953,7 +3963,10 @@ declare module "packages/base/src/control" {
         private _bottomLeft;
         private _bottomRight;
         constructor(target: Control, options?: IBorder);
+        updateValue(options: IBorder): void;
+        private isNumber;
         protected updateAllSidesProps(options: IBorder): void;
+        private removeStyles;
         get radius(): string;
         set radius(value: string | number);
         get width(): string;
@@ -3973,6 +3986,7 @@ declare module "packages/base/src/control" {
         protected removeStyleClass(name: string): void;
         protected setSideBorderStyles(side: BorderStylesSideType, value?: IBorderSideStyles): void;
         protected setBorderStyles(value: IBorder): void;
+        private setBorderProp;
     }
     export interface IGrid {
         column?: number;
@@ -4023,7 +4037,14 @@ declare module "packages/base/src/control" {
         zIndex?: string | number;
         maxHeight?: string | number;
         maxWidth?: string | number;
+        width?: number | string;
+        height?: number | string;
+        minWidth?: number | string;
+        minHeight?: number | string;
         overflow?: IOverflow | OverflowType;
+        font?: IFont;
+        opacity?: string;
+        stack?: IStack;
     }
     export type IControlMediaQuery = IMediaQuery<IControlMediaQueryProps>;
     export const ControlProperties: ICustomProperties;
@@ -4076,7 +4097,7 @@ declare module "packages/base/src/control" {
         tag: any;
         protected static create(options?: any, parent?: Container, defaults?: any): Promise<Control>;
         constructor(parent?: Control, options?: any, defaults?: any);
-        _setDesignPropValue(prop: string, value: string | number | boolean | object): void;
+        _setDesignPropValue(prop: string, value: string | number | boolean | object, breakpointProp?: any): void;
         _getCustomProperties(): ICustomProperties;
         private getMarginStyle;
         private getPaddingStyle;
@@ -4392,6 +4413,7 @@ declare module "packages/modal/src/style/modal.css" {
     export const getAbsoluteWrapperStyle: (left: string, top: string) => string;
     export const getModalStyle: (left: string, top: string) => string;
     export const modalStyle: string;
+    export const getBodyStyle: string;
     export const titleStyle: string;
     export const getModalMediaQueriesStyleClass: (mediaQueries: IModalMediaQuery[]) => string;
 }
@@ -4404,11 +4426,6 @@ declare module "packages/modal/src/modal" {
     export interface IModalMediaQueryProps extends IControlMediaQueryProps {
         showBackdrop?: boolean;
         popupPlacement?: 'center' | 'bottom' | 'top';
-        maxWidth?: string | number;
-        maxHeight?: string | number;
-        height?: string | number;
-        minWidth?: string | number;
-        width?: string | number;
         position?: ModalPositionType;
     }
     export type IModalMediaQuery = IMediaQuery<IModalMediaQueryProps>;
@@ -5014,13 +5031,16 @@ declare module "packages/layout/src/style/panel.css" {
     export const vStackStyle: string;
     export const hStackStyle: string;
     export const gridStyle: string;
-    export const getStackDirectionStyleClass: (direction: StackDirectionType) => string;
-    export const getStackMediaQueriesStyleClass: (mediaQueries: IStackMediaQuery[]) => string;
+    export const getStackDirectionStyleClass: (direction: StackDirectionType, reverse: boolean) => string;
+    export const getStackMediaQueriesStyleClass: (mediaQueries: IStackMediaQuery[], currentDirection: StackDirectionType) => string;
     export const justifyContentStartStyle: string;
     export const justifyContentCenterStyle: string;
     export const justifyContentEndStyle: string;
     export const justifyContentSpaceBetweenStyle: string;
+    export const justifyContentSpaceAroundStyle: string;
+    export const justifyContentSpaceEvenlyStyle: string;
     export const alignItemsStretchStyle: string;
+    export const alignItemsBaselineStyle: string;
     export const alignItemsStartStyle: string;
     export const alignItemsCenterStyle: string;
     export const alignItemsEndStyle: string;
@@ -5042,25 +5062,21 @@ declare module "packages/layout/src/style/panel.css" {
     export const getHoverStyleClass: (hover: IHover) => string;
 }
 declare module "packages/layout/src/stack" {
-    import { Container, ContainerElement, IMediaQuery, IBackground, PositionType, IControlMediaQueryProps } from "@ijstech/components/base";
+    import { Container, ContainerElement, IMediaQuery, IControlMediaQueryProps } from "@ijstech/components/base";
     import { IHover } from "packages/layout/src/interfaces";
     export interface IStackMediaQueryProps extends IControlMediaQueryProps {
         direction?: StackDirectionType;
-        width?: number | string;
-        height?: number | string;
         gap?: number | string;
-        background?: IBackground;
         justifyContent?: StackJustifyContentType;
         alignItems?: StackAlignItemsType;
         alignSelf?: StackAlignSelfType;
-        position?: PositionType;
-        top?: number | string;
+        reverse?: boolean;
     }
     export type IStackMediaQuery = IMediaQuery<IStackMediaQueryProps>;
     export type StackWrapType = 'nowrap' | 'wrap' | 'wrap-reverse' | 'initial' | 'inherit';
     export type StackDirectionType = 'horizontal' | 'vertical';
-    export type StackJustifyContentType = "start" | "center" | "end" | "space-between";
-    export type StackAlignItemsType = "stretch" | "start" | "center" | "end";
+    export type StackJustifyContentType = "start" | "center" | "end" | "space-between" | "space-around" | "space-evenly";
+    export type StackAlignItemsType = "stretch" | "start" | "center" | "end" | "baseline";
     export type StackAlignSelfType = "auto" | "stretch" | "start" | "center" | "end";
     export type StackAlignContentType = "stretch" | "start" | "center" | "end" | "space-between" | "space-around" | "space-evenly";
     export interface StackLayoutElement extends ContainerElement {
@@ -5071,6 +5087,7 @@ declare module "packages/layout/src/stack" {
         alignItems?: StackAlignItemsType;
         alignSelf?: StackAlignSelfType;
         alignContent?: StackAlignSelfType;
+        reverse?: boolean;
         mediaQueries?: IStackMediaQuery[];
         hover?: IHover;
     }
@@ -5113,6 +5130,7 @@ declare module "packages/layout/src/stack" {
         private _gap;
         private _wrap;
         private _direction;
+        private _reverse;
         private _justifyContent;
         private _alignItems;
         private _alignSelf;
@@ -5123,6 +5141,8 @@ declare module "packages/layout/src/stack" {
         static create(options?: StackLayoutElement, parent?: Container): Promise<StackLayout>;
         get direction(): StackDirectionType;
         set direction(value: StackDirectionType);
+        get reverse(): boolean;
+        set reverse(value: boolean);
         get justifyContent(): StackJustifyContentType;
         set justifyContent(value: StackJustifyContentType);
         get alignItems(): StackAlignItemsType;
@@ -5222,6 +5242,7 @@ declare module "packages/layout/src/grid" {
         autoFillInHoles?: boolean;
         mediaQueries?: IGridLayoutMediaQuery[];
     }
+    export const gridSchemaProps: any;
     export class GridLayout extends Container {
         private _templateColumns;
         private _templateRows;
@@ -5697,7 +5718,7 @@ declare module "packages/combo-box/src/style/combo-box.css" {
     export let ItemListStyle: string;
 }
 declare module "packages/combo-box/src/combo-box" {
-    import { Control, ControlElement, notifyEventCallback, IBorder, Border } from "@ijstech/components/base";
+    import { Control, ControlElement, notifyEventCallback, IBorder, Border, IFont, IBackground, Background } from "@ijstech/components/base";
     import { Icon, IconElement } from "packages/icon/src/index";
     import "packages/combo-box/src/style/combo-box.css";
     export interface IComboItem {
@@ -5744,10 +5765,10 @@ declare module "packages/combo-box/src/combo-box" {
         private callback;
         onChanged: notifyEventCallback;
         constructor(parent?: Control, options?: any);
-        get value(): IComboItem | IComboItem[];
-        set value(value: IComboItem | IComboItem[]);
-        get selectedItem(): IComboItem | IComboItem[];
-        set selectedItem(value: IComboItem | IComboItem[]);
+        get value(): IComboItem | IComboItem[] | undefined;
+        set value(value: IComboItem | IComboItem[] | undefined);
+        get selectedItem(): IComboItem | IComboItem[] | undefined;
+        set selectedItem(value: IComboItem | IComboItem[] | undefined);
         get caption(): string;
         set caption(value: string);
         get captionWidth(): number | string;
@@ -5767,6 +5788,10 @@ declare module "packages/combo-box/src/combo-box" {
         get border(): Border;
         get readOnly(): boolean;
         set readOnly(value: boolean);
+        get background(): Background;
+        set background(value: IBackground);
+        get font(): IFont;
+        set font(value: IFont);
         private isValueValid;
         private getItemIndex;
         private openList;
@@ -5850,6 +5875,8 @@ declare module "packages/datepicker/src/datepicker" {
         set enabled(value: boolean);
         get placeholder(): string;
         set placeholder(value: string);
+        get type(): dateType;
+        set type(value: dateType);
         private get formatString();
         private _onDatePickerChange;
         private _onBlur;
@@ -5930,7 +5957,7 @@ declare module "packages/radio/src/radio.css" {
     export const captionStyle: string;
 }
 declare module "packages/radio/src/radio" {
-    import { Control, ControlElement, notifyEventCallback } from "@ijstech/components/base";
+    import { Control, ControlElement, notifyEventCallback, IFont } from "@ijstech/components/base";
     export interface RadioElement extends ControlElement {
         caption?: string;
         captionWidth?: number | string;
@@ -5947,6 +5974,7 @@ declare module "packages/radio/src/radio" {
         namespace JSX {
             interface IntrinsicElements {
                 ['i-radio-group']: RadioGroupElement;
+                ['i-radio']: RadioElement;
             }
         }
     }
@@ -5964,6 +5992,8 @@ declare module "packages/radio/src/radio" {
         set caption(value: string);
         get captionWidth(): number | string;
         set captionWidth(value: number | string);
+        set font(value: IFont);
+        get font(): IFont;
         _handleClick(event: MouseEvent): boolean;
         protected init(): void;
         static create(options?: RadioElement, parent?: Control): Promise<Radio>;
@@ -5985,7 +6015,7 @@ declare module "packages/radio/src/radio" {
         private renderUI;
         private appendItem;
         private _handleChange;
-        add(options: RadioElement): Promise<Radio>;
+        add(options: RadioElement): Radio;
         delete(index: number): void;
         protected init(): void;
         static create(options?: RadioGroupElement, parent?: Control): Promise<RadioGroup>;
@@ -6112,7 +6142,7 @@ declare module "packages/color/src/index" {
 }
 declare module "packages/input/src/style/input.css" { }
 declare module "packages/input/src/input" {
-    import { Control, ControlElement, notifyEventCallback, IBorder, Border } from "@ijstech/components/base";
+    import { Control, ControlElement, notifyEventCallback, IBorder, Border, IBackground, Background, IFont } from "@ijstech/components/base";
     import { Checkbox, CheckboxElement } from "packages/checkbox/src/index";
     import { ComboBox, ComboBoxElement } from "packages/combo-box/src/index";
     import { Datepicker, DatepickerElement } from "packages/datepicker/src/index";
@@ -6205,6 +6235,10 @@ declare module "packages/input/src/input" {
         get border(): Border;
         set maxLength(value: number);
         get maxLength(): number;
+        get background(): Background;
+        set background(value: IBackground);
+        get font(): IFont;
+        set font(value: IFont);
         set onClosed(callback: () => void);
         get onClosed(): () => void;
         private _createInputElement;
@@ -9765,7 +9799,7 @@ declare module "packages/code-editor/src/editor.api" {
 }
 declare module "packages/code-editor/src/monaco" {
     import * as IMonaco from "packages/code-editor/src/editor.api";
-    export type LanguageType = "txt" | "css" | "json" | "javascript" | "typescript" | "solidity" | "markdown" | "html" | "xml";
+    export type LanguageType = "txt" | "css" | "json" | "javascript" | "typescript" | "solidity" | "markdown" | "html" | "xml" | "shell";
     export function getLanguageType(fileName: string): LanguageType | undefined;
     export interface Monaco {
         editor: typeof IMonaco.editor;
@@ -10403,7 +10437,7 @@ declare module "packages/menu/src/style/menu.css" {
     export const modalStyle: string;
 }
 declare module "packages/menu/src/menu" {
-    import { Control, ControlElement, IContextMenu, ISpace } from "@ijstech/components/base";
+    import { Control, ControlElement, IContextMenu, IFont, ISpace } from "@ijstech/components/base";
     import { Link, LinkElement } from "packages/link/src/index";
     import { Icon, IconElement } from "packages/icon/src/index";
     export type MenuMode = "horizontal" | "vertical" | "inline";
@@ -10498,6 +10532,8 @@ declare module "packages/menu/src/menu" {
         delete(item: MenuItem): void;
         get title(): string;
         set title(value: string);
+        set font(value: IFont);
+        get font(): IFont;
         get link(): Link;
         set link(value: Link);
         get icon(): Icon;
@@ -12023,7 +12059,7 @@ declare module "packages/form/src/index" {
 declare module "@ijstech/components" {
     export * as Styles from "packages/style/src/index";
     export { application, EventBus, IEventBus, IHasDependencies, IModuleOptions, IModuleRoute, IModuleMenuItem, IRenderUIOptions, DataSchemaValidator, renderUI, FormatUtils, IFormatNumberOptions, IdUtils } from "packages/application/src/index";
-    export { customModule, customElements, getCustomElements, Component, Control, ControlElement, Container, Observe, Unobserve, ClearObservers, isObservable, observable, LibPath, RequireJS, ISpace, IBorder } from "@ijstech/components/base";
+    export { customModule, customElements, getCustomElements, Component, Control, ControlElement, Container, Observe, Unobserve, ClearObservers, isObservable, observable, LibPath, RequireJS, ISpace, IBorder, IFont } from "@ijstech/components/base";
     export { Alert } from "packages/alert/src/index";
     export { Button } from "packages/button/src/index";
     export { CodeEditor, LanguageType, CodeDiffEditor } from "packages/code-editor/src/index";

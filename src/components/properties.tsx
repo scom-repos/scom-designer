@@ -213,9 +213,9 @@ export default class DesignerProperties extends Module {
       alignItems,
       alignContent,
       alignSelf,
-      reverse = false,
+      reverse,
       wrap,
-      stack = {basis: '', grow: '', shrink: ''},
+      stack,
       mediaQueries = []
     }: any = this.designerProps;
     const {
