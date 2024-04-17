@@ -193,7 +193,7 @@ export default class DesignerSelector extends Module {
         id="gridSelector"
         templateColumns={['70px', 'auto']}
         verticalAlignment="center"
-        gap={{column: '0.5rem', row: '0.5rem'}}
+        gap={{column: 0, row: '0.5rem'}}
       >
         <i-label id="lblTitle" caption="" font={{ size: '0.75rem' }} />
         <i-hstack id="pnlList" gap={`1px`} verticalAlignment="center" height={'1.5rem'}></i-hstack>

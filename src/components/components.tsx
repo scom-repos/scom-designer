@@ -18,8 +18,7 @@ import {
 import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
 import './index.css';
-import { getBreakpoint } from '../helpers/store';
-import { getDefaultMediaQuery, getMediaQueryProps } from '../helpers/config';
+import { getMediaQueryProps } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -79,7 +78,7 @@ export default class DesignerComponents extends Module {
   }
   set activeComponent(value: IComponent) {
     this._activeComponent = value;
-    const elm = value?.path &&this.vStackComponents?.querySelector(`#elm-${value.path}`) as Control;
+    const elm = value?.path && this.vStackComponents?.querySelector(`#elm-${value.path}`) as Control;
     this.updateActiveStyle(elm)
   }
 

@@ -171,11 +171,11 @@ export default class DesignerToolSize extends Module {
       )
       this.pnlSizes.append(elm)
     }
-    if (!this.isChecked) this.designerHeader.checked = hasChanged;
+    if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_SIZE_PROPS);
   }
 
-  private checkValues(prop: string, newVal: any) {
+  private checkValues(prop: string, newVal: string) {
     let result = false;
     if (this.isChecked) {
       result = isSameValue(this._data[prop] || 'auto', newVal || 'auto');
@@ -253,7 +253,7 @@ export default class DesignerToolSize extends Module {
     const onUnitChanged = (value: 'px' | '%') => {
       const input = this.currentLabel.previousSibling as Input;
       const num = input?.value ?? parseNumberValue(this._data[this.currentProp])?.value;
-      const valueStr = num !== '' ? `${num}${value}` : 'auto';
+      const valueStr = num === '' ? 'auto' : `${num}${value}`;
       this._data[this.currentProp] = valueStr;
       if (this.onChanged) this.onChanged(this.currentProp, this._data[this.currentProp]);
       this.currentLabel.caption = value;

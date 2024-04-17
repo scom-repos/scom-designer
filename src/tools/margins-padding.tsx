@@ -8,7 +8,8 @@ import {
   Modal,
   Label,
   Button,
-  Input
+  Input,
+  ISpace
 } from '@ijstech/components'
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
@@ -125,10 +126,10 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const samePValue = paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0]);
     const sameMValue = marginValues.length === 4 && marginValues.every(v => v === marginValues[0]);
     if (samePValue) {
-      this.paddingInput.value = `${parseNumberValue(paddingValues[0])?.value || ''}`;
+      this.paddingInput.value = `${parseNumberValue(paddingValues[0])?.value ?? ''}`;
     }
     if (sameMValue) {
-      this.marginInput.value =  `${parseNumberValue(marginValues[0])?.value || ''}`;
+      this.marginInput.value =  `${parseNumberValue(marginValues[0])?.value ?? ''}`;
     }
   }
 
@@ -141,12 +142,12 @@ export default class DesignerToolMarginsAndPadding extends Module {
     if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
-  private checkValues(prop: string, newVal: any) {
+  private checkValues(prop: string, newVal: ISpace) {
     let result = false;
     if (this.isChecked) {
-      result = isSameValue(this._data[prop] || '', newVal);
+      result = isSameValue(this._data[prop], newVal);
     } else {
-      result = isSameValue(this._data.default?.[prop] || '', newVal);
+      result = isSameValue(this._data.default?.[prop], newVal);
     }
     return result;
   }
@@ -169,7 +170,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
           if (!isSame && !this._idvChanged) this._idvChanged = true;
         }
         button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
-        button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
+        button.caption = parseData?.value === '' ? 'auto' : `${parseData?.value}${parseData?.unit}`;
       }
     }
   }
@@ -210,7 +211,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
       if (valueObj) {
         for (let prop in valueObj) {
           const numValue = parseNumberValue(valueObj[prop])?.value;
-          const valueStr = numValue !== '' ? `${numValue}${value}` : '';
+          const valueStr = numValue === '' ? '' : `${numValue}${value}`;
           this.handleValueChanged(this.currentProp, valueStr, prop);
         }
       }

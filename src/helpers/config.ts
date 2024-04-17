@@ -25,24 +25,24 @@ const breakpoints = [
     icon: {name: 'tablet-alt', ...iconProps},
     value: BREAKPOINTS.TABLET
   },
-  {
-    tooltip: 'Laptop',
-    type: 'breakpoint',
-    icon: {name: 'laptop', ...iconProps},
-    value: BREAKPOINTS.LAPTOP
-  },
+  // {
+  //   tooltip: 'Laptop',
+  //   type: 'breakpoint',
+  //   icon: {name: 'laptop', ...iconProps},
+  //   value: BREAKPOINTS.LAPTOP
+  // },
   {
     tooltip: 'Desktop',
     type: 'breakpoint',
     icon: {name: 'desktop', ...iconProps},
     value: BREAKPOINTS.DESKTOP
   },
-  {
-    tooltip: 'Big Screen',
-    type: 'breakpoint',
-    icon: {name: 'tv', ...iconProps},
-    value: BREAKPOINTS.BIG_SCREEN
-  }
+  // {
+  //   tooltip: 'Big Screen',
+  //   type: 'breakpoint',
+  //   icon: {name: 'tv', ...iconProps},
+  //   value: BREAKPOINTS.BIG_SCREEN
+  // }
 ]
 
 const getBreakpointInfo = (index: number) => {
@@ -65,18 +65,13 @@ const breakpointsMap: {[key: number]: IMediaQuery} = {
     maxWidth: '1023px',
     properties: {}
   },
-  [BREAKPOINTS.LAPTOP]: {
-    minWidth: '1024px',
-    maxWidth: '1439px',
-    properties: {}
-  },
+  // [BREAKPOINTS.LAPTOP]: {
+  //   minWidth: '1024px',
+  //   maxWidth: '1439px',
+  //   properties: {}
+  // },
   [BREAKPOINTS.DESKTOP]: {
-    minWidth: '1440px',
-    maxWidth: '1919px',
-    properties: {}
-  },
-  [BREAKPOINTS.BIG_SCREEN]: {
-    minWidth: '1920px',
+    minWidth: '1024px',
     properties: {}
   }
 }

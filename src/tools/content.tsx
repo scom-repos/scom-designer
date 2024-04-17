@@ -90,7 +90,7 @@ export default class DesignerToolContent extends Module {
 
     const { font = {} } = data;
     this.inputFontColor.value = font.color;
-    this.inputFontSize.value = parseNumberValue(font.size)?.value || '';
+    this.inputFontSize.value = parseNumberValue(font.size)?.value ?? '';
     this.inputFontWeight.value = font.weight;
     this.updateHighlight();
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_CONTENT_PROPS);
@@ -99,7 +99,8 @@ export default class DesignerToolContent extends Module {
   private updateHighlight() {
     const wResust = this.checkValues('weight', this.inputFontWeight.value);
     const cResult = this.checkValues('color', this.inputFontColor.value);
-    const sResult = this.checkValues('size', this.inputFontSize.value ? `${this.inputFontSize.value}px` : '');
+    const sizeVal = this.inputFontSize.value === '' ? '' : `${this.inputFontSize.value}px`;
+    const sResult = this.checkValues('size', sizeVal);
     this.lblWeight.font = getFont(wResust);
     this.lblSize.font = getFont(sResult);
     this.lblColor.font = getFont(cResult);
@@ -109,9 +110,9 @@ export default class DesignerToolContent extends Module {
   private checkValues(prop: string, newVal: any) {
     let result = false;
     if (this.isChecked) {
-      result = isSameValue(this._data.font?.[prop] || '', newVal || '');
+      result = isSameValue(this._data.font?.[prop] ?? '', newVal ?? '');
     } else {
-      result = isSameValue(this._data.default?.font?.[prop] || '', newVal || '');
+      result = isSameValue(this._data.default?.font?.[prop] ?? '', newVal ?? '');
     }
     return result;
   }

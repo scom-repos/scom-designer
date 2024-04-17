@@ -63,7 +63,7 @@ export default class DesignerPickerComponents extends Module {
         <i-vstack
           gap={'0.5rem'} width="100%" height="100%"
           verticalAlignment="center" horizontalAlignment="center"
-          onClick={(target: Control) => this.onItemSelected(target, item)}
+          onClick={(target: Control, event: MouseEvent) => this.onItemSelected(target, event, item)}
         >
           {icon ? <i-icon name={icon} width={'1.5rem'} height={'1.5rem'} /> : (image ? <i-image url={image} width={'1.5rem'} height={'1.5rem'} /> : [])}
           <i-label caption={name} font={{ size: '0.75rem' }} />
@@ -79,7 +79,8 @@ export default class DesignerPickerComponents extends Module {
     this.hStackItems.append(...nodeItems);
   }
 
-  private onItemSelected(target: Control, item: IComponentItem) {
+  private onItemSelected(target: Control, event: MouseEvent, item: IComponentItem) {
+    event.preventDefault();
     if (this.onSelect) this.onSelect(target, item);
   }
 

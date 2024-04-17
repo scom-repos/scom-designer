@@ -126,34 +126,33 @@ export default class DesignerToolBorders extends Module {
     const values = Object.values(this.radiusObj);
     const sameValue = values.every(v => v === values[0]);
     if (sameValue) {
-      const parsedRadius = parseNumberValue(values[0])?.value;
+      const parsedRadius = parseNumberValue(values[0])?.value ?? '';
       this.inputRadius.value = parsedRadius;
     }
-    const widthStr = parseNumberValue(width)?.value || '';
+    const widthStr = parseNumberValue(width)?.value ?? '';
     this.inputWidth.value = widthStr;
   }
 
   private updateHighlight() {
-    const wValue = this.inputWidth.value;
-    const rValue = this.inputRadius.value;
-    const wResult = this.checkValues('width', wValue ? `${wValue}px` : '');
-    const rResult = this.checkValues('radius', rValue ? `${rValue}px` : '');
+    const wValue = this.inputWidth.value === '' ? '' : `${this.inputWidth.value}px`;
+    const rValue = this.inputRadius.value === '' ? '' : `${this.inputRadius.value}px`;
+    const wResult = this.checkValues('width', wValue);
+    const rResult = this.checkValues('radius', rValue);
+    const cResult = this.checkValues('color', this.bgColor.value);
     this.lblWidth.font = getFont(wResult);
     this.lblRadius.font = getFont(rResult);
-    const styleValue = this.styleSelector.activeItem;
-    this.styleSelector.isChanged = !this.checkValues('style', styleValue);
-    const cResult = this.checkValues('color', this.bgColor.value);
     this.lblColor.font = getFont(cResult);
+    this.styleSelector.isChanged = !this.checkValues('style', this.styleSelector.activeItem as string);
     const hasChanged = this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged;
     if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
-  private checkValues(prop: string, newVal: any) {
+  private checkValues(prop: string, newVal: string) {
     let result = false;
     if (this.isChecked) {
-      result = isSameValue(this._data.border?.[prop] || '', newVal);
+      result = isSameValue(this._data.border?.[prop] ?? '', newVal);
     } else {
-      result = isSameValue(this._data.default.border?.[prop] || '', newVal);
+      result = isSameValue(this._data.default.border?.[prop] ?? '', newVal);
     }
     return result;
   }
@@ -174,7 +173,7 @@ export default class DesignerToolBorders extends Module {
       const oldVal = type === 'width' ? this._data.border?.[position]?.[type] : oldRadius[position];
       let isSame = true;
       if (this.isChecked) {
-        isSame = isSameValue(value || '', oldVal || '');
+        isSame = isSameValue(value ?? '', oldVal ?? '');
       } else {
         isSame = !value;
         if (!isSame && !this._idvChanged) this._idvChanged = true;
@@ -236,7 +235,7 @@ export default class DesignerToolBorders extends Module {
     }
     if (this.spacingBtn) {
       const parseData = parseNumberValue(value);
-      this.spacingBtn.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
+      this.spacingBtn.caption = parseData?.value === '' ? 'auto' : `${parseData?.value}${parseData?.unit}`;
     }
     this.spacingBtn = undefined;
   }

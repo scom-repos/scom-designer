@@ -204,7 +204,10 @@ export class ScomDesignerForm extends Module {
     if (name === 'i-stack') {
       options = {direction: 'vertical', ...options};
     }
-    const newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
+    let newOptions = {}
+    try {
+      newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
+    } catch {}
     const control: Control = new controlConstructor(parent, {...newOptions});
     const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
@@ -214,18 +217,19 @@ export class ScomDesignerForm extends Module {
   private updateDesignProps(component: Parser.IComponent) {
     if (!component) return;
     const control = this.pathMapping.get((component as IComponent).path);
-    const props = JSON.parse(JSON.stringify(control?.control?._getDesignProps() || '{}'));
+    const props: any = control?.control?._getDesignProps();
+    if (!props) return;
     const customProps = control?.control?._getCustomProperties()?.props || {};
     const newProps: any = {};
     for (let prop in props) {
       const defaultValue = customProps[prop]?.default;
       if (prop === 'mediaQueries') {
-        props[prop] = props[prop].filter(v => (v && Object.keys(v.properties).length > 0));
+        props[prop] = (props[prop] || []).filter(v => (v && Object.keys(v.properties).length > 0));
         if (props[prop].length === 0) {
           continue;
         }
       }
-      if (this.isSameValue(defaultValue, props[prop])) {
+      if (this.isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
         continue;
       }
       newProps[prop] = this.formatDesignProp(prop, props[prop], control);
@@ -264,11 +268,11 @@ export class ScomDesignerForm extends Module {
           break;
         }
         case "object": {
-          valueStr = `{${JSON.stringify(value)}}`;
+          valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
           break;
         }
         case "array": {
-          valueStr = `{${JSON.stringify(value)}}`;
+          valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
           break;
         }
       }
@@ -347,9 +351,13 @@ export class ScomDesignerForm extends Module {
         if (!mediaQueries) mediaQueries = [];
         const defaultBreakpoint = getDefaultMediaQuery(getBreakpoint());
         const findedBreakpoint = mediaQueries.find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
-        const currentMediaQuery = findedBreakpoint || defaultBreakpoint;
-        currentMediaQuery['properties']['visible'] = visible;
-        control.control._setDesignPropValue("mediaQueries", currentMediaQuery);
+        if (findedBreakpoint) {
+          findedBreakpoint['properties']['visible'] = visible;
+        } else {
+          defaultBreakpoint['properties']['visible'] = visible;
+          mediaQueries.push(defaultBreakpoint);
+        }
+        control.control._setDesignPropValue("mediaQueries", mediaQueries);
         control.control._setDesignPropValue("visible", true, visible);
       }
     }
@@ -415,7 +423,10 @@ export class ScomDesignerForm extends Module {
     //     }
     //   }
     // };
-    control.control.onMouseDown = () => this.handleSelectControl(control);
+    control.control.onMouseDown = () => {
+      this.handleSelectControl(control);
+      this.designerComponents.activeComponent = control;
+    };
     control.control.onDblClick = (target, event) => {
       event?.stopPropagation();
       const id = control.control.id;
@@ -435,7 +446,6 @@ export class ScomDesignerForm extends Module {
     if (this.selectedControl) this.selectedControl.control.tag.hideResizers();
     this.selectedControl = target;
     this.selectedControl.control.tag.showResizers();
-    this.designerComponents.activeComponent = this.selectedControl;
     this.showDesignProperties();
   }
 
@@ -485,6 +495,7 @@ export class ScomDesignerForm extends Module {
       ...this.designerComponents.screen,
       elements: [this._rootComponent]
     }
+    this.designerComponents.activeComponent = this.selectedControl;
   }
 
   private initComponentPicker() {
@@ -498,10 +509,6 @@ export class ScomDesignerForm extends Module {
         onSelect: (target: Control, component: IComponentItem) => {
           this.onCloseComponentPicker();
           this.onAddComponent(target, component);
-          if (this.selectedComponent) {
-            const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
-            if (!finded) this.recentComponents.push(this.selectedComponent);
-          }
         }
       })
       nodeItems.push(pickerElm)
@@ -512,6 +519,10 @@ export class ScomDesignerForm extends Module {
 
   private onAddComponent(target: Control, component: IComponentItem) {
     this.selectedComponent = { ...component, control: target } as any;
+    if (this.selectedComponent) {
+      const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
+      if (!finded) this.recentComponents.push(this.selectedComponent);
+    }
     if (this.isParentGroup(this.selectedComponent.control)) {
       const parentControl = this.pathMapping.get(this.currentParent.path);
       const com = this.handleAddControl(undefined, parentControl?.control);
