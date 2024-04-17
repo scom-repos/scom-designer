@@ -18,7 +18,7 @@ import { backgroundOptions, borderStyles, isNumber, isSameValue, parseNumberValu
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
-import { getBreakpointInfo } from '../helpers/config';
+import { getBreakpointInfo, getFont } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolBordersElement extends ControlElement {
@@ -83,10 +83,8 @@ export default class DesignerToolBorders extends Module {
   private get currentData() {
     let data = JSON.parse(JSON.stringify(this._data));
     if (this.isChecked) {
-      const border = this._data.mediaQuery?.properties?.border;
-      if (border) {
-        data.border = border;
-      }
+      const border = this._data.mediaQuery?.properties?.border || {};
+      data.border = {...data.border, ...border};
     }
     return data;
   }
@@ -138,16 +136,16 @@ export default class DesignerToolBorders extends Module {
   private updateHighlight() {
     const wValue = this.inputWidth.value;
     const rValue = this.inputRadius.value;
-    let wResult = this.checkValues('width', wValue ? `${wValue}px` : '');
-    let rResult = this.checkValues('radius', rValue ? `${rValue}px` : '');
-    this.lblWidth.font = { size: '0.75rem', color: wResult ? Theme.text.primary : Theme.colors.success.main };
-    this.lblRadius.font = { size: '0.75rem', color: rResult ? Theme.text.primary : Theme.colors.success.main };
+    const wResult = this.checkValues('width', wValue ? `${wValue}px` : '');
+    const rResult = this.checkValues('radius', rValue ? `${rValue}px` : '');
+    this.lblWidth.font = getFont(wResult);
+    this.lblRadius.font = getFont(rResult);
     const styleValue = this.styleSelector.activeItem;
     this.styleSelector.isChanged = !this.checkValues('style', styleValue);
     const cResult = this.checkValues('color', this.bgColor.value);
-    this.lblColor.font = { size: '0.75rem', color: cResult ? Theme.text.primary : Theme.colors.success.main };
-    const hasChanged = !this.isChecked && (this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged);
-    if (hasChanged) this.designerHeader.isChanged = true;
+    this.lblColor.font = getFont(cResult);
+    const hasChanged = this._idvChanged || !wResult || !rResult || !cResult || this.styleSelector.isChanged;
+    if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
   private checkValues(prop: string, newVal: any) {

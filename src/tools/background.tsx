@@ -97,10 +97,11 @@ export default class DesignerToolBackground extends Module {
 
   private updateHighlight() {
     let result = false;
+    const value = this.bgColor.value || '';
     if (this.isChecked) {
-      result = isSameValue(this._data.background?.color || '', this.bgColor.value);
+      result = isSameValue(this._data.background?.color || '', value);
     } else {
-      result = isSameValue(this._data.default?.background?.color || '', this.bgColor.value);
+      result = isSameValue(this._data.default?.background?.color || '', value);
       this.designerHeader.isChanged = !result;
     }
     this.lblColor.font = { size: '0.75rem', color: result ? Theme.text.primary : Theme.colors.success.main };

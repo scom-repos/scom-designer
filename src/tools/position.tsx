@@ -124,8 +124,8 @@ export default class DesignerToolPosition extends Module {
     const zIndexVal = this.zIndexInput.value;
     const zChanged = !this.checkValues('zIndex', zIndexVal);
     this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
-    const hasChanged = !this.isChecked && (this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged);
-    if (hasChanged) this.designerHeader.isChanged = true;
+    const hasChanged = this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged;
+    if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
   private checkValues(prop: string, newVal: any) {
@@ -242,7 +242,7 @@ export default class DesignerToolPosition extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Position"
+          name="Position and Display"
           tooltipText="Define a relative or absolute position from the parent element."
           hasMediaQuery={true}
           onCollapse={this.onCollapse}
@@ -298,6 +298,7 @@ export default class DesignerToolPosition extends Module {
               ]}
               onChanged={this.onSelectChanged}
             />
+            {/* TODO: add Display dropdown */}
           </i-vstack>
         </i-vstack>
         <designer-tool-modal-spacing id="mdSpacing" onChanged={this.onSpacingChanged} />

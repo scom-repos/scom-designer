@@ -36,7 +36,7 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
 import { parseProps } from './helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueries, getMediaQueryProps } from './helpers/config'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps } from './helpers/config'
 import { getBreakpoint } from './helpers/store'
 
 const Theme = Styles.Theme.ThemeVars
@@ -111,6 +111,7 @@ export class ScomDesignerForm extends Module {
   private recentComponents: IComponent[] = [];
   private _rootComponent: IComponent
   private selectedComponent: IControl
+  private currentParent: IComponent;
   private designingPos: any = {};
 
   selectedControl: IControl
@@ -322,10 +323,11 @@ export class ScomDesignerForm extends Module {
     }
   }
 
-  private onShowComponentPicker() {
+  private onShowComponentPicker(component: IComponent) {
     this.mdPicker.linkTo = this.pnlScreens;
     this.mdPicker.height = this.designerComponents.height;
     this.mdPicker.visible = true;
+    this.currentParent = component;
   }
 
   private onSelectComponent(component: IComponent) {
@@ -403,16 +405,16 @@ export class ScomDesignerForm extends Module {
   }
 
   private bindControlEvents(control: IControl) {
-    control.control.onclick = (event) => {
-      if (this.isParentGroup(control.control)) {
-        const com = this.handleAddControl(event, control.control);
-        if (com) {
-          control.items = control.items || [];
-          control.items.push(com);
-          this.updateStructure();
-        }
-      }
-    };
+    // control.control.onclick = (event) => {
+    //   if (this.isParentGroup(control.control)) {
+    //     const com = this.handleAddControl(event, control.control);
+    //     if (com) {
+    //       control.items = control.items || [];
+    //       control.items.push(com);
+    //       this.updateStructure();
+    //     }
+    //   }
+    // };
     control.control.onMouseDown = () => this.handleSelectControl(control);
     control.control.onDblClick = (target, event) => {
       event?.stopPropagation();
@@ -445,24 +447,24 @@ export class ScomDesignerForm extends Module {
     this.mdPicker.visible = false
   }
 
-  private handleAddControl(event: MouseEvent, parent?: Control) {
-    event.stopPropagation();
+  private handleAddControl(event?: MouseEvent, parent?: Control) {
+    if (event) event.stopPropagation();
     this.modified = true;
-    let pos = { x: event.offsetX, y: event.offsetY };
     if (this.selectedComponent) {
       let com: IControl = {
         name: this.selectedComponent.name,
         path: IdUtils.generateUUID(),
+        items: [],
         props: {
           width: `{${100}}`,
-          height: `{${20}}`,
-          mediaQueries: `{${JSON.stringify(getMediaQueries())}}`
+          height: `{${20}}`
         },
         control: null
       };
       if (parent) {
         this.renderComponent(parent, com, true);
       } else {
+        let pos = { x: event?.offsetX || 0, y: event?.offsetY || 0};
         com.props = {
           ...com.props,
           left: `{${pos.x}}`,
@@ -495,10 +497,10 @@ export class ScomDesignerForm extends Module {
         margin: { bottom: 1 },
         onSelect: (target: Control, component: IComponentItem) => {
           this.onCloseComponentPicker();
-          this.selectedComponent = { ...component, control: target } as any;
-          const finded = this.recentComponents.find(x => x.name === component.name);
-          if (!finded) {
-            this.recentComponents.push(this.selectedComponent);
+          this.onAddComponent(target, component);
+          if (this.selectedComponent) {
+            const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
+            if (!finded) this.recentComponents.push(this.selectedComponent);
           }
         }
       })
@@ -506,6 +508,20 @@ export class ScomDesignerForm extends Module {
     }
     this.pnlComponentPicker.clearInnerHTML()
     this.pnlComponentPicker.append(...nodeItems)
+  }
+
+  private onAddComponent(target: Control, component: IComponentItem) {
+    this.selectedComponent = { ...component, control: target } as any;
+    if (this.isParentGroup(this.selectedComponent.control)) {
+      const parentControl = this.pathMapping.get(this.currentParent.path);
+      const com = this.handleAddControl(undefined, parentControl?.control);
+      if (com && parentControl) {
+        parentControl.items = parentControl.items || [];
+        parentControl.items.push(com);
+        this.pathMapping.set(this.currentParent.path, parentControl);
+        this.updateStructure();
+      }
+    }
   }
 
   private initBlockPicker() {
@@ -738,7 +754,7 @@ export class ScomDesignerForm extends Module {
         this.resizerPos = '';
       }
     };
-    this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
+    // this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
     this.pnlFormDesigner.onmouseup = this.handleControlMouseUp.bind(this);
     this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
   }
