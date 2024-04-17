@@ -162,9 +162,9 @@ export default class DesignerToolPosition extends Module {
       const parseData = parseNumberValue(data[id]);
       let isSame = true;
       if (this.isChecked) {
-        isSame = isSameValue(this._data[id] ?? '', data[id] ?? '');
+        isSame = isSameValue(this._data[id] || 'auto', data[id] || 'auto');
       } else {
-        isSame = !data[id];
+        isSame = (data[id] || 'auto') === this._data.default[id];
         if (!isSame && !this._idvChanged) this._idvChanged = true;
       }
       button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
@@ -197,7 +197,7 @@ export default class DesignerToolPosition extends Module {
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {
-    this.handleValueChanged(position, value);
+    this.handleValueChanged(position, value === '' ? 'auto' : value);
   }
 
   private onDisplayChanged(target: ComboBox) {

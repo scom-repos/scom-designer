@@ -53,7 +53,6 @@ export default class DesignerToolBorders extends Module {
   private bgColor: ColorPicker;
   private lblColor: Label;
   private designerHeader: DesignerToolHeader;
-  private spacingBtn: Button|undefined = undefined;
   private lblWidth: Label;
   private lblRadius: Label;
 
@@ -95,7 +94,6 @@ export default class DesignerToolBorders extends Module {
   }
 
   setData(value: IDesignerBorder) {
-    this.spacingBtn = undefined;
     this._data = value;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
@@ -185,7 +183,6 @@ export default class DesignerToolBorders extends Module {
 
   private onShowSpacingModal(target: Button, type: string, position: string) {
     let data = this.currentData;
-    this.spacingBtn = target;
     let value = '';
     if (type === 'width') {
       value = data.border?.[position]?.width ?? '';
@@ -233,11 +230,6 @@ export default class DesignerToolBorders extends Module {
       const radiusText = `${this.radiusObj.topLeft} ${this.radiusObj.topRight} ${this.radiusObj.bottomRight} ${this.radiusObj.bottomLeft}`;
       this.handleValueChanged('radius', radiusText);
     }
-    if (this.spacingBtn) {
-      const parseData = parseNumberValue(value);
-      this.spacingBtn.caption = parseData?.value === '' ? 'auto' : `${parseData?.value}${parseData?.unit}`;
-    }
-    this.spacingBtn = undefined;
   }
 
   private handleValueChanged(type: string, value: any, position?: string) {
