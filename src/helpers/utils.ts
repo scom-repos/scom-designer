@@ -57,8 +57,7 @@ export function getAlignProps(type: string) {
         image: {
           url: assets.fullPath('img/designer/layout/align-stretch.svg')
         }
-      },
-      isActive: true
+      }
     },
     {
       tooltip: 'Baseline',
@@ -91,8 +90,7 @@ export const justifyProps = [
       image: {
         url: assets.fullPath('img/designer/layout/justify-start.svg')
       }
-    },
-    isActive: true
+    }
   },
   {
     tooltip: 'Center',
@@ -157,8 +155,7 @@ export const alignContentProps = [
       image: {
         url: assets.fullPath('img/designer/layout/align-start.svg')
       }
-    },
-    isActive: true,
+    }
   },
   {
     tooltip: 'Center',
@@ -224,8 +221,7 @@ export const borderStyles = [
       image: {
         url: assets.fullPath('img/designer/border/solid.svg')
       }
-    },
-    isActive: true
+    }
   },
   {
     tooltip: 'Dotted',

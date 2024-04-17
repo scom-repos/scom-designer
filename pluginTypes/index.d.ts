@@ -26,12 +26,6 @@ declare module "@scom/scom-designer/components/index.css.ts" {
     export const sourceControlStyle: string;
     export const githubTabStyle: string;
 }
-/// <amd-module name="@scom/scom-designer/helpers/store.ts" />
-declare module "@scom/scom-designer/helpers/store.ts" {
-    const setBreakpoint: (breakpoint: number) => void;
-    const getBreakpoint: () => number;
-    export { setBreakpoint, getBreakpoint };
-}
 /// <amd-module name="@scom/scom-designer/assets.ts" />
 declare module "@scom/scom-designer/assets.ts" {
     function fullPath(path: string): string;
@@ -39,6 +33,12 @@ declare module "@scom/scom-designer/assets.ts" {
         fullPath: typeof fullPath;
     };
     export default _default;
+}
+/// <amd-module name="@scom/scom-designer/helpers/store.ts" />
+declare module "@scom/scom-designer/helpers/store.ts" {
+    const setBreakpoint: (breakpoint: number) => void;
+    const getBreakpoint: () => number;
+    export { setBreakpoint, getBreakpoint };
 }
 /// <amd-module name="@scom/scom-designer/helpers/config.ts" />
 declare module "@scom/scom-designer/helpers/config.ts" {
@@ -272,19 +272,6 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
                 url: string;
             };
         };
-        isActive: boolean;
-        rotate?: undefined;
-        placement?: undefined;
-    } | {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        isActive?: undefined;
         rotate?: undefined;
         placement?: undefined;
     } | {
@@ -297,7 +284,6 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
             };
         };
         rotate: number;
-        isActive?: undefined;
         placement?: undefined;
     } | {
         tooltip: string;
@@ -309,7 +295,6 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
                 url: string;
             };
         };
-        isActive?: undefined;
         rotate?: undefined;
     })[];
     export const alignContentProps: ({
@@ -321,18 +306,6 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
                 url: string;
             };
         };
-        isActive: boolean;
-        rotate?: undefined;
-    } | {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        isActive?: undefined;
         rotate?: undefined;
     } | {
         tooltip: string;
@@ -344,9 +317,8 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
             };
         };
         rotate: number;
-        isActive?: undefined;
     })[];
-    export const borderStyles: ({
+    export const borderStyles: {
         tooltip: string;
         value: string;
         type: string;
@@ -355,18 +327,7 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
                 url: string;
             };
         };
-        isActive: boolean;
-    } | {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        isActive?: undefined;
-    })[];
+    }[];
     export const getFileContent: (url: string) => Promise<string>;
     export const extractFileName: (path: string) => string;
     export const parseProps: (props: any) => {};
@@ -440,84 +401,6 @@ declare module "@scom/scom-designer/tools/selector.tsx" {
         render(): void;
     }
 }
-/// <amd-module name="@scom/scom-designer/tools/layout.tsx" />
-declare module "@scom/scom-designer/tools/layout.tsx" {
-    import { Module, ControlElement, Container } from '@ijstech/components';
-    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
-    interface IDesignerLayout {
-        wrap?: string;
-        direction?: string;
-        alignItems?: string;
-        justifyContent?: string;
-        alignSelf?: string;
-        alignContent?: string;
-        display?: string;
-        name?: string;
-        stack?: IStack;
-        reverse?: boolean;
-        mediaQuery?: IMediaQuery;
-        default?: {
-            [name: string]: any;
-        };
-    }
-    export const DESIGNER_LAYOUT_PROPS: string[];
-    interface IStack {
-        basis?: string;
-        grow?: string;
-        shrink?: string;
-    }
-    interface DesignerToolLayoutElement extends ControlElement {
-        onChanged?: onChangedCallback;
-        onUpdate?: onUpdateCallback;
-    }
-    global {
-        namespace JSX {
-            interface IntrinsicElements {
-                ['designer-tool-layout']: DesignerToolLayoutElement;
-            }
-        }
-    }
-    export default class DesignerToolLayout extends Module {
-        private vStackContent;
-        private lbTypeFlex;
-        private inputBasicFlex;
-        private wrapperAdvancedFlex;
-        private pnlFlexContent;
-        private pnlFlexItems;
-        private pnlSelectedItem;
-        private directionSelector;
-        private wrapSelector;
-        private justifySelector;
-        private alignSelector;
-        private alignSelfSelector;
-        private alignContentSelector;
-        private reverseSwitch;
-        private shrinkInput;
-        private growInput;
-        private basisInput;
-        private _data;
-        private isBasicFlex;
-        onChanged: onChangedCallback;
-        onUpdate: onUpdateCallback;
-        constructor(parent?: Container, options?: DesignerToolLayoutElement);
-        get name(): string;
-        set name(value: string);
-        get isStack(): boolean;
-        setData(data: IDesignerLayout): void;
-        private renderUI;
-        private togglePanels;
-        private onCollapse;
-        private onFlexChanged;
-        private onSelectChanged;
-        private onReverseSwitch;
-        private onBasicFlexChanged;
-        private onAdvFlexChanged;
-        private onToggleMediaQuery;
-        private onResetData;
-        init(): void;
-        render(): any;
-    }
-}
 /// <amd-module name="@scom/scom-designer/tools/header.tsx" />
 declare module "@scom/scom-designer/tools/header.tsx" {
     import { Module, ControlElement, Container } from '@ijstech/components';
@@ -570,6 +453,92 @@ declare module "@scom/scom-designer/tools/header.tsx" {
         private _onCollapse;
         private _onClear;
         private onQueryChanged;
+        init(): void;
+        render(): any;
+    }
+}
+/// <amd-module name="@scom/scom-designer/tools/layout.tsx" />
+declare module "@scom/scom-designer/tools/layout.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    import { IMediaQuery, onChangedCallback, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    interface IDesignerLayout {
+        wrap?: string;
+        direction?: string;
+        alignItems?: string;
+        justifyContent?: string;
+        alignSelf?: string;
+        alignContent?: string;
+        name?: string;
+        stack?: IStack;
+        reverse?: boolean;
+        mediaQuery?: IMediaQuery;
+        default?: {
+            [name: string]: any;
+        };
+    }
+    export const DESIGNER_LAYOUT_PROPS: string[];
+    interface IStack {
+        basis?: string;
+        grow?: string;
+        shrink?: string;
+    }
+    interface DesignerToolLayoutElement extends ControlElement {
+        onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-layout']: DesignerToolLayoutElement;
+            }
+        }
+    }
+    export default class DesignerToolLayout extends Module {
+        private vStackContent;
+        private lbTypeFlex;
+        private inputBasicFlex;
+        private wrapperAdvancedFlex;
+        private pnlFlexContent;
+        private pnlFlexItems;
+        private pnlSelectedItem;
+        private directionSelector;
+        private wrapSelector;
+        private justifySelector;
+        private alignSelector;
+        private alignSelfSelector;
+        private alignContentSelector;
+        private reverseSwitch;
+        private shrinkInput;
+        private growInput;
+        private basisInput;
+        private designerHeader;
+        private lblReverse;
+        private _data;
+        private isBasicFlex;
+        onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
+        constructor(parent?: Container, options?: DesignerToolLayoutElement);
+        get name(): string;
+        set name(value: string);
+        get isStack(): boolean;
+        private get isChecked();
+        private get currentData();
+        private hasMediaQuery;
+        setData(data: IDesignerLayout): void;
+        private renderUI;
+        private updateHighlight;
+        private checkValues;
+        private togglePanels;
+        private onCollapse;
+        private onFlexChanged;
+        private onSelectChanged;
+        private onReverseSwitch;
+        private onBasicFlexChanged;
+        private onAdvFlexChanged;
+        private handleValueChanged;
+        private handleMediaQuery;
+        private onToggleMediaQuery;
+        private onResetData;
         init(): void;
         render(): any;
     }
@@ -821,6 +790,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
             y?: string;
         };
         zIndex?: string;
+        display?: string;
         mediaQuery?: IMediaQuery;
         default?: {
             [name: string]: any;
@@ -843,7 +813,8 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private posSelector;
         private designerHeader;
         private lblZIndex;
-        private spacingBtn;
+        private displaySelect;
+        private lblDisplay;
         private _data;
         private _idvChanged;
         onChanged: onChangedCallback;
@@ -861,6 +832,7 @@ declare module "@scom/scom-designer/tools/position.tsx" {
         private onShowModal;
         private onSelectChanged;
         private onSpacingChanged;
+        private onDisplayChanged;
         private handleValueChanged;
         private handleMediaQuery;
         private onToggleMediaQuery;

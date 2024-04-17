@@ -176,15 +176,16 @@ export default class DesignerProperties extends Module {
       minWidth,
       maxHeight,
       maxWidth,
+      display,
       mediaQueries = []
     }: any = this.designerProps;
     const mediaQuery = getMediaQuery(mediaQueries);
+    const overflowObj = typeof overflow === 'string' ? { x: overflow, y: overflow } : overflow;
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQuery, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQuery, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow: overflowObj, display, mediaQuery, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
   }
 
   private updateProps() {
-    const control = this.component?.control;
     let {
       id,
       margin = {},
@@ -202,13 +203,19 @@ export default class DesignerProperties extends Module {
       opacity,
       overflow = {x: '', y: ''},
       display,
-      stack,
       direction,
       font,
       minHeight,
       minWidth,
       maxHeight,
       maxWidth,
+      justifyContent,
+      alignItems,
+      alignContent,
+      alignSelf,
+      reverse = false,
+      wrap,
+      stack = {basis: '', grow: '', shrink: ''},
       mediaQueries = []
     }: any = this.designerProps;
     const {
@@ -217,17 +224,23 @@ export default class DesignerProperties extends Module {
     const mediaQuery = getMediaQuery(mediaQueries);
     this.inputId.value = id || controlId || '';
 
+    const overflowObj = typeof overflow === 'string' ? { x: overflow, y: overflow } : overflow;
     this.designerBackground.setData({ background, mediaQuery, default: this.getDefaultValues(DESIGNER_BACKGROUND_PROPS) });
     this.designerSize.setData({ width, height, minHeight, minWidth, maxHeight, maxWidth, mediaQuery, default: this.getDefaultValues(DESIGNER_SIZE_PROPS) });
     this.designerEffects.setData({ opacity: opacity || 1, default: this.getDefaultValues(DESIGNER_EFFECT_PROPS) });
     this.designerSpacing.setData({ margin, padding, mediaQuery, default: this.getDefaultValues(DESIGNER_SPACING_PROPS) });
-    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow, mediaQuery, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
+    this.designerPosition.setData({ position, zIndex, top, left, right, bottom, overflow: overflowObj, display, mediaQuery, default: this.getDefaultValues(DESIGNER_POSITION_PROPS) });
     this.designerBorders.setData({ border, mediaQuery, default: this.getDefaultValues(DESIGNER_BORDER_PROPS) });
     this.designerLayout.setData({
       name: this.component?.name,
-      display: display || control?.style.display,
       stack,
       direction,
+      justifyContent,
+      alignItems,
+      alignContent,
+      alignSelf,
+      wrap,
+      reverse,
       mediaQuery,
       default: this.getDefaultValues(DESIGNER_LAYOUT_PROPS)
     });

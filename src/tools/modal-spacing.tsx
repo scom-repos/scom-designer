@@ -181,7 +181,7 @@ export default class DesignerToolModalSpacing extends Module {
     const parseValue = parseNumberValue(value.value);
     const unit = parseValue?.unit || 'px';
     this.unit = unit;
-    this.inputValue.value = parseValue?.value || '';
+    this.inputValue.value = parseValue?.value ?? '';
     this.lbIndUnit.caption = unit;
     this.config = config || {};
     this.spacing = value || {};

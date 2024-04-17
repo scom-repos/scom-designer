@@ -8,7 +8,9 @@ import {
   Button,
   Input,
   Panel,
-  Label
+  Label,
+  IComboItem,
+  ComboBox
 } from '@ijstech/components'
 import { buttonAutoStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
@@ -17,7 +19,7 @@ import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
-import { getBreakpointInfo } from '../helpers/config';
+import { getBreakpointInfo, getFont } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {
@@ -33,11 +35,23 @@ interface IDesignerPosition {
   left?: number | string;
   overflow?: {x?: string, y?: string};
   zIndex?: string;
+  display?: string;
   mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
 }
 
-export const DESIGNER_POSITION_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex'];
+export const DESIGNER_POSITION_PROPS = ['position', 'top', 'right', 'bottom', 'left', 'overflow', 'zIndex', 'display'];
+
+const displayOptions: IComboItem[] = [
+  { value: 'block', label: 'Block' },
+  { value: 'inline', label: 'Inline' },
+  { value: 'inline-block', label: 'Inline Block' },
+  { value: 'inline-flex', label: 'Inline Flex' },
+  { value: 'flex', label: 'Flex' },
+  { value: 'none', label: 'None' },
+  { value: 'initial', label: 'Initial' },
+  { value: 'inherit', label: 'Inherit' }
+]
 
 declare global {
   namespace JSX {
@@ -57,7 +71,8 @@ export default class DesignerToolPosition extends Module {
   private posSelector: DesignerSelector;
   private designerHeader: DesignerToolHeader;
   private lblZIndex: Label;
-  private spacingBtn: Button|undefined = undefined;
+  private displaySelect: ComboBox;
+  private lblDisplay: Label;
 
   private _data: IDesignerPosition = {};
   private _idvChanged: boolean = false;
@@ -92,7 +107,6 @@ export default class DesignerToolPosition extends Module {
   }
 
   setData(data: IDesignerPosition) {
-    this.spacingBtn = undefined;
     this._data = data;
     const olChecked = this.designerHeader.checked;
     this.designerHeader.checked = !!this.hasMediaQuery();
@@ -107,33 +121,35 @@ export default class DesignerToolPosition extends Module {
     let data = this.currentData;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     this._idvChanged = false;
-    const { zIndex, position, overflow } = data;
+    const { zIndex, position, overflow, display } = data;
     this.zIndexInput.value = zIndex !== undefined ? `${zIndex}` : '';
     this.posSelector.activeItem = position || '';
     this.overflowSelector.activeItem = overflow?.y || '';
+    const displayItem = display ? displayOptions.find(d => d.value === display) : undefined;
+    this.displaySelect.selectedItem = displayItem;
     this.updateButtons(data);
     this.updateHighlight();
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_POSITION_PROPS);
   }
 
   private updateHighlight() {
-    const pValue = this.posSelector.activeItem;
-    this.posSelector.isChanged = !this.checkValues('position', pValue);
-    const oValue = this.overflowSelector.activeItem;
-    this.overflowSelector.isChanged = !this.checkValues('overflow', oValue);
-    const zIndexVal = this.zIndexInput.value;
-    const zChanged = !this.checkValues('zIndex', zIndexVal);
-    this.lblZIndex.font = { size: '0.75rem', color: zChanged ? Theme.colors.success.main : Theme.text.primary };
-    const hasChanged = this._idvChanged || zChanged || this.posSelector.isChanged || this.overflowSelector.isChanged;
+    this.posSelector.isChanged = !this.checkValues('position', this.posSelector.activeItem);
+    this.overflowSelector.isChanged = !this.checkValues('overflow', this.overflowSelector.activeItem);
+    const zResult = this.checkValues('zIndex', this.zIndexInput.value);
+    this.lblZIndex.font = getFont(zResult);
+    const display = ((this.displaySelect.selectedItem) as IComboItem)?.value as string;
+    const dResult = this.checkValues('display', display);
+    this.lblDisplay.font = getFont(dResult);
+    const hasChanged = this._idvChanged || !zResult || this.posSelector.isChanged || this.overflowSelector.isChanged || !dResult;
     if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
   private checkValues(prop: string, newVal: any) {
     let pResult = false;
     if (this.isChecked) {
-      pResult = isSameValue((prop === 'overflow' ? this._data[prop]?.y : this._data[prop]) || '', newVal);
+      pResult = isSameValue((prop === 'overflow' ? this._data[prop]?.y : this._data[prop]) ?? '', newVal ?? '');
     } else {
-      pResult = isSameValue((prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop]) || '', newVal);
+      pResult = isSameValue((prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop]) ?? '', newVal ?? '');
     }
     return pResult;
   }
@@ -146,13 +162,13 @@ export default class DesignerToolPosition extends Module {
       const parseData = parseNumberValue(data[id]);
       let isSame = true;
       if (this.isChecked) {
-        isSame = isSameValue(this._data[id] || '', data[id] || '');
+        isSame = isSameValue(this._data[id] ?? '', data[id] ?? '');
       } else {
         isSame = !data[id];
         if (!isSame && !this._idvChanged) this._idvChanged = true;
       }
       button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
-      button.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
+      button.caption = parseData?.value === '' ? 'auto' : `${parseData?.value}${parseData?.unit}`;
     }
   }
 
@@ -170,7 +186,6 @@ export default class DesignerToolPosition extends Module {
       breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
     }
     this.mdSpacing.onShowModal(target, spacing, config);
-    this.spacingBtn = target;
   }
 
   private onSelectChanged(type: string, value: string) {
@@ -183,11 +198,11 @@ export default class DesignerToolPosition extends Module {
 
   private onSpacingChanged(type: string, position: string, value: string) {
     this.handleValueChanged(position, value);
-    if (this.spacingBtn) {
-      const parseData = parseNumberValue(value);
-      this.spacingBtn.caption = parseData?.value !== '' ? `${parseData?.value}${parseData?.unit}` : 'auto';
-    }
-    this.spacingBtn = undefined;
+  }
+
+  private onDisplayChanged(target: ComboBox) {
+    const selectedItem = target.selectedItem as IComboItem;
+    this.handleValueChanged('display', selectedItem?.value || '');
   }
 
   private handleValueChanged(type: string, value: any) {
@@ -298,7 +313,22 @@ export default class DesignerToolPosition extends Module {
               ]}
               onChanged={this.onSelectChanged}
             />
-            {/* TODO: add Display dropdown */}
+            <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
+              <i-label id="lblDisplay" caption="Display" font={{ size: '0.75rem' }} />
+              <i-combo-box
+                id="displaySelect"
+                items={displayOptions}
+                font={{ size: '0.75rem' }}
+                placeholder="Select display"
+                width="100%"
+                height={24}
+                border={{
+                  radius: 8,
+                  width: 0
+                }}
+                onChanged={this.onDisplayChanged}
+              />
+            </i-grid-layout>
           </i-vstack>
         </i-vstack>
         <designer-tool-modal-spacing id="mdSpacing" onChanged={this.onSpacingChanged} />

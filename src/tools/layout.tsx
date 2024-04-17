@@ -13,8 +13,10 @@ import {
 import { textInputRight } from './index.css';
 import assets from '../assets';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
-import { alignContentProps, getAlignProps, justifyProps } from '../helpers/utils';
+import { alignContentProps, getAlignProps, isSameValue, justifyProps } from '../helpers/utils';
 import DesignerSelector from './selector';
+import DesignerToolHeader from './header';
+import { getFont } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 interface IDesignerLayout {
@@ -24,7 +26,6 @@ interface IDesignerLayout {
   justifyContent?: string;
   alignSelf?: string;
   alignContent?: string;
-  display?: string;
   name?: string;
   stack?: IStack;
   reverse?: boolean;
@@ -74,6 +75,8 @@ export default class DesignerToolLayout extends Module {
   private shrinkInput: Input;
   private growInput: Input;
   private basisInput: Input;
+  private designerHeader: DesignerToolHeader;
+  private lblReverse: Label;
 
   private _data: IDesignerLayout = {};
   private isBasicFlex: boolean = true;
@@ -100,17 +103,50 @@ export default class DesignerToolLayout extends Module {
     return this.name && stackTypes.includes(this.name);
   }
 
+  private get isChecked() {
+    return this.designerHeader.checked;
+  }
+
+  private get currentData() {
+    let data = JSON.parse(JSON.stringify(this._data));
+    const clonedDefault = JSON.parse(JSON.stringify(data.default));
+    data = { ...clonedDefault, ...data };
+    if (this.isChecked) {
+      const breakpointProps = this._data.mediaQuery?.properties || {};
+      data = {...data, ...breakpointProps};
+    }
+    return data;
+  }
+
+  private hasMediaQuery() {
+    const breakpointProps = this._data.mediaQuery?.properties || {};
+    return Object.keys(breakpointProps).some(prop => DESIGNER_LAYOUT_PROPS.includes(prop));
+  }
+
   setData(data: IDesignerLayout) {
     this._data = data;
-    this.renderUI();
+    const olChecked = this.designerHeader.checked;
+    this.designerHeader.checked = !!this.hasMediaQuery();
+    this.renderUI(olChecked !== this.designerHeader.checked);
   }
 
   private renderUI(needUpdate = false) {
+    let data = this.currentData;
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     this.togglePanels();
-    const { wrap, alignItems, justifyContent, alignSelf, alignContent, direction, stack } = this._data;
-    this.directionSelector.activeItem = direction;
-    this.reverseSwitch.checked = this._data.reverse ?? (direction || '').includes('reverse') ?? false;
+    const {
+      wrap,
+      alignItems,
+      justifyContent,
+      alignSelf,
+      alignContent,
+      direction,
+      stack,
+      reverse
+    } = data;
     if (this.isStack) {
+      this.directionSelector.activeItem = direction;
+      this.reverseSwitch.checked = reverse ?? (direction || '').includes('reverse') ?? false;
       if (wrap) this.wrapSelector.activeItem = wrap
       if (alignItems) this.alignSelector.activeItem = alignItems
       if (justifyContent) this.justifySelector.activeItem = justifyContent
@@ -118,10 +154,40 @@ export default class DesignerToolLayout extends Module {
       if (alignContent) this.alignContentSelector.activeItem = alignContent
     }
     const { basis, grow, shrink } = stack || {};
-    this.basisInput.value = basis || '';
-    this.shrinkInput.value = shrink || '';
-    this.growInput.value = grow || '';
+    this.basisInput.value = basis ?? '';
+    this.shrinkInput.value = shrink ?? '';
+    this.growInput.value = grow ?? '';
     this.inputBasicFlex.value = !shrink && !grow ? '0' : '1';
+    this.updateHighlight(data);
+    if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_LAYOUT_PROPS);
+  }
+
+  private updateHighlight(data: IDesignerLayout) {
+    const isStack = this.isStack;
+    this.directionSelector.isChanged = !this.checkValues('direction', this.directionSelector.activeItem);
+    this.justifySelector.isChanged = !this.checkValues('justifyContent', this.justifySelector.activeItem);
+    this.alignContentSelector.isChanged = !this.checkValues('alignContent', this.alignContentSelector.activeItem);
+    this.alignSelfSelector.isChanged = !this.checkValues('alignSelf', this.alignSelfSelector.activeItem);
+    this.alignSelector.isChanged = !this.checkValues('alignItems', this.alignSelector.activeItem);
+    this.wrapSelector.isChanged = !this.checkValues('wrap', this.wrapSelector.activeItem);
+    const reverseResult = this.checkValues('reverse', this.reverseSwitch.checked);
+    this.lblReverse.font = getFont(reverseResult);
+
+    const stackResult = !this.checkValues('stack', data.stack);
+
+    const stackChanged = isStack && (this.directionSelector.isChanged || this.justifySelector.isChanged || this.alignContentSelector.isChanged || this.alignSelfSelector.isChanged || this.alignSelector.isChanged || this.wrapSelector.isChanged || !reverseResult);
+    const hasChanged = stackChanged || stackResult;
+    if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
+  }
+
+  private checkValues(prop: string, newVal: any) {
+    let result = false;
+    if (this.isChecked) {
+      result = isSameValue(this._data[prop] ?? this._data.default?.[prop], newVal);
+    } else {
+      result = isSameValue(this._data.default?.[prop], newVal);
+    }
+    return result;
   }
 
   private togglePanels() {
@@ -149,36 +215,49 @@ export default class DesignerToolLayout extends Module {
   }
 
   private onSelectChanged(type: string, value: string) {
-    this._data[type] = value;
-    if (this.onChanged) this.onChanged(type, value);
+    this.handleValueChanged(type, value);
   }
 
   private onReverseSwitch(target: Switch) {
-    this._data.reverse = target.checked;
-    if (this.onChanged) this.onChanged('reverse', this._data.reverse);
+    this.handleValueChanged('reverse', this.reverseSwitch.checked);
   }
 
   private onBasicFlexChanged(target: Input) {
     const value = target.value;
+    let stack = undefined;
     if (value) {
-      this._data.stack = { basis: '0%', shrink: '1', grow: `${value}` };
+      stack = { basis: '0%', shrink: '1', grow: `${value}` };
       this.basisInput.value = '0%';
       this.shrinkInput.value = '1';
       this.growInput.value = value;
     } else {
-      this._data.stack = undefined;
+      stack = undefined;
       this.basisInput.value = '';
       this.shrinkInput.value = '';
       this.growInput.value = '';
     }
-    if (this.onChanged) this.onChanged('stack', this._data.stack);
+    this.handleValueChanged('stack', stack);
   }
 
   private onAdvFlexChanged(target: Input, type: string) {
     const value = target.value;
-    if (!this._data.stack) this._data.stack = {};
-    this._data.stack[type] = value;
-    if (this.onChanged) this.onChanged('stack', this._data.stack);
+    const stack = { ...(this._data.stack || {}), [type]: value };
+    this.handleValueChanged('stack', stack);
+  }
+
+  private handleValueChanged(type: string, value: any) {
+    if (this.isChecked) {
+      this.handleMediaQuery(type, value);
+    } else {
+      this._data[type] = value;
+      if (this.onChanged) this.onChanged(type, value);
+    }
+    this.renderUI();
+  }
+
+  private handleMediaQuery(prop: string, value: any) {
+    this._data.mediaQuery['properties'][prop] = value;
+    if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery, prop);
   }
 
   private onToggleMediaQuery(value: boolean) {
@@ -186,13 +265,19 @@ export default class DesignerToolLayout extends Module {
   }
 
   private onResetData() {
-    const clonedData = JSON.parse(JSON.stringify(this._data));
-    const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
-    this._data = { ...clonedData, ...cloneDefault };
-    for (let prop of DESIGNER_LAYOUT_PROPS) {
-      if (this.onChanged) this.onChanged(prop, this._data[prop]);
+    if (this.isChecked) {
+      const breakpoint = this._data.mediaQuery.properties;
+      this._data.mediaQuery.properties = (({ stack, direction, wrap, alignItems, justifyContent, alignSelf, alignContent, reverse, ...o }) => o)(breakpoint);
+      if (this.onChanged) this.onChanged('mediaQueries', this._data.mediaQuery);
+    } else {
+      const clonedData = JSON.parse(JSON.stringify(this._data));
+      const cloneDefault = JSON.parse(JSON.stringify(clonedData.default));
+      this._data = { ...clonedData, ...cloneDefault };
+      for (let prop of DESIGNER_LAYOUT_PROPS) {
+        if (this.onChanged) this.onChanged(prop, this._data[prop]);
+      }
     }
-    this.renderUI();
+    this.renderUI(true);
   }
 
   init() {
@@ -214,7 +299,7 @@ export default class DesignerToolLayout extends Module {
           name="Layout"
           tooltipText="With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes."
           onCollapse={this.onCollapse}
-          // hasMediaQuery={true}
+          hasMediaQuery={true}
           onReset={this.onResetData}
           onToggleMediaQuery={this.onToggleMediaQuery}
         />
@@ -238,7 +323,7 @@ export default class DesignerToolLayout extends Module {
                 />
                 <i-hstack gap={4} verticalAlignment="center" stack={{grow: '1', shrink: '1'}}>
                   <i-switch id="reverseSwitch" onChanged={this.onReverseSwitch} />
-                  <i-label caption="Reverse" font={{ size: '0.875rem' }} />
+                  <i-label id="lblReverse" caption="Reverse" font={{ size: '0.75rem' }} />
                 </i-hstack>
               </i-hstack>
               <designer-selector
