@@ -100,8 +100,15 @@ export default class DesignerToolSize extends Module {
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQuery?.properties|| {};
-    return Object.keys(breakpointProps).some(prop => DESIGNER_SIZE_PROPS.includes(prop));
+    const breakpointProps = this._data.mediaQuery?.properties || {};
+    const hasChanged = DESIGNER_SIZE_PROPS.find(prop => {
+      const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+      if (hasProp) {
+        return !isSameValue(this._data?.[prop] ?? this._data.default?.[prop], breakpointProps?.[prop]);
+      }
+      return false;
+    });
+    return !!hasChanged;
   }
 
   setData(value: IDesignerSize) {
@@ -177,10 +184,11 @@ export default class DesignerToolSize extends Module {
 
   private checkValues(prop: string, newVal: string) {
     let result = false;
+    const defaultValue = this._data.default?.[prop];
     if (this.isChecked) {
-      result = isSameValue(this._data[prop] || 'auto', newVal || 'auto');
+      result = isSameValue(this._data[prop] || defaultValue, newVal || defaultValue);
     } else {
-      result = isSameValue(this._data.default?.[prop] || 'auto', newVal || 'auto');
+      result = isSameValue(this._data.default?.[prop], newVal || defaultValue);
     }
     return result;
   }

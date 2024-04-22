@@ -163,57 +163,57 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
 define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.githubTabStyle = exports.sourceControlStyle = exports.modalStyle = exports.titlebarStyle = exports.navbarStyle = exports.codeTabsStyle = exports.iconTabsStyle = exports.componentStyle = void 0;
+    exports.codeTabsStyle = void 0;
     components_2.Styles.cssRule(".i-resizer", {
         position: "absolute",
-        width: "8px",
-        height: "8px",
+        width: "6px",
+        height: "6px",
         background: "#EEE",
         border: "0.9px solid #333",
         zIndex: 1000,
         $nest: {
             "&.tl": {
                 cursor: "nw-resize",
-                top: "-4px",
-                left: "-4px",
+                top: "0px",
+                left: "0px",
             },
             "&.tm": {
                 cursor: "n-resize",
-                top: "-4px",
+                top: "0px",
                 left: "50%",
                 marginLeft: "-4px",
             },
             "&.tr": {
                 cursor: "ne-resize",
-                top: "-4px",
-                right: "-4px",
+                top: "0px",
+                right: "0px",
             },
             "&.ml": {
                 top: "50%",
                 marginTop: "-4px",
-                left: "-4px",
+                left: "0px",
                 cursor: "w-resize",
             },
             "&.mr": {
                 top: "50%",
                 marginTop: "-4px",
-                right: "-4px",
+                right: "0px",
                 cursor: "e-resize",
             },
             "&.bl": {
-                bottom: "-4px",
-                left: "-4px",
+                bottom: "0px",
+                left: "0px",
                 cursor: "sw-resize",
             },
             "&.bm": {
-                bottom: "-4px",
+                bottom: "0px",
                 left: "50%",
                 marginLeft: "-4px",
                 cursor: "s-resize",
             },
             "&.br": {
-                bottom: "-4px",
-                right: "-4px",
+                bottom: "0px",
+                right: "0px",
                 cursor: "se-resize",
             },
         },
@@ -226,7 +226,6 @@ define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@i
         border: "1px solid rgba(255, 255, 255, 0.12)",
         $nest: {
             ul: {
-                // overflow: "hidden",
                 $nest: {
                     "& > li.matched, & > li:hover": {
                         color: "#fff",
@@ -236,313 +235,12 @@ define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@i
             },
         },
     });
-    exports.componentStyle = components_2.Styles.style({
-        cursor: "pointer",
-        $nest: {
-            "&.selected": {
-                borderWidth: "2px",
-                borderColor: components_2.Styles.Theme.ThemeVars.text.primary,
-            },
-            "i-label": {
-                textOverflow: "ellipsis",
-                textAlign: "center",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-            },
-        },
-    });
-    components_2.Styles.cssRule(".btn-collapse", {
-        marginRight: 5,
-        cursor: "pointer",
-    });
-    exports.iconTabsStyle = components_2.Styles.style({
-        $nest: {
-            "> .tabs-nav-wrap": {
-                backgroundColor: "rgb(24, 24, 24)",
-                borderRight: "1px solid rgba(255, 255, 255, 0.08)",
-                $nest: {
-                    ".tabs-nav": {
-                        border: 0,
-                    },
-                    "i-tab": {
-                        height: 48,
-                        width: 48,
-                        border: 0,
-                        borderLeft: "2px solid transparent",
-                        background: "transparent",
-                        justifyContent: "center",
-                    },
-                    "i-tab:not(.disabled).active": {
-                        background: "transparent",
-                        borderLeftColor: "#0078d4",
-                    },
-                    "i-tab .tab-item": {
-                        gap: 0,
-                        padding: 0,
-                        paddingRight: 2,
-                    },
-                    "i-tab i-icon svg": {
-                        fill: "rgba(255, 255, 255, 0.5)",
-                    },
-                    "i-tab.active i-icon svg": {
-                        fill: "rgb(215, 215, 215)",
-                    },
-                    "i-tab:hover i-icon svg": {
-                        fill: "rgb(215, 215, 215)",
-                    },
-                },
-            },
-            "> .tabs-content": {
-                background: "#181818",
-            },
-        },
-    });
     exports.codeTabsStyle = components_2.Styles.style({
         $nest: {
             "> .tabs-nav-wrap": {
                 background: "#181818",
             },
         },
-    });
-    exports.navbarStyle = components_2.Styles.style({
-        background: "#252525",
-        $nest: {
-            "i-button": {
-                background: "transparent",
-                boxShadow: "none",
-            },
-            "i-button:hover": {
-                background: components_2.Styles.Theme.ThemeVars.action.hover,
-            },
-            "> i-input input": {
-                background: "#363636",
-                color: "#fff",
-                paddingInline: 4,
-            },
-        },
-    });
-    exports.titlebarStyle = components_2.Styles.style({
-        backgroundColor: "#181818",
-        color: "rgb(139, 148, 158)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-        $nest: {
-            "i-combo-box": {
-                $nest: {
-                    ".selection": {
-                        padding: "0 2px",
-                    },
-                },
-            },
-            "i-button": {
-                display: "flex",
-                alignItems: "center",
-                padding: "0 8px",
-                borderRadius: "5px",
-                fontSize: "13px",
-                lineHeight: "22px",
-                color: "#8b949e",
-                background: "transparent",
-                marginLeft: "4px",
-                $nest: {
-                    "&:hover": {
-                        color: "#ccc",
-                        background: "rgba(90, 93, 94, 0.31)",
-                    },
-                },
-            },
-        },
-    });
-    exports.modalStyle = components_2.Styles.style({
-        $nest: {
-            "& > div": {
-                position: "fixed",
-                left: "50%!important",
-                paddingTop: "30px",
-                transform: "translateX(-50%)",
-            },
-            ".modal": {
-                backgroundColor: "#1f1f1f",
-                color: "#ccc",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "6px",
-                padding: "12px 10px 14px",
-                boxShadow: "0 0 8px 2px rgba(0, 0, 0, 0.36)",
-                $nest: {
-                    ".i-modal_header": {
-                        fontSize: "14px",
-                        paddingBottom: "6px",
-                        $nest: {
-                            span: { color: "#ccc" },
-                        },
-                    },
-                    ".connect-git-form": {
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
-                        gap: "4px",
-                        marginTop: "6px",
-                    },
-                    ".pull-form": {
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
-                        gap: "4px",
-                        marginTop: "12px",
-                        borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-                        paddingTop: "12px",
-                    },
-                    "i-input": {
-                        flex: 1,
-                        height: "unset!important",
-                        width: "unset!important",
-                        $nest: {
-                            "& > span": {
-                                display: "block",
-                                $nest: {
-                                    "& > label": {
-                                        display: "block",
-                                        width: "unset!important",
-                                        textAlign: "left",
-                                        color: "rgb(204, 204, 204)",
-                                        fontSize: "10px",
-                                        textTransform: "uppercase",
-                                        marginBottom: "4px",
-                                    },
-                                },
-                            },
-                            input: {
-                                minHeight: "28px",
-                                width: "100%!important",
-                                padding: "2px 6px",
-                                borderRadius: "2px",
-                                backgroundColor: "#2a2a2a",
-                                color: "#ccc",
-                                border: "1px solid rgba(255, 255, 255, 0.12)",
-                            },
-                        },
-                    },
-                    "i-combo-box": {
-                        $nest: {
-                            ".selection": {
-                                background: "transparent",
-                                border: 0,
-                                padding: 0,
-                                $nest: {
-                                    input: {
-                                        minHeight: "28px",
-                                        width: "100%!important",
-                                        padding: "2px 6px",
-                                        borderTopLeftRadius: "2px",
-                                        borderBottomLeftRadius: "2px",
-                                        backgroundColor: "#2a2a2a",
-                                        color: "#ccc",
-                                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                                    },
-                                },
-                            },
-                            ".icon-btn": {
-                                borderTopRightRadius: "2px",
-                                borderBottomRightRadius: "2px",
-                            },
-                        },
-                    },
-                    "i-button": {
-                        flex: 1,
-                        minHeight: "28px",
-                        color: "#fff",
-                        background: "rgb(0, 120, 212)",
-                        borderRadius: "2px",
-                    },
-                    ".form-error": {
-                        minHeight: "12px",
-                        paddingTop: "6px",
-                        fontSize: "12px",
-                        fontStyle: "italic",
-                        $nest: {
-                            "&.success span": {
-                                color: "rgb(0, 120, 212)",
-                            },
-                            span: {
-                                color: "#f14c4c",
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    });
-    exports.sourceControlStyle = components_2.Styles.style({
-        $nest: {
-            ".source-control-heading": {
-                fontSize: "11px",
-                fontWeight: 400,
-                color: "rgb(204, 204, 204)",
-                lineHeight: "35px",
-                paddingLeft: "12px",
-            },
-            ".source-control-rows": {
-                lineHeight: "22px",
-                paddingLeft: "12px",
-                paddingRight: "12px",
-                gap: "6px",
-                $nest: {
-                    "i-input": {
-                        flex: 1,
-                        height: "unset!important",
-                        width: "unset!important",
-                        $nest: {
-                            input: {
-                                minHeight: "28px",
-                                width: "100%!important",
-                                padding: "2px 6px",
-                                borderRadius: "2px",
-                                backgroundColor: "#2a2a2a",
-                                color: "#ccc",
-                                border: "1px solid rgba(255, 255, 255, 0.12)",
-                            },
-                        },
-                    },
-                },
-            },
-            "i-button": {
-                borderRadius: "2px",
-                lineHeight: "18px",
-                color: "#fff",
-                backgroundColor: "#0078d4",
-                padding: "4px",
-                margin: "12px",
-            },
-        },
-    });
-    exports.githubTabStyle = components_2.Styles.style({
-        $nest: {
-            ".heading": {
-                fontSize: "11px",
-                fontWeight: 400,
-                color: "rgb(204, 204, 204)",
-                lineHeight: "35px",
-                paddingLeft: "12px",
-            },
-            '.content': {
-                paddingLeft: "12px",
-                paddingRight: "12px",
-                $nest: {
-                    'i-label': {
-                        fontSize: '13px',
-                        color: 'rgb(204, 204, 204)'
-                    },
-                    "i-button": {
-                        fontSize: '13px',
-                        borderRadius: "2px",
-                        lineHeight: "18px",
-                        color: "#fff",
-                        backgroundColor: "#0078d4",
-                        padding: "4px",
-                        margin: "12px 0",
-                    },
-                }
-            }
-        }
     });
 });
 define("@scom/scom-designer/assets.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_3) {
@@ -2126,7 +1824,14 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
         }
         hasMediaQuery() {
             const breakpointProps = this._data.mediaQuery?.properties || {};
-            return Object.keys(breakpointProps).some(prop => exports.DESIGNER_LAYOUT_PROPS.includes(prop));
+            const hasChanged = exports.DESIGNER_LAYOUT_PROPS.find(prop => {
+                const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+                if (hasProp) {
+                    return !(0, utils_1.isSameValue)(this._data[prop] ?? this._data.default?.[prop], breakpointProps?.[prop]);
+                }
+                return false;
+            });
+            return !!hasChanged;
         }
         setData(data) {
             this._data = data;
@@ -2157,12 +1862,14 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
             this.basisInput.value = basis ?? '';
             this.shrinkInput.value = shrink ?? '';
             this.growInput.value = grow ?? '';
-            this.inputBasicFlex.value = !shrink && !grow ? '0' : '1';
+            this.inputBasicFlex.value = grow ?? '';
             this.updateHighlight(data);
             if (this.onUpdate && needUpdate)
                 this.onUpdate(this.isChecked, exports.DESIGNER_LAYOUT_PROPS);
         }
         updateHighlight(data) {
+            if (Object.keys(this._data.default || {}).length === 0)
+                return;
             const isStack = this.isStack;
             this.directionSelector.isChanged = !this.checkValues('direction', this.directionSelector.activeItem);
             this.justifySelector.isChanged = !this.checkValues('justifyContent', this.justifySelector.activeItem);
@@ -2172,9 +1879,10 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
             this.wrapSelector.isChanged = !this.checkValues('wrap', this.wrapSelector.activeItem);
             const reverseResult = this.checkValues('reverse', this.reverseSwitch.checked);
             this.lblReverse.font = (0, config_2.getFont)(reverseResult);
-            const stackResult = !this.checkValues('stack', data.stack);
+            const stackResult = this.checkValues('stack', data.stack);
+            this.lblFlex.font = (0, config_2.getFont)(stackResult);
             const stackChanged = isStack && (this.directionSelector.isChanged || this.justifySelector.isChanged || this.alignContentSelector.isChanged || this.alignSelfSelector.isChanged || this.alignSelector.isChanged || this.wrapSelector.isChanged || !reverseResult);
-            const hasChanged = stackChanged || stackResult;
+            const hasChanged = stackChanged || !stackResult;
             if (!this.isChecked)
                 this.designerHeader.isChanged = hasChanged;
         }
@@ -2302,7 +2010,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
                             this.$render("designer-selector", { id: "alignSelfSelector", title: "Align", items: (0, utils_1.getAlignProps)('alignSelf'), onChanged: this.onSelectChanged }),
                             this.$render("i-grid-layout", { templateColumns: ['70px', 'auto'] },
                                 this.$render("i-vstack", { gap: 8 },
-                                    this.$render("i-label", { caption: "Flex", font: { size: '0.75rem' }, lineHeight: "24px" }),
+                                    this.$render("i-label", { id: "lblFlex", caption: "Flex", font: { size: '0.75rem' }, lineHeight: "24px" }),
                                     this.$render("i-hstack", { gap: 2, width: "fit-content", verticalAlignment: "center", opacity: 0.7, cursor: "pointer", onClick: this.onFlexChanged },
                                         this.$render("i-label", { id: "lbTypeFlex", caption: "Advanced", font: { size: '0.825rem' } }),
                                         this.$render("i-icon", { name: "arrow-right", fill: "#fff", width: 12, height: 12 }))),
@@ -2371,7 +2079,8 @@ define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijst
         }
         hasMediaQuery() {
             const breakpointProps = this._data?.mediaQuery?.properties || {};
-            return Object.hasOwnProperty.call(breakpointProps, 'background');
+            const hasProp = Object.hasOwnProperty.call(breakpointProps, 'background');
+            return hasProp && !(0, utils_2.isSameValue)(this._data.background?.color || '', breakpointProps.background?.color || '');
         }
         setData(value) {
             this._data = value;
@@ -2384,7 +2093,7 @@ define("@scom/scom-designer/tools/background.tsx", ["require", "exports", "@ijst
             const mediaBg = this._data.mediaQuery?.properties?.background;
             if (this.isChecked && mediaBg)
                 data.background = mediaBg;
-            this.designerHeader.isQueryChanged = !!mediaBg?.color;
+            this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
             const { background = {} } = data;
             this.bgColor.value = background?.color || undefined;
             this.updateHighlight();
@@ -2526,7 +2235,14 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
         }
         hasMediaQuery() {
             const breakpointProps = this._data.mediaQuery?.properties || {};
-            return Object.keys(breakpointProps).some(prop => exports.DESIGNER_SIZE_PROPS.includes(prop));
+            const hasChanged = exports.DESIGNER_SIZE_PROPS.find(prop => {
+                const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+                if (hasProp) {
+                    return !(0, utils_3.isSameValue)(this._data?.[prop] ?? this._data.default?.[prop], breakpointProps?.[prop]);
+                }
+                return false;
+            });
+            return !!hasChanged;
         }
         setData(value) {
             this._data = value;
@@ -2572,11 +2288,12 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
         }
         checkValues(prop, newVal) {
             let result = false;
+            const defaultValue = this._data.default?.[prop];
             if (this.isChecked) {
-                result = (0, utils_3.isSameValue)(this._data[prop] || 'auto', newVal || 'auto');
+                result = (0, utils_3.isSameValue)(this._data[prop] || defaultValue, newVal || defaultValue);
             }
             else {
-                result = (0, utils_3.isSameValue)(this._data.default?.[prop] || 'auto', newVal || 'auto');
+                result = (0, utils_3.isSameValue)(this._data.default?.[prop], newVal || defaultValue);
             }
             return result;
         }
@@ -2831,7 +2548,14 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
         }
         hasMediaQuery() {
             const breakpointProps = this._data.mediaQuery?.properties || {};
-            return Object.keys(breakpointProps).some(prop => exports.DESIGNER_SPACING_PROPS.includes(prop));
+            const hasChanged = exports.DESIGNER_SPACING_PROPS.find(prop => {
+                const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+                if (hasProp) {
+                    return !(0, utils_5.isSameValue)(this._data?.[prop] ?? this._data.default?.[prop], breakpointProps[prop]);
+                }
+                return false;
+            });
+            return !!hasChanged;
         }
         setData(data) {
             this._data = data;
@@ -2856,18 +2580,24 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             const { padding, margin } = data;
             const paddingValues = Object.values(padding || {});
             const marginValues = Object.values(margin || {});
-            const samePValue = paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0]);
-            const sameMValue = marginValues.length === 4 && marginValues.every(v => v === marginValues[0]);
-            if (samePValue) {
+            if (paddingValues.length === 0) {
+                this.paddingInput.value = '';
+            }
+            else if (paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0])) {
                 this.paddingInput.value = `${(0, utils_5.parseNumberValue)(paddingValues[0])?.value ?? ''}`;
             }
-            if (sameMValue) {
+            if (marginValues.length === 0) {
+                this.marginInput.value = '';
+            }
+            else if (marginValues.length === 4 && marginValues.every(v => v === marginValues[0])) {
                 this.marginInput.value = `${(0, utils_5.parseNumberValue)(marginValues[0])?.value ?? ''}`;
             }
         }
         updateHighlight(data) {
-            const isSameMargin = this.checkValues('margin', data.margin) || this.marginInput.value === '';
-            const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
+            if (Object.keys(this._data.default || {}).length === 0)
+                return;
+            const isSameMargin = this.checkValues('margin', data.margin);
+            const isSamePadding = this.checkValues('padding', data.padding);
             this.lblMargin.font = (0, config_3.getFont)(isSameMargin);
             this.lblPadding.font = (0, config_3.getFont)(isSamePadding);
             const hasChanged = this._idvChanged || !isSameMargin || !isSamePadding;
@@ -2877,7 +2607,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
         checkValues(prop, newVal) {
             let result = false;
             if (this.isChecked) {
-                result = (0, utils_5.isSameValue)(this._data[prop], newVal);
+                result = (0, utils_5.isSameValue)(this._data[prop] ?? this._data.default?.[prop], newVal);
             }
             else {
                 result = (0, utils_5.isSameValue)(this._data.default?.[prop], newVal);
@@ -2912,7 +2642,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             const nextLabel = target.nextSibling;
             const targetVal = target.value;
             const unit = nextLabel?.caption || 'px';
-            const value = targetVal !== '' ? `${targetVal}${unit}` : '';
+            const value = targetVal === '' ? '0px' : `${targetVal}${unit}`;
             this.handleValueChanged(prop, { top: value, right: value, bottom: value, left: value });
         }
         onShowUnitsModal(target, prop) {
@@ -3123,7 +2853,16 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
         }
         hasMediaQuery() {
             const breakpointProps = this._data.mediaQuery?.properties || {};
-            return Object.keys(breakpointProps).some(prop => exports.DESIGNER_POSITION_PROPS.includes(prop));
+            const hasChanged = exports.DESIGNER_POSITION_PROPS.find(prop => {
+                const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+                if (hasProp) {
+                    const oldVal = prop === 'overflow' ? this._data[prop]?.y ?? this._data.default?.[prop]?.y : this._data[prop] ?? this._data.default?.[prop];
+                    const newVal = prop === 'overflow' ? breakpointProps?.[prop]?.y : breakpointProps?.[prop];
+                    return !(0, utils_6.isSameValue)(oldVal, newVal);
+                }
+                return false;
+            });
+            return !!hasChanged;
         }
         setData(data) {
             this._data = data;
@@ -3150,6 +2889,8 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
                 this.onUpdate(this.isChecked, exports.DESIGNER_POSITION_PROPS);
         }
         updateHighlight() {
+            if (Object.keys(this._data.default || {}).length === 0)
+                return;
             this.posSelector.isChanged = !this.checkValues('position', this.posSelector.activeItem);
             this.overflowSelector.isChanged = !this.checkValues('overflow', this.overflowSelector.activeItem);
             const zResult = this.checkValues('zIndex', this.zIndexInput.value);
@@ -3163,11 +2904,14 @@ define("@scom/scom-designer/tools/position.tsx", ["require", "exports", "@ijstec
         }
         checkValues(prop, newVal) {
             let pResult = false;
+            let oldValue = '';
             if (this.isChecked) {
-                pResult = (0, utils_6.isSameValue)((prop === 'overflow' ? this._data[prop]?.y : this._data[prop]) ?? '', newVal ?? '');
+                oldValue = prop === 'overflow' ? (this._data[prop]?.y ?? this._data.default?.[prop]?.y) : (this._data[prop] ?? this._data.default?.[prop]);
+                pResult = (0, utils_6.isSameValue)(oldValue, newVal ?? '');
             }
             else {
-                pResult = (0, utils_6.isSameValue)((prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop]) ?? '', newVal ?? '');
+                oldValue = prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop];
+                pResult = (0, utils_6.isSameValue)(oldValue, newVal ?? '');
             }
             return pResult;
         }
@@ -3336,7 +3080,8 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
         }
         hasMediaQuery() {
             const breakpointProps = this._data.mediaQuery?.properties || {};
-            return Object.hasOwnProperty.call(breakpointProps, 'border');
+            const hasProp = Object.hasOwnProperty.call(breakpointProps, 'border');
+            return hasProp && !(0, utils_7.isSameValue)(this._data.border ?? this._data.default?.border, breakpointProps.border || {});
         }
         setData(value) {
             this._data = value;
@@ -3373,6 +3118,8 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             this.inputWidth.value = widthStr;
         }
         updateHighlight() {
+            if (Object.keys(this._data.default || {}).length === 0)
+                return;
             const wValue = this.inputWidth.value === '' ? '' : `${this.inputWidth.value}px`;
             const rValue = this.inputRadius.value === '' ? '' : `${this.inputRadius.value}px`;
             const wResult = this.checkValues('width', wValue);
@@ -3689,12 +3436,10 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
         get isChecked() {
             return this.designerHeader.checked;
         }
-        get isLabel() {
-            return this._data?.name === 'i-label';
-        }
         hasMediaQuery() {
             const breakpointProps = this._data.mediaQuery?.properties || {};
-            return Object.keys(breakpointProps).some(prop => exports.DESIGNER_CONTENT_PROPS.includes(prop));
+            const hasProp = Object.hasOwnProperty.call(breakpointProps, 'font');
+            return hasProp && !(0, utils_8.isSameValue)(this._data.font ?? this._data.default?.font, breakpointProps.font);
         }
         get currentData() {
             let data = JSON.parse(JSON.stringify(this._data));
@@ -3717,8 +3462,6 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
             let data = this.currentData;
             this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
             const { font = {}, default: defaultValue } = data;
-            // this.decorSelector.visible = this.isLabel;
-            // this.decorSelector.activeItem = textDecoration;
             this.inputFontSize.value = (0, utils_8.parseNumberValue)(font.size)?.value ?? '';
             this.inputFontWeight.value = font.weight ?? defaultValue?.font?.weight;
             this.inputShadow.value = font.shadow ?? defaultValue?.font?.shadow;
@@ -3729,6 +3472,8 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
                 this.onUpdate(this.isChecked, exports.DESIGNER_CONTENT_PROPS);
         }
         updateHighlight() {
+            if (Object.keys(this._data.default || {}).length === 0)
+                return;
             const wResust = this.checkFontProp('font', this.inputFontWeight.value, 'weight');
             const sizeVal = this.inputFontSize.value === '' ? '' : `${this.inputFontSize.value}px`;
             const sResult = this.checkFontProp('font', sizeVal, 'size');
@@ -4963,7 +4708,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.resizing = false;
             this.resizerPos = "";
             this.recentComponents = [];
-            this.designingPos = {};
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
@@ -5478,7 +5222,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                             let top = currentControl.top + mouseMoveDelta.y;
                             let height = currentHeight - mouseMoveDelta.y;
                             this.updatePosition({ top, height });
-                            this.updatePosition({ top, height });
                             break;
                         }
                         case "tr": {
@@ -5530,20 +5273,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
         }
         updatePosition(value) {
-            this.designingPos = { ...value };
             const control = this.selectedControl?.control;
             if (!control)
                 return;
             for (let prop in value) {
-                control[prop] = value[prop];
+                if ((prop === 'width' || prop === 'height') && value[prop] < 0)
+                    value[prop] = 0;
+                this.onPropertiesChanged(prop, value[prop]);
             }
         }
         updateDesignPosition() {
-            for (let prop in this.designingPos) {
-                if (this.designingPos.hasOwnProperty(prop)) {
-                    this.onPropertiesChanged(prop, this.designingPos[prop]);
-                }
-            }
             this.designerProperties.onUpdate();
         }
         handleBreakpoint(value) {
@@ -5575,9 +5314,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         initEvents() {
             this.pnlFormDesigner.onmouseleave = event => {
                 this.mouseDown = false;
+                this.updateDesignPosition();
             };
             this.pnlFormDesigner.onmousedown = event => {
-                this.designingPos = {};
                 this.mouseDown = true;
                 this.mouseDownPos = { x: event.clientX, y: event.clientY };
                 let elm = event.target;
@@ -5600,21 +5339,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     this.resizerPos = '';
                 }
             };
-            // this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
-            this.pnlFormDesigner.onmouseup = this.handleControlMouseUp.bind(this);
+            this.pnlFormDesigner.onmouseup = (event) => {
+                this.mouseDown = false;
+            };
             this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
-        }
-        handleControlMouseUp() {
-            this.mouseDown = false;
-            this.updateDesignPosition();
-            this.designingPos = {};
         }
         init() {
             super.init();
             this.wrapperComponentPicker.style.borderBottom = 'none';
             this.initComponentPicker();
             this.initBlockPicker();
-            this.showDesignProperties();
             this.initEvents();
         }
         render() {

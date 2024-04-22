@@ -17,14 +17,7 @@ declare module "@scom/scom-designer/index.css.ts" {
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" {
-    export const componentStyle: string;
-    export const iconTabsStyle: string;
     export const codeTabsStyle: string;
-    export const navbarStyle: string;
-    export const titlebarStyle: string;
-    export const modalStyle: string;
-    export const sourceControlStyle: string;
-    export const githubTabStyle: string;
 }
 /// <amd-module name="@scom/scom-designer/assets.ts" />
 declare module "@scom/scom-designer/assets.ts" {
@@ -548,6 +541,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         private basisInput;
         private designerHeader;
         private lblReverse;
+        private lblFlex;
         private _data;
         private isBasicFlex;
         onChanged: onChangedCallback;
@@ -1020,7 +1014,6 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolContentElement);
         private get isChecked();
-        private get isLabel();
         private hasMediaQuery;
         private get currentData();
         setData(value: IDesignerContent): void;
@@ -1490,7 +1483,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         private _rootComponent;
         private selectedComponent;
         private currentParent;
-        private designingPos;
         selectedControl: IControl;
         modified: boolean;
         studio: IStudio;
@@ -1537,7 +1529,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleBreakpoint;
         private onToggleClick;
         private initEvents;
-        private handleControlMouseUp;
         init(): void;
         render(): any;
     }

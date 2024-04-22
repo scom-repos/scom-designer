@@ -112,7 +112,6 @@ export class ScomDesignerForm extends Module {
   private _rootComponent: IComponent
   private selectedComponent: IControl
   private currentParent: IComponent;
-  private designingPos: any = {};
 
   selectedControl: IControl
   modified: boolean;
@@ -642,7 +641,6 @@ export class ScomDesignerForm extends Module {
             let top = (currentControl.top as number) + mouseMoveDelta.y;
             let height = currentHeight - mouseMoveDelta.y;
             this.updatePosition({ top, height })
-            this.updatePosition({ top, height })
             break;
           }
           case "tr": {
@@ -694,20 +692,15 @@ export class ScomDesignerForm extends Module {
   }
 
   private updatePosition(value: any) {
-    this.designingPos = {...value};
     const control = this.selectedControl?.control
     if (!control) return;
     for (let prop in value) {
-      control[prop] = value[prop];
+      if ((prop === 'width' || prop === 'height') && value[prop] < 0) value[prop] = 0;
+      this.onPropertiesChanged(prop, value[prop]);
     }
   }
 
   private updateDesignPosition() {
-    for (let prop in this.designingPos) {
-      if (this.designingPos.hasOwnProperty(prop)) {
-        this.onPropertiesChanged(prop, this.designingPos[prop]);
-      }
-    }
     this.designerProperties.onUpdate();
   }
 
@@ -741,9 +734,9 @@ export class ScomDesignerForm extends Module {
   private initEvents() {
     this.pnlFormDesigner.onmouseleave = event => {
       this.mouseDown = false;
+      this.updateDesignPosition();
     };
     this.pnlFormDesigner.onmousedown = event => {
-      this.designingPos = {};
       this.mouseDown = true;
       this.mouseDownPos = { x: event.clientX, y: event.clientY };
       let elm = event.target as HTMLElement;
@@ -765,15 +758,10 @@ export class ScomDesignerForm extends Module {
         this.resizerPos = '';
       }
     };
-    // this.pnlFormDesigner.onclick = this.handleAddControl.bind(this);
-    this.pnlFormDesigner.onmouseup = this.handleControlMouseUp.bind(this);
+    this.pnlFormDesigner.onmouseup = (event) => {
+      this.mouseDown = false;
+    };
     this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
-  }
-
-  private handleControlMouseUp() {
-    this.mouseDown = false;
-    this.updateDesignPosition();
-    this.designingPos = {};
   }
 
   init() {
@@ -781,7 +769,6 @@ export class ScomDesignerForm extends Module {
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
     this.initBlockPicker()
-    this.showDesignProperties()
     this.initEvents()
   }
 
