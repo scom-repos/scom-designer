@@ -813,14 +813,17 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 });
                 const onShowActions = (target, event, component) => {
                     this.currentComponent = component;
-                    const { pageX, pageY, screenX } = event;
-                    let x = pageX;
-                    if (pageX + 112 >= screenX) {
-                        x = screenX - 112;
-                    }
-                    this.onShowActions(pageY + 5, x);
+                    // const { pageX, pageY, screenX } = event;
+                    // let x = pageX;
+                    // if (pageX + 112 >= screenX) {
+                    //   x = screenX - 112;
+                    // }
+                    // this.onShowActions(pageY + 5, x);
+                    this.mdActions.linkTo = target;
+                    this.mdActions.popupPlacement = 'bottomRight';
+                    this.onShowActions();
                 };
-                hStackActions.appendChild(this.$render("i-icon", { name: "ellipsis-h", width: '0.875rem', height: '0.875rem', opacity: 0, cursor: "pointer", onClick: (target, event) => onShowActions(target, event, elm) }));
+                hStackActions.appendChild(this.$render("i-icon", { name: "ellipsis-h", width: '0.875rem', height: '0.875rem', opacity: 0, cursor: "pointer", onClick: (target, event) => onShowActions(hStack, event, elm) }));
                 const queriesStr = elm.props?.mediaQueries;
                 const mediaQueries = typeof queriesStr === 'string' ? JSON.parse(queriesStr.substring(1, queriesStr.length - 1)) : [];
                 const breakpointProps = (0, config_1.getMediaQueryProps)(mediaQueries);
@@ -1056,10 +1059,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             if (this.onVisible)
                 this.onVisible(component, icon.name === 'eye');
         }
-        onShowActions(top, left) {
-            const mdWrapper = this.mdActions.querySelector('.modal-wrapper');
-            mdWrapper.style.top = `${top}px`;
-            mdWrapper.style.left = `${left}px`;
+        onShowActions() {
+            // const mdWrapper = this.mdActions.querySelector('.modal-wrapper') as HTMLElement;
+            // mdWrapper.style.top = `${top}px`;
+            // mdWrapper.style.left = `${left}px`;
             const firstChild = this.mdActions.item.children?.[0];
             if (firstChild)
                 firstChild.visible = this.isContainer;
@@ -1075,7 +1078,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 showBackdrop: false,
                 minWidth: '11.25rem',
                 height: 'auto',
-                popupPlacement: 'bottomRight'
+                popupPlacement: 'bottomRight',
             });
             const itemActions = new components_5.VStack(undefined, { gap: 8, border: { radius: 8 } });
             const buttonList = [
@@ -1366,7 +1369,7 @@ define("@scom/scom-designer/tools/stylesheet.tsx", ["require", "exports", "@ijst
 define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, assets_2, store_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
+    exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
     exports.backgroundOptions = [
         {
             value: 'primary',
@@ -1606,6 +1609,98 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 }
             }
         },
+    ];
+    exports.fontStyles = [
+        {
+            tooltip: 'Normal',
+            value: 'normal',
+            type: 'style',
+            icon: {
+                name: 'remove-format'
+            }
+        },
+        {
+            tooltip: 'Italic',
+            value: 'italic',
+            type: 'style',
+            icon: {
+                name: 'italic'
+            }
+        }
+    ];
+    exports.fontTransforms = [
+        {
+            tooltip: 'None',
+            value: 'none',
+            type: 'style',
+            icon: {
+                name: 'remove-format'
+            }
+        },
+        {
+            tooltip: 'Capitalize',
+            value: 'capitalize',
+            type: 'transform',
+            icon: {
+                image: {
+                    url: assets_2.default.fullPath('img/designer/font/capitalize.svg')
+                }
+            }
+        },
+        {
+            tooltip: 'Lowercase',
+            value: 'lowercase',
+            type: 'transform',
+            icon: {
+                image: {
+                    url: assets_2.default.fullPath('img/designer/font/lowercase.svg')
+                }
+            }
+        },
+        {
+            tooltip: 'Uppercase',
+            value: 'uppercase',
+            type: 'transform',
+            icon: {
+                image: {
+                    url: assets_2.default.fullPath('img/designer/font/uppercase.svg')
+                }
+            }
+        }
+    ];
+    exports.fontDecorations = [
+        {
+            tooltip: 'None',
+            value: 'none',
+            type: 'textDecoration',
+            icon: {
+                name: 'remove-format'
+            }
+        },
+        {
+            tooltip: 'Underline',
+            value: 'underline',
+            type: 'textDecoration',
+            icon: {
+                name: 'underline'
+            }
+        },
+        {
+            tooltip: 'Line Through',
+            value: 'line-through',
+            type: 'textDecoration',
+            icon: {
+                name: 'strikethrough'
+            }
+        },
+        {
+            tooltip: 'Overline',
+            value: 'overline',
+            type: 'textDecoration',
+            icon: {
+                name: 'underline'
+            }
+        }
     ];
     const getFileContent = async (url) => {
         let result = '';
@@ -3589,14 +3684,25 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
             this.onFontChanged = this.onFontChanged.bind(this);
             this.onResetData = this.onResetData.bind(this);
             this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
-            this.onColorChanged = this.onColorChanged.bind(this);
+            this.onStyleChanged = this.onStyleChanged.bind(this);
         }
         get isChecked() {
             return this.designerHeader.checked;
         }
+        get isLabel() {
+            return this._data?.name === 'i-label';
+        }
         hasMediaQuery() {
-            const breakpointProps = this._data?.mediaQuery?.properties || {};
-            return Object.hasOwnProperty.call(breakpointProps, 'font');
+            const breakpointProps = this._data.mediaQuery?.properties || {};
+            return Object.keys(breakpointProps).some(prop => exports.DESIGNER_CONTENT_PROPS.includes(prop));
+        }
+        get currentData() {
+            let data = JSON.parse(JSON.stringify(this._data));
+            if (this.isChecked) {
+                const font = this._data.mediaQuery?.properties?.font || {};
+                data.font = { ...data.font, ...font };
+            }
+            return data;
         }
         setData(value) {
             this._data = value;
@@ -3608,38 +3714,43 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
             this.vStackContent.visible = isShown;
         }
         renderUI(needUpdate = false) {
-            let data = JSON.parse(JSON.stringify(this._data));
-            const fontData = this._data.mediaQuery?.properties?.font;
-            if (this.isChecked)
-                data.font = { ...data.font, ...(fontData || {}) };
-            this.designerHeader.isQueryChanged = !!fontData;
-            const { font = {} } = data;
-            this.inputFontColor.value = font.color;
+            let data = this.currentData;
+            this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
+            const { font = {}, default: defaultValue } = data;
+            // this.decorSelector.visible = this.isLabel;
+            // this.decorSelector.activeItem = textDecoration;
             this.inputFontSize.value = (0, utils_8.parseNumberValue)(font.size)?.value ?? '';
-            this.inputFontWeight.value = font.weight;
+            this.inputFontWeight.value = font.weight ?? defaultValue?.font?.weight;
+            this.inputShadow.value = font.shadow ?? defaultValue?.font?.shadow;
+            this.styleSelector.activeItem = font.style || defaultValue?.font?.style;
+            this.transformSelector.activeItem = font.transform || defaultValue?.font?.transform;
             this.updateHighlight();
             if (this.onUpdate && needUpdate)
                 this.onUpdate(this.isChecked, exports.DESIGNER_CONTENT_PROPS);
         }
         updateHighlight() {
-            const wResust = this.checkValues('weight', this.inputFontWeight.value);
-            const cResult = this.checkValues('color', this.inputFontColor.value);
+            const wResust = this.checkFontProp('font', this.inputFontWeight.value, 'weight');
             const sizeVal = this.inputFontSize.value === '' ? '' : `${this.inputFontSize.value}px`;
-            const sResult = this.checkValues('size', sizeVal);
+            const sResult = this.checkFontProp('font', sizeVal, 'size');
+            const shadowResult = this.checkFontProp('font', this.inputShadow.value, 'shadow');
             this.lblWeight.font = (0, config_6.getFont)(wResust);
             this.lblSize.font = (0, config_6.getFont)(sResult);
-            this.lblColor.font = (0, config_6.getFont)(cResult);
+            this.lblShadow.font = (0, config_6.getFont)(shadowResult);
+            this.styleSelector.isChanged = !this.checkFontProp('font', this.styleSelector.activeItem, 'style');
+            this.transformSelector.isChanged = !this.checkFontProp('font', this.transformSelector.activeItem, 'transform');
             if (!this.isChecked)
-                this.designerHeader.isChanged = !wResust || !cResult || !sResult;
+                this.designerHeader.isChanged = !wResust || !sResult || !shadowResult || this.styleSelector.isChanged || this.transformSelector.isChanged;
         }
-        checkValues(prop, newVal) {
+        checkFontProp(type, newVal, prop) {
             let result = false;
+            let oldVal = '';
             if (this.isChecked) {
-                result = (0, utils_8.isSameValue)(this._data.font?.[prop] ?? '', newVal ?? '');
+                oldVal = prop ? this._data[type]?.[prop] ?? this._data.default?.[type]?.[prop] : this._data[type] ?? this._data.default?.[type];
             }
             else {
-                result = (0, utils_8.isSameValue)(this._data.default?.font?.[prop] ?? '', newVal ?? '');
+                oldVal = prop ? this._data.default?.[type]?.[prop] : this._data.default?.[type];
             }
+            result = (0, utils_8.isSameValue)(oldVal, newVal);
             return result;
         }
         onFontChanged(target, prop) {
@@ -3648,9 +3759,8 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
                 value = (0, utils_8.isNumber)(value) ? `${value}px` : value;
             this.handleValueChanged(prop, value);
         }
-        onColorChanged(target) {
-            const value = target.value;
-            this.handleValueChanged('color', value);
+        onStyleChanged(type, value) {
+            this.handleValueChanged(type, value);
         }
         handleValueChanged(type, value) {
             if (this.isChecked) {
@@ -3704,10 +3814,6 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
                 this.$render("i-vstack", { id: "vStackContent", padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }, visible: false },
                     this.$render("i-vstack", { gap: '0.5rem' },
                         this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
-                            this.$render("i-label", { id: "lblColor", caption: "Color", font: { size: '0.75rem' } }),
-                            this.$render("i-hstack", { gap: 4, width: "100%", verticalAlignment: "center" },
-                                this.$render("i-color", { id: "inputFontColor", onChanged: this.onColorChanged, class: index_css_14.customColorStyled }))),
-                        this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { id: "lblSize", caption: 'Size', font: { size: '0.75rem' } }),
                             this.$render("i-hstack", { verticalAlignment: "center", border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
                                 this.$render("i-input", { id: "inputFontSize", inputType: 'number', placeholder: "Enter font size...", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: '1.5rem', border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_14.bgInputTransparent}`, onBlur: (target) => this.onFontChanged(target, 'size'), onKeyUp: (target, event) => event.key === 'Enter' && this.onFontChanged(target, 'size') }),
@@ -3721,7 +3827,13 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
                         this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
                             this.$render("i-label", { id: "lblWeight", caption: 'Weight', font: { size: '0.75rem' } }),
                             this.$render("i-hstack", { verticalAlignment: "center", border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
-                                this.$render("i-input", { id: "inputFontWeight", inputType: 'number', placeholder: "Enter font weight...", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: '1.5rem', border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_14.bgInputTransparent}`, onBlur: (target) => this.onFontChanged(target, 'weight'), onKeyUp: (target, event) => event.key === 'Enter' && this.onFontChanged(target, 'weight') })))))));
+                                this.$render("i-input", { id: "inputFontWeight", inputType: 'number', placeholder: "Enter font weight...", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: '1.5rem', border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_14.bgInputTransparent}`, onBlur: (target) => this.onFontChanged(target, 'weight'), onKeyUp: (target, event) => event.key === 'Enter' && this.onFontChanged(target, 'weight') }))),
+                        this.$render("i-grid-layout", { width: "100%", templateColumns: ['70px', 'auto'], verticalAlignment: "center" },
+                            this.$render("i-label", { id: "lblShadow", caption: 'Shadow', font: { size: '0.75rem' } }),
+                            this.$render("i-hstack", { verticalAlignment: "center", border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
+                                this.$render("i-input", { id: "inputShadow", placeholder: "Enter text shadow...", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: '1.5rem', border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_14.bgInputTransparent}`, onBlur: (target) => this.onFontChanged(target, 'shadow'), onKeyUp: (target, event) => event.key === 'Enter' && this.onFontChanged(target, 'shadow') }))),
+                        this.$render("designer-selector", { id: "styleSelector", title: 'Style', display: 'block', items: utils_8.fontStyles, onChanged: this.onStyleChanged }),
+                        this.$render("designer-selector", { id: "transformSelector", title: 'Transform', display: 'block', items: utils_8.fontTransforms, onChanged: this.onStyleChanged })))));
         }
     };
     DesignerToolContent = __decorate([
@@ -4222,7 +4334,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 mediaQuery,
                 default: this.getDefaultValues(index_2.DESIGNER_LAYOUT_PROPS)
             });
-            this.designerContent.setData({ font, mediaQuery, default: this.getDefaultValues(index_2.DESIGNER_CONTENT_PROPS) });
+            this.designerContent.setData({ name: this.component?.name, font, mediaQuery, default: this.getDefaultValues(index_2.DESIGNER_CONTENT_PROPS) });
         }
         getDefaultValues(props) {
             let result = {};

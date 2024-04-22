@@ -328,6 +328,41 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
             };
         };
     }[];
+    export const fontStyles: {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            name: string;
+        };
+    }[];
+    export const fontTransforms: ({
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            name: string;
+            image?: undefined;
+        };
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+            name?: undefined;
+        };
+    })[];
+    export const fontDecorations: {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            name: string;
+        };
+    }[];
     export const getFileContent: (url: string) => Promise<string>;
     export const extractFileName: (path: string) => string;
     export const parseProps: (props: any) => {};
@@ -954,6 +989,7 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         onUpdate?: onUpdateCallback;
     }
     interface IDesignerContent {
+        name?: string;
         font?: IFont;
         mediaQuery?: IMediaQuery;
         default?: {
@@ -972,24 +1008,28 @@ declare module "@scom/scom-designer/tools/content.tsx" {
         private vStackContent;
         private inputFontSize;
         private inputFontWeight;
-        private inputFontColor;
         private designerHeader;
-        private lblColor;
         private lblWeight;
         private lblSize;
+        private transformSelector;
+        private styleSelector;
+        private inputShadow;
+        private lblShadow;
         private _data;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolContentElement);
         private get isChecked();
+        private get isLabel();
         private hasMediaQuery;
+        private get currentData();
         setData(value: IDesignerContent): void;
         private onCollapse;
         private renderUI;
         private updateHighlight;
-        private checkValues;
+        private checkFontProp;
         private onFontChanged;
-        private onColorChanged;
+        private onStyleChanged;
         private handleValueChanged;
         private handleMediaQuery;
         private onToggleMediaQuery;
