@@ -158,12 +158,15 @@ export default class DesignerComponents extends Module {
 
       const onShowActions = (target: Control, event: MouseEvent, component: IComponent) => {
         this.currentComponent = component;
-        const { pageX, pageY, screenX } = event;
-        let x = pageX;
-        if (pageX + 112 >= screenX) {
-          x = screenX - 112;
-        }
-        this.onShowActions(pageY + 5, x);
+        // const { pageX, pageY, screenX } = event;
+        // let x = pageX;
+        // if (pageX + 112 >= screenX) {
+        //   x = screenX - 112;
+        // }
+        // this.onShowActions(pageY + 5, x);
+        this.mdActions.linkTo = target;
+        this.mdActions.popupPlacement = 'bottomRight';
+        this.onShowActions();
       }
 
       hStackActions.appendChild(
@@ -171,7 +174,7 @@ export default class DesignerComponents extends Module {
           name="ellipsis-h"
           width={'0.875rem'} height={'0.875rem'}
           opacity={0} cursor="pointer"
-          onClick={(target: Control, event: MouseEvent) => onShowActions(target, event, elm)}
+          onClick={(target: Control, event: MouseEvent) => onShowActions(hStack, event, elm)}
         />
       );
       const queriesStr = elm.props?.mediaQueries;
@@ -421,10 +424,10 @@ export default class DesignerComponents extends Module {
     if (this.onVisible) this.onVisible(component, icon.name === 'eye');
   }
 
-  private onShowActions(top: number, left: number) {
-    const mdWrapper = this.mdActions.querySelector('.modal-wrapper') as HTMLElement;
-    mdWrapper.style.top = `${top}px`;
-    mdWrapper.style.left = `${left}px`;
+  private onShowActions() {
+    // const mdWrapper = this.mdActions.querySelector('.modal-wrapper') as HTMLElement;
+    // mdWrapper.style.top = `${top}px`;
+    // mdWrapper.style.left = `${left}px`;
     const firstChild = this.mdActions.item.children?.[0] as Control;
     if (firstChild) firstChild.visible = this.isContainer;
     const lastChild = this.mdActions.item.children?.[3] as Control;
@@ -439,7 +442,7 @@ export default class DesignerComponents extends Module {
       showBackdrop: false,
       minWidth: '11.25rem',
       height: 'auto',
-      popupPlacement: 'bottomRight'
+      popupPlacement: 'bottomRight',
     });
     const itemActions = new VStack(undefined, { gap: 8, border: { radius: 8 } });
     const buttonList = [

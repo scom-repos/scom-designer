@@ -245,6 +245,101 @@ export const borderStyles = [
   },
 ]
 
+export const fontStyles = [
+  {
+    tooltip: 'Normal',
+    value: 'normal',
+    type: 'style',
+    icon: {
+      name: 'remove-format'
+    }
+  },
+  {
+    tooltip: 'Italic',
+    value: 'italic',
+    type: 'style',
+    icon: {
+      name: 'italic'
+    }
+  }
+]
+
+export const fontTransforms = [
+  {
+    tooltip: 'None',
+    value: 'none',
+    type: 'style',
+    icon: {
+      name: 'remove-format'
+    }
+  },
+  {
+    tooltip: 'Capitalize',
+    value: 'capitalize',
+    type: 'transform',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/font/capitalize.svg')
+      }
+    }
+  },
+  {
+    tooltip: 'Lowercase',
+    value: 'lowercase',
+    type: 'transform',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/font/lowercase.svg')
+      }
+    }
+  },
+  {
+    tooltip: 'Uppercase',
+    value: 'uppercase',
+    type: 'transform',
+    icon: {
+      image: {
+        url: assets.fullPath('img/designer/font/uppercase.svg')
+      }
+    }
+  }
+]
+
+export const fontDecorations = [
+  {
+    tooltip: 'None',
+    value: 'none',
+    type: 'textDecoration',
+    icon: {
+      name: 'remove-format'
+    }
+  },
+  {
+    tooltip: 'Underline',
+    value: 'underline',
+    type: 'textDecoration',
+    icon: {
+      name: 'underline'
+    }
+  },
+  {
+    tooltip: 'Line Through',
+    value: 'line-through',
+    type: 'textDecoration',
+    icon: {
+      name: 'strikethrough'
+    }
+  },
+  {
+    tooltip: 'Overline',
+    value: 'overline',
+    type: 'textDecoration',
+    icon: {
+      name: 'underline'
+    }
+  }
+]
+
 export const getFileContent = async (url: string) => {
   let result = '';
   if (url) {

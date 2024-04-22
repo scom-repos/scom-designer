@@ -244,7 +244,7 @@ export default class DesignerProperties extends Module {
       mediaQuery,
       default: this.getDefaultValues(DESIGNER_LAYOUT_PROPS)
     });
-    this.designerContent.setData({ font, mediaQuery, default: this.getDefaultValues(DESIGNER_CONTENT_PROPS) });
+    this.designerContent.setData({ name: this.component?.name, font, mediaQuery, default: this.getDefaultValues(DESIGNER_CONTENT_PROPS) });
   }
 
   private getDefaultValues(props: string[]) {

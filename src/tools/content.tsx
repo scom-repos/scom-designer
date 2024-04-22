@@ -6,15 +6,15 @@ import {
   Styles,
   VStack,
   Input,
-  ColorPicker,
   IFont,
   Label
 } from '@ijstech/components'
-import { bgInputTransparent, customColorStyled, unitStyled } from './index.css';
+import { bgInputTransparent, unitStyled } from './index.css';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import DesignerToolHeader from './header';
-import { isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
+import { fontStyles, fontTransforms, isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
 import { getFont } from '../helpers/config';
+import DesignerSelector from './selector';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolContentElement extends ControlElement {
@@ -23,6 +23,7 @@ interface DesignerToolContentElement extends ControlElement {
 }
 
 interface IDesignerContent {
+  name?: string;
   font?: IFont;
   mediaQuery?: IMediaQuery;
   default?: {[name: string]: any};
@@ -43,11 +44,13 @@ export default class DesignerToolContent extends Module {
   private vStackContent: VStack;
   private inputFontSize: Input;
   private inputFontWeight: Input;
-  private inputFontColor: ColorPicker;
   private designerHeader: DesignerToolHeader;
-  private lblColor: Label;
   private lblWeight: Label;
   private lblSize: Label;
+  private transformSelector: DesignerSelector;
+  private styleSelector: DesignerSelector;
+  private inputShadow: Input;
+  private lblShadow: Label;
 
   private _data: IDesignerContent = {};
 
@@ -59,16 +62,29 @@ export default class DesignerToolContent extends Module {
     this.onFontChanged = this.onFontChanged.bind(this);
     this.onResetData = this.onResetData.bind(this);
     this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
-    this.onColorChanged = this.onColorChanged.bind(this);
+    this.onStyleChanged = this.onStyleChanged.bind(this);
   }
 
   private get isChecked() {
     return this.designerHeader.checked;
   }
 
+  private get isLabel() {
+    return this._data?.name === 'i-label';
+  }
+
   private hasMediaQuery() {
-    const breakpointProps = this._data?.mediaQuery?.properties|| {};
-    return Object.hasOwnProperty.call(breakpointProps, 'font');
+    const breakpointProps = this._data.mediaQuery?.properties|| {};
+    return Object.keys(breakpointProps).some(prop => DESIGNER_CONTENT_PROPS.includes(prop));
+  }
+
+  private get currentData() {
+    let data = JSON.parse(JSON.stringify(this._data));
+    if (this.isChecked) {
+      const font = this._data.mediaQuery?.properties?.font || {};
+      data.font = {...data.font, ...font};
+    }
+    return data;
   }
 
   setData(value: IDesignerContent) {
@@ -83,37 +99,44 @@ export default class DesignerToolContent extends Module {
   }
 
   private renderUI(needUpdate = false) {
-    let data = JSON.parse(JSON.stringify(this._data));
-    const fontData = this._data.mediaQuery?.properties?.font;
-    if (this.isChecked) data.font = {...data.font, ...(fontData || {})};
-    this.designerHeader.isQueryChanged = !!fontData;
+    let data = this.currentData;
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
 
-    const { font = {} } = data;
-    this.inputFontColor.value = font.color;
+    const { font = {}, default: defaultValue } = data;
+    // this.decorSelector.visible = this.isLabel;
+    // this.decorSelector.activeItem = textDecoration;
     this.inputFontSize.value = parseNumberValue(font.size)?.value ?? '';
-    this.inputFontWeight.value = font.weight;
+    this.inputFontWeight.value = font.weight ?? defaultValue?.font?.weight;
+    this.inputShadow.value = font.shadow ?? defaultValue?.font?.shadow;
+    this.styleSelector.activeItem = font.style || defaultValue?.font?.style;
+    this.transformSelector.activeItem = font.transform || defaultValue?.font?.transform;
     this.updateHighlight();
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_CONTENT_PROPS);
   }
 
   private updateHighlight() {
-    const wResust = this.checkValues('weight', this.inputFontWeight.value);
-    const cResult = this.checkValues('color', this.inputFontColor.value);
+    const wResust = this.checkFontProp('font', this.inputFontWeight.value, 'weight');
     const sizeVal = this.inputFontSize.value === '' ? '' : `${this.inputFontSize.value}px`;
-    const sResult = this.checkValues('size', sizeVal);
+    const sResult = this.checkFontProp('font', sizeVal, 'size');
+    const shadowResult = this.checkFontProp('font', this.inputShadow.value, 'shadow');
     this.lblWeight.font = getFont(wResust);
     this.lblSize.font = getFont(sResult);
-    this.lblColor.font = getFont(cResult);
-    if (!this.isChecked) this.designerHeader.isChanged = !wResust || !cResult || !sResult;
+    this.lblShadow.font = getFont(shadowResult);
+    this.styleSelector.isChanged = !this.checkFontProp('font', this.styleSelector.activeItem, 'style');
+    this.transformSelector.isChanged = !this.checkFontProp('font', this.transformSelector.activeItem, 'transform');
+    if (!this.isChecked)
+      this.designerHeader.isChanged = !wResust || !sResult || !shadowResult || this.styleSelector.isChanged || this.transformSelector.isChanged;
   }
 
-  private checkValues(prop: string, newVal: any) {
+  private checkFontProp(type: string, newVal: any, prop?: string) {
     let result = false;
+    let oldVal = '';
     if (this.isChecked) {
-      result = isSameValue(this._data.font?.[prop] ?? '', newVal ?? '');
+      oldVal = prop ? this._data[type]?.[prop] ?? this._data.default?.[type]?.[prop] : this._data[type] ?? this._data.default?.[type];
     } else {
-      result = isSameValue(this._data.default?.font?.[prop] ?? '', newVal ?? '');
+      oldVal = prop ? this._data.default?.[type]?.[prop] : this._data.default?.[type];
     }
+    result = isSameValue(oldVal, newVal);
     return result;
   }
 
@@ -123,9 +146,8 @@ export default class DesignerToolContent extends Module {
     this.handleValueChanged(prop, value);
   }
 
-  private onColorChanged(target: ColorPicker) {
-    const value = target.value;
-    this.handleValueChanged('color', value);
+  private onStyleChanged(type: string, value: string) {
+    this.handleValueChanged(type, value);
   }
 
   private handleValueChanged(type: string, value: any) {
@@ -189,7 +211,7 @@ export default class DesignerToolContent extends Module {
         />
         <i-vstack id="vStackContent" padding={{ top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }} visible={false}>
           <i-vstack gap={'0.5rem'}>
-            <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
+            {/* <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center" visible={false}>
               <i-label id="lblColor" caption="Color" font={{ size: '0.75rem' }} />
               <i-hstack gap={4} width="100%" verticalAlignment="center">
                 <i-color
@@ -198,7 +220,7 @@ export default class DesignerToolContent extends Module {
                   class={customColorStyled}
                 />
               </i-hstack>
-            </i-grid-layout>
+            </i-grid-layout> */}
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
               <i-label id="lblSize" caption={'Size'} font={{ size: '0.75rem' }} />
               <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
@@ -254,7 +276,46 @@ export default class DesignerToolContent extends Module {
                 />
               </i-hstack>
             </i-grid-layout>
-            {/* TODO: Style, case */}
+            <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
+              <i-label id="lblShadow" caption={'Shadow'} font={{ size: '0.75rem' }} />
+              <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
+                <i-input
+                  id="inputShadow"
+                  placeholder="Enter text shadow..."
+                  background={{ color: 'transparent' }}
+                  width="calc(100% - 1.5rem)"
+                  height={'1.5rem'}
+                  border={{ width: 0 }}
+                  padding={{ left: 4, right: 2 }}
+                  font={{ size: '0.675rem' }}
+                  class={`${bgInputTransparent}`}
+                  onBlur={(target: Input) => this.onFontChanged(target, 'shadow')}
+                  onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onFontChanged(target, 'shadow')}
+                />
+              </i-hstack>
+            </i-grid-layout>
+            <designer-selector
+              id="styleSelector"
+              title='Style'
+              display='block'
+              items={fontStyles}
+              onChanged={this.onStyleChanged}
+            />
+            <designer-selector
+              id="transformSelector"
+              title='Transform'
+              display='block'
+              items={fontTransforms}
+              onChanged={this.onStyleChanged}
+            />
+            {/* <designer-selector
+              id="decorSelector"
+              title='Decoration'
+              visible={false}
+              display='block'
+              items={fontDecorations}
+              onChanged={this.onStyleChanged}
+            /> */}
           </i-vstack>
         </i-vstack>
       </i-vstack>
