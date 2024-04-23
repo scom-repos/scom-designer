@@ -70,7 +70,8 @@ export default class DesignerToolBackground extends Module {
 
   private hasMediaQuery() {
     const breakpointProps = this._data?.mediaQuery?.properties|| {};
-    return Object.hasOwnProperty.call(breakpointProps, 'background');
+    const hasProp = Object.hasOwnProperty.call(breakpointProps, 'background');
+    return hasProp && !isSameValue(this._data.background?.color || '', breakpointProps.background?.color || '');
   }
 
   setData(value: IDesignerBackground) {
@@ -84,7 +85,7 @@ export default class DesignerToolBackground extends Module {
     let data = JSON.parse(JSON.stringify(this._data));
     const mediaBg = this._data.mediaQuery?.properties?.background;
     if (this.isChecked && mediaBg) data.background = mediaBg;
-    this.designerHeader.isQueryChanged = !!mediaBg?.color;
+    this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
 
     const { background = {} } = data;
     this.bgColor.value = background?.color || undefined;

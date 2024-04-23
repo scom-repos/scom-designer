@@ -95,15 +95,24 @@ export default class DesignerToolPosition extends Module {
   private get currentData() {
     let data = this._data;
     if (this.isChecked) {
-      const breakpointProps = this._data.mediaQuery?.properties|| {};
+      const breakpointProps = this._data.mediaQuery?.properties || {};
       data = {...data, ...breakpointProps};
     }
     return data;
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQuery?.properties|| {};
-    return Object.keys(breakpointProps).some(prop => DESIGNER_POSITION_PROPS.includes(prop));
+    const breakpointProps = this._data.mediaQuery?.properties || {};
+    const hasChanged = DESIGNER_POSITION_PROPS.find(prop => {
+      const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+      if (hasProp) {
+        const oldVal = prop === 'overflow' ? this._data[prop]?.y ?? this._data.default?.[prop]?.y : this._data[prop] ?? this._data.default?.[prop];
+        const newVal = prop === 'overflow' ? breakpointProps?.[prop]?.y : breakpointProps?.[prop];
+        return !isSameValue(oldVal, newVal);
+      }
+      return false;
+    });
+    return !!hasChanged;
   }
 
   setData(data: IDesignerPosition) {
@@ -133,6 +142,7 @@ export default class DesignerToolPosition extends Module {
   }
 
   private updateHighlight() {
+    if (Object.keys(this._data.default || {}).length === 0) return;
     this.posSelector.isChanged = !this.checkValues('position', this.posSelector.activeItem);
     this.overflowSelector.isChanged = !this.checkValues('overflow', this.overflowSelector.activeItem);
     const zResult = this.checkValues('zIndex', this.zIndexInput.value);
@@ -146,10 +156,13 @@ export default class DesignerToolPosition extends Module {
 
   private checkValues(prop: string, newVal: any) {
     let pResult = false;
+    let oldValue = '';
     if (this.isChecked) {
-      pResult = isSameValue((prop === 'overflow' ? this._data[prop]?.y : this._data[prop]) ?? '', newVal ?? '');
+      oldValue = prop === 'overflow' ? (this._data[prop]?.y ?? this._data.default?.[prop]?.y) : (this._data[prop] ?? this._data.default?.[prop]);
+      pResult = isSameValue(oldValue, newVal ?? '');
     } else {
-      pResult = isSameValue((prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop]) ?? '', newVal ?? '');
+      oldValue = prop === 'overflow' ? this._data.default?.[prop]?.y : this._data.default?.[prop];
+      pResult = isSameValue(oldValue, newVal ?? '');
     }
     return pResult;
   }

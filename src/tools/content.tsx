@@ -69,13 +69,10 @@ export default class DesignerToolContent extends Module {
     return this.designerHeader.checked;
   }
 
-  private get isLabel() {
-    return this._data?.name === 'i-label';
-  }
-
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQuery?.properties|| {};
-    return Object.keys(breakpointProps).some(prop => DESIGNER_CONTENT_PROPS.includes(prop));
+    const breakpointProps = this._data.mediaQuery?.properties || {};
+    const hasProp = Object.hasOwnProperty.call(breakpointProps, 'font');
+    return hasProp && !isSameValue(this._data.font ?? this._data.default?.font, breakpointProps.font);
   }
 
   private get currentData() {
@@ -103,8 +100,6 @@ export default class DesignerToolContent extends Module {
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
 
     const { font = {}, default: defaultValue } = data;
-    // this.decorSelector.visible = this.isLabel;
-    // this.decorSelector.activeItem = textDecoration;
     this.inputFontSize.value = parseNumberValue(font.size)?.value ?? '';
     this.inputFontWeight.value = font.weight ?? defaultValue?.font?.weight;
     this.inputShadow.value = font.shadow ?? defaultValue?.font?.shadow;
@@ -115,6 +110,7 @@ export default class DesignerToolContent extends Module {
   }
 
   private updateHighlight() {
+    if (Object.keys(this._data.default || {}).length === 0) return;
     const wResust = this.checkFontProp('font', this.inputFontWeight.value, 'weight');
     const sizeVal = this.inputFontSize.value === '' ? '' : `${this.inputFontSize.value}px`;
     const sResult = this.checkFontProp('font', sizeVal, 'size');

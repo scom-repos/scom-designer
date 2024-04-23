@@ -94,8 +94,15 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQuery?.properties|| {};
-    return Object.keys(breakpointProps).some(prop => DESIGNER_SPACING_PROPS.includes(prop));
+    const breakpointProps = this._data.mediaQuery?.properties || {};
+    const hasChanged = DESIGNER_SPACING_PROPS.find(prop => {
+      const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+      if (hasProp) {
+        return !isSameValue(this._data?.[prop] ?? this._data.default?.[prop], breakpointProps[prop]);
+      }
+      return false;
+    });
+    return !!hasChanged;
   }
 
   setData(data: IDesignerSpacing) {
@@ -123,19 +130,22 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const { padding, margin } = data;
     const paddingValues = Object.values(padding || {});
     const marginValues = Object.values(margin || {});
-    const samePValue = paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0]);
-    const sameMValue = marginValues.length === 4 && marginValues.every(v => v === marginValues[0]);
-    if (samePValue) {
+    if (paddingValues.length === 0) {
+      this.paddingInput.value = '';
+    } else if (paddingValues.length === 4 && paddingValues.every(v => v === paddingValues[0])) {
       this.paddingInput.value = `${parseNumberValue(paddingValues[0])?.value ?? ''}`;
     }
-    if (sameMValue) {
-      this.marginInput.value =  `${parseNumberValue(marginValues[0])?.value ?? ''}`;
+    if (marginValues.length === 0) {
+      this.marginInput.value = '';
+    } else if (marginValues.length === 4 && marginValues.every(v => v === marginValues[0])) {
+      this.marginInput.value = `${parseNumberValue(marginValues[0])?.value ?? ''}`;
     }
   }
 
   private updateHighlight(data: IDesignerSpacing) {
-    const isSameMargin = this.checkValues('margin', data.margin) || this.marginInput.value === '';
-    const isSamePadding = this.checkValues('padding', data.padding) || this.paddingInput.value === '';
+    if (Object.keys(this._data.default || {}).length === 0) return;
+    const isSameMargin = this.checkValues('margin', data.margin);
+    const isSamePadding = this.checkValues('padding', data.padding);
     this.lblMargin.font = getFont(isSameMargin);
     this.lblPadding.font = getFont(isSamePadding);
     const hasChanged = this._idvChanged || !isSameMargin || !isSamePadding;
@@ -145,7 +155,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private checkValues(prop: string, newVal: ISpace) {
     let result = false;
     if (this.isChecked) {
-      result = isSameValue(this._data[prop], newVal);
+      result = isSameValue(this._data[prop] ?? this._data.default?.[prop], newVal);
     } else {
       result = isSameValue(this._data.default?.[prop], newVal);
     }
@@ -179,7 +189,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const nextLabel = target.nextSibling as Label;
     const targetVal = target.value;
     const unit = nextLabel?.caption || 'px';
-    const value = targetVal !== '' ? `${targetVal}${unit}` : '';
+    const value = targetVal === '' ? '0px' : `${targetVal}${unit}`;
     this.handleValueChanged(prop, { top: value, right: value, bottom: value, left: value});
   }
 

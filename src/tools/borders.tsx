@@ -89,8 +89,9 @@ export default class DesignerToolBorders extends Module {
   }
 
   private hasMediaQuery() {
-    const breakpointProps = this._data.mediaQuery?.properties|| {};
-    return Object.hasOwnProperty.call(breakpointProps, 'border');
+    const breakpointProps = this._data.mediaQuery?.properties || {};
+    const hasProp = Object.hasOwnProperty.call(breakpointProps, 'border');
+    return hasProp && !isSameValue(this._data.border ?? this._data.default?.border, breakpointProps.border || {});
   }
 
   setData(value: IDesignerBorder) {
@@ -132,6 +133,7 @@ export default class DesignerToolBorders extends Module {
   }
 
   private updateHighlight() {
+    if (Object.keys(this._data.default || {}).length === 0) return;
     const wValue = this.inputWidth.value === '' ? '' : `${this.inputWidth.value}px`;
     const rValue = this.inputRadius.value === '' ? '' : `${this.inputRadius.value}px`;
     const wResult = this.checkValues('width', wValue);

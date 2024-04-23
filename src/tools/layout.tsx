@@ -77,6 +77,7 @@ export default class DesignerToolLayout extends Module {
   private basisInput: Input;
   private designerHeader: DesignerToolHeader;
   private lblReverse: Label;
+  private lblFlex: Label;
 
   private _data: IDesignerLayout = {};
   private isBasicFlex: boolean = true;
@@ -120,7 +121,14 @@ export default class DesignerToolLayout extends Module {
 
   private hasMediaQuery() {
     const breakpointProps = this._data.mediaQuery?.properties || {};
-    return Object.keys(breakpointProps).some(prop => DESIGNER_LAYOUT_PROPS.includes(prop));
+    const hasChanged = DESIGNER_LAYOUT_PROPS.find(prop => {
+      const hasProp = Object.hasOwnProperty.call(breakpointProps, prop);
+      if (hasProp) {
+        return !isSameValue(this._data[prop] ?? this._data.default?.[prop], breakpointProps?.[prop]);
+      }
+      return false;
+    });
+    return !!hasChanged;
   }
 
   setData(data: IDesignerLayout) {
@@ -157,12 +165,13 @@ export default class DesignerToolLayout extends Module {
     this.basisInput.value = basis ?? '';
     this.shrinkInput.value = shrink ?? '';
     this.growInput.value = grow ?? '';
-    this.inputBasicFlex.value = !shrink && !grow ? '0' : '1';
+    this.inputBasicFlex.value = grow ?? '';
     this.updateHighlight(data);
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_LAYOUT_PROPS);
   }
 
   private updateHighlight(data: IDesignerLayout) {
+    if (Object.keys(this._data.default || {}).length === 0) return;
     const isStack = this.isStack;
     this.directionSelector.isChanged = !this.checkValues('direction', this.directionSelector.activeItem);
     this.justifySelector.isChanged = !this.checkValues('justifyContent', this.justifySelector.activeItem);
@@ -173,10 +182,11 @@ export default class DesignerToolLayout extends Module {
     const reverseResult = this.checkValues('reverse', this.reverseSwitch.checked);
     this.lblReverse.font = getFont(reverseResult);
 
-    const stackResult = !this.checkValues('stack', data.stack);
+    const stackResult = this.checkValues('stack', data.stack);
+    this.lblFlex.font = getFont(stackResult);
 
     const stackChanged = isStack && (this.directionSelector.isChanged || this.justifySelector.isChanged || this.alignContentSelector.isChanged || this.alignSelfSelector.isChanged || this.alignSelector.isChanged || this.wrapSelector.isChanged || !reverseResult);
-    const hasChanged = stackChanged || stackResult;
+    const hasChanged = stackChanged || !stackResult;
     if (!this.isChecked) this.designerHeader.isChanged = hasChanged;
   }
 
@@ -356,7 +366,7 @@ export default class DesignerToolLayout extends Module {
               />
               <i-grid-layout templateColumns={['70px', 'auto']}>
                 <i-vstack gap={8}>
-                  <i-label caption="Flex" font={{ size: '0.75rem' }} lineHeight="24px" />
+                  <i-label id="lblFlex" caption="Flex" font={{ size: '0.75rem' }} lineHeight="24px" />
                   <i-hstack gap={2} width="fit-content" verticalAlignment="center" opacity={0.7} cursor="pointer" onClick={this.onFlexChanged}>
                     <i-label id="lbTypeFlex" caption="Advanced" font={{ size: '0.825rem' }} />
                     <i-icon name="arrow-right" fill="#fff" width={12} height={12} />
