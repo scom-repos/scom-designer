@@ -146,6 +146,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         onSelect?: selectCallback;
         onVisible?: visibleCallback;
         onDelete?: selectCallback;
+        onDuplicate?: selectCallback;
         onUpdate?: () => void;
         screen?: IScreen;
     }
@@ -171,6 +172,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         onSelect: selectCallback;
         onVisible: visibleCallback;
         onDelete: selectCallback;
+        onDuplicate: selectCallback;
         onUpdate: () => void;
         get screen(): IScreen;
         set screen(value: IScreen);
@@ -196,6 +198,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private removeElements;
         private onClose;
         private handleDelete;
+        private handleDuplicate;
         init(): void;
         render(): any;
     }
@@ -1483,6 +1486,9 @@ declare module "@scom/scom-designer/designer.tsx" {
         private _rootComponent;
         private selectedComponent;
         private currentParent;
+        private designPos;
+        private handleMouseMoveBound;
+        private handleMouseUpBound;
         selectedControl: IControl;
         modified: boolean;
         studio: IStudio;
@@ -1494,7 +1500,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
         private createControl;
         private updateDesignProps;
-        private isSameValue;
         private formatDesignProp;
         get rootComponent(): Parser.IComponent;
         clear(): void;
@@ -1506,6 +1511,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onSelectComponent;
         private onVisibleComponent;
         private onDeleteComponent;
+        private onDuplicateComponent;
+        private duplicateItem;
         private renderComponent;
         private renderControl;
         private isParentGroup;
@@ -1525,6 +1532,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onUpdateDesigner;
         private handleControlMouseMove;
         private updatePosition;
+        private handleControlMouseDown;
+        private handleControlMouseUp;
         private updateDesignPosition;
         private handleBreakpoint;
         private onToggleClick;
@@ -1563,6 +1572,7 @@ declare module "@scom/scom-designer/interface.ts" {
         image?: string;
         icon?: IconName;
         category?: string;
+        parent?: string;
     }
     export interface IComponent extends IComponentItem {
         items?: IComponent[];

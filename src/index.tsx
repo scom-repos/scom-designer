@@ -101,7 +101,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.focus()
     this.codeEditor.setCursor(result.lineNumber, result.columnNumber)
   }
-  removeComponent(designer: ScomDesignerForm): void {}
+  removeComponent(designer: ScomDesignerForm): void {
+    console.log('removeComponent', this.formDesigner.rootComponent)
+  }
   renameComponent(
     designer: ScomDesignerForm,
     oldId: string,
@@ -222,17 +224,19 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         items: []
       }
     }
+    (root as IComponent).path = IdUtils.generateUUID();
     if (root?.items?.length) {
-      root.items = this.updatePath(root.items);
+      root.items = this.updatePath(root.items, (root as IComponent).path);
     }
-    return {...root, path: IdUtils.generateUUID()} as IComponent;
+    return {...root} as IComponent;
   }
 
-  private updatePath(items: Parser.IComponent[]) {
+  private updatePath(items: Parser.IComponent[], path: string) {
     return [...items].map((item) => {
       (item as IComponent).path = IdUtils.generateUUID();
+      (item as IComponent).parent = path;
       if (item.items?.length) {
-        item.items = this.updatePath(item.items);
+        item.items = this.updatePath(item.items, (item as IComponent).path);
       }
       return item;
     })
