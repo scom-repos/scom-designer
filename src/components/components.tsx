@@ -29,6 +29,7 @@ interface DesignerComponentsElement extends ControlElement {
   onSelect?: selectCallback;
   onVisible?: visibleCallback;
   onDelete?: selectCallback;
+  onDuplicate?: selectCallback;
   onUpdate?: () => void;
   screen?: IScreen;
 }
@@ -62,6 +63,7 @@ export default class DesignerComponents extends Module {
   onSelect: selectCallback;
   onVisible: visibleCallback;
   onDelete: selectCallback;
+  onDuplicate: selectCallback;
   onUpdate: () => void;
 
   get screen() {
@@ -430,9 +432,11 @@ export default class DesignerComponents extends Module {
     // mdWrapper.style.left = `${left}px`;
     const firstChild = this.mdActions.item.children?.[0] as Control;
     if (firstChild) firstChild.visible = this.isContainer;
+    const dupChild = this.mdActions.item.children?.[2] as Control;
     const lastChild = this.mdActions.item.children?.[3] as Control;
     const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
     if (lastChild) lastChild.visible = !isTopPanel;
+    if (dupChild) dupChild.visible = !isTopPanel;
     this.mdActions.visible = true;
   }
 
@@ -465,7 +469,7 @@ export default class DesignerComponents extends Module {
         caption: 'Duplicate',
         icon: 'copy',
         visible: true,
-        onClick: () => {}
+        onClick: () => this.handleDuplicate()
       },
       {
         caption: 'Delete',
@@ -533,11 +537,19 @@ export default class DesignerComponents extends Module {
     this.mdAlert.showModal();
   }
 
+  private handleDuplicate() {
+    if (this.currentComponent) {
+      this.mdActions.visible = false;
+      if (this.onDuplicate) this.onDuplicate({...this.currentComponent});
+    }
+  }
+
   init() {
     super.init();
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
     this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
+    this.onDuplicate = this.getAttribute('onDuplicate', true) || this.onDuplicate;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
     this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
     this.initModalActions();

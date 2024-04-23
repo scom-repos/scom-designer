@@ -146,6 +146,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         onSelect?: selectCallback;
         onVisible?: visibleCallback;
         onDelete?: selectCallback;
+        onDuplicate?: selectCallback;
         onUpdate?: () => void;
         screen?: IScreen;
     }
@@ -171,6 +172,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         onSelect: selectCallback;
         onVisible: visibleCallback;
         onDelete: selectCallback;
+        onDuplicate: selectCallback;
         onUpdate: () => void;
         get screen(): IScreen;
         set screen(value: IScreen);
@@ -196,6 +198,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private removeElements;
         private onClose;
         private handleDelete;
+        private handleDuplicate;
         init(): void;
         render(): any;
     }
@@ -1506,6 +1509,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onSelectComponent;
         private onVisibleComponent;
         private onDeleteComponent;
+        private onDuplicateComponent;
+        private duplicateItem;
         private renderComponent;
         private renderControl;
         private isParentGroup;
@@ -1563,6 +1568,7 @@ declare module "@scom/scom-designer/interface.ts" {
         image?: string;
         icon?: IconName;
         category?: string;
+        parent?: string;
     }
     export interface IComponent extends IComponentItem {
         items?: IComponent[];

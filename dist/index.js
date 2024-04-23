@@ -764,10 +764,13 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             const firstChild = this.mdActions.item.children?.[0];
             if (firstChild)
                 firstChild.visible = this.isContainer;
+            const dupChild = this.mdActions.item.children?.[2];
             const lastChild = this.mdActions.item.children?.[3];
             const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
             if (lastChild)
                 lastChild.visible = !isTopPanel;
+            if (dupChild)
+                dupChild.visible = !isTopPanel;
             this.mdActions.visible = true;
         }
         async initModalActions() {
@@ -800,7 +803,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                     caption: 'Duplicate',
                     icon: 'copy',
                     visible: true,
-                    onClick: () => { }
+                    onClick: () => this.handleDuplicate()
                 },
                 {
                     caption: 'Delete',
@@ -854,11 +857,19 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         handleDelete() {
             this.mdAlert.showModal();
         }
+        handleDuplicate() {
+            if (this.currentComponent) {
+                this.mdActions.visible = false;
+                if (this.onDuplicate)
+                    this.onDuplicate({ ...this.currentComponent });
+            }
+        }
         init() {
             super.init();
             this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
             this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
             this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
+            this.onDuplicate = this.getAttribute('onDuplicate', true) || this.onDuplicate;
             this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
             this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
             this.initModalActions();
@@ -4124,7 +4135,6 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 }
                 else {
                     this.component.control[prop] = designerProps?.[prop] ?? customProps?.[prop]?.default;
-                    console.log('onUpdateUI', designerProps?.[prop], customProps?.[prop]?.default);
                 }
             }
         }
@@ -4712,6 +4722,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
             this.onDeleteComponent = this.onDeleteComponent.bind(this);
+            this.onDuplicateComponent = this.onDuplicateComponent.bind(this);
             this.onVisibleComponent = this.onVisibleComponent.bind(this);
             this.handleBreakpoint = this.handleBreakpoint.bind(this);
             this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
@@ -4860,7 +4871,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 control.props[prop] = valueStr;
             }
             else if (props.events[prop]) {
-                valueStr = "{" + value + "}";
+                valueStr = `{${value}}`;
             }
             return valueStr;
         }
@@ -4947,10 +4958,45 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (path) {
                 const control = this.pathMapping.get(path);
                 if (control?.control) {
+                    this.modified = true;
                     control.control.remove();
                     this.pathMapping.delete(path);
                 }
             }
+        }
+        onDuplicateComponent(component) {
+            this.modified = true;
+            const control = this.pathMapping.get(component.path);
+            const newComponent = this.duplicateItem(component);
+            const parentControl = control?.control?.parent;
+            this.renderComponent(parentControl, newComponent, true);
+            const parentPath = component.parent;
+            const parent = this.pathMapping.get(parentPath);
+            if (parent) {
+                parent.items = parent.items || [];
+                const index = parent.items.findIndex(x => x.path === component.path);
+                parent.items.splice(index + 1, 0, newComponent);
+                this.pathMapping.set(parentPath, parent);
+            }
+            this.updateStructure();
+        }
+        duplicateItem(component) {
+            const control = this.pathMapping.get(component.path);
+            const designerProps = control?.control?._getDesignProps() || {};
+            const newProps = JSON.parse(JSON.stringify(designerProps));
+            delete newProps['id'];
+            let newComponent = {
+                name: component.name,
+                path: components_30.IdUtils.generateUUID(),
+                props: { ...newProps },
+                control: null
+            };
+            if (component.items) {
+                newComponent.items = component.items.map(item => {
+                    return this.duplicateItem(item);
+                });
+            }
+            return newComponent;
         }
         renderComponent(parent, component, select) {
             if (!component?.name)
@@ -5106,6 +5152,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 const parentControl = this.pathMapping.get(this.currentParent.path);
                 const com = this.handleAddControl(undefined, parentControl?.control);
                 if (com && parentControl) {
+                    com.parent = this.currentParent.path;
                     parentControl.items = parentControl.items || [];
                     parentControl.items.push(com);
                     this.pathMapping.set(this.currentParent.path, parentControl);
@@ -5162,6 +5209,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             if (prop === "id" && oldVal !== value)
                 this.studio.renameComponent(this, oldVal, value);
+            this.pathMapping.set(this.selectedControl.path, this.selectedControl);
         }
         onControlEventChanged(prop, newValue, oldValue) {
             if (this.selectedControl?.control && oldValue !== newValue) {
@@ -5363,7 +5411,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', right: '0.15rem' })),
                         this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
-                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onUpdate: this.onUpdateDesigner }),
+                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onDuplicate: this.onDuplicateComponent, onUpdate: this.onUpdateDesigner }),
                         this.$render("i-modal", { id: "mdPicker", width: '16rem', maxWidth: '100%', height: '100dvh', overflow: 'hidden', showBackdrop: false, popupPlacement: 'rightTop', zIndex: 2000, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
                             this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden' },
                                 this.$render("i-vstack", { id: 'wrapperComponentPicker', width: '100%', height: '100%', border: {
@@ -17677,16 +17725,18 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     items: []
                 };
             }
+            root.path = components_32.IdUtils.generateUUID();
             if (root?.items?.length) {
-                root.items = this.updatePath(root.items);
+                root.items = this.updatePath(root.items, root.path);
             }
-            return { ...root, path: components_32.IdUtils.generateUUID() };
+            return { ...root };
         }
-        updatePath(items) {
+        updatePath(items, path) {
             return [...items].map((item) => {
                 item.path = components_32.IdUtils.generateUUID();
+                item.parent = path;
                 if (item.items?.length) {
-                    item.items = this.updatePath(item.items);
+                    item.items = this.updatePath(item.items, item.path);
                 }
                 return item;
             });

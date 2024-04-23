@@ -123,6 +123,7 @@ export class ScomDesignerForm extends Module {
     this.onControlEventChanged = this.onControlEventChanged.bind(this);
     this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
     this.onDeleteComponent = this.onDeleteComponent.bind(this);
+    this.onDuplicateComponent = this.onDuplicateComponent.bind(this);
     this.onVisibleComponent = this.onVisibleComponent.bind(this);
     this.handleBreakpoint = this.handleBreakpoint.bind(this);
     this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
@@ -277,7 +278,7 @@ export class ScomDesignerForm extends Module {
       }
       control.props[prop] = valueStr;
     } else if (props.events[prop]) {
-      valueStr = "{" + value + "}";
+      valueStr = `{${value}}`;
     }
     return valueStr;
   }
@@ -367,10 +368,47 @@ export class ScomDesignerForm extends Module {
     if (path) {
       const control = this.pathMapping.get(path);
       if (control?.control) {
+        this.modified = true;
         control.control.remove();
         this.pathMapping.delete(path);
       }
     }
+  }
+
+  private onDuplicateComponent(component: IComponent) {
+    this.modified = true;
+    const control = this.pathMapping.get(component.path);
+    const newComponent = this.duplicateItem(component);
+    const parentControl = control?.control?.parent;
+    this.renderComponent(parentControl, newComponent, true);
+    const parentPath = component.parent;
+    const parent = this.pathMapping.get(parentPath);
+    if (parent) {
+      parent.items = parent.items || [];
+      const index = parent.items.findIndex(x => x.path === component.path);
+      parent.items.splice(index + 1, 0, newComponent);
+      this.pathMapping.set(parentPath, parent);
+    }
+    this.updateStructure();
+  }
+
+  private duplicateItem(component: IComponent) {
+    const control = this.pathMapping.get(component.path);
+    const designerProps = control?.control?._getDesignProps() || {};
+    const newProps = JSON.parse(JSON.stringify(designerProps));
+    delete newProps['id'];
+    let newComponent: IControl = {
+      name: component.name,
+      path: IdUtils.generateUUID(),
+      props: {...newProps},
+      control: null
+    }
+    if (component.items) {
+      newComponent.items = component.items.map(item => {
+        return this.duplicateItem(item)
+      })
+    }
+    return newComponent;
   }
 
   private renderComponent(parent: Control, component: IControl, select?: boolean) {
@@ -526,6 +564,7 @@ export class ScomDesignerForm extends Module {
       const parentControl = this.pathMapping.get(this.currentParent.path);
       const com = this.handleAddControl(undefined, parentControl?.control);
       if (com && parentControl) {
+        com.parent = this.currentParent.path;
         parentControl.items = parentControl.items || [];
         parentControl.items.push(com);
         this.pathMapping.set(this.currentParent.path, parentControl);
@@ -579,6 +618,7 @@ export class ScomDesignerForm extends Module {
       control[prop] = imageEl;
     }
     if (prop === "id" && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
+    this.pathMapping.set(this.selectedControl.path, this.selectedControl);
   }
 
   private onControlEventChanged(prop: string, newValue: string, oldValue: string) {
@@ -829,6 +869,7 @@ export class ScomDesignerForm extends Module {
               onSelect={this.onSelectComponent}
               onVisible={this.onVisibleComponent}
               onDelete={this.onDeleteComponent}
+              onDuplicate={this.onDuplicateComponent}
               onUpdate={this.onUpdateDesigner}
             />
              <i-modal

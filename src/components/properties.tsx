@@ -288,7 +288,6 @@ export default class DesignerProperties extends Module {
           this.component.control[prop] = breakpointProps?.[prop] ?? designerProps?.[prop] ?? customProps?.[prop]?.default;
       } else {
         this.component.control[prop] = designerProps?.[prop] ?? customProps?.[prop]?.default;
-        console.log('onUpdateUI', designerProps?.[prop], customProps?.[prop]?.default)
       }
     }
   }

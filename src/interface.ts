@@ -30,6 +30,7 @@ export interface IComponentItem extends Parser.IComponent {
   image?: string;
   icon?: IconName;
   category?: string;
+  parent?: string;
 }
 
 export interface IComponent extends IComponentItem {
