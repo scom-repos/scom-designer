@@ -427,16 +427,15 @@ export default class DesignerComponents extends Module {
   }
 
   private onShowActions() {
-    // const mdWrapper = this.mdActions.querySelector('.modal-wrapper') as HTMLElement;
-    // mdWrapper.style.top = `${top}px`;
-    // mdWrapper.style.left = `${left}px`;
-    const firstChild = this.mdActions.item.children?.[0] as Control;
-    if (firstChild) firstChild.visible = this.isContainer;
-    const dupChild = this.mdActions.item.children?.[2] as Control;
-    const lastChild = this.mdActions.item.children?.[3] as Control;
+    const children = this.mdActions.item.children;
     const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
-    if (lastChild) lastChild.visible = !isTopPanel;
-    if (dupChild) dupChild.visible = !isTopPanel;
+    for (let i = 0; i < children.length; i++) {
+      if (i === 0) {
+        (children[i] as Control).visible = this.isContainer;
+      } else {
+        (children[i] as Control).visible = !isTopPanel;
+      }
+    }
     this.mdActions.visible = true;
   }
 
@@ -458,12 +457,6 @@ export default class DesignerComponents extends Module {
           this.mdActions.visible = false;
           if (this.onShowComponentPicker) this.onShowComponentPicker({...this.currentComponent});
         }
-      },
-      {
-        caption: 'Save Custom Block',
-        icon: 'save',
-        visible: true,
-        onClick: () => {}
       },
       {
         caption: 'Duplicate',

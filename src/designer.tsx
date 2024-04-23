@@ -35,7 +35,7 @@ import {
 } from './data'
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
-import { parseProps } from './helpers/utils'
+import { isSameValue, parseProps } from './helpers/utils'
 import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps } from './helpers/config'
 import { getBreakpoint } from './helpers/store'
 
@@ -112,6 +112,10 @@ export class ScomDesignerForm extends Module {
   private _rootComponent: IComponent
   private selectedComponent: IControl
   private currentParent: IComponent;
+  private designPos: any = {};
+
+  private handleMouseMoveBound: (event: MouseEvent) => void;
+  private handleMouseUpBound: (event: MouseEvent) => void;
 
   selectedControl: IControl
   modified: boolean;
@@ -229,7 +233,7 @@ export class ScomDesignerForm extends Module {
           continue;
         }
       }
-      if (this.isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
+      if (isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
         continue;
       }
       newProps[prop] = this.formatDesignProp(prop, props[prop], control);
@@ -238,14 +242,6 @@ export class ScomDesignerForm extends Module {
     component.items?.forEach(item => {
       this.updateDesignProps(item);
     });
-  }
-
-  private isSameValue(defaultVal: any, value: any) {
-    if (defaultVal === value) return true;
-    if (typeof defaultVal === 'object' && typeof value === 'object') {
-      return JSON.stringify(defaultVal) === JSON.stringify(value);
-    }
-    return false;
   }
 
   private formatDesignProp(prop: string, value: any, control: IControl) {
@@ -371,6 +367,7 @@ export class ScomDesignerForm extends Module {
         this.modified = true;
         control.control.remove();
         this.pathMapping.delete(path);
+        this.studio.removeComponent(this);
       }
     }
   }
@@ -400,6 +397,7 @@ export class ScomDesignerForm extends Module {
     let newComponent: IControl = {
       name: component.name,
       path: IdUtils.generateUUID(),
+      parent: component.parent,
       props: {...newProps},
       control: null
     }
@@ -658,75 +656,77 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleControlMouseMove(event: MouseEvent) {
-    if (this.mouseDown) {
-      let mouseMovePos = { x: event.clientX, y: event.clientY };
-      let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
-      this.mouseDownPos = mouseMovePos;
-      const currentControl = this.selectedControl?.control;
-      if (!currentControl) return;
-      if (this.resizing) {
-        this.modified = true;
-        const currentWidth = (currentControl.width || this.selectedControl?.control?._getDesignPropValue('width')) as number;
-        const currentHeight = (currentControl.height || this.selectedControl?.control?._getDesignPropValue('height')) as number;
-        switch (this.resizerPos) {
-          case "tl": {
-            let left = (currentControl.left as number) + mouseMoveDelta.x;
-            let top = (currentControl.top as number) + mouseMoveDelta.y;
-            let width = currentWidth - mouseMoveDelta.x;
-            let height = currentHeight - mouseMoveDelta.y;
-            this.updatePosition({ left, top, width, height })
-            break;
-          }
-          case "tm": {
-            let top = (currentControl.top as number) + mouseMoveDelta.y;
-            let height = currentHeight - mouseMoveDelta.y;
-            this.updatePosition({ top, height })
-            break;
-          }
-          case "tr": {
-            let top = (currentControl.top as number) + mouseMoveDelta.y;
-            let width = currentWidth + mouseMoveDelta.x;
-            let height = currentHeight - mouseMoveDelta.y;
-            this.updatePosition({ top, width, height })
-            break;
-          }
-          case "ml": {
-            let left = (currentControl.left as number) + mouseMoveDelta.x;
-            let width = currentWidth - mouseMoveDelta.x;
-            this.updatePosition({ left, width })
-            break;
-          }
-          case "mr": {
-            let width = currentWidth + mouseMoveDelta.x;
-            this.updatePosition({ width })
-            break;
-          }
-          case "bl": {
-            let left = (currentControl.left as number) + mouseMoveDelta.x;
-            let width = currentWidth - mouseMoveDelta.x;
-            let height = currentHeight + mouseMoveDelta.y;
-            this.updatePosition({ left, width, height })
-            break;
-          }
-          case "bm": {
-            let height = currentHeight + mouseMoveDelta.y;
-            this.updatePosition({ height })
-            break;
-          }
-          case "br": {
-            let width = currentWidth + mouseMoveDelta.x;
-            let height = currentHeight + mouseMoveDelta.y;
-            this.updatePosition({ width, height })
-            break;
-          }
-        }
-      } else {
-        if (Math.abs(mouseMoveDelta.x) > 5 || Math.abs(mouseMoveDelta.y) > 5) {
-          this.modified = true;
+    const currentControl = this.selectedControl?.control;
+    if (!currentControl || !this.mouseDown) {
+      event.preventDefault();
+      return;
+    }
+
+    let mouseMovePos = { x: event.clientX, y: event.clientY };
+    let mouseMoveDelta = { x: mouseMovePos.x - this.mouseDownPos.x, y: mouseMovePos.y - this.mouseDownPos.y };
+    this.mouseDownPos = mouseMovePos;
+    if (this.resizing) {
+      this.modified = true;
+      const currentWidth = (currentControl.width || this.selectedControl?.control?._getDesignPropValue('width')) as number;
+      const currentHeight = (currentControl.height || this.selectedControl?.control?._getDesignPropValue('height')) as number;
+      switch (this.resizerPos) {
+        case "tl": {
           let left = (currentControl.left as number) + mouseMoveDelta.x;
           let top = (currentControl.top as number) + mouseMoveDelta.y;
-          this.updatePosition({ left, top })
+          let width = currentWidth - mouseMoveDelta.x;
+          let height = currentHeight - mouseMoveDelta.y;
+          this.updatePosition({ left, top, width, height })
+          break;
         }
+        case "tm": {
+          let top = (currentControl.top as number) + mouseMoveDelta.y;
+          let height = currentHeight - mouseMoveDelta.y;
+          this.updatePosition({ top, height })
+          break;
+        }
+        case "tr": {
+          let top = (currentControl.top as number) + mouseMoveDelta.y;
+          let width = currentWidth + mouseMoveDelta.x;
+          let height = currentHeight - mouseMoveDelta.y;
+          this.updatePosition({ top, width, height })
+          break;
+        }
+        case "ml": {
+          let left = (currentControl.left as number) + mouseMoveDelta.x;
+          let width = currentWidth - mouseMoveDelta.x;
+          this.updatePosition({ left, width })
+          break;
+        }
+        case "mr": {
+          let width = currentWidth + mouseMoveDelta.x;
+          this.updatePosition({ width })
+          break;
+        }
+        case "bl": {
+          let left = (currentControl.left as number) + mouseMoveDelta.x;
+          let width = currentWidth - mouseMoveDelta.x;
+          let height = currentHeight + mouseMoveDelta.y;
+          this.updatePosition({ left, width, height })
+          break;
+        }
+        case "bm": {
+          let height = currentHeight + mouseMoveDelta.y;
+          this.updatePosition({ height })
+          break;
+        }
+        case "br": {
+          let width = currentWidth + mouseMoveDelta.x;
+          let height = currentHeight + mouseMoveDelta.y;
+          this.updatePosition({ width, height })
+          break;
+        }
+      }
+    } else {
+      if (Math.abs(mouseMoveDelta.x) > 5 || Math.abs(mouseMoveDelta.y) > 5) {
+        this.modified = true;
+        let left = (currentControl.left as number) + mouseMoveDelta.x;
+        let top = (currentControl.top as number) + mouseMoveDelta.y;
+        this.updatePosition({ left, top });
       }
     }
   }
@@ -736,11 +736,58 @@ export class ScomDesignerForm extends Module {
     if (!control) return;
     for (let prop in value) {
       if ((prop === 'width' || prop === 'height') && value[prop] < 0) value[prop] = 0;
-      this.onPropertiesChanged(prop, value[prop]);
+      this.designPos[prop] = value[prop];
+      control[prop] = value[prop];
     }
   }
 
+  private handleControlMouseDown(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.mouseDown = true;
+    this.mouseDownPos = { x: event.clientX, y: event.clientY };
+    let elm = event.target as HTMLElement;
+    const resizers = elm.querySelectorAll('.i-resizer');
+    let currentResizer = null;
+    for (let i = 0; i < resizers.length; i++) {
+      const resizer = resizers[i] as HTMLElement;
+      const { left, right, top, bottom } = resizer.getBoundingClientRect();
+      if (left <= event.clientX && event.clientX <= right && top <= event.clientY && event.clientY <= bottom) {
+        currentResizer = resizer;
+        break;
+      }
+    }
+    if (currentResizer) {
+      this.resizing = currentResizer.classList?.contains("i-resizer");
+      this.resizerPos = currentResizer.className?.split(" ")[1];
+    } else {
+      this.resizing = false;
+      this.resizerPos = '';
+    }
+    this.handleMouseMoveBound = this.handleControlMouseMove.bind(this);
+    this.handleMouseUpBound = (event: MouseEvent) => {
+      this.handleControlMouseUp(event);
+      this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
+      this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
+    };
+
+    this.pnlFormDesigner.addEventListener('mousemove', this.handleMouseMoveBound);
+    this.pnlFormDesigner.addEventListener('mouseup', this.handleMouseUpBound);
+  }
+
+  private handleControlMouseUp(event: MouseEvent) {
+    event.preventDefault();
+    this.mouseDown = false;
+    this.resizing = false;
+    this.resizerPos = '';
+    this.updateDesignPosition();
+  }
+
   private updateDesignPosition() {
+    for (let prop in this.designPos) {
+      this.onPropertiesChanged(prop, this.designPos[prop]);
+    }
+    this.designPos = {};
     this.designerProperties.onUpdate();
   }
 
@@ -772,36 +819,7 @@ export class ScomDesignerForm extends Module {
   }
 
   private initEvents() {
-    this.pnlFormDesigner.onmouseleave = event => {
-      this.mouseDown = false;
-      this.updateDesignPosition();
-    };
-    this.pnlFormDesigner.onmousedown = event => {
-      this.mouseDown = true;
-      this.mouseDownPos = { x: event.clientX, y: event.clientY };
-      let elm = event.target as HTMLElement;
-      const resizers = elm.querySelectorAll('.i-resizer');
-      let currentResizer = null;
-      for (let i = 0; i < resizers.length; i++) {
-        const resizer = resizers[i] as HTMLElement;
-        const { left, right, top, bottom } = resizer.getBoundingClientRect();
-        if (left <= event.clientX && event.clientX <= right && top <= event.clientY && event.clientY <= bottom) {
-          currentResizer = resizer;
-          break;
-        }
-      }
-      if (currentResizer) {
-        this.resizing = currentResizer.classList?.contains("i-resizer");
-        this.resizerPos = currentResizer.className?.split(" ")[1];
-      } else {
-        this.resizing = false;
-        this.resizerPos = '';
-      }
-    };
-    this.pnlFormDesigner.onmouseup = (event) => {
-      this.mouseDown = false;
-    };
-    this.pnlFormDesigner.onmousemove = this.handleControlMouseMove.bind(this);
+    this.pnlFormDesigner.addEventListener('mousedown', this.handleControlMouseDown.bind(this));
   }
 
   init() {

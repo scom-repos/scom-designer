@@ -1486,6 +1486,9 @@ declare module "@scom/scom-designer/designer.tsx" {
         private _rootComponent;
         private selectedComponent;
         private currentParent;
+        private designPos;
+        private handleMouseMoveBound;
+        private handleMouseUpBound;
         selectedControl: IControl;
         modified: boolean;
         studio: IStudio;
@@ -1497,7 +1500,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
         private createControl;
         private updateDesignProps;
-        private isSameValue;
         private formatDesignProp;
         get rootComponent(): Parser.IComponent;
         clear(): void;
@@ -1530,6 +1532,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onUpdateDesigner;
         private handleControlMouseMove;
         private updatePosition;
+        private handleControlMouseDown;
+        private handleControlMouseUp;
         private updateDesignPosition;
         private handleBreakpoint;
         private onToggleClick;

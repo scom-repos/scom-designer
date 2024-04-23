@@ -101,7 +101,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.focus()
     this.codeEditor.setCursor(result.lineNumber, result.columnNumber)
   }
-  removeComponent(designer: ScomDesignerForm): void {}
+  removeComponent(designer: ScomDesignerForm): void {
+    console.log('removeComponent', this.formDesigner.rootComponent)
+  }
   renameComponent(
     designer: ScomDesignerForm,
     oldId: string,
