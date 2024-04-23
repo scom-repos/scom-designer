@@ -290,6 +290,7 @@ export default class DesignerProperties extends Module {
         this.component.control[prop] = designerProps?.[prop] ?? customProps?.[prop]?.default;
       }
     }
+    if (!this.component.control.position) this.component.control.position = 'relative';
   }
 
   private onIDChanged(target: Input) {

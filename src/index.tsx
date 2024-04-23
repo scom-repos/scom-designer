@@ -225,7 +225,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       }
     }
     (root as IComponent).path = IdUtils.generateUUID();
-    if (root?.items?.length) {
+    if (!root.items) root.items = [];
+    if (root.items.length) {
       root.items = this.updatePath(root.items, (root as IComponent).path);
     }
     return {...root} as IComponent;
@@ -235,7 +236,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return [...items].map((item) => {
       (item as IComponent).path = IdUtils.generateUUID();
       (item as IComponent).parent = path;
-      if (item.items?.length) {
+      if (!item.items) item.items = [];
+      if (item.items.length) {
         item.items = this.updatePath(item.items, (item as IComponent).path);
       }
       return item;
