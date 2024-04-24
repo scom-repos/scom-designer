@@ -568,7 +568,7 @@ export default class DesignerComponents extends Module {
           background={{ color: '#26324b' }}
         >
           <i-label caption="Structure" font={{ bold: true, size: '0.75rem' }} />
-          <i-hstack verticalAlignment="center" margin={{ left: 'auto' }}>
+          <i-hstack visible={false} verticalAlignment="center" margin={{ left: 'auto' }}>
             <i-icon
               name="history"
               class={hoverFullOpacity}

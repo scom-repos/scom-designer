@@ -871,7 +871,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             return (this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: Theme.layout.container.maxWidth, margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main } },
                 this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: '#26324b' } },
                     this.$render("i-label", { caption: "Structure", font: { bold: true, size: '0.75rem' } }),
-                    this.$render("i-hstack", { verticalAlignment: "center", margin: { left: 'auto' } },
+                    this.$render("i-hstack", { visible: false, verticalAlignment: "center", margin: { left: 'auto' } },
                         this.$render("i-icon", { name: "history", class: index_css_1.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
                                 left: { style: 'solid', color: Theme.divider, width: 1 },
                                 right: { style: 'solid', color: Theme.divider, width: 1 }
@@ -4128,6 +4128,8 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                     this.component.control[prop] = designerProps?.[prop] ?? customProps?.[prop]?.default;
                 }
             }
+            if (!this.component.control.position)
+                this.component.control.position = 'relative';
         }
         onIDChanged(target) {
             const value = target.value;
@@ -17729,7 +17731,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 };
             }
             root.path = components_32.IdUtils.generateUUID();
-            if (root?.items?.length) {
+            if (!root.items)
+                root.items = [];
+            if (root.items.length) {
                 root.items = this.updatePath(root.items, root.path);
             }
             return { ...root };
@@ -17738,7 +17742,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return [...items].map((item) => {
                 item.path = components_32.IdUtils.generateUUID();
                 item.parent = path;
-                if (item.items?.length) {
+                if (!item.items)
+                    item.items = [];
+                if (item.items.length) {
                     item.items = this.updatePath(item.items, item.path);
                 }
                 return item;
