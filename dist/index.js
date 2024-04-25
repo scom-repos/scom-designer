@@ -421,6 +421,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_5.Styles.Theme.ThemeVars;
+    const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider'];
     let DesignerComponents = class DesignerComponents extends components_5.Module {
         constructor() {
             super(...arguments);
@@ -449,7 +450,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.updateActiveStyle(elm);
         }
         get isContainer() {
-            return this.currentComponent?.name && ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout'].includes(this.currentComponent?.name);
+            return this.currentComponent?.name && CONTAINERS.includes(this.currentComponent?.name);
         }
         updateActiveStyle(el) {
             const currentElm = this.vStackComponents?.querySelector(`.${index_css_1.rowItemActiveStyled}`);
@@ -3064,6 +3065,12 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 bottomLeft: '',
                 bottomRight: ''
             };
+            this.widthObj = {
+                top: '',
+                right: '',
+                bottom: '',
+                left: ''
+            };
             this._idvChanged = false;
             this.onSpacingChanged = this.onSpacingChanged.bind(this);
             this.onToggleMediaQuery = this.onToggleMediaQuery.bind(this);
@@ -3099,7 +3106,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             this._idvChanged = false;
             this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
             const { border = {} } = data;
-            this.updateOverall(border?.radius, border?.width);
+            this.updateOverall(border);
             this.styleSelector.activeItem = border?.style || '';
             this.bgColor.value = border?.color ?? '';
             this.updateButtons(data);
@@ -3107,7 +3114,8 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             if (this.onUpdate && needUpdate)
                 this.onUpdate(this.isChecked, exports.DESIGNER_BORDER_PROPS);
         }
-        updateOverall(radius, width) {
+        updateOverall(border) {
+            const { radius, width } = border;
             const radiusStr = (0, utils_7.isNumber)(radius) ? `${radius}px` : radius;
             this.radiusObj = this.radiusByPosition(radiusStr);
             const values = Object.values(this.radiusObj);
@@ -3116,6 +3124,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 const parsedRadius = (0, utils_7.parseNumberValue)(values[0])?.value ?? '';
                 this.inputRadius.value = parsedRadius;
             }
+            this.widthObj = this.widthByPosition(border);
             const widthStr = (0, utils_7.parseNumberValue)(width)?.value ?? '';
             this.inputWidth.value = widthStr;
         }
@@ -3156,10 +3165,10 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 const result = /(.*)(Radius|Width)$/.exec(id);
                 if (!result)
                     continue;
-                const type = result[2];
+                const type = result[2].toLowerCase();
                 const position = result[1];
-                const value = type === 'width' ? data.border?.[position]?.[type] : this.radiusObj[position];
-                const oldVal = type === 'width' ? this._data.border?.[position]?.[type] : oldRadius[position];
+                const value = type === 'width' ? this.widthObj[position] : this.radiusObj[position];
+                const oldVal = type === 'width' ? (this._data.border?.[position]?.width ?? this._data.border?.width) : oldRadius[position];
                 let isSame = true;
                 if (this.isChecked) {
                     isSame = (0, utils_7.isSameValue)(value ?? '', oldVal ?? '');
@@ -3169,7 +3178,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                     if (!isSame && !this._idvChanged)
                         this._idvChanged = true;
                 }
-                button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
+                button.caption = (0, utils_7.isNumber)(value) ? `${value}px` : (value || 'auto');
                 button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
             }
         }
@@ -3177,7 +3186,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             let data = this.currentData;
             let value = '';
             if (type === 'width') {
-                value = data.border?.[position]?.width ?? '';
+                value = this.widthObj[position];
             }
             else {
                 value = this.radiusObj[position];
@@ -3211,22 +3220,51 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             }
             return { topLeft: '', topRight: '', bottomRight: '', bottomLeft: '' };
         }
+        widthByPosition(border) {
+            const { width } = border;
+            const widthStr = ((0, utils_7.isNumber)(width) ? `${width}px` : width);
+            const result = {
+                top: widthStr,
+                right: widthStr,
+                bottom: widthStr,
+                left: widthStr
+            };
+            for (let prop of ['top', 'right', 'bottom', 'left']) {
+                if (this._data.border && Object.hasOwnProperty.call(this._data.border, prop)) {
+                    const width = this._data.border[prop].width;
+                    if (width !== undefined && width !== '') {
+                        result[prop] = ((0, utils_7.isNumber)(width) ? `${width}px` : width);
+                    }
+                }
+            }
+            return result;
+        }
         onPropChanged(target, prop) {
             const value = target.value;
             const newVal = (0, utils_7.isNumber)(value) ? `${value}px` : value;
+            if (prop === 'width' && this._data.border) {
+                for (let prop of ['top', 'right', 'bottom', 'left']) {
+                    if (Object.hasOwnProperty.call(this._data.border, prop)) {
+                        this.onSpacingChanged('width', prop, newVal, false);
+                    }
+                }
+            }
             this.handleValueChanged(prop, newVal);
         }
-        onSpacingChanged(type, position, value) {
+        // private onOverallChanged(type: string, value: string) {
+        // }
+        onSpacingChanged(type, position, value, needUpdate = true) {
             if (type === 'width') {
-                this.handleValueChanged('width', value, position);
+                this.widthObj[position] = value;
+                this.handleValueChanged('width', value, needUpdate, position);
             }
             else {
                 this.radiusObj[position] = value;
                 const radiusText = `${this.radiusObj.topLeft} ${this.radiusObj.topRight} ${this.radiusObj.bottomRight} ${this.radiusObj.bottomLeft}`;
-                this.handleValueChanged('radius', radiusText);
+                this.handleValueChanged('radius', radiusText, needUpdate);
             }
         }
-        handleValueChanged(type, value, position) {
+        handleValueChanged(type, value, needUpdate = true, position) {
             if (this.isChecked) {
                 this.handleMediaQuery(type, value, position);
             }
@@ -3242,7 +3280,8 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 if (this.onChanged)
                     this.onChanged('border', this._data.border);
             }
-            this.renderUI();
+            if (needUpdate)
+                this.renderUI();
         }
         handleMediaQuery(prop, value, position) {
             let border = this._data.mediaQuery['properties']['border'];
@@ -4469,13 +4508,14 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
     let DesignerPickerComponents = class DesignerPickerComponents extends components_28.Module {
         constructor(parent, options) {
             super(parent, options);
-            this.isShown = true;
+            this.isShown = false;
         }
         renderUI() {
             this.lbName.caption = this.name;
             this.iconArrow.name = 'angle-down';
             this.iconTooltip.visible = !!this.tooltipText;
             this.iconTooltip.tooltip.content = this.tooltipText || '';
+            this.hStackItems.visible = this.isShown;
             const nodeItems = [];
             for (const item of this.items) {
                 const { name, image, icon } = item;
@@ -4507,6 +4547,7 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
             this.name = this.getAttribute('name', true) || '';
             this.tooltipText = this.getAttribute('tooltipText', true);
+            this.isShown = this.getAttribute('isShown', true) || false;
             this.items = this.getAttribute('items', true) || [];
             this.renderUI();
         }
@@ -4793,7 +4834,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
             }
             catch { }
-            const control = new controlConstructor(parent, { ...newOptions });
+            const control = new controlConstructor(parent, { ...newOptions, designMode: true });
             const breakpointProps = (0, config_8.getMediaQueryProps)(options.mediaQueries);
             control._setDesignProps(options, breakpointProps);
             return control;
@@ -4838,7 +4879,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         break;
                     }
                     case "string": {
-                        valueStr = "'" + value + "'";
+                        valueStr = '"' + value + '"';
                         break;
                     }
                     case "boolean": {
@@ -4957,6 +4998,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const newComponent = this.duplicateItem(component);
             const parentControl = control?.control?.parent;
             this.renderComponent(parentControl, newComponent, true);
+            if (control.control && newComponent.control) {
+                control.control.insertAdjacentElement('afterend', newComponent.control);
+            }
             const parentPath = component.parent;
             const parent = this.pathMapping.get(parentPath);
             if (parent) {
@@ -4981,6 +5025,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             };
             if (component.items) {
                 newComponent.items = component.items.map(item => {
+                    item.parent = newComponent.path;
                     return this.duplicateItem(item);
                 });
             }
@@ -5009,10 +5054,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             let control = null;
             let isTab = component.name === 'i-tab' && parent instanceof components_30.Tabs;
             let isMenu = component.name === 'i-menu-item' && parent instanceof components_30.Menu;
-            let isRadio = component.name === 'i-radio' && parent instanceof components_30.RadioGroup;
             let isTree = component.name === 'i-tree-node' && parent instanceof components_30.TreeView;
-            if (isTab || isMenu || isRadio || isTree) {
+            if (isTab || isMenu || isTree) {
                 control = parent.add({ ...(options || {}) });
+            }
+            else if (parent instanceof components_30.CarouselSlider) {
+                const childControl = this.createControl(undefined, component.name, options);
+                control = parent.add(childControl);
             }
             else {
                 control = this.createControl(parent, component.name, options);
@@ -5022,21 +5070,12 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         isParentGroup(control) {
             return control instanceof components_30.Container ||
                 control instanceof components_30.Tabs ||
+                control instanceof components_30.Tab ||
                 control instanceof components_30.Menu ||
-                control instanceof components_30.RadioGroup ||
-                control instanceof components_30.TreeView;
+                control instanceof components_30.TreeView ||
+                control instanceof components_30.CarouselSlider;
         }
         bindControlEvents(control) {
-            // control.control.onclick = (event) => {
-            //   if (this.isParentGroup(control.control)) {
-            //     const com = this.handleAddControl(event, control.control);
-            //     if (com) {
-            //       control.items = control.items || [];
-            //       control.items.push(com);
-            //       this.updateStructure();
-            //     }
-            //   }
-            // };
             control.control.onMouseDown = () => {
                 this.handleSelectControl(control);
                 this.designerComponents.activeComponent = control;
@@ -5074,14 +5113,12 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 event.stopPropagation();
             this.modified = true;
             if (this.selectedComponent) {
+                const props = this.getDefaultProps(this.selectedComponent.name);
                 let com = {
                     name: this.selectedComponent.name,
                     path: components_30.IdUtils.generateUUID(),
                     items: [],
-                    props: {
-                        width: `{${100}}`,
-                        height: `{${20}}`
-                    },
+                    props,
                     control: null
                 };
                 if (parent) {
@@ -5104,6 +5141,161 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 return com;
             }
         }
+        getDefaultProps(name) {
+            let props = {};
+            switch (name) {
+                case 'i-panel':
+                    props = {
+                        width: '100%',
+                    };
+                    break;
+                case 'i-stack':
+                    props = {
+                        width: '100%',
+                        position: 'relative',
+                        padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
+                    };
+                    break;
+                case 'i-grid-layout':
+                    props = {
+                        width: '100%',
+                        minHeight: '100px',
+                        gap: '{{"column":"8px","row":"8px"}}',
+                        templateColumns: '{["auto"]}',
+                        templateRows: '{["auto"]}',
+                        padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}',
+                        autoFillInHoles: '{false}'
+                    };
+                    break;
+                case 'i-card-layout':
+                    props = {
+                        width: '100%',
+                        templateColumns: '{["auto"]}',
+                        templateRows: '{["auto"]}',
+                        gap: '{{"column":"8px","row":"8px"}}',
+                        padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}',
+                        cardMinWidth: '{100}',
+                        cardHeight: '{100}'
+                    };
+                    break;
+                case 'i-markdown-editor':
+                case 'i-iframe':
+                case 'i-code-editor':
+                case 'i-line-chart':
+                case 'i-bar-chart':
+                case 'i-pie-chart':
+                case 'i-scatter-chart':
+                case 'i-scatter-line-chart':
+                case 'i-bar-stack-chart':
+                case 'i-tabs':
+                    props = {
+                        width: '100%',
+                        height: '{200}',
+                        display: 'block'
+                    };
+                    break;
+                case 'i-tab':
+                    props = {
+                        caption: 'Tab Title',
+                    };
+                    break;
+                case 'i-table':
+                    props = {
+                        width: '100%',
+                        heading: '{true}',
+                        columns: '{[{"title":"Column 1","fieldName":"col_1","textAlign":"left"},{"title":"Column 2","fieldName":"col_2","textAlign":"left"},{"title":"Column 3","fieldName":"col_3","textAlign":"left"}]}'
+                    };
+                    break;
+                case 'i-carousel-slider':
+                    props = {
+                        width: '100%',
+                        type: 'dot',
+                        minHeight: '100px',
+                        indicators: '{true}'
+                    };
+                    break;
+                case 'i-video':
+                    props = {
+                        width: '100%',
+                        display: 'block'
+                    };
+                    break;
+                case 'i-image':
+                    props = {
+                        url: 'https://placehold.co/600x400?text=No+Image',
+                        width: '100%'
+                    };
+                    break;
+                case 'i-label':
+                    props = {
+                        caption: 'Label'
+                    };
+                    break;
+                case 'i-icon':
+                    props = {
+                        width: '24px',
+                        height: '24px'
+                    };
+                    break;
+                case 'i-progress':
+                    props = {
+                        width: '100%',
+                        percent: '{100}',
+                        strokeWidth: '{5}',
+                        border: '{{"radius":"4px"}}'
+                    };
+                    break;
+                case 'i-pagination':
+                    props = {
+                        width: '100%',
+                        pageSize: '{10}',
+                        currentPage: '{1}',
+                        totalPages: '{2}',
+                    };
+                    break;
+                case 'i-tree-view':
+                    props = {
+                        width: '100%',
+                        data: '{[{"caption":"Tree node 1", "active": true},{"caption":"Tree node 2"}]}'
+                    };
+                    break;
+                case 'i-menu':
+                    props = {
+                        width: '100%',
+                        data: '{[{"title":"Menu item 1","textAlign":"left"}, {"title":"Menu Item 2","textAlign":"left"}]}'
+                    };
+                    break;
+                case 'i-radio-group':
+                    props = {
+                        width: '100%',
+                        radioItems: '{[{"caption":"Option 1","value":"1"},{"caption":"Option 2","value":"2"},{"caption":"Option 3","value":"3"}]}'
+                    };
+                    break;
+                case 'i-datepicker':
+                case 'i-input':
+                case 'i-combo-box':
+                case 'i-range':
+                    props = {
+                        width: '100%',
+                        height: '32px',
+                        background: '{{"color":"transparent"}}',
+                    };
+                    break;
+                case 'i-button':
+                    props = {
+                        padding: '{{"top":"8px","right":"10px","bottom":"8px","left":"10px"}}',
+                        caption: 'Button',
+                        border: '{{"radius":"4px"}}',
+                    };
+                default:
+                    props = {
+                        width: `{100}`,
+                        height: `{20}`
+                    };
+                    break;
+            }
+            return props;
+        }
         updateStructure() {
             this.designerComponents.screen = {
                 ...this.designerComponents.screen,
@@ -5114,10 +5306,11 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         initComponentPicker() {
             const nodeItems = [];
             const components = this.pickerComponentsFiltered;
-            for (const picker of components) {
+            for (let i = 0; i < components.length; i++) {
                 const pickerElm = new index_3.DesignerPickerComponents(undefined, {
-                    ...picker,
+                    ...components[i],
                     display: 'block',
+                    isShown: i === 0,
                     margin: { bottom: 1 },
                     onSelect: (target, component) => {
                         this.onCloseComponentPicker();
@@ -17687,6 +17880,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const { url = '' } = this._data;
             const content = url ? await (0, utils_11.getFileContent)(url) : '';
             const fileName = this.fileName;
+            this.designTabs.activeTabIndex = 0;
+            this.updateDesigner = true;
             await this.codeEditor.loadContent(content, 'typescript', fileName);
             this.pnlMessage.visible = true;
         }
@@ -17726,7 +17921,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (!root) {
                 root = {
                     name: 'i-panel',
-                    props: {},
+                    props: {
+                        width: '{100%}',
+                        minHeight: '{100%}'
+                    },
                     items: []
                 };
             }
