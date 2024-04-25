@@ -20,6 +20,7 @@ interface DesignerPickerComponentsElement extends ControlElement {
   name: string;
   tooltipText?: string;
   items: IComponentItem[];
+  isShown?: boolean;
   onSelect?: onSelectCallback;
 }
 
@@ -36,7 +37,7 @@ export default class DesignerPickerComponents extends Module {
   private name: string;
   private tooltipText: string;
   private items: IComponentItem[];
-  private isShown = true;
+  private isShown: boolean = false;
 
   private lbName: Label;
   private iconArrow: Icon;
@@ -54,6 +55,7 @@ export default class DesignerPickerComponents extends Module {
     this.iconArrow.name = 'angle-down';
     this.iconTooltip.visible = !!this.tooltipText;
     this.iconTooltip.tooltip.content = this.tooltipText || '';
+    this.hStackItems.visible = this.isShown;
 
     const nodeItems: HTMLElement[] = [];
     for (const item of this.items) {
@@ -95,6 +97,7 @@ export default class DesignerPickerComponents extends Module {
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.name = this.getAttribute('name', true) || '';
     this.tooltipText = this.getAttribute('tooltipText', true);
+    this.isShown = this.getAttribute('isShown', true) || false;
     this.items = this.getAttribute('items', true) || [];
     this.renderUI();
   }

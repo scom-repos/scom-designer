@@ -182,6 +182,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const { url = '' } = this._data
     const content = url ? await getFileContent(url) : ''
     const fileName = this.fileName
+    this.designTabs.activeTabIndex = 0
+    this.updateDesigner = true;
     await this.codeEditor.loadContent(content, 'typescript', fileName)
     this.pnlMessage.visible = true
   }
@@ -220,7 +222,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (!root) {
       root = {
         name: 'i-panel',
-        props: {},
+        props: {
+          width: '{100%}',
+          minHeight: '{100%}'
+        },
         items: []
       }
     }

@@ -63,6 +63,12 @@ export default class DesignerToolBorders extends Module {
     bottomLeft: '',
     bottomRight: ''
   }
+  private widthObj = {
+    top: '',
+    right: '',
+    bottom: '',
+    left: ''
+  }
   private _idvChanged: boolean = false;
 
   onChanged: onChangedCallback;
@@ -110,7 +116,7 @@ export default class DesignerToolBorders extends Module {
     this._idvChanged = false;
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     const { border = {} } = data;
-    this.updateOverall(border?.radius, border?.width);
+    this.updateOverall(border);
     this.styleSelector.activeItem = border?.style || '';
     this.bgColor.value = border?.color ?? '';
 
@@ -119,7 +125,8 @@ export default class DesignerToolBorders extends Module {
     if (this.onUpdate && needUpdate) this.onUpdate(this.isChecked, DESIGNER_BORDER_PROPS);
   }
 
-  private updateOverall(radius: number|string, width: number|string) {
+  private updateOverall(border: IBorder) {
+    const { radius, width } = border;
     const radiusStr = isNumber(radius) ? `${radius}px` : radius;
     this.radiusObj = this.radiusByPosition(radiusStr as string);
     const values = Object.values(this.radiusObj);
@@ -128,6 +135,7 @@ export default class DesignerToolBorders extends Module {
       const parsedRadius = parseNumberValue(values[0])?.value ?? '';
       this.inputRadius.value = parsedRadius;
     }
+    this.widthObj = this.widthByPosition(border);
     const widthStr = parseNumberValue(width)?.value ?? '';
     this.inputWidth.value = widthStr;
   }
@@ -167,10 +175,10 @@ export default class DesignerToolBorders extends Module {
       const id = button.id || '';
       const result = /(.*)(Radius|Width)$/.exec(id);
       if (!result) continue;
-      const type = result[2];
+      const type = result[2].toLowerCase();
       const position = result[1];
-      const value = type === 'width' ? data.border?.[position]?.[type] : this.radiusObj[position];
-      const oldVal = type === 'width' ? this._data.border?.[position]?.[type] : oldRadius[position];
+      const value = type === 'width' ? this.widthObj[position] : this.radiusObj[position];
+      const oldVal = type === 'width' ? (this._data.border?.[position]?.width ?? this._data.border?.width) : oldRadius[position];
       let isSame = true;
       if (this.isChecked) {
         isSame = isSameValue(value ?? '', oldVal ?? '');
@@ -178,7 +186,7 @@ export default class DesignerToolBorders extends Module {
         isSame = !value;
         if (!isSame && !this._idvChanged) this._idvChanged = true;
       }
-      button.caption = (typeof value === 'number' ? `${value}px` : value) || 'auto';
+      button.caption = isNumber(value) ? `${value}px` : (value || 'auto');
       button.border.color = isSame ? Theme.action.selectedBackground : Theme.colors.success.main;
     }
   }
@@ -187,7 +195,7 @@ export default class DesignerToolBorders extends Module {
     let data = this.currentData;
     let value = '';
     if (type === 'width') {
-      value = data.border?.[position]?.width ?? '';
+      value = this.widthObj[position];
     } else {
       value = this.radiusObj[position];
     }
@@ -218,23 +226,54 @@ export default class DesignerToolBorders extends Module {
     return {topLeft: '', topRight: '', bottomRight: '', bottomLeft: ''};
   }
 
+  private widthByPosition(border: IBorder) {
+    const { width } = border;
+    const widthStr = (isNumber(width) ? `${width}px` : width) as string;
+    const result = {
+      top: widthStr,
+      right: widthStr,
+      bottom: widthStr,
+      left: widthStr
+    }
+    for (let prop of ['top', 'right', 'bottom', 'left']) {
+      if (this._data.border && Object.hasOwnProperty.call(this._data.border, prop)) {
+        const width = this._data.border[prop].width;
+        if (width !== undefined && width !== '') {
+          result[prop] = (isNumber(width) ? `${width}px` : width) as string;
+        }
+      }
+    }
+    return result;
+  }
+
   private onPropChanged(target: Input, prop: string) {
     const value = target.value;
     const newVal = isNumber(value) ? `${value}px` : value;
+    if (prop === 'width' && this._data.border) {
+      for (let prop of ['top', 'right', 'bottom', 'left']) {
+        if (Object.hasOwnProperty.call(this._data.border, prop)) {
+          this.onSpacingChanged('width', prop, newVal, false);
+        }
+      }
+    }
     this.handleValueChanged(prop, newVal);
   }
 
-  private onSpacingChanged(type: string, position: string, value: string) {
+  // private onOverallChanged(type: string, value: string) {
+  // }
+
+  private onSpacingChanged(type: string, position: string, value: string, needUpdate = true) {
     if (type === 'width') {
-      this.handleValueChanged('width', value, position);
+      this.widthObj[position] = value;
+      this.handleValueChanged('width', value, needUpdate, position);
     } else {
       this.radiusObj[position] = value;
       const radiusText = `${this.radiusObj.topLeft} ${this.radiusObj.topRight} ${this.radiusObj.bottomRight} ${this.radiusObj.bottomLeft}`;
-      this.handleValueChanged('radius', radiusText);
+      this.handleValueChanged('radius', radiusText, needUpdate);
     }
   }
 
-  private handleValueChanged(type: string, value: any, position?: string) {
+  private handleValueChanged(type: string, value: any, needUpdate = true, position?: string) {
     if (this.isChecked) {
       this.handleMediaQuery(type, value, position);
     } else {
@@ -246,7 +285,7 @@ export default class DesignerToolBorders extends Module {
       }
       if (this.onChanged) this.onChanged('border', this._data.border);
     }
-    this.renderUI();
+    if (needUpdate) this.renderUI();
   }
 
   private handleMediaQuery(prop: string, value: any, position?: string) {

@@ -19,7 +19,9 @@ import {
   RadioGroup,
   TreeView,
   Modal,
-  VStack
+  VStack,
+  Tab,
+  CarouselSlider
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -212,7 +214,7 @@ export class ScomDesignerForm extends Module {
     try {
       newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     } catch {}
-    const control: Control = new controlConstructor(parent, {...newOptions});
+    const control: Control = new controlConstructor(parent, {...newOptions, designMode: true});
     const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
     return control;
@@ -256,7 +258,7 @@ export class ScomDesignerForm extends Module {
           break;
         }
         case "string": {
-          valueStr = "'" + value + "'";
+          valueStr = '"' + value + '"';
           break;
         }
         case "boolean": {
@@ -378,6 +380,9 @@ export class ScomDesignerForm extends Module {
     const newComponent = this.duplicateItem(component);
     const parentControl = control?.control?.parent;
     this.renderComponent(parentControl, newComponent, true);
+    if (control.control && newComponent.control) {
+      control.control.insertAdjacentElement('afterend', newComponent.control);
+    }
     const parentPath = component.parent;
     const parent = this.pathMapping.get(parentPath);
     if (parent) {
@@ -403,6 +408,7 @@ export class ScomDesignerForm extends Module {
     }
     if (component.items) {
       newComponent.items = component.items.map(item => {
+        item.parent = newComponent.path;
         return this.duplicateItem(item)
       })
     }
@@ -429,10 +435,12 @@ export class ScomDesignerForm extends Module {
     let control = null;
     let isTab = component.name === 'i-tab' && parent instanceof Tabs;
     let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
-    let isRadio = component.name === 'i-radio' && parent instanceof RadioGroup;
     let isTree = component.name === 'i-tree-node' && parent instanceof TreeView;
-    if (isTab || isMenu || isRadio || isTree) {
+    if (isTab || isMenu || isTree) {
       control = (parent as any).add({...(options || {})});
+    } else if (parent instanceof CarouselSlider) {
+      const childControl = this.createControl(undefined, component.name, options);
+      control = parent.add(childControl);
     } else {
       control = this.createControl(parent, component.name, options);
     }
@@ -442,22 +450,13 @@ export class ScomDesignerForm extends Module {
   private isParentGroup(control: Control) {
     return control instanceof Container ||
       control instanceof Tabs ||
+      control instanceof Tab ||
       control instanceof Menu ||
-      control instanceof RadioGroup ||
-      control instanceof TreeView;
+      control instanceof TreeView ||
+      control instanceof CarouselSlider;
   }
 
   private bindControlEvents(control: IControl) {
-    // control.control.onclick = (event) => {
-    //   if (this.isParentGroup(control.control)) {
-    //     const com = this.handleAddControl(event, control.control);
-    //     if (com) {
-    //       control.items = control.items || [];
-    //       control.items.push(com);
-    //       this.updateStructure();
-    //     }
-    //   }
-    // };
     control.control.onMouseDown = () => {
       this.handleSelectControl(control);
       this.designerComponents.activeComponent = control;
@@ -496,14 +495,12 @@ export class ScomDesignerForm extends Module {
     if (event) event.stopPropagation();
     this.modified = true;
     if (this.selectedComponent) {
+      const props = this.getDefaultProps(this.selectedComponent.name);
       let com: IControl = {
         name: this.selectedComponent.name,
         path: IdUtils.generateUUID(),
         items: [],
-        props: {
-          width: `{${100}}`,
-          height: `{${20}}`
-        },
+        props,
         control: null
       };
       if (parent) {
@@ -525,6 +522,162 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  private getDefaultProps(name: string) {
+    let props: any = {};
+    switch(name) {
+      case 'i-panel':
+        props = {
+          width: '100%',
+        }
+        break;
+      case 'i-stack':
+        props = {
+          width: '100%',
+          position: 'relative',
+          padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
+        }
+        break;
+      case 'i-grid-layout':
+        props = {
+          width: '100%',
+          minHeight: '100px',
+          gap: '{{"column":"8px","row":"8px"}}',
+          templateColumns: '{["auto"]}',
+          templateRows: '{["auto"]}',
+          padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}',
+          autoFillInHoles: '{false}'
+        }
+        break;
+      case 'i-card-layout':
+        props = {
+          width: '100%',
+          templateColumns: '{["auto"]}',
+          templateRows: '{["auto"]}',
+          gap: '{{"column":"8px","row":"8px"}}',
+          padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}',
+          cardMinWidth: '{100}',
+          cardHeight: '{100}'
+        }
+        break;
+      case 'i-markdown-editor':
+      case 'i-iframe':
+      case 'i-code-editor':
+      case 'i-line-chart':
+      case 'i-bar-chart':
+      case 'i-pie-chart':
+      case 'i-scatter-chart':
+      case 'i-scatter-line-chart':
+      case 'i-bar-stack-chart':
+      case 'i-tabs':
+        props = {
+          width: '100%',
+          height: '{200}',
+          display: 'block'
+        }
+        break;
+      case 'i-tab':
+        props = {
+          caption: 'Tab Title',
+        }
+        break;
+      case 'i-table':
+        props = {
+          width: '100%',
+          heading: '{true}',
+          columns: '{[{"title":"Column 1","fieldName":"col_1","textAlign":"left"},{"title":"Column 2","fieldName":"col_2","textAlign":"left"},{"title":"Column 3","fieldName":"col_3","textAlign":"left"}]}'
+        }
+        break;
+      case 'i-carousel-slider':
+        props = {
+          width: '100%',
+          type: 'dot',
+          minHeight: '100px',
+          indicators: '{true}'
+        }
+        break;
+      case 'i-video':
+        props = {
+          width: '100%',
+          display: 'block'
+        }
+        break;
+      case 'i-image':
+        props = {
+          url: 'https://placehold.co/600x400?text=No+Image',
+          width: '100%'
+        }
+        break;
+      case 'i-label':
+        props = {
+          caption: 'Label'
+        }
+        break;
+      case 'i-icon':
+        props = {
+          width: '24px',
+          height: '24px'
+        }
+        break;
+      case 'i-progress':
+        props = {
+          width: '100%',
+          percent: '{100}',
+          strokeWidth: '{5}',
+          border: '{{"radius":"4px"}}'
+        }
+        break;
+      case 'i-pagination':
+        props = {
+          width: '100%',
+          pageSize: '{10}',
+          currentPage: '{1}',
+          totalPages: '{2}',
+        }
+        break;
+      case 'i-tree-view':
+        props = {
+          width: '100%',
+          data: '{[{"caption":"Tree node 1", "active": true},{"caption":"Tree node 2"}]}'
+        }
+        break;
+      case 'i-menu':
+        props = {
+          width: '100%',
+          data: '{[{"title":"Menu item 1","textAlign":"left"}, {"title":"Menu Item 2","textAlign":"left"}]}'
+        }
+        break;
+      case 'i-radio-group':
+        props = {
+          width: '100%',
+          radioItems: '{[{"caption":"Option 1","value":"1"},{"caption":"Option 2","value":"2"},{"caption":"Option 3","value":"3"}]}'
+        }
+        break;
+      case 'i-datepicker':
+      case 'i-input':
+      case 'i-combo-box':
+      case 'i-range':
+        props = {
+          width: '100%',
+          height: '32px',
+          background: '{{"color":"transparent"}}',
+        }
+        break;
+      case 'i-button':
+        props = {
+          padding: '{{"top":"8px","right":"10px","bottom":"8px","left":"10px"}}',
+          caption: 'Button',
+          border: '{{"radius":"4px"}}',
+        }
+      default:
+        props = {
+          width: `{100}`,
+          height: `{20}`
+        }
+        break;
+    }
+    return props;
+  }
+
   private updateStructure() {
     this.designerComponents.screen = {
       ...this.designerComponents.screen,
@@ -536,10 +689,11 @@ export class ScomDesignerForm extends Module {
   private initComponentPicker() {
     const nodeItems: HTMLElement[] = []
     const components = this.pickerComponentsFiltered;
-    for (const picker of components) {
+    for (let i = 0; i < components.length; i++) {
       const pickerElm = new DesignerPickerComponents(undefined, {
-        ...picker,
+        ... components[i],
         display: 'block',
+        isShown: i === 0,
         margin: { bottom: 1 },
         onSelect: (target: Control, component: IComponentItem) => {
           this.onCloseComponentPicker();

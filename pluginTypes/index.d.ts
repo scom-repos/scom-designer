@@ -910,6 +910,7 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private lblRadius;
         private _data;
         private radiusObj;
+        private widthObj;
         private _idvChanged;
         onChanged: onChangedCallback;
         onUpdate: onUpdateCallback;
@@ -926,6 +927,7 @@ declare module "@scom/scom-designer/tools/borders.tsx" {
         private updateButtons;
         private onShowSpacingModal;
         private radiusByPosition;
+        private widthByPosition;
         private onPropChanged;
         private onSpacingChanged;
         private handleValueChanged;
@@ -1405,6 +1407,7 @@ declare module "@scom/scom-designer/components/pickerComponents.tsx" {
         name: string;
         tooltipText?: string;
         items: IComponentItem[];
+        isShown?: boolean;
         onSelect?: onSelectCallback;
     }
     global {
@@ -1521,6 +1524,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private showDesignProperties;
         private onCloseComponentPicker;
         private handleAddControl;
+        private getDefaultProps;
         private updateStructure;
         private initComponentPicker;
         private onAddComponent;

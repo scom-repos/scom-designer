@@ -34,6 +34,8 @@ interface DesignerComponentsElement extends ControlElement {
   screen?: IScreen;
 }
 
+const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider'];
+
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -85,7 +87,7 @@ export default class DesignerComponents extends Module {
   }
 
   private get isContainer() {
-    return this.currentComponent?.name && ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout'].includes(this.currentComponent?.name)
+    return this.currentComponent?.name && CONTAINERS.includes(this.currentComponent?.name)
   }
 
   private updateActiveStyle(el: Control) {
