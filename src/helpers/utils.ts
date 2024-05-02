@@ -384,6 +384,7 @@ export const parseProps = (props: any) => {
 }
 
 export const parsePropValue = (value: any) => {
+  if (typeof value !== "string") return value;
   if (value.startsWith('{') && value.endsWith('}')) {
     value = value.substring(1, value.length - 1);
     if (value.startsWith('{') && value.endsWith('}')) {

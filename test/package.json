@@ -5,12 +5,22 @@
         "node": ">=18.0.0"
     },
     "dependencies": {
-        "@ijstech/components": "^0.1.47"
+        "@ijstech/components": "^0.1.47",
+        "@ijstech/eth-contract": "^0.1.24",
+        "@ijstech/eth-wallet": "^0.1.80"
     },
     "devDependencies": {
         "@ijstech/cli": "^0.1.28",
         "@ijstech/compiler": "^0.1.22",
         "@scom/dapp": "^0.1.11",
+        "@scom/scom-chart-data-source-setup": "^0.1.7",
+        "@scom/scom-line-chart": "^0.1.10",
+        "@scom/scom-bar-chart": "^0.1.10",
+        "@scom/scom-pie-chart": "^0.1.10",
+        "@scom/scom-table": "^0.1.10",
+        "@scom/scom-scatter-chart": "^0.1.10",
+        "@scom/scom-mixed-chart": "^0.1.10",
+        "@scom/scom-area-chart": "^0.1.10",
         "@scom/scom-designer": "file:./ref"
     },
     "scripts": {

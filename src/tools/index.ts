@@ -7,6 +7,7 @@ import DesignerToolPosition, {DESIGNER_POSITION_PROPS} from "./position";
 import DesignerToolBorders, {DESIGNER_BORDER_PROPS} from "./borders";
 import DesignerToolEffects, {DESIGNER_EFFECT_PROPS} from "./effects";
 import DesignerToolContent, {DESIGNER_CONTENT_PROPS} from './content';
+import DesignerToolWidget from './widgetSetting';
 import DesignerToolGroup from './group';
 import DesignerToolHeader from "./header";
 import DesignerSelector from './selector';
@@ -26,6 +27,7 @@ export {
   DesignerSelector,
   DesignerToolContent,
   DesignerToolGroup,
+  DesignerToolWidget,
   DESIGNER_BACKGROUND_PROPS,
   DESIGNER_BORDER_PROPS,
   DESIGNER_POSITION_PROPS,

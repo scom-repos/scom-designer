@@ -15,7 +15,15 @@
   "dependencies": {
     "@scom/dapp": "*",
     "@scom/scom-designer": "*",
-    "@ijstech/compiler": "*"
+    "@ijstech/compiler": "*",
+    "@scom/scom-chart-data-source-setup": "*",
+    "@scom/scom-line-chart": "*",
+    "@scom/scom-bar-chart": "*",
+    "@scom/scom-pie-chart": "*",
+    "@scom/scom-table": "*",
+    "@scom/scom-scatter-chart": "*",
+    "@scom/scom-mixed-chart": "*",
+    "@scom/scom-area-chart": "*"
   },
   "packages": [
   ],

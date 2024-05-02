@@ -983,6 +983,10 @@ define("@scom/scom-designer/tools/index.css.ts", ["require", "exports", "@ijstec
                     },
                     'i-combo-box .selection': {
                         padding: '0 1rem'
+                    },
+                    '.tabs-nav-wrap i-tab': {
+                        padding: '0 1rem !important',
+                        margin: '0px !important'
                     }
                 }
             }
@@ -1451,6 +1455,8 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
     };
     exports.parseProps = parseProps;
     const parsePropValue = (value) => {
+        if (typeof value !== "string")
+            return value;
         if (value.startsWith('{') && value.endsWith('}')) {
             value = value.substring(1, value.length - 1);
             if (value.startsWith('{') && value.endsWith('}')) {
@@ -3107,7 +3113,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
             const { border = {} } = data;
             this.updateOverall(border);
-            this.styleSelector.activeItem = border?.style || '';
+            this.styleSelector.activeItem = border?.style || 'solid';
             this.bgColor.value = border?.color ?? '';
             this.updateButtons(data);
             this.updateHighlight();
@@ -3183,7 +3189,6 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             }
         }
         onShowSpacingModal(target, type, position) {
-            let data = this.currentData;
             let value = '';
             if (type === 'width') {
                 value = this.widthObj[position];
@@ -3251,8 +3256,6 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
             }
             this.handleValueChanged(prop, newVal);
         }
-        // private onOverallChanged(type: string, value: string) {
-        // }
         onSpacingChanged(type, position, value, needUpdate = true) {
             if (type === 'width') {
                 this.widthObj[position] = value;
@@ -3277,7 +3280,7 @@ define("@scom/scom-designer/tools/borders.tsx", ["require", "exports", "@ijstech
                 else {
                     this._data.border[type] = value;
                 }
-                if (this.onChanged)
+                if (this.onChanged && needUpdate)
                     this.onChanged('border', this._data.border);
             }
             if (needUpdate)
@@ -3627,11 +3630,48 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
     ], DesignerToolContent);
     exports.default = DesignerToolContent;
 });
-define("@scom/scom-designer/tools/group.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_19, index_css_15) {
+define("@scom/scom-designer/tools/widgetSetting.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_19, index_css_15) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_19.Styles.Theme.ThemeVars;
-    let DesignerToolGroup = class DesignerToolGroup extends components_19.Module {
+    let DesignerToolWidget = class DesignerToolWidget extends components_19.Module {
+        constructor(parent, options) {
+            super(parent, options);
+            this._data = {};
+            this.onConfigClicked = this.onConfigClicked.bind(this);
+        }
+        setData(value) {
+            this._data = value;
+        }
+        onCollapse(isShown) {
+            this.vStackContent.visible = isShown;
+        }
+        onConfigClicked() {
+            if (this.onConfig)
+                this.onConfig();
+        }
+        init() {
+            super.init();
+            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.onConfig = this.getAttribute('onConfig', true) || this.onConfig;
+        }
+        render() {
+            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
+                this.$render("designer-tool-header", { id: "designerHeader", name: "Widget Settings", tooltipText: "", onCollapse: this.onCollapse }),
+                this.$render("i-hstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }, visible: false },
+                    this.$render("i-button", { caption: '', icon: { name: 'cog', fill: Theme.text.primary, width: '1rem', height: '1rem' }, class: index_css_15.buttonAutoStyled, onClick: this.onConfigClicked }))));
+        }
+    };
+    DesignerToolWidget = __decorate([
+        (0, components_19.customElements)('designer-tool-widget-settings')
+    ], DesignerToolWidget);
+    exports.default = DesignerToolWidget;
+});
+define("@scom/scom-designer/tools/group.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, components_20, index_css_16) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const Theme = components_20.Styles.Theme.ThemeVars;
+    let DesignerToolGroup = class DesignerToolGroup extends components_20.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {};
@@ -3699,18 +3739,18 @@ define("@scom/scom-designer/tools/group.tsx", ["require", "exports", "@ijstech/c
             return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative" },
                 this.$render("designer-tool-header", { id: "designerHeader", name: "", tooltipText: "", onCollapse: this.onCollapse, onReset: this.onResetData }),
                 this.$render("i-vstack", { id: "vStackContent", gap: '0.5rem', padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' }, visible: false },
-                    this.$render("i-form", { id: "form", class: index_css_15.customFormStyle, visible: false }))));
+                    this.$render("i-form", { id: "form", class: index_css_16.customFormStyle, visible: false }))));
         }
     };
     DesignerToolGroup = __decorate([
-        (0, components_19.customElements)('designer-tool-group')
+        (0, components_20.customElements)('designer-tool-group')
     ], DesignerToolGroup);
     exports.default = DesignerToolGroup;
 });
-define("@scom/scom-designer/tools/index.ts", ["require", "exports", "@scom/scom-designer/tools/stylesheet.tsx", "@scom/scom-designer/tools/layout.tsx", "@scom/scom-designer/tools/background.tsx", "@scom/scom-designer/tools/size.tsx", "@scom/scom-designer/tools/margins-padding.tsx", "@scom/scom-designer/tools/position.tsx", "@scom/scom-designer/tools/borders.tsx", "@scom/scom-designer/tools/effects.tsx", "@scom/scom-designer/tools/content.tsx", "@scom/scom-designer/tools/group.tsx", "@scom/scom-designer/tools/header.tsx", "@scom/scom-designer/tools/selector.tsx", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, stylesheet_1, layout_1, background_1, size_1, margins_padding_1, position_1, borders_1, effects_1, content_1, group_1, header_1, selector_1, index_css_16) {
+define("@scom/scom-designer/tools/index.ts", ["require", "exports", "@scom/scom-designer/tools/stylesheet.tsx", "@scom/scom-designer/tools/layout.tsx", "@scom/scom-designer/tools/background.tsx", "@scom/scom-designer/tools/size.tsx", "@scom/scom-designer/tools/margins-padding.tsx", "@scom/scom-designer/tools/position.tsx", "@scom/scom-designer/tools/borders.tsx", "@scom/scom-designer/tools/effects.tsx", "@scom/scom-designer/tools/content.tsx", "@scom/scom-designer/tools/widgetSetting.tsx", "@scom/scom-designer/tools/group.tsx", "@scom/scom-designer/tools/header.tsx", "@scom/scom-designer/tools/selector.tsx", "@scom/scom-designer/tools/index.css.ts"], function (require, exports, stylesheet_1, layout_1, background_1, size_1, margins_padding_1, position_1, borders_1, effects_1, content_1, widgetSetting_1, group_1, header_1, selector_1, index_css_17) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.DESIGNER_CONTENT_PROPS = exports.DESIGNER_EFFECT_PROPS = exports.DESIGNER_LAYOUT_PROPS = exports.DESIGNER_SPACING_PROPS = exports.DESIGNER_SIZE_PROPS = exports.DESIGNER_POSITION_PROPS = exports.DESIGNER_BORDER_PROPS = exports.DESIGNER_BACKGROUND_PROPS = exports.DesignerToolGroup = exports.DesignerToolContent = exports.DesignerSelector = exports.DesignerToolHeader = exports.DesignerToolEffects = exports.DesignerToolBorders = exports.DesignerToolPosition = exports.DesignerToolMarginsAndPadding = exports.DesignerToolSize = exports.DesignerToolBackground = exports.DesignerToolLayout = exports.DesignerToolStylesheet = void 0;
+    exports.DESIGNER_CONTENT_PROPS = exports.DESIGNER_EFFECT_PROPS = exports.DESIGNER_LAYOUT_PROPS = exports.DESIGNER_SPACING_PROPS = exports.DESIGNER_SIZE_PROPS = exports.DESIGNER_POSITION_PROPS = exports.DESIGNER_BORDER_PROPS = exports.DESIGNER_BACKGROUND_PROPS = exports.DesignerToolWidget = exports.DesignerToolGroup = exports.DesignerToolContent = exports.DesignerSelector = exports.DesignerToolHeader = exports.DesignerToolEffects = exports.DesignerToolBorders = exports.DesignerToolPosition = exports.DesignerToolMarginsAndPadding = exports.DesignerToolSize = exports.DesignerToolBackground = exports.DesignerToolLayout = exports.DesignerToolStylesheet = void 0;
     exports.DesignerToolStylesheet = stylesheet_1.default;
     exports.DesignerToolLayout = layout_1.default;
     Object.defineProperty(exports, "DESIGNER_LAYOUT_PROPS", { enumerable: true, get: function () { return layout_1.DESIGNER_LAYOUT_PROPS; } });
@@ -3728,16 +3768,17 @@ define("@scom/scom-designer/tools/index.ts", ["require", "exports", "@scom/scom-
     Object.defineProperty(exports, "DESIGNER_EFFECT_PROPS", { enumerable: true, get: function () { return effects_1.DESIGNER_EFFECT_PROPS; } });
     exports.DesignerToolContent = content_1.default;
     Object.defineProperty(exports, "DESIGNER_CONTENT_PROPS", { enumerable: true, get: function () { return content_1.DESIGNER_CONTENT_PROPS; } });
+    exports.DesignerToolWidget = widgetSetting_1.default;
     exports.DesignerToolGroup = group_1.default;
     exports.DesignerToolHeader = header_1.default;
     exports.DesignerSelector = selector_1.default;
-    __exportStar(index_css_16, exports);
+    __exportStar(index_css_17, exports);
 });
-define("@scom/scom-designer/settings/basic.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_20, index_1) {
+define("@scom/scom-designer/settings/basic.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_21, index_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_20.Styles.Theme.ThemeVars;
-    let DesignerSettingsBasic = class DesignerSettingsBasic extends components_20.Module {
+    const Theme = components_21.Styles.Theme.ThemeVars;
+    let DesignerSettingsBasic = class DesignerSettingsBasic extends components_21.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -3773,15 +3814,15 @@ define("@scom/scom-designer/settings/basic.tsx", ["require", "exports", "@ijstec
         }
     };
     DesignerSettingsBasic = __decorate([
-        (0, components_20.customElements)('designer-settings-basic')
+        (0, components_21.customElements)('designer-settings-basic')
     ], DesignerSettingsBasic);
     exports.default = DesignerSettingsBasic;
 });
-define("@scom/scom-designer/settings/advanced.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_21) {
+define("@scom/scom-designer/settings/advanced.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_22) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_21.Styles.Theme.ThemeVars;
-    let DesignerSettingsAdvanced = class DesignerSettingsAdvanced extends components_21.Module {
+    const Theme = components_22.Styles.Theme.ThemeVars;
+    let DesignerSettingsAdvanced = class DesignerSettingsAdvanced extends components_22.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -3811,7 +3852,7 @@ define("@scom/scom-designer/settings/advanced.tsx", ["require", "exports", "@ijs
         }
     };
     DesignerSettingsAdvanced = __decorate([
-        (0, components_21.customElements)('designer-settings-advanced')
+        (0, components_22.customElements)('designer-settings-advanced')
     ], DesignerSettingsAdvanced);
     exports.default = DesignerSettingsAdvanced;
 });
@@ -3822,11 +3863,11 @@ define("@scom/scom-designer/settings/index.ts", ["require", "exports", "@scom/sc
     exports.DesignerSettingsBasic = basic_1.default;
     exports.DesignerSettingsAdvanced = advanced_1.default;
 });
-define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_22) {
+define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_23) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_22.Styles.Theme.ThemeVars;
-    let DesignerTrigger = class DesignerTrigger extends components_22.Module {
+    const Theme = components_23.Styles.Theme.ThemeVars;
+    let DesignerTrigger = class DesignerTrigger extends components_23.Module {
         constructor(parent, options) {
             super(parent, options);
             this._events = {};
@@ -3924,7 +3965,7 @@ define("@scom/scom-designer/triggers/trigger.tsx", ["require", "exports", "@ijst
         }
     };
     DesignerTrigger = __decorate([
-        (0, components_22.customElements)('designer-trigger')
+        (0, components_23.customElements)('designer-trigger')
     ], DesignerTrigger);
     exports.default = DesignerTrigger;
 });
@@ -3934,11 +3975,11 @@ define("@scom/scom-designer/triggers/index.ts", ["require", "exports", "@scom/sc
     exports.DesignerTrigger = void 0;
     exports.DesignerTrigger = trigger_1.default;
 });
-define("@scom/scom-designer/setting-data/params.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_23, tools_1) {
+define("@scom/scom-designer/setting-data/params.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.ts"], function (require, exports, components_24, tools_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_23.Styles.Theme.ThemeVars;
-    let DesignerDataParams = class DesignerDataParams extends components_23.Module {
+    const Theme = components_24.Styles.Theme.ThemeVars;
+    let DesignerDataParams = class DesignerDataParams extends components_24.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -3968,15 +4009,15 @@ define("@scom/scom-designer/setting-data/params.tsx", ["require", "exports", "@i
         }
     };
     DesignerDataParams = __decorate([
-        (0, components_23.customElements)('designer-data-params')
+        (0, components_24.customElements)('designer-data-params')
     ], DesignerDataParams);
     exports.default = DesignerDataParams;
 });
-define("@scom/scom-designer/setting-data/linking.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_24) {
+define("@scom/scom-designer/setting-data/linking.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_25) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_24.Styles.Theme.ThemeVars;
-    let DesignerDataLinking = class DesignerDataLinking extends components_24.Module {
+    const Theme = components_25.Styles.Theme.ThemeVars;
+    let DesignerDataLinking = class DesignerDataLinking extends components_25.Module {
         constructor(parent, options) {
             super(parent, options);
         }
@@ -4006,7 +4047,7 @@ define("@scom/scom-designer/setting-data/linking.tsx", ["require", "exports", "@
         }
     };
     DesignerDataLinking = __decorate([
-        (0, components_24.customElements)('designer-data-linking')
+        (0, components_25.customElements)('designer-data-linking')
     ], DesignerDataLinking);
     exports.default = DesignerDataLinking;
 });
@@ -4017,17 +4058,18 @@ define("@scom/scom-designer/setting-data/index.tsx", ["require", "exports", "@sc
     exports.DesignerDataParams = params_1.default;
     exports.DesignerDataLinking = linking_1.default;
 });
-define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/settings/index.ts", "@scom/scom-designer/triggers/index.ts", "@scom/scom-designer/setting-data/index.tsx"], function (require, exports, components_25, index_css_17, index_2, config_7, utils_9, store_6) {
+define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/settings/index.ts", "@scom/scom-designer/triggers/index.ts", "@scom/scom-designer/setting-data/index.tsx"], function (require, exports, components_26, index_css_18, index_2, config_7, utils_9, store_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_25.Styles.Theme.ThemeVars;
-    let DesignerProperties = class DesignerProperties extends components_25.Module {
+    const Theme = components_26.Styles.Theme.ThemeVars;
+    let DesignerProperties = class DesignerProperties extends components_26.Module {
         constructor(parent, options) {
             super(parent, options);
             this.onPropChanged = this.onPropChanged.bind(this);
             this.onUpdateUI = this.onUpdateUI.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onBreakpointClick = this.onBreakpointClick.bind(this);
+            this.onShowConfig = this.onShowConfig.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -4055,6 +4097,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             const events = this._component?.control?._getCustomProperties()?.events;
             const designProps = this.component?.control._getDesignProps();
             this.designerTrigger.setData({ events, props: designProps });
+            this.designerWidget.visible = !!this.component?.control?.showConfigurator;
         }
         renderCustomGroup() {
             const designProps = (0, utils_9.parseProps)(this.designerProps);
@@ -4185,6 +4228,11 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         onPreviewClick(type, value) {
         }
+        onShowConfig() {
+            if (this.component?.control) {
+                this.component.control.showConfigurator(this.mdActions, 'Data');
+            }
+        }
         init() {
             super.init();
             this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -4206,13 +4254,14 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                     this.$render("designer-selector", { id: "previewSelector", title: 'PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
                         , items: config_7.previews, direction: 'vertical', stack: { grow: '1', shrink: '1' }, onChanged: this.onPreviewClick.bind(this) })),
                 this.$render("i-hstack", { id: "hStackInfo", width: "100%", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' }, visible: false }),
-                this.$render("i-tabs", { mode: "horizontal", activeTabIndex: 0, class: index_css_17.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
+                this.$render("i-tabs", { mode: "horizontal", activeTabIndex: 0, class: index_css_18.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
                     this.$render("i-tab", { icon: { name: 'sliders-h', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
                             this.$render("i-grid-layout", { id: "gridSelector", templateColumns: ['70px', 'auto'], verticalAlignment: "center", gap: { column: '0.5rem', row: '0.5rem' }, padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
                                 this.$render("i-label", { caption: "ID", font: { size: '0.75rem' } }),
                                 this.$render("i-hstack", { verticalAlignment: "center", border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
                                     this.$render("i-input", { id: "inputId", inputType: "text", placeholder: "Enter ID", background: { color: 'transparent' }, width: "calc(100% - 1.5rem)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_2.textInputRight} ${index_2.bgInputTransparent}`, onBlur: (target) => this.onIDChanged(target), onKeyUp: (target, event) => event.key === 'Enter' && this.onIDChanged(target) }))),
+                            this.$render("designer-tool-widget-settings", { id: "designerWidget", display: "block", onChanged: this.onGroupChanged, onConfig: this.onShowConfig, visible: false }),
                             this.$render("designer-tool-group", { id: "customGroup", display: 'block', onChanged: this.onGroupChanged }),
                             this.$render("designer-tool-background", { id: "designerBackground", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }),
                             this.$render("designer-tool-borders", { id: "designerBorders", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }),
@@ -4225,19 +4274,20 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                             this.$render("designer-tool-content", { id: "designerContent", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }))),
                     this.$render("i-tab", { icon: { name: 'magic', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%", height: '100%' },
-                            this.$render("designer-trigger", { id: "designerTrigger", display: "block", width: "100%", minHeight: 250, onChanged: this.onControlEventChanged, onEventDblClick: (name) => this.onEventDblClick && this.onEventDblClick(name) }))))));
+                            this.$render("designer-trigger", { id: "designerTrigger", display: "block", width: "100%", minHeight: 250, onChanged: this.onControlEventChanged, onEventDblClick: (name) => this.onEventDblClick && this.onEventDblClick(name) })))),
+                this.$render("i-modal", { id: "mdActions", title: 'Widget Settings', closeIcon: { name: 'times' }, width: 600, maxWidth: '100%', height: '100dvh', overflow: { y: 'auto' }, closeOnBackdropClick: false })));
         }
     };
     DesignerProperties = __decorate([
-        (0, components_25.customElements)('designer-properties')
+        (0, components_26.customElements)('designer-properties')
     ], DesignerProperties);
     exports.default = DesignerProperties;
 });
-define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_26, index_css_18) {
+define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_27, index_css_19) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_26.Styles.Theme.ThemeVars;
-    let DesignerScreens = class DesignerScreens extends components_26.Module {
+    const Theme = components_27.Styles.Theme.ThemeVars;
+    let DesignerScreens = class DesignerScreens extends components_27.Module {
         constructor() {
             super(...arguments);
             this.listScreen = [];
@@ -4280,8 +4330,8 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                 this.vStackDeletedScreens.removeChild(pnl);
                 this.lbDeletedScreens.caption = `Deleted Screens (${this.listScreen.filter(v => v.isDeleted).length})`;
             };
-            const pnl = new components_26.Panel();
-            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_18.hoverFullOpacity} ${index_css_18.rowItemHoverStyled}` },
+            const pnl = new components_27.Panel();
+            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_19.hoverFullOpacity} ${index_css_19.rowItemHoverStyled}` },
                 this.$render("i-label", { caption: `${deletedScreen.name} (Deleted)`, font: { size: '0.75rem' } }),
                 this.$render("i-icon", { name: "trash-restore", width: 14, height: 14, opacity: 0, cursor: "pointer", tooltip: { content: 'Restore Deleted Screen' }, onClick: onRestore })));
             this.vStackDeletedScreens.appendChild(pnl);
@@ -4313,7 +4363,7 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
         }
         onAddScreen(name, elements, _id) {
             const _name = this.getNewName(name);
-            const id = _id || components_26.IdUtils.generateUUID();
+            const id = _id || components_27.IdUtils.generateUUID();
             if (!_id) {
                 const obj = {
                     id,
@@ -4326,8 +4376,8 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                 const index = this.listScreen.findIndex(v => v.id === _id);
                 this.listScreen[index].name = _name;
             }
-            const lb = new components_26.Label(undefined, { caption: _name, font: { size: '0.75rem' } });
-            const input = new components_26.Input(undefined, { width: '100%', value: _name, visible: false, font: { size: '0.75rem' }, border: 'none' });
+            const lb = new components_27.Label(undefined, { caption: _name, font: { size: '0.75rem' } });
+            const input = new components_27.Input(undefined, { width: '100%', value: _name, visible: false, font: { size: '0.75rem' }, border: 'none' });
             input.onBlur = () => {
                 if (input.value) {
                     lb.caption = this.getNewName(input.value);
@@ -4357,12 +4407,12 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             };
             const onScreenChanged = () => {
                 for (const elm of this.vStackScreens.children) {
-                    elm.classList.remove(index_css_18.rowItemActiveStyled);
+                    elm.classList.remove(index_css_19.rowItemActiveStyled);
                 }
-                pnl.classList.add(index_css_18.rowItemActiveStyled);
+                pnl.classList.add(index_css_19.rowItemActiveStyled);
                 this.onScreenChanged(this.listScreen.find(screen => screen.id === id));
             };
-            const hStackActions = new components_26.HStack(undefined, {
+            const hStackActions = new components_27.HStack(undefined, {
                 gap: 8,
                 position: 'relative',
                 verticalAlignment: 'center',
@@ -4371,10 +4421,10 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             });
             hStackActions.appendChild(this.$render("i-icon", { name: "ellipsis-h", width: 14, height: 14, opacity: 0, cursor: "pointer", onClick: onShowActions }));
             hStackActions.appendChild(this.$render("i-icon", { name: "eye", width: 14, height: 14, opacity: 0, cursor: "pointer", onClick: (icon) => this.onHideScreen(icon, id) }));
-            const pnl = new components_26.Panel();
+            const pnl = new components_27.Panel();
             pnl.id = `screen-${id}`;
             pnl.onClick = () => onScreenChanged();
-            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_18.hoverFullOpacity} ${index_css_18.rowItemHoverStyled}`, onDblClick: onEditName },
+            pnl.appendChild(this.$render("i-hstack", { verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8, right: 8 }, class: `${index_css_19.hoverFullOpacity} ${index_css_19.rowItemHoverStyled}`, onDblClick: onEditName },
                 lb,
                 input,
                 hStackActions));
@@ -4388,16 +4438,16 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
             this.mdActions.visible = true;
         }
         async initModalActions() {
-            this.mdActions = await components_26.Modal.create({
+            this.mdActions = await components_27.Modal.create({
                 visible: false,
                 showBackdrop: false,
                 minWidth: '7rem',
                 height: 'auto',
                 popupPlacement: 'bottomRight'
             });
-            const itemActions = new components_26.VStack(undefined, { gap: 8, border: { radius: 8 } });
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'copy', width: 12, height: 12 }, caption: "Duplicate", class: index_css_18.iconButtonStyled, onClick: () => this.onDuplicateScreen(this.selectedId) }));
-            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'trash', width: 12, height: 12 }, caption: "Delete", class: index_css_18.iconButtonStyled, onClick: () => this.onShowModalDelete(this.selectedId) }));
+            const itemActions = new components_27.VStack(undefined, { gap: 8, border: { radius: 8 } });
+            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'copy', width: 12, height: 12 }, caption: "Duplicate", class: index_css_19.iconButtonStyled, onClick: () => this.onDuplicateScreen(this.selectedId) }));
+            itemActions.appendChild(this.$render("i-button", { background: { color: 'transparent' }, boxShadow: "none", icon: { name: 'trash', width: 12, height: 12 }, caption: "Delete", class: index_css_19.iconButtonStyled, onClick: () => this.onShowModalDelete(this.selectedId) }));
             this.mdActions.item = itemActions;
             document.body.appendChild(this.mdActions);
         }
@@ -4421,20 +4471,20 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                             this.$render("i-label", { id: "lbScreens", caption: "Components", font: { bold: true, size: '0.75rem' } }),
                             this.$render("i-label", { caption: "Last Updated", font: { bold: true, size: '0.75rem' }, opacity: 0.8 })),
                         this.$render("i-hstack", { verticalAlignment: "center", margin: { left: 'auto' } },
-                            this.$render("i-icon", { name: "history", class: index_css_18.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
+                            this.$render("i-icon", { name: "history", class: index_css_19.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
                                     left: { style: 'solid', color: Theme.divider, width: 1 },
                                     right: { style: 'solid', color: Theme.divider, width: 1 }
                                 }, tooltip: {
                                     content: 'View Deleted Screens'
                                 }, onClick: () => this.onShowDeletedScreens(true) }),
-                            this.$render("i-icon", { name: "plus-circle", class: index_css_18.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, tooltip: {
+                            this.$render("i-icon", { name: "plus-circle", class: index_css_19.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, tooltip: {
                                     content: 'Add Screen'
                                 }, onClick: () => this.onAddScreen('Blank') }))),
                     this.$render("i-vstack", { id: "vStackScreens", gap: 2, overflow: "auto", maxHeight: "calc(100% - 32px)" })),
                 this.$render("i-vstack", { id: "wrapperDeletedScreens", visible: false },
                     this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: '#26324b' } },
                         this.$render("i-label", { id: "lbDeletedScreens", caption: "Deleted Screens (0)", font: { bold: true, size: '0.75rem' } }),
-                        this.$render("i-icon", { name: "history", margin: { left: 'auto' }, class: index_css_18.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
+                        this.$render("i-icon", { name: "history", margin: { left: 'auto' }, class: index_css_19.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
                                 left: { style: 'solid', color: Theme.divider, width: 1 },
                             }, tooltip: {
                                 content: 'View Live Screens'
@@ -4444,15 +4494,15 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
         }
     };
     DesignerScreens = __decorate([
-        (0, components_26.customElements)('designer-screens')
+        (0, components_27.customElements)('designer-screens')
     ], DesignerScreens);
     exports.default = DesignerScreens;
 });
-define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_27, index_css_19) {
+define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_28, index_css_20) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_27.Styles.Theme.ThemeVars;
-    let DesignerPickerBlocks = class DesignerPickerBlocks extends components_27.Module {
+    const Theme = components_28.Styles.Theme.ThemeVars;
+    let DesignerPickerBlocks = class DesignerPickerBlocks extends components_28.Module {
         constructor(parent, options) {
             super(parent, options);
             this.isShown = true;
@@ -4465,13 +4515,13 @@ define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports",
             const nodeItems = [];
             for (const item of this.items) {
                 const { id, caption, image, path } = item;
-                const block = new components_27.Panel(undefined, { width: '100%', height: 'auto', background: { color: Theme.background.main }, padding: { top: 6, bottom: 6, left: 8, right: 8 } });
+                const block = new components_28.Panel(undefined, { width: '100%', height: 'auto', background: { color: Theme.background.main }, padding: { top: 6, bottom: 6, left: 8, right: 8 } });
                 block.appendChild(this.$render("i-hstack", { gap: 8, width: "100%", height: "100%", verticalAlignment: "center", horizontalAlignment: "space-between" },
                     this.$render("i-hstack", { gap: 8, verticalAlignment: "center", wrap: "wrap" },
                         image ? this.$render("i-image", { url: image, width: 24, height: 24 }) : [],
                         this.$render("i-label", { caption: caption, font: { size: '0.75rem' } })),
                     this.$render("i-icon", { name: "trash", width: 16, height: 16, cursor: "pointer", tooltip: { content: 'Delete Custom Block' }, onClick: () => this.onDeleteCustomBlock(id) })));
-                block.classList.add(index_css_19.blockItemHoverStyled);
+                block.classList.add(index_css_20.blockItemHoverStyled);
                 nodeItems.push(block);
             }
             this.vStackItems.clearInnerHTML();
@@ -4497,15 +4547,15 @@ define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports",
         }
     };
     DesignerPickerBlocks = __decorate([
-        (0, components_27.customElements)('designer-picker-blocks')
+        (0, components_28.customElements)('designer-picker-blocks')
     ], DesignerPickerBlocks);
     exports.default = DesignerPickerBlocks;
 });
-define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_28, index_css_20) {
+define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts"], function (require, exports, components_29, index_css_21) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_28.Styles.Theme.ThemeVars;
-    let DesignerPickerComponents = class DesignerPickerComponents extends components_28.Module {
+    const Theme = components_29.Styles.Theme.ThemeVars;
+    let DesignerPickerComponents = class DesignerPickerComponents extends components_29.Module {
         constructor(parent, options) {
             super(parent, options);
             this.isShown = false;
@@ -4519,11 +4569,11 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             const nodeItems = [];
             for (const item of this.items) {
                 const { name, image, icon } = item;
-                const block = new components_28.Panel(undefined, { width: 'calc(50% - 0.5px)', height: '5rem', background: { color: Theme.background.main } });
+                const block = new components_29.Panel(undefined, { width: 'calc(50% - 0.5px)', height: '5rem', background: { color: Theme.background.main } });
                 block.appendChild(this.$render("i-vstack", { gap: '0.5rem', width: "100%", height: "100%", verticalAlignment: "center", horizontalAlignment: "center", onClick: (target, event) => this.onItemSelected(target, event, item) },
                     icon ? this.$render("i-icon", { name: icon, width: '1.5rem', height: '1.5rem' }) : (image ? this.$render("i-image", { url: image, width: '1.5rem', height: '1.5rem' }) : []),
                     this.$render("i-label", { caption: name, font: { size: '0.75rem' } })));
-                block.classList.add(index_css_20.blockItemHoverStyled);
+                block.classList.add(index_css_21.blockItemHoverStyled);
                 nodeItems.push(block);
             }
             if (this.items.length % 2 === 1) {
@@ -4561,15 +4611,15 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
         }
     };
     DesignerPickerComponents = __decorate([
-        (0, components_28.customElements)('designer-picker-components')
+        (0, components_29.customElements)('designer-picker-components')
     ], DesignerPickerComponents);
     exports.default = DesignerPickerComponents;
 });
-define("@scom/scom-designer/components/index.ts", ["require", "exports", "@scom/scom-designer/components/components.tsx", "@scom/scom-designer/components/properties.tsx", "@scom/scom-designer/components/screens.tsx", "@scom/scom-designer/components/pickerBlocks.tsx", "@scom/scom-designer/components/pickerComponents.tsx"], function (require, exports, components_29, properties_1, screens_1, pickerBlocks_1, pickerComponents_1) {
+define("@scom/scom-designer/components/index.ts", ["require", "exports", "@scom/scom-designer/components/components.tsx", "@scom/scom-designer/components/properties.tsx", "@scom/scom-designer/components/screens.tsx", "@scom/scom-designer/components/pickerBlocks.tsx", "@scom/scom-designer/components/pickerComponents.tsx"], function (require, exports, components_30, properties_1, screens_1, pickerBlocks_1, pickerComponents_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DesignerPickerComponents = exports.DesignerPickerBlocks = exports.DesignerScreens = exports.DesignerProperties = exports.DesignerComponents = void 0;
-    exports.DesignerComponents = components_29.default;
+    exports.DesignerComponents = components_30.default;
     exports.DesignerProperties = properties_1.default;
     exports.DesignerScreens = screens_1.default;
     exports.DesignerPickerBlocks = pickerBlocks_1.default;
@@ -4704,11 +4754,11 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
         ]
     };
 });
-define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_30, index_3, index_css_21, data_1, index_4, utils_10, config_8, store_7) {
+define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_31, index_3, index_css_22, data_1, index_4, utils_10, config_8, store_7) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerForm = void 0;
-    const Theme = components_30.Styles.Theme.ThemeVars;
+    const Theme = components_31.Styles.Theme.ThemeVars;
     var TABS;
     (function (TABS) {
         TABS[TABS["RECENT"] = 0] = "RECENT";
@@ -4743,7 +4793,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
         }
     }
-    let ScomDesignerForm = class ScomDesignerForm extends components_30.Module {
+    let ScomDesignerForm = class ScomDesignerForm extends components_31.Module {
         constructor(parent, options) {
             super(parent, options);
             this.currentTab = TABS.BITS;
@@ -4753,6 +4803,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.resizerPos = "";
             this.recentComponents = [];
             this.designPos = {};
+            this.libsMap = {};
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
@@ -4800,7 +4851,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             for (let group in config_8.GroupMetadata) {
                 result[group] = { ...config_8.GroupMetadata[group], items: [] };
             }
-            let components = (0, components_30.getCustomElements)();
+            let components = (0, components_31.getCustomElements)();
             for (let name in components) {
                 const component = components[name];
                 const icon = component?.icon;
@@ -4823,18 +4874,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             return data_1.blockComponents;
         }
-        createControl(parent, name, options) {
+        async createControl(parent, name, options) {
             const controlConstructor = window.customElements.get(name);
             options = options || {};
-            if (name === 'i-stack') {
-                options = { direction: 'vertical', ...options };
-            }
             let newOptions = {};
             try {
                 newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
             }
             catch { }
-            const control = new controlConstructor(parent, { ...newOptions, designMode: true });
+            const control = await controlConstructor.create({ ...newOptions, designMode: true, cursor: 'pointer' });
+            parent.append(control);
             const breakpointProps = (0, config_8.getMediaQueryProps)(options.mediaQueries);
             control._setDesignProps(options, breakpointProps);
             return control;
@@ -4908,6 +4957,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         clear() {
             this.pathMapping = new Map();
+            this.libsMap = {};
         }
         onScreenChanged(screen) { }
         onScreenHistoryShown(shown) {
@@ -4919,10 +4969,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 return;
             for (let i = 0; i < this.wrapperTab.children.length; i++) {
                 if (value === i) {
-                    this.wrapperTab.children[i].classList.add(index_css_21.labelActiveStyled);
+                    this.wrapperTab.children[i].classList.add(index_css_22.labelActiveStyled);
                 }
                 else {
-                    this.wrapperTab.children[i].classList.remove(index_css_21.labelActiveStyled);
+                    this.wrapperTab.children[i].classList.remove(index_css_22.labelActiveStyled);
                 }
             }
             this.currentTab = value;
@@ -5018,7 +5068,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             delete newProps['id'];
             let newComponent = {
                 name: component.name,
-                path: components_30.IdUtils.generateUUID(),
+                path: components_31.IdUtils.generateUUID(),
                 parent: component.parent,
                 props: { ...newProps },
                 control: null
@@ -5031,12 +5081,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             return newComponent;
         }
-        renderComponent(parent, component, select) {
+        async renderComponent(parent, component, select) {
             if (!component?.name)
                 return;
-            let control = this.renderControl(parent, component);
+            let control = await this.renderControl(parent, component);
             if (!control)
                 return;
+            await control.ready();
             if (!control.style.position)
                 control.style.position = "relative";
             component.control = control;
@@ -5049,31 +5100,31 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (select || (beforeSelected && beforeSelected === component.path))
                 this.handleSelectControl(component);
         }
-        renderControl(parent, component) {
+        async renderControl(parent, component) {
             const options = (0, utils_10.parseProps)(component.props);
             let control = null;
-            let isTab = component.name === 'i-tab' && parent instanceof components_30.Tabs;
-            let isMenu = component.name === 'i-menu-item' && parent instanceof components_30.Menu;
-            let isTree = component.name === 'i-tree-node' && parent instanceof components_30.TreeView;
+            let isTab = component.name === 'i-tab' && parent instanceof components_31.Tabs;
+            let isMenu = component.name === 'i-menu-item' && parent instanceof components_31.Menu;
+            let isTree = component.name === 'i-tree-node' && parent instanceof components_31.TreeView;
             if (isTab || isMenu || isTree) {
                 control = parent.add({ ...(options || {}) });
             }
-            else if (parent instanceof components_30.CarouselSlider) {
-                const childControl = this.createControl(undefined, component.name, options);
+            else if (parent instanceof components_31.CarouselSlider) {
+                const childControl = await this.createControl(undefined, component.name, options);
                 control = parent.add(childControl);
             }
             else {
-                control = this.createControl(parent, component.name, options);
+                control = await this.createControl(parent, component.name, options);
             }
             return control;
         }
         isParentGroup(control) {
-            return control instanceof components_30.Container ||
-                control instanceof components_30.Tabs ||
-                control instanceof components_30.Tab ||
-                control instanceof components_30.Menu ||
-                control instanceof components_30.TreeView ||
-                control instanceof components_30.CarouselSlider;
+            return control instanceof components_31.Container ||
+                control instanceof components_31.Tabs ||
+                control instanceof components_31.Tab ||
+                control instanceof components_31.Menu ||
+                control instanceof components_31.TreeView ||
+                control instanceof components_31.CarouselSlider;
         }
         bindControlEvents(control) {
             control.control.onMouseDown = () => {
@@ -5100,6 +5151,12 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.selectedControl.control.tag.hideResizers();
             this.selectedControl = target;
             this.selectedControl.control.tag.showResizers();
+            const name = this.selectedControl.name;
+            if (this.selectedControl?.control?.register && !this.libsMap[name]) {
+                this.libsMap[name] = true;
+                const { types, defaultData } = (this.selectedControl?.control).register();
+                this.studio.registerWidget(this, name, types);
+            }
             this.showDesignProperties();
         }
         showDesignProperties() {
@@ -5108,7 +5165,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         onCloseComponentPicker() {
             this.mdPicker.visible = false;
         }
-        handleAddControl(event, parent) {
+        async handleAddControl(event, parent) {
             if (event)
                 event.stopPropagation();
             this.modified = true;
@@ -5116,13 +5173,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 const props = this.getDefaultProps(this.selectedComponent.name);
                 let com = {
                     name: this.selectedComponent.name,
-                    path: components_30.IdUtils.generateUUID(),
+                    path: components_31.IdUtils.generateUUID(),
                     items: [],
                     props,
                     control: null
                 };
                 if (parent) {
-                    this.renderComponent(parent, com, true);
+                    await this.renderComponent(parent, com, true);
                 }
                 else {
                     let pos = { x: event?.offsetX || 0, y: event?.offsetY || 0 };
@@ -5131,7 +5188,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         left: `{${pos.x}}`,
                         top: `{${pos.y}}`,
                     };
-                    this.renderComponent(this.pnlFormDesigner, com, true);
+                    await this.renderComponent(this.pnlFormDesigner, com, true);
                     if (!this._rootComponent.items)
                         this._rootComponent.items = [];
                     this._rootComponent.items.push(com);
@@ -5153,6 +5210,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     props = {
                         width: '100%',
                         position: 'relative',
+                        direction: 'vertical',
                         padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
                     };
                     break;
@@ -5181,12 +5239,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-markdown-editor':
                 case 'i-iframe':
                 case 'i-code-editor':
-                case 'i-line-chart':
-                case 'i-bar-chart':
-                case 'i-pie-chart':
-                case 'i-scatter-chart':
-                case 'i-scatter-line-chart':
-                case 'i-bar-stack-chart':
                 case 'i-tabs':
                     props = {
                         width: '100%',
@@ -5197,6 +5249,22 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-tab':
                     props = {
                         caption: 'Tab Title',
+                    };
+                    break;
+                case 'i-scom-line-chart':
+                    props = {
+                        width: '100%',
+                        minHeight: '{200}',
+                        data: '{{"mode":"Live","dataSource": "Dune", "queryId": "2360905", "title": "ETH Withdrawals after Shanghai Unlock vs ETH price", "options": { "xColumn": { "key": "time", "type": "time" }, "yColumns": ["eth_price"], "seriesOptions": [{ "key": "eth_price", "title": "ETH Price", "color": "#EE2020" }], "xAxis": { "title": "Date", "tickFormat": "MMM DD" }, "yAxis": { "labelFormat": "0,000.00$", "position": "left"}}}}',
+                        display: 'block'
+                    };
+                    break;
+                case 'i-scom-bar-chart':
+                    props = {
+                        width: '100%',
+                        minHeight: '{200}',
+                        data: '{{"mode":"Live","dataSource":"Dune","queryId":"2360815","title":"ETH Withdrawals after Shanghai Unlock","options":{"xColumn":{"key":"time","type":"time"},"yColumns":["ETH"],"groupBy":"category","stacking":true,"legend":{"show":true},"seriesOptions":[{"key":"Reward","color":"#378944"},{"key":"Full Withdraw","color":"#b03030"}],"xAxis":{"title":"Date","tickFormat":"MMM DD"},"yAxis":{"title":"ETH","position":"left","labelFormat":"0,000.ma"}}}}',
+                        display: 'block'
                     };
                     break;
                 case 'i-table':
@@ -5223,6 +5291,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-image':
                     props = {
                         url: 'https://placehold.co/600x400?text=No+Image',
+                        display: 'block',
                         width: '100%'
                     };
                     break;
@@ -5322,7 +5391,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.pnlComponentPicker.clearInnerHTML();
             this.pnlComponentPicker.append(...nodeItems);
         }
-        onAddComponent(target, component) {
+        async onAddComponent(target, component) {
             this.selectedComponent = { ...component, control: target };
             if (this.selectedComponent) {
                 const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
@@ -5331,7 +5400,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             if (this.isParentGroup(this.selectedComponent.control)) {
                 const parentControl = this.pathMapping.get(this.currentParent.path);
-                const com = this.handleAddControl(undefined, parentControl?.control);
+                const com = await this.handleAddControl(undefined, parentControl?.control);
                 if (com && parentControl) {
                     com.parent = this.currentParent.path;
                     parentControl.items = parentControl.items || [];
@@ -5377,15 +5446,15 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 value.name = 'angle-down';
             }
             if (prop === 'link' && value.href) {
-                const linkEl = new components_30.Link(control, value);
+                const linkEl = new components_31.Link(control, value);
                 control[prop] = linkEl;
             }
             else if (prop.includes('icon') && (value.name || value.image?.url)) {
-                const iconEl = new components_30.Icon(control, { width: '1rem', height: '1rem', display: 'flex', ...value });
+                const iconEl = new components_31.Icon(control, { width: '1rem', height: '1rem', display: 'flex', ...value });
                 control[prop] = iconEl;
             }
             else if (prop === 'image' && value.url) {
-                const imageEl = new components_30.Image(control, { width: '1rem', height: '1rem', display: 'flex', ...value });
+                const imageEl = new components_31.Image(control, { width: '1rem', height: '1rem', display: 'flex', ...value });
                 control[prop] = imageEl;
             }
             if (prop === "id" && oldVal !== value)
@@ -5603,7 +5672,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.$render("i-hstack", { width: '100%', height: '100%' },
                     this.$render("i-vstack", { id: "pnlScreens", width: '100%', height: '100%', border: {
                             top: { width: 1, style: 'solid', color: Theme.divider },
-                        }, maxWidth: 300, position: 'relative', overflow: 'visible', zIndex: 10, class: index_css_21.customTransition },
+                        }, maxWidth: 300, position: 'relative', overflow: 'visible', zIndex: 10, class: index_css_22.customTransition },
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', right: '0.15rem' })),
                         this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
@@ -5623,13 +5692,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                             this.$render("i-label", { caption: 'Add Components', font: { size: '0.75rem', bold: true } }),
                                             this.$render("i-icon", { name: 'times', width: 14, height: 14, cursor: 'pointer', onClick: this.onCloseComponentPicker })),
                                         this.$render("i-grid-layout", { id: 'wrapperTab', width: '100%', background: { color: Theme.action.hoverBackground }, templateColumns: ['1fr', '1fr', '1fr'], class: `${index_4.borderRadiusLeft} ${index_4.borderRadiusRight}` },
-                                            this.$render("i-label", { caption: 'Recent', class: `${index_css_21.customLabelTabStyled} ${index_4.borderRadiusLeft}`, onClick: () => this.onTabChanged(TABS.RECENT) }),
-                                            this.$render("i-label", { caption: 'Bits', class: `${index_css_21.customLabelTabStyled} ${index_css_21.labelActiveStyled}`, border: {
+                                            this.$render("i-label", { caption: 'Recent', class: `${index_css_22.customLabelTabStyled} ${index_4.borderRadiusLeft}`, onClick: () => this.onTabChanged(TABS.RECENT) }),
+                                            this.$render("i-label", { caption: 'Bits', class: `${index_css_22.customLabelTabStyled} ${index_css_22.labelActiveStyled}`, border: {
                                                     radius: 0,
                                                     left: { width: 1, style: 'solid', color: Theme.divider },
                                                     right: { width: 1, style: 'solid', color: Theme.divider },
                                                 }, onClick: () => this.onTabChanged(TABS.BITS) }),
-                                            this.$render("i-label", { caption: 'Blocks', class: `${index_css_21.customLabelTabStyled} ${index_4.borderRadiusRight}`, onClick: () => this.onTabChanged(TABS.BLOCKS) })),
+                                            this.$render("i-label", { caption: 'Blocks', class: `${index_css_22.customLabelTabStyled} ${index_4.borderRadiusRight}`, onClick: () => this.onTabChanged(TABS.BLOCKS) })),
                                         this.$render("i-input", { id: 'inputSearch', placeholder: 'Search', width: '100%', height: 24, border: {
                                                 radius: 8,
                                                 width: 0,
@@ -5645,14 +5714,14 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                     }
                                 }
                             ] })),
-                    this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_21.customTransition, zIndex: 10 },
+                    this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition, zIndex: 10 },
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
                         this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint })))));
         }
     };
     ScomDesignerForm = __decorate([
-        (0, components_30.customElements)('i-scom-designer--form')
+        (0, components_31.customElements)('i-scom-designer--form')
     ], ScomDesignerForm);
     exports.ScomDesignerForm = ScomDesignerForm;
 });
@@ -9379,6 +9448,7 @@ declare module "packages/base/src/component" {
         transform?: TextTransform;
         underline?: boolean;
         weight?: number | string;
+        shadow?: string;
     }
     export interface ISpace {
         top?: string | number;
@@ -9500,6 +9570,7 @@ declare module "packages/base/src/style/base.css" {
     import { BorderStylesSideType, IBorder, IBorderSideStyles, IOverflow, IBackground, IControlMediaQuery, DisplayType, IMediaQuery } from "@ijstech/components/base";
     export const disabledStyle: string;
     export const containerStyle: string;
+    export const getBorderSideObj: (side: BorderStylesSideType, value: IBorderSideStyles) => any;
     export const getBorderSideStyleClass: (side: BorderStylesSideType, value: IBorderSideStyles) => string;
     export const getBorderStyleClass: (value: IBorder) => string;
     export const getOverflowStyleClass: (value: IOverflow) => string;
@@ -9758,6 +9829,7 @@ declare module "packages/base/src/control" {
         protected _contextMenuControl: Control | null;
         private _opacity;
         protected _zIndex: string;
+        protected _designMode: boolean;
         protected propertyClassMap: Record<string, string>;
         _container?: HTMLElement;
         tag: any;
@@ -9805,6 +9877,8 @@ declare module "packages/base/src/control" {
         set maxWidth(value: number | string);
         get minWidth(): string | number;
         set minWidth(value: string | number);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         observables(propName: string): any;
         get onClick(): notifyMouseEventCallback;
         set onClick(callback: notifyMouseEventCallback);
@@ -9970,6 +10044,7 @@ declare module "@ijstech/components/base" {
         cursor?: CursorType;
         letterSpacing?: string | number;
         boxShadow?: string;
+        designMode?: boolean;
         mediaQueries?: IControlMediaQuery[];
         onClick?: notifyMouseEventCallback;
         onDblClick?: notifyMouseEventCallback;
@@ -10909,6 +10984,7 @@ declare module "packages/layout/src/grid" {
         mediaQueries?: IGridLayoutMediaQuery[];
     }
     export const gridSchemaProps: any;
+    export const gridProps: any;
     export class GridLayout extends Container {
         private _templateColumns;
         private _templateRows;
@@ -11543,6 +11619,8 @@ declare module "packages/datepicker/src/datepicker" {
         set placeholder(value: string);
         get type(): dateType;
         set type(value: dateType);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         private get formatString();
         private _onDatePickerChange;
         private _onBlur;
@@ -11606,6 +11684,8 @@ declare module "packages/range/src/range" {
         set width(value: number | string);
         get enabled(): boolean;
         set enabled(value: boolean);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         get tooltipVisible(): boolean;
         set tooltipVisible(value: boolean);
         get trackColor(): Types.Color;
@@ -15584,7 +15664,6 @@ declare module "packages/data-grid/src/dataGrid" {
     export type cellValueChangedCallback = (source: DataGrid, cell: DataGridCell, oldValue: any, newValue: any) => void;
     export interface IDataGridElement extends ControlElement {
         caption?: string;
-        mode?: GridMode;
     }
     global {
         namespace JSX {
@@ -15763,7 +15842,6 @@ declare module "packages/data-grid/src/dataGrid" {
         getRow(index: number): TGridRow;
     }
     export type TGridLayout = 'grid' | 'card';
-    export type GridMode = 'vertical' | 'horizontal';
     export class DataGrid extends Control {
         private _colResizing;
         private _listOfValue;
@@ -15785,7 +15863,6 @@ declare module "packages/data-grid/src/dataGrid" {
         private data;
         columns: TGridColumns;
         gridRows: TGridRows;
-        private _mode;
         private _colCount;
         private _rowCount;
         private editor;
@@ -15864,7 +15941,6 @@ declare module "packages/data-grid/src/dataGrid" {
         set row(value: number);
         get colCount(): number;
         set colCount(value: number);
-        get mode(): GridMode;
         get readOnly(): boolean;
         set readOnly(value: boolean);
         get rowCount(): number;
@@ -16005,8 +16081,6 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         hideModeSwitch?: boolean;
         value?: string;
         viewer?: boolean;
-        width?: string;
-        height?: string;
         toolbarItems?: any[];
         plugins?: any[];
         widgetRules?: {
@@ -16055,11 +16129,13 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         set previewStyle(value: 'tab' | 'vertical');
         get viewer(): boolean;
         set viewer(value: boolean);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         get value(): string;
         set value(value: string);
         setValue(value: string): Promise<void>;
-        get height(): string;
-        set height(value: string);
+        get height(): string | number;
+        set height(value: string | number);
         get toolbarItems(): any[];
         set toolbarItems(items: any[]);
         get plugins(): any[];
@@ -17037,6 +17113,7 @@ declare module "packages/carousel/src/carousel" {
         set activeSlide(value: number);
         get items(): CarouselItemElement[];
         set items(nodes: CarouselItemElement[]);
+        add(control: Control): Control;
         get type(): 'dot' | 'arrow';
         set type(value: 'dot' | 'arrow');
         get swipe(): boolean;
@@ -17096,6 +17173,8 @@ declare module "packages/video/src/video" {
         set url(value: string);
         get border(): Border;
         set border(value: IBorder);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         getPlayer(): any;
         private getVideoTypeFromExtension;
         protected init(): void;
@@ -17769,17 +17848,2721 @@ declare module "@ijstech/components" {
 }
 `;
 });
-define("@scom/scom-designer/types/index.ts", ["require", "exports", "@scom/scom-designer/types/components.ts"], function (require, exports, components_31) {
+define("@scom/scom-designer/types/ethContract.ts", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.components = void 0;
-    exports.components = components_31.default;
+    ///<amd-module name='@scom/scom-designer/types/ethContract.ts'/> 
+    exports.default = `/*!-----------------------------------------------------------
+* Copyright (c) IJS Technologies. All rights reserved.
+* Released under dual AGPLv3/commercial license
+* https://ijs.network
+*-----------------------------------------------------------*/
+/// <amd-module name="@ijstech/eth-contract" />
+import { BigNumber } from "bignumber.js";
+export { BigNumber };
+declare type stringArray = string | _stringArray;
+interface _stringArray extends Array<stringArray> {
+}
+export interface IWalletUtils {
+    fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+    fromWei(value: any, unit?: string): string;
+    hexToUtf8(value: string): string;
+    sha3(value: string): string;
+    stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+    stringToBytes32(value: string | stringArray): string | string[];
+    toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+    toString(value: any): string;
+    toUtf8(value: any): string;
+    toWei(value: string, unit?: string): string;
+}
+export interface IBatchRequestResult {
+    key: string;
+    result: any;
+}
+export interface IBatchRequestObj {
+    batch: any;
+    promises: Promise<IBatchRequestResult>[];
+    execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
+}
+export interface IWallet {
+    address: string;
+    balance: Promise<BigNumber>;
+    _call(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<any>;
+    decode(abi: any, event: IWalletLog | IWalletEventLog, raw?: {
+        data: string;
+        topics: string[];
+    }): Event;
+    decodeLog(inputs: any, hexString: string, topics: any): any;
+    getAbiEvents(abi: any[]): any;
+    getAbiTopics(abi: any[], eventNames: string[]): any[];
+    getChainId(): Promise<number>;
+    methods(...args: any): Promise<any>;
+    registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+    send(to: string, amount: number): Promise<TransactionReceipt>;
+    _send(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+    scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+    scanEvents(params: {
+        fromBlock: number;
+        toBlock?: number | string;
+        topics?: any;
+        events?: any;
+        address?: string | string[];
+    }): Promise<Event[]>;
+    _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<string>;
+    _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: any): Promise<TransactionOptions>;
+    utils: IWalletUtils;
+}
+export interface Event {
+    name: string;
+    address: string;
+    blockNumber: bigint;
+    logIndex: bigint;
+    topics: string[];
+    transactionHash: string;
+    transactionIndex: bigint;
+    data: any;
+    rawData: any;
+}
+export interface IWalletLog {
+    address: string;
+    data: string;
+    topics: string[];
+    logIndex: bigint;
+    transactionIndex: bigint;
+    transactionHash: string;
+    blockHash: string;
+    blockNumber: bigint;
+    removed: boolean;
+    type?: string;
+}
+export interface IWalletEventLog {
+    event: string;
+    address: string;
+    returnValues: any;
+    logIndex: bigint;
+    transactionIndex: bigint;
+    transactionHash: string;
+    blockHash: string;
+    blockNumber: bigint;
+    raw?: {
+        data: string;
+        topics: string[];
+    };
+}
+export interface TransactionReceipt {
+    status: bigint;
+    transactionHash: string;
+    transactionIndex: bigint;
+    blockHash: string;
+    blockNumber: bigint;
+    from: string;
+    to: string;
+    contractAddress?: string;
+    cumulativeGasUsed: bigint;
+    gasUsed: bigint;
+    effectiveGasPrice: bigint;
+    logs: IWalletLog[];
+    logsBloom: string;
+    events?: {
+        [eventName: string]: IWalletEventLog;
+    };
+}
+export interface Transaction {
+    hash?: string;
+    nonce?: bigint;
+    blockHash?: string | null;
+    blockNumber?: bigint | null;
+    data?: string;
+    transactionIndex?: bigint | null;
+    from?: string;
+    to?: string | null;
+    value?: BigNumber;
+    gasPrice?: BigNumber;
+    maxPriorityFeePerGas?: bigint | string | BigNumber;
+    maxFeePerGas?: bigint | string | BigNumber;
+    gas?: bigint;
+    input?: string;
+}
+export interface TransactionOptions {
+    from?: string;
+    to?: string;
+    nonce?: number;
+    gas?: number;
+    gasLimit?: number;
+    gasPrice?: BigNumber | number;
+    data?: string;
+    value?: BigNumber | number;
+}
+export interface DeployOptions extends TransactionOptions {
+    linkReferences?: {
+        [file: string]: {
+            [contract: string]: {
+                length: number;
+                start: number;
+            }[];
+        };
+    };
+    libraries?: {
+        [file: string]: {
+            [contract: string]: string;
+        };
+    };
+}
+export interface EventType {
+    name: string;
+}
+export declare const nullAddress = "0x0000000000000000000000000000000000000000";
+export interface IContractMethod {
+    call: any;
+    estimateGas(...params: any[]): Promise<number>;
+    encodeABI(): string;
+}
+export interface IContract {
+    deploy(params: {
+        data: string;
+        arguments?: any[];
+    }): IContractMethod;
+    methods: {
+        [methodName: string]: (...params: any[]) => IContractMethod;
+    };
+}
+export interface EventType {
+    name: string;
+}
+export declare class Contract {
+    wallet: IWallet;
+    _abi: any;
+    _bytecode: any;
+    _address: string;
+    private _events;
+    privateKey: string;
+    private abiHash;
+    constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any);
+    at(address: string): Contract;
+    set address(value: string);
+    get address(): string;
+    protected decodeEvents(receipt: TransactionReceipt): any[];
+    protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
+    get events(): EventType[];
+    protected getAbiEvents(): any;
+    protected getAbiTopics(eventNames?: string[]): any[];
+    scanEvents(fromBlock: number | {
+        fromBlock: number;
+        toBlock?: number | string;
+        eventNames?: string[];
+    }, toBlock?: number | string, eventNames?: string[]): Promise<Event[]>;
+    batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<void>;
+    protected txData(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+    protected call(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+    private _send;
+    protected __deploy(params?: any[], options?: number | BigNumber | DeployOptions): Promise<string>;
+    protected send(methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
+    protected _deploy(...params: any[]): Promise<string>;
+    protected methods(methodName: string, ...params: any[]): Promise<any>;
+}
+export declare class TAuthContract extends Contract {
+    rely(address: string): Promise<any>;
+    deny(address: string): Promise<any>;
+}
+`;
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/types/index.ts", "@ijstech/compiler", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_32, index_css_22, Dts, compiler_1, utils_11) {
+define("@scom/scom-designer/types/ethWallet.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    ///<amd-module name='@scom/scom-designer/types/ethWallet.ts'/> 
+    exports.default = `/// <amd-module name="@ijstech/eth-wallet/web3.ts" />
+declare module "@ijstech/eth-wallet/web3.ts" {
+    import { BigNumber } from 'bignumber.js';
+    export type Hex = string | number;
+    export type Unit = 'noether' | 'wei' | 'kwei' | 'Kwei' | 'babbage' | 'femtoether' | 'mwei' | 'Mwei' | 'lovelace' | 'picoether' | 'gwei' | 'Gwei' | 'shannon' | 'nanoether' | 'nano' | 'szabo' | 'microether' | 'micro' | 'finney' | 'milliether' | 'milli' | 'ether' | 'kether' | 'grand' | 'mether' | 'gether' | 'tether';
+    export type Mixed = string | number | BigNumber | {
+        type: string;
+        value: string;
+    } | {
+        t: string;
+        v: string | BigNumber | number;
+    } | boolean;
+    export interface Units {
+        noether: string;
+        wei: string;
+        kwei: string;
+        Kwei: string;
+        babbage: string;
+        femtoether: string;
+        mwei: string;
+        Mwei: string;
+        lovelace: string;
+        picoether: string;
+        gwei: string;
+        Gwei: string;
+        shannon: string;
+        nanoether: string;
+        nano: string;
+        szabo: string;
+        microether: string;
+        micro: string;
+        finney: string;
+        milliether: string;
+        milli: string;
+        ether: string;
+        kether: string;
+        grand: string;
+        mether: string;
+        gether: string;
+        tether: string;
+    }
+    export interface Utils {
+        isBN(value: string | number): boolean;
+        isBigNumber(value: BigNumber): boolean;
+        toBN(value: number | string): BigNumber;
+        toTwosComplement(value: number | string | BigNumber): string;
+        isAddress(address: string, chainId?: number): boolean;
+        isHex(hex: Hex): boolean;
+        isHexStrict(hex: Hex): boolean;
+        asciiToHex(string: string, length?: number): string;
+        hexToAscii(string: string): string;
+        toAscii(string: string): string;
+        bytesToHex(bytes: number[]): string;
+        numberToHex(value: number | string | BigNumber): string;
+        checkAddressChecksum(address: string, chainId?: number): boolean;
+        fromAscii(string: string): string;
+        fromDecimal(value: string | number): string;
+        fromUtf8(string: string): string;
+        fromWei(value: string | BigNumber, unit?: Unit): string;
+        hexToBytes(hex: Hex): number[];
+        hexToNumber(hex: Hex, bigIntOnOverflow?: boolean): number | string;
+        hexToNumberString(hex: Hex): string;
+        hexToString(hex: Hex): string;
+        hexToUtf8(string: string): string;
+        keccak256(value: string | BigNumber): string;
+        padLeft(value: string | number, characterAmount: number, sign?: string): string;
+        padRight(string: string | number, characterAmount: number, sign?: string): string;
+        leftPad(string: string | number, characterAmount: number, sign?: string): string;
+        rightPad(string: string | number, characterAmount: number, sign?: string): string;
+        sha3(value: string | BigNumber): string | null;
+        randomHex(bytesSize: number): string;
+        utf8ToHex(string: string): string;
+        stringToHex(string: string): string;
+        toChecksumAddress(address: string, chainId?: number): string;
+        toDecimal(hex: Hex): number;
+        toHex(value: number | string | BigNumber): string;
+        toUtf8(string: string): string;
+        toWei(val: BigNumber, unit?: Unit): BigNumber;
+        toWei(val: string, unit?: Unit): string;
+        isBloom(bloom: string): boolean;
+        isInBloom(bloom: string, value: string | Uint8Array): boolean;
+        isUserEthereumAddressInBloom(bloom: string, ethereumAddress: string): boolean;
+        isContractAddressInBloom(bloom: string, contractAddress: string): boolean;
+        isTopicInBloom(bloom: string, topic: string): boolean;
+        isTopic(topic: string): boolean;
+        _jsonInterfaceMethodToString(abiItem: AbiItem): string;
+        soliditySha3(...val: Mixed[]): string | null;
+        soliditySha3Raw(...val: Mixed[]): string;
+        encodePacked(...val: Mixed[]): string | null;
+        getUnitValue(unit: Unit): string;
+        unitMap(): Units;
+        testAddress(bloom: string, address: string): boolean;
+        testTopic(bloom: string, topic: string): boolean;
+        getSignatureParameters(signature: string): {
+            r: string;
+            s: string;
+            v: number;
+        };
+        stripHexPrefix(str: string): string;
+        toNumber(value: number | string | BigNumber, bigIntOnOverflow?: boolean): number | string;
+    }
+    export interface HttpHeader {
+        name: string;
+        value: string;
+    }
+    export interface HttpProviderOptions {
+        keepAlive?: boolean;
+        timeout?: number;
+        headers?: HttpHeader[];
+        withCredentials?: boolean;
+        agent?: HttpAgent;
+    }
+    export interface HttpAgent {
+        http?: string;
+        https?: string;
+        baseUrl?: string;
+    }
+    export interface HttpProvider {
+        constructor(host: string, options?: HttpProviderOptions): any;
+        host: string;
+        connected: boolean;
+        supportsSubscriptions(): boolean;
+        send(payload: any, callback: (error: Error | null, result?: any) => void): void;
+        disconnect(): boolean;
+    }
+    export interface ReconnectOptions {
+        auto?: boolean;
+        delay?: number;
+        maxAttempts?: number;
+        onTimeout?: boolean;
+    }
+    export interface WebsocketProviderOptions {
+        host?: string;
+        timeout?: number;
+        reconnectDelay?: number;
+        headers?: any;
+        protocol?: string;
+        clientConfig?: object;
+        requestOptions?: any;
+        origin?: string;
+        reconnect?: ReconnectOptions;
+    }
+    export interface JsonRpcPayload {
+        jsonrpc: string;
+        method: string;
+        params?: any[];
+        id?: string | number;
+    }
+    export interface RequestItem {
+        payload: JsonRpcPayload;
+        callback: (error: any, result: any) => void;
+    }
+    export interface JsonRpcResponse {
+        jsonrpc: string;
+        id: string | number;
+        result?: any;
+        error?: {
+            readonly code?: number;
+            readonly data?: unknown;
+            readonly message: string;
+        };
+    }
+    export interface WebsocketProvider {
+        constructor(host: string, options?: WebsocketProviderOptions): any;
+        isConnecting(): boolean;
+        requestQueue: Map<string, RequestItem>;
+        responseQueue: Map<string, RequestItem>;
+        connected: boolean;
+        connection: any;
+        supportsSubscriptions(): boolean;
+        send(payload: JsonRpcPayload, callback: (error: Error | null, result?: JsonRpcResponse) => void): void;
+        on(type: string, callback: () => void): void;
+        once(type: string, callback: () => void): void;
+        removeListener(type: string, callback: () => void): void;
+        removeAllListeners(type: string): void;
+        reset(): void;
+        disconnect(code?: number, reason?: string): void;
+        connect(): void;
+        reconnect(): void;
+    }
+    export interface RequestArguments {
+        method: string;
+        params?: any;
+        [key: string]: any;
+    }
+    export interface AbstractProvider {
+        sendAsync(payload: JsonRpcPayload, callback?: (error: Error | null, result?: JsonRpcResponse) => Promise<unknown> | void): void;
+        send?(payload: JsonRpcPayload, callback: (error: Error | null, result?: JsonRpcResponse) => unknown): void;
+        request?(args: RequestArguments): Promise<any>;
+        connected?: boolean;
+    }
+    export type provider = HttpProvider | WebsocketProvider | AbstractProvider | string | null;
+    export interface AbiInput {
+        name: string;
+        type: string;
+        indexed?: boolean;
+        components?: AbiInput[];
+        internalType?: string;
+    }
+    export interface AbiOutput {
+        name: string;
+        type: string;
+        components?: AbiOutput[];
+        internalType?: string;
+    }
+    export type AbiType = 'function' | 'constructor' | 'event' | 'fallback' | 'receive';
+    export type StateMutabilityType = 'pure' | 'view' | 'nonpayable' | 'payable';
+    export interface AbiItem {
+        anonymous?: boolean;
+        constant?: boolean;
+        inputs?: AbiInput[];
+        name?: string;
+        outputs?: AbiOutput[];
+        payable?: boolean;
+        stateMutability?: StateMutabilityType;
+        type: AbiType;
+        gas?: number;
+    }
+    export interface ContractOptions {
+        from?: string;
+        gasPrice?: string;
+        gas?: number;
+        data?: string;
+    }
+    export type chain = 'mainnet' | 'goerli' | 'kovan' | 'rinkeby' | 'ropsten';
+    export type hardfork = 'chainstart' | 'homestead' | 'dao' | 'tangerineWhistle' | 'spuriousDragon' | 'byzantium' | 'constantinople' | 'petersburg' | 'istanbul';
+    export interface CustomChainParams {
+        name?: string;
+        networkId: number;
+        chainId: number;
+    }
+    export interface Common {
+        customChain: CustomChainParams;
+        baseChain?: chain;
+        hardfork?: hardfork;
+    }
+    export interface TransactionConfig {
+        from?: string | number;
+        to?: string;
+        value?: number | string | BigNumber;
+        gas?: number | string;
+        gasPrice?: number | string | BigNumber;
+        maxPriorityFeePerGas?: number | string | BigNumber;
+        maxFeePerGas?: number | string | BigNumber;
+        data?: string;
+        nonce?: number;
+        chainId?: number;
+        common?: Common;
+        chain?: string;
+        hardfork?: string;
+    }
+    export interface SignedTransaction {
+        messageHash?: string;
+        r: string;
+        s: string;
+        v: string;
+        rawTransaction?: string;
+        transactionHash?: string;
+    }
+    export interface Sign extends SignedTransaction {
+        message: string;
+        signature: string;
+    }
+    export interface EncryptedKeystoreV3Json {
+        version: number;
+        id: string;
+        address: string;
+        crypto: {
+            ciphertext: string;
+            cipherparams: {
+                iv: string;
+            };
+            cipher: string;
+            kdf: string;
+            kdfparams: {
+                dklen: number;
+                salt: string;
+                n: number;
+                r: number;
+                p: number;
+            };
+            mac: string;
+        };
+    }
+    export interface Account {
+        address: string;
+        privateKey: string;
+        signTransaction: (transactionConfig: TransactionConfig) => Promise<SignedTransaction>;
+        sign: (data: string) => Sign;
+        encrypt: (password: string) => EncryptedKeystoreV3Json;
+    }
+    export interface SignatureObject {
+        messageHash: string;
+        r: string;
+        s: string;
+        v: string;
+    }
+    export interface AddedAccount extends Account {
+        index: number;
+    }
+    export interface AddAccount {
+        address: string;
+        privateKey: string;
+    }
+    export interface WalletBase {
+        constructor(accounts: Accounts): any;
+        length: number;
+        defaultKeyName: string;
+        [key: number]: Account;
+        create(numberOfAccounts: number, entropy?: string): WalletBase;
+        add(account: string | AddAccount): AddedAccount;
+        remove(account: string | number): boolean;
+        clear(): WalletBase;
+        encrypt(password: string): EncryptedKeystoreV3Json[];
+        decrypt(keystoreArray: EncryptedKeystoreV3Json[], password: string): WalletBase;
+        save(password: string, keyName?: string): boolean;
+        load(password: string, keyName?: string): WalletBase;
+    }
+    export interface Accounts {
+        constructor(provider?: provider): any;
+        readonly givenProvider: any;
+        readonly currentProvider: provider;
+        setProvider(provider: provider): boolean;
+        create(entropy?: string): Account;
+        privateKeyToAccount(privateKey: string, ignoreLength?: boolean): Account;
+        signTransaction(transactionConfig: TransactionConfig, privateKey: string): Promise<SignedTransaction>;
+        recoverTransaction(signature: string): string;
+        hashMessage(message: string): string;
+        sign(data: string, privateKey: string): Sign;
+        recover(signatureObject: SignatureObject): string;
+        recover(message: string, signature: string, preFixed?: boolean): string;
+        recover(message: string, v: string, r: string, s: string, preFixed?: boolean): string;
+        encrypt(privateKey: string, password: string): EncryptedKeystoreV3Json;
+        decrypt(keystoreJsonV3: EncryptedKeystoreV3Json, password: string): Account;
+        wallet: WalletBase;
+    }
+    export type BlockNumber = bigint | string | number | BigNumber | 'latest' | 'pending' | 'earliest' | 'genesis' | 'finalized' | 'safe';
+    export interface Options extends ContractOptions {
+        address: string;
+        jsonInterface: AbiItem[];
+    }
+    export interface DeployOptions {
+        data: string;
+        arguments?: any[];
+    }
+    export interface SendOptions {
+        from: string;
+        gasPrice?: string;
+        gas?: number;
+        value?: number | string | BigNumber;
+        nonce?: number;
+    }
+    export interface EventLog {
+        event: string;
+        address: string;
+        returnValues: any;
+        logIndex: bigint;
+        transactionIndex: bigint;
+        transactionHash: string;
+        blockHash: string;
+        blockNumber: bigint;
+        raw?: {
+            data: string;
+            topics: any[];
+        };
+    }
+    export interface Log {
+        address: string;
+        data: string;
+        topics: string[];
+        logIndex: bigint;
+        transactionIndex: bigint;
+        transactionHash: string;
+        blockHash: string;
+        blockNumber: bigint;
+        removed: boolean;
+    }
+    export interface TransactionReceipt {
+        status: bigint;
+        transactionHash: string;
+        transactionIndex: bigint;
+        blockHash: string;
+        blockNumber: bigint;
+        from: string;
+        to: string;
+        contractAddress?: string;
+        cumulativeGasUsed: bigint;
+        gasUsed: bigint;
+        effectiveGasPrice: bigint;
+        logs: Log[];
+        logsBloom: string;
+        events?: {
+            [eventName: string]: EventLog;
+        };
+    }
+    export interface ConfirmationObject {
+        confirmationNumber: bigint;
+        receipt: TransactionReceipt;
+        latestBlockHash: string;
+    }
+    export interface PromiEvent<T> extends Promise<T> {
+        once(type: 'sending', handler: (payload: object) => void): PromiEvent<T>;
+        once(type: 'sent', handler: (payload: object) => void): PromiEvent<T>;
+        once(type: 'transactionHash', handler: (transactionHash: string) => void): PromiEvent<T>;
+        once(type: 'receipt', handler: (receipt: TransactionReceipt) => void): PromiEvent<T>;
+        once(type: 'confirmation', handler: (confirmationObject: ConfirmationObject) => void): PromiEvent<T>;
+        once(type: 'error', handler: (error: Error) => void): PromiEvent<T>;
+        once(type: 'error' | 'confirmation' | 'receipt' | 'transactionHash' | 'sent' | 'sending', handler: (error: Error | TransactionReceipt | string | object) => void): PromiEvent<T>;
+        on(type: 'sending', handler: (payload: object) => void): PromiEvent<T>;
+        on(type: 'sent', handler: (payload: object) => void): PromiEvent<T>;
+        on(type: 'transactionHash', handler: (receipt: string) => void): PromiEvent<T>;
+        on(type: 'receipt', handler: (receipt: TransactionReceipt) => void): PromiEvent<T>;
+        on(type: 'confirmation', handler: (confirmationObject: ConfirmationObject) => void): PromiEvent<T>;
+        on(type: 'error', handler: (error: Error) => void): PromiEvent<T>;
+        on(type: 'error' | 'confirmation' | 'receipt' | 'transactionHash' | 'sent' | 'sending', handler: (error: Error | TransactionReceipt | string | object) => void): PromiEvent<T>;
+    }
+    export interface CallOptions {
+        from?: string;
+        gasPrice?: string;
+        gas?: bigint;
+    }
+    export interface EstimateGasOptions {
+        from?: string;
+        gas?: bigint;
+        value?: number | string | BigNumber;
+    }
+    export interface ContractSendMethod {
+        send(options: SendOptions): PromiEvent<Contract>;
+        call(options?: CallOptions): Promise<any>;
+        estimateGas(options: EstimateGasOptions): Promise<bigint>;
+        estimateGas(): Promise<bigint>;
+        estimateGas(options: EstimateGasOptions): Promise<bigint>;
+        estimateGas(options: EstimateGasOptions): Promise<bigint>;
+        estimateGas(): Promise<bigint>;
+        encodeABI(): string;
+    }
+    export interface EventData {
+        returnValues: {
+            [key: string]: any;
+        };
+        raw: {
+            data: string;
+            topics: string[];
+        };
+        event: string;
+        signature: string;
+        logIndex: bigint;
+        transactionIndex: bigint;
+        transactionHash: string;
+        blockHash: string;
+        blockNumber: bigint;
+        address: string;
+    }
+    export interface Filter {
+        [key: string]: number | string | string[] | number[];
+    }
+    export interface LogsOptions {
+        fromBlock?: BlockNumber;
+        address?: string | string[];
+        topics?: Array<string | string[] | null>;
+    }
+    export interface EventOptions extends LogsOptions {
+        filter?: Filter;
+    }
+    export interface PastLogsOptions extends LogsOptions {
+        toBlock?: BlockNumber;
+    }
+    export interface PastEventOptions extends PastLogsOptions {
+        filter?: Filter;
+    }
+    export interface Contract {
+        constructor(jsonInterface: AbiItem[], address?: string, options?: ContractOptions): any;
+        setProvider(provider: provider, accounts?: Accounts): void;
+        defaultAccount: string | null;
+        defaultBlock: BlockNumber;
+        defaultCommon: Common;
+        defaultHardfork: hardfork;
+        defaultChain: chain;
+        transactionPollingTimeout: number;
+        transactionConfirmationBlocks: number;
+        transactionBlockTimeout: number;
+        handleRevert: boolean;
+        options: Options;
+        clone(): Contract;
+        deploy(options: DeployOptions): ContractSendMethod;
+        methods: any;
+        once(event: string, callback: (error: Error, event: EventData) => void): void;
+        once(event: string, options: EventOptions, callback: (error: Error, event: EventData) => void): void;
+        events: any;
+        getPastEvents(event: string): Promise<EventData[]>;
+        getPastEvents(event: string, options: PastEventOptions): Promise<EventData[]>;
+        getPastEvents(event: string, options: PastEventOptions): Promise<EventData[]>;
+        getPastEvents(event: string): Promise<EventData[]>;
+    }
+    export interface IndirectOptions {
+        institution: string;
+        identifier: string;
+    }
+    export interface Iban {
+        constructor(iban: string): any;
+        toAddress(iban: string): string;
+        toIban(address: string): string;
+        fromAddress(address: string): Iban;
+        fromBban(bban: string): Iban;
+        createIndirect(options: IndirectOptions): Iban;
+        isValid(iban: string): boolean;
+        isValid(): boolean;
+        isDirect(): boolean;
+        isIndirect(): boolean;
+        checksum(): string;
+        institution(): string;
+        client(): string;
+        toAddress(): string;
+        toString(): string;
+    }
+    export interface Method {
+        name: string;
+        call: string;
+        params?: number;
+        inputFormatter?: Array<(() => void) | null>;
+        outputFormatter?: () => void;
+        transformPayload?: () => void;
+        extraFormatters?: any;
+        defaultBlock?: string;
+        defaultAccount?: string | null;
+        abiCoder?: any;
+        handleRevert?: boolean;
+    }
+    export interface BatchRequest {
+        constructor(): any;
+        add(method: Method): void;
+        execute(): void;
+    }
+    export interface Extension {
+        property?: string;
+        methods: Method[];
+    }
+    export interface RLPEncodedTransaction {
+        raw: string;
+        tx: {
+            nonce: string;
+            gasPrice: string;
+            gas: string;
+            to: string;
+            value: string;
+            input: string;
+            r: string;
+            s: string;
+            v: string;
+            hash: string;
+        };
+    }
+    export interface Personal {
+        constructor(provider?: provider): any;
+        readonly givenProvider: any;
+        readonly currentProvider: provider;
+        defaultAccount: string | null;
+        defaultBlock: string | number;
+        BatchRequest: new () => BatchRequest;
+        setProvider(provider: provider): boolean;
+        extend(extension: Extension): any;
+        newAccount(password: string): Promise<string>;
+        sign(dataToSign: string, address: string, password: string): Promise<string>;
+        ecRecover(dataThatWasSigned: string, signature: string): Promise<string>;
+        signTransaction(transactionConfig: TransactionConfig, password: string): Promise<RLPEncodedTransaction>;
+        sendTransaction(transactionConfig: TransactionConfig, password: string): Promise<string>;
+        unlockAccount(address: string, password: string, unlockDuration: number): Promise<boolean>;
+        lockAccount(address: string): Promise<boolean>;
+        getAccounts(): Promise<string[]>;
+        importRawKey(privateKey: string, password: string): Promise<string>;
+    }
+    export interface AbiCoder {
+        encodeFunctionSignature(functionName: string | AbiItem): string;
+        encodeEventSignature(functionName: string | AbiItem): string;
+        encodeParameter(type: any, parameter: any): string;
+        encodeParameters(types: any[], paramaters: any[]): string;
+        encodeFunctionCall(abiItem: AbiItem, params: string[]): string;
+        decodeParameter(type: any, hex: string): {
+            [key: string]: any;
+        };
+        decodeParameters(types: any[], hex: string): {
+            [key: string]: any;
+        };
+        decodeLog(inputs: AbiInput[], hex: string, topics: string[]): {
+            [key: string]: string;
+        };
+    }
+    export interface Providers {
+        HttpProvider: new (host: string, options?: HttpProviderOptions) => HttpProvider;
+        WebsocketProvider: new (host: string, options?: WebsocketProviderOptions) => WebsocketProvider;
+        IpcProvider: new (path: string, net: any) => any;
+    }
+    export interface Network {
+        constructor(provider?: provider): any;
+        readonly givenProvider: any;
+        readonly currentProvider: provider;
+        readonly providers: Providers;
+        BatchRequest: new () => BatchRequest;
+        setProvider(provider: provider): boolean;
+        extend(extension: Extension): any;
+        getNetworkType(): Promise<string>;
+    }
+    export interface SubscriptionOptions {
+        subscription: string;
+        type: string;
+        requestManager: any;
+    }
+    export interface Subscription<T> {
+        constructor(options: SubscriptionOptions): any;
+        id: string;
+        options: SubscriptionOptions;
+        callback: () => void;
+        arguments: any;
+        lastBlock: number;
+        subscribe(callback?: (error: Error, result: T) => void): Subscription<T>;
+        unsubscribe(callback?: (error: Error, result: boolean) => void): Promise<undefined | boolean>;
+        on(type: 'data', handler: (data: T) => void): Subscription<T>;
+        on(type: 'changed', handler: (data: T) => void): Subscription<T>;
+        on(type: 'connected', handler: (subscriptionId: string) => void): Subscription<T>;
+        on(type: 'error', handler: (data: Error) => void): Subscription<T>;
+    }
+    export interface Syncing {
+        StartingBlock: number;
+        CurrentBlock: number;
+        HighestBlock: number;
+        KnownStates: number;
+        PulledStates: number;
+    }
+    export interface BlockHeader {
+        number: bigint;
+        hash: string;
+        parentHash: string;
+        nonce: string;
+        sha3Uncles: string;
+        logsBloom: string;
+        transactionsRoot: string;
+        stateRoot: string;
+        receiptsRoot: string;
+        miner: string;
+        extraData: string;
+        gasLimit: bigint;
+        gasUsed: bigint;
+        timestamp: bigint;
+        baseFeePerGas?: bigint;
+    }
+    export interface FeeHistoryResult {
+        baseFeePerGas: string[];
+        gasUsedRatio: number[];
+        oldestBlock: bigint;
+        reward: string[][];
+    }
+    export interface BlockTransactionBase extends BlockHeader {
+        size: bigint;
+        difficulty: bigint;
+        totalDifficulty: bigint;
+        uncles: string[];
+    }
+    export interface BlockTransactionString extends BlockTransactionBase {
+        transactions: string[];
+    }
+    export interface AccessTuple {
+        address: string;
+        storageKeys: string[];
+    }
+    export type AccessList = AccessTuple[];
+    export interface Transaction {
+        hash: string;
+        nonce: bigint;
+        blockHash: string | null;
+        blockNumber: bigint | null;
+        transactionIndex: bigint | null;
+        from: string;
+        to: string | null;
+        value: string;
+        gasPrice: string;
+        maxPriorityFeePerGas?: bigint | string | BigNumber;
+        maxFeePerGas?: bigint | string | BigNumber;
+        gas: bigint;
+        input: string;
+        chainId?: string;
+        accessList?: AccessList;
+        v?: string;
+        r?: string;
+        s?: string;
+    }
+    export interface BlockTransactionObject extends BlockTransactionBase {
+        transactions: Transaction[];
+    }
+    export interface CreateAccessList {
+        accessList: AccessTuple[];
+        error?: string;
+        gasUsed: string;
+    }
+    export interface Eth {
+        constructor(provider?: provider): any;
+        Contract: new (jsonInterface: AbiItem[] | AbiItem, address?: string, options?: ContractOptions) => Contract;
+        Iban: new (iban: string) => Iban;
+        personal: Personal;
+        accounts: Accounts;
+        ens: any;
+        abi: AbiCoder;
+        net: Network;
+        readonly givenProvider: any;
+        defaultAccount: string | null;
+        defaultBlock: BlockNumber;
+        defaultCommon: Common;
+        defaultHardfork: hardfork;
+        defaultChain: chain;
+        transactionPollingTimeout: number;
+        transactionConfirmationBlocks: number;
+        transactionBlockTimeout: number;
+        handleRevert: boolean;
+        readonly currentProvider: provider;
+        setProvider(provider: provider): boolean;
+        BatchRequest: new () => BatchRequest;
+        readonly providers: Providers;
+        extend(extension: Extension): any;
+        clearSubscriptions(callback: (error: Error, result: boolean) => void): void;
+        subscribe(type: 'logs', options: LogsOptions): Subscription<Log>;
+        subscribe(type: 'syncing'): Subscription<Syncing>;
+        subscribe(type: 'newBlockHeaders'): Subscription<BlockHeader>;
+        subscribe(type: 'pendingTransactions'): Subscription<string>;
+        getProtocolVersion(): Promise<string>;
+        isSyncing(): Promise<Syncing | boolean>;
+        getCoinbase(): Promise<string>;
+        isMining(): Promise<boolean>;
+        getHashRate(): Promise<number>;
+        getNodeInfo(): Promise<string>;
+        getChainId(): Promise<bigint>;
+        getGasPrice(): Promise<bigint>;
+        getFeeHistory(blockCount: number | BigNumber | BigNumber | string, lastBlock: number | BigNumber | BigNumber | string, rewardPercentiles: number[]): Promise<FeeHistoryResult>;
+        getAccounts(): Promise<string[]>;
+        getBlockNumber(): Promise<bigint>;
+        getBalance(address: string): Promise<bigint>;
+        getBalance(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+        getBalance(address: string): Promise<bigint>;
+        getBalance(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+        getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
+        getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber): Promise<string>;
+        getStorageAt(address: string, position: number | BigNumber | string): Promise<string>;
+        getStorageAt(address: string, position: number | BigNumber | string, defaultBlock: BlockNumber): Promise<string>;
+        getCode(address: string): Promise<string>;
+        getCode(address: string, defaultBlock: BlockNumber): Promise<string>;
+        getCode(address: string): Promise<string>;
+        getCode(address: string, defaultBlock: BlockNumber): Promise<string>;
+        getBlock(blockHashOrBlockNumber: BlockNumber | string): Promise<BlockTransactionString>;
+        getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false): Promise<BlockTransactionString>;
+        getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true): Promise<BlockTransactionObject>;
+        getBlock(blockHashOrBlockNumber: BlockNumber | string): Promise<BlockTransactionString>;
+        getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: false): Promise<BlockTransactionString>;
+        getBlock(blockHashOrBlockNumber: BlockNumber | string, returnTransactionObjects: true): Promise<BlockTransactionObject>;
+        getBlockTransactionCount(blockHashOrBlockNumber: BlockNumber | string): Promise<bigint>;
+        getBlockUncleCount(blockHashOrBlockNumber: BlockNumber | string): Promise<bigint>;
+        getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
+        getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean): Promise<BlockTransactionObject>;
+        getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber): Promise<BlockTransactionString>;
+        getUncle(blockHashOrBlockNumber: BlockNumber | string, uncleIndex: number | string | BigNumber, returnTransactionObjects: boolean): Promise<BlockTransactionObject>;
+        getTransaction(transactionHash: string): Promise<Transaction>;
+        getPendingTransactions(): Promise<Transaction[]>;
+        getTransactionFromBlock(blockHashOrBlockNumber: BlockNumber | string, indexNumber: number | string | BigNumber): Promise<Transaction>;
+        getTransactionReceipt(hash: string): Promise<TransactionReceipt>;
+        getTransactionCount(address: string): Promise<bigint>;
+        getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+        getTransactionCount(address: string): Promise<bigint>;
+        getTransactionCount(address: string, defaultBlock: BlockNumber): Promise<bigint>;
+        sendTransaction(transactionConfig: TransactionConfig): PromiEvent<TransactionReceipt>;
+        sendSignedTransaction(signedTransactionData: string): PromiEvent<TransactionReceipt>;
+        sign(dataToSign: string, address: string | number): Promise<string>;
+        signTransaction(transactionConfig: TransactionConfig): Promise<RLPEncodedTransaction>;
+        signTransaction(transactionConfig: TransactionConfig, address: string): Promise<RLPEncodedTransaction>;
+        signTransaction(transactionConfig: TransactionConfig, address: string): Promise<RLPEncodedTransaction>;
+        call(transactionConfig: TransactionConfig): Promise<string>;
+        call(transactionConfig: TransactionConfig, defaultBlock?: BlockNumber): Promise<string>;
+        call(transactionConfig: TransactionConfig): Promise<string>;
+        call(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<string>;
+        estimateGas(transactionConfig: TransactionConfig): Promise<bigint>;
+        createAccessList(transactionConfig: TransactionConfig): Promise<CreateAccessList>;
+        createAccessList(transactionConfig: TransactionConfig, defaultBlock: BlockNumber): Promise<CreateAccessList>;
+        getPastLogs(options: PastLogsOptions): Promise<Log[]>;
+    }
+    export interface IWeb3 {
+        eth: Eth;
+        utils: Utils;
+        currentProvider(): any;
+        setProvider(provider: any): any;
+    }
+    export class Web3 implements IWeb3 {
+        readonly eth: Eth;
+        readonly utils: Utils;
+        static utils: Utils;
+        constructor(provider?: any);
+        get currentProvider(): any;
+        setProvider(provider: any): boolean;
+    }
+}
+declare module "contracts/ERC1155/ERC1155.json" {
+    const _default: {
+        abi: ({
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+            name?: undefined;
+            outputs?: undefined;
+        } | {
+            anonymous: boolean;
+            inputs: {
+                indexed: boolean;
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            type: string;
+            stateMutability?: undefined;
+            outputs?: undefined;
+        } | {
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+        })[];
+        bytecode: string;
+    };
+    export default _default;
+}
+declare module "contracts/ERC1155/ERC1155" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IBalanceOfParams {
+        account: string;
+        id: number | BigNumber;
+    }
+    export interface IBalanceOfBatchParams {
+        accounts: string[];
+        ids: (number | BigNumber)[];
+    }
+    export interface IIsApprovedForAllParams {
+        account: string;
+        operator: string;
+    }
+    export interface ISafeBatchTransferFromParams {
+        from: string;
+        to: string;
+        ids: (number | BigNumber)[];
+        amounts: (number | BigNumber)[];
+        data: string;
+    }
+    export interface ISafeTransferFromParams {
+        from: string;
+        to: string;
+        id: number | BigNumber;
+        amount: number | BigNumber;
+        data: string;
+    }
+    export interface ISetApprovalForAllParams {
+        operator: string;
+        approved: boolean;
+    }
+    export class ERC1155 extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(uri: string, options?: TransactionOptions): Promise<string>;
+        parseApprovalForAllEvent(receipt: TransactionReceipt): ERC1155.ApprovalForAllEvent[];
+        decodeApprovalForAllEvent(event: Event): ERC1155.ApprovalForAllEvent;
+        parseTransferBatchEvent(receipt: TransactionReceipt): ERC1155.TransferBatchEvent[];
+        decodeTransferBatchEvent(event: Event): ERC1155.TransferBatchEvent;
+        parseTransferSingleEvent(receipt: TransactionReceipt): ERC1155.TransferSingleEvent[];
+        decodeTransferSingleEvent(event: Event): ERC1155.TransferSingleEvent;
+        parseURIEvent(receipt: TransactionReceipt): ERC1155.URIEvent[];
+        decodeURIEvent(event: Event): ERC1155.URIEvent;
+        balanceOf: {
+            (params: IBalanceOfParams, options?: TransactionOptions): Promise<BigNumber>;
+        };
+        balanceOfBatch: {
+            (params: IBalanceOfBatchParams, options?: TransactionOptions): Promise<BigNumber[]>;
+        };
+        isApprovedForAll: {
+            (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
+        };
+        safeBatchTransferFrom: {
+            (params: ISafeBatchTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeBatchTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        safeTransferFrom: {
+            (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        setApprovalForAll: {
+            (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        };
+        supportsInterface: {
+            (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
+        };
+        uri: {
+            (param1: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        private assign;
+    }
+    export module ERC1155 {
+        interface ApprovalForAllEvent {
+            account: string;
+            operator: string;
+            approved: boolean;
+            _event: Event;
+        }
+        interface TransferBatchEvent {
+            operator: string;
+            from: string;
+            to: string;
+            ids: BigNumber[];
+            values: BigNumber[];
+            _event: Event;
+        }
+        interface TransferSingleEvent {
+            operator: string;
+            from: string;
+            to: string;
+            id: BigNumber;
+            value: BigNumber;
+            _event: Event;
+        }
+        interface URIEvent {
+            value: string;
+            id: BigNumber;
+            _event: Event;
+        }
+    }
+}
+declare module "contracts/ERC20/ERC20.json" {
+    const _default_1: {
+        abi: ({
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+            name?: undefined;
+            outputs?: undefined;
+        } | {
+            anonymous: boolean;
+            inputs: {
+                indexed: boolean;
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            type: string;
+            stateMutability?: undefined;
+            outputs?: undefined;
+        } | {
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+        })[];
+        bytecode: string;
+    };
+    export default _default_1;
+}
+declare module "contracts/ERC20/ERC20" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IDeployParams {
+        name: string;
+        symbol: string;
+    }
+    export interface IAllowanceParams {
+        owner: string;
+        spender: string;
+    }
+    export interface IApproveParams {
+        spender: string;
+        amount: number | BigNumber;
+    }
+    export interface IDecreaseAllowanceParams {
+        spender: string;
+        subtractedValue: number | BigNumber;
+    }
+    export interface IIncreaseAllowanceParams {
+        spender: string;
+        addedValue: number | BigNumber;
+    }
+    export interface ITransferParams {
+        to: string;
+        amount: number | BigNumber;
+    }
+    export interface ITransferFromParams {
+        from: string;
+        to: string;
+        amount: number | BigNumber;
+    }
+    export class ERC20 extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
+        parseApprovalEvent(receipt: TransactionReceipt): ERC20.ApprovalEvent[];
+        decodeApprovalEvent(event: Event): ERC20.ApprovalEvent;
+        parseTransferEvent(receipt: TransactionReceipt): ERC20.TransferEvent[];
+        decodeTransferEvent(event: Event): ERC20.TransferEvent;
+        allowance: {
+            (params: IAllowanceParams, options?: TransactionOptions): Promise<BigNumber>;
+        };
+        approve: {
+            (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IApproveParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        balanceOf: {
+            (account: string, options?: TransactionOptions): Promise<BigNumber>;
+            txData: (account: string, options?: TransactionOptions) => Promise<string>;
+        };
+        decimals: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        decreaseAllowance: {
+            (params: IDecreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IDecreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        increaseAllowance: {
+            (params: IIncreaseAllowanceParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IIncreaseAllowanceParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        name: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        symbol: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        totalSupply: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        transfer: {
+            (params: ITransferParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ITransferParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        transferFrom: {
+            (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<boolean>;
+        };
+        private assign;
+    }
+    export module ERC20 {
+        interface ApprovalEvent {
+            owner: string;
+            spender: string;
+            value: BigNumber;
+            _event: Event;
+        }
+        interface TransferEvent {
+            from: string;
+            to: string;
+            value: BigNumber;
+            _event: Event;
+        }
+    }
+}
+declare module "contracts/ERC721/ERC721.json" {
+    const _default_2: {
+        abi: ({
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+            name?: undefined;
+            outputs?: undefined;
+        } | {
+            anonymous: boolean;
+            inputs: {
+                indexed: boolean;
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            type: string;
+            stateMutability?: undefined;
+            outputs?: undefined;
+        } | {
+            inputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+            anonymous?: undefined;
+        })[];
+        bytecode: string;
+    };
+    export default _default_2;
+}
+declare module "contracts/ERC721/ERC721" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, Event, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IDeployParams {
+        name: string;
+        symbol: string;
+    }
+    export interface IApproveParams {
+        to: string;
+        tokenId: number | BigNumber;
+    }
+    export interface IIsApprovedForAllParams {
+        owner: string;
+        operator: string;
+    }
+    export interface ISafeTransferFromParams {
+        from: string;
+        to: string;
+        tokenId: number | BigNumber;
+    }
+    export interface ISafeTransferFrom_1Params {
+        from: string;
+        to: string;
+        tokenId: number | BigNumber;
+        data: string;
+    }
+    export interface ISetApprovalForAllParams {
+        operator: string;
+        approved: boolean;
+    }
+    export interface ITransferFromParams {
+        from: string;
+        to: string;
+        tokenId: number | BigNumber;
+    }
+    export class ERC721 extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(params: IDeployParams, options?: TransactionOptions): Promise<string>;
+        parseApprovalEvent(receipt: TransactionReceipt): ERC721.ApprovalEvent[];
+        decodeApprovalEvent(event: Event): ERC721.ApprovalEvent;
+        parseApprovalForAllEvent(receipt: TransactionReceipt): ERC721.ApprovalForAllEvent[];
+        decodeApprovalForAllEvent(event: Event): ERC721.ApprovalForAllEvent;
+        parseTransferEvent(receipt: TransactionReceipt): ERC721.TransferEvent[];
+        decodeTransferEvent(event: Event): ERC721.TransferEvent;
+        approve: {
+            (params: IApproveParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IApproveParams, options?: TransactionOptions) => Promise<void>;
+        };
+        balanceOf: {
+            (owner: string, options?: TransactionOptions): Promise<BigNumber>;
+        };
+        getApproved: {
+            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        isApprovedForAll: {
+            (params: IIsApprovedForAllParams, options?: TransactionOptions): Promise<boolean>;
+        };
+        name: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        ownerOf: {
+            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        safeTransferFrom: {
+            (params: ISafeTransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeTransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        safeTransferFrom_1: {
+            (params: ISafeTransferFrom_1Params, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISafeTransferFrom_1Params, options?: TransactionOptions) => Promise<void>;
+        };
+        setApprovalForAll: {
+            (params: ISetApprovalForAllParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ISetApprovalForAllParams, options?: TransactionOptions) => Promise<void>;
+        };
+        supportsInterface: {
+            (interfaceId: string, options?: TransactionOptions): Promise<boolean>;
+        };
+        symbol: {
+            (options?: TransactionOptions): Promise<string>;
+        };
+        tokenURI: {
+            (tokenId: number | BigNumber, options?: TransactionOptions): Promise<string>;
+        };
+        transferFrom: {
+            (params: ITransferFromParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: ITransferFromParams, options?: TransactionOptions) => Promise<void>;
+        };
+        private assign;
+    }
+    export module ERC721 {
+        interface ApprovalEvent {
+            owner: string;
+            approved: string;
+            tokenId: BigNumber;
+            _event: Event;
+        }
+        interface ApprovalForAllEvent {
+            owner: string;
+            operator: string;
+            approved: boolean;
+            _event: Event;
+        }
+        interface TransferEvent {
+            from: string;
+            to: string;
+            tokenId: BigNumber;
+            _event: Event;
+        }
+    }
+}
+declare module "contracts/MultiCall/MultiCall.json" {
+    const _default_3: {
+        abi: {
+            inputs: ({
+                components: {
+                    internalType: string;
+                    name: string;
+                    type: string;
+                }[];
+                internalType: string;
+                name: string;
+                type: string;
+            } | {
+                internalType: string;
+                name: string;
+                type: string;
+                components?: undefined;
+            })[];
+            name: string;
+            outputs: {
+                internalType: string;
+                name: string;
+                type: string;
+            }[];
+            stateMutability: string;
+            type: string;
+        }[];
+        bytecode: string;
+    };
+    export default _default_3;
+}
+declare module "contracts/MultiCall/MultiCall" {
+    import { IWallet, Contract as _Contract, TransactionReceipt, BigNumber, TransactionOptions } from "@ijstech/eth-contract";
+    export interface IMulticallWithGasLimitationParams {
+        calls: {
+            to: string;
+            data: string;
+        }[];
+        gasBuffer: number | BigNumber;
+    }
+    export class MultiCall extends _Contract {
+        constructor(wallet: IWallet, address?: string);
+        deploy(options?: number | BigNumber | TransactionOptions): Promise<string>;
+        gasLeft: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        gaslimit: {
+            (options?: TransactionOptions): Promise<BigNumber>;
+        };
+        multicall: {
+            (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions) => Promise<string[]>;
+        };
+        multicallWithGas: {
+            (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (calls: {
+                to: string;
+                data: string;
+            }[], options?: TransactionOptions) => Promise<{
+                results: string[];
+                gasUsed: BigNumber[];
+            }>;
+        };
+        multicallWithGasLimitation: {
+            (params: IMulticallWithGasLimitationParams, options?: TransactionOptions): Promise<TransactionReceipt>;
+            call: (params: IMulticallWithGasLimitationParams, options?: TransactionOptions) => Promise<{
+                results: string[];
+                lastSuccessIndex: BigNumber;
+            }>;
+        };
+        private assign;
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/contracts/index.ts" />
+declare module "@ijstech/eth-wallet/contracts/index.ts" {
+    export { ERC1155 } from "contracts/ERC1155/ERC1155";
+    export { ERC20 } from "contracts/ERC20/ERC20";
+    export { ERC721 } from "contracts/ERC721/ERC721";
+    export { MultiCall } from "contracts/MultiCall/MultiCall";
+}
+/// <amd-module name="@ijstech/eth-wallet/contract.ts" />
+declare module "@ijstech/eth-wallet/contract.ts" {
+    /*!-----------------------------------------------------------
+    * Copyright (c) IJS Technologies. All rights reserved.
+    * Released under dual AGPLv3/commercial license
+    * https://ijs.network
+    *-----------------------------------------------------------*/
+    import { IWallet, TransactionReceipt, Event, IBatchRequestObj } from "@ijstech/eth-wallet/wallet.ts";
+    module Contract {
+        interface EventType {
+            name: string;
+        }
+        class Contract {
+            wallet: IWallet;
+            _abi: any;
+            _bytecode: any;
+            _address: string;
+            private _events;
+            privateKey: string;
+            private abiHash;
+            constructor(wallet: IWallet, address?: string, abi?: any, bytecode?: any);
+            at(address: string): Contract;
+            set address(value: string);
+            get address(): string;
+            protected decodeEvents(receipt: TransactionReceipt): any[];
+            protected parseEvents(receipt: TransactionReceipt, eventName: string): Event[];
+            get events(): EventType[];
+            getAbiEvents(): any;
+            getAbiTopics(eventNames?: string[]): any[];
+            scanEvents(fromBlock: number, toBlock: number | string, eventNames?: string[]): Promise<Event[]>;
+            batchCall(batchObj: IBatchRequestObj, key: string, methodName: string, params?: any[], options?: any): Promise<void>;
+            protected call(methodName: string, params?: any[], options?: any): Promise<any>;
+            private _send;
+            protected __deploy(params?: any[], options?: any): Promise<string>;
+            protected send(methodName: string, params?: any[], options?: any): Promise<TransactionReceipt>;
+            protected _deploy(...params: any[]): Promise<string>;
+            protected methods(methodName: string, ...params: any[]): Promise<any>;
+        }
+    }
+    export = Contract;
+}
+/// <amd-module name="@ijstech/eth-wallet/types.ts" />
+declare module "@ijstech/eth-wallet/types.ts" {
+    /*!-----------------------------------------------------------
+   * Copyright (c) IJS Technologies. All rights reserved.
+   * Released under dual AGPLv3/commercial license
+   * https://ijs.network
+   *-----------------------------------------------------------*/
+    export interface MessageTypeProperty {
+        name: string;
+        type: string;
+    }
+    export type EIP712TypeMap = {
+        [type: string]: MessageTypeProperty[];
+    };
+    export interface IEIP712Domain {
+        name: string;
+        version: string;
+        chainId: number;
+        verifyingContract: string;
+    }
+    export enum SignTypedDataVersion {
+        V1 = "V1",
+        V3 = "V3",
+        V4 = "V4"
+    }
+    export interface MessageTypes {
+        EIP712Domain: MessageTypeProperty[];
+        [additionalProperties: string]: MessageTypeProperty[];
+    }
+    export interface TypedMessage<T extends MessageTypes> {
+        types: T;
+        primaryType: keyof T;
+        domain: {
+            name?: string;
+            version?: string;
+            chainId?: number;
+            verifyingContract?: string;
+            salt?: ArrayBuffer;
+        };
+        message: Record<string, unknown>;
+    }
+    export interface IAbiDefinition {
+        _abi: any;
+    }
+    export interface ITokenObject {
+        address?: string;
+        name: string;
+        decimals: number;
+        symbol: string;
+    }
+    namespace nacl {
+        interface BoxKeyPair {
+            publicKey: Uint8Array;
+            secretKey: Uint8Array;
+        }
+        interface SignKeyPair {
+            publicKey: Uint8Array;
+            secretKey: Uint8Array;
+        }
+        interface secretbox {
+            (msg: Uint8Array, nonce: Uint8Array, key: Uint8Array): Uint8Array;
+            open(box: Uint8Array, nonce: Uint8Array, key: Uint8Array): Uint8Array | null;
+            readonly keyLength: number;
+            readonly nonceLength: number;
+            readonly overheadLength: number;
+        }
+        interface scalarMult {
+            (n: Uint8Array, p: Uint8Array): Uint8Array;
+            base(n: Uint8Array): Uint8Array;
+            readonly scalarLength: number;
+            readonly groupElementLength: number;
+        }
+        namespace boxProps {
+            interface open {
+                (msg: Uint8Array, nonce: Uint8Array, publicKey: Uint8Array, secretKey: Uint8Array): Uint8Array | null;
+                after(box: Uint8Array, nonce: Uint8Array, key: Uint8Array): Uint8Array | null;
+            }
+            interface keyPair {
+                (): BoxKeyPair;
+                fromSecretKey(secretKey: Uint8Array): BoxKeyPair;
+            }
+        }
+        interface box {
+            (msg: Uint8Array, nonce: Uint8Array, publicKey: Uint8Array, secretKey: Uint8Array): Uint8Array;
+            before(publicKey: Uint8Array, secretKey: Uint8Array): Uint8Array;
+            after(msg: Uint8Array, nonce: Uint8Array, key: Uint8Array): Uint8Array;
+            open: boxProps.open;
+            keyPair: boxProps.keyPair;
+            readonly publicKeyLength: number;
+            readonly secretKeyLength: number;
+            readonly sharedKeyLength: number;
+            readonly nonceLength: number;
+            readonly overheadLength: number;
+        }
+        namespace signProps {
+            interface detached {
+                (msg: Uint8Array, secretKey: Uint8Array): Uint8Array;
+                verify(msg: Uint8Array, sig: Uint8Array, publicKey: Uint8Array): boolean;
+            }
+            interface keyPair {
+                (): SignKeyPair;
+                fromSecretKey(secretKey: Uint8Array): SignKeyPair;
+                fromSeed(secretKey: Uint8Array): SignKeyPair;
+            }
+        }
+        interface sign {
+            (msg: Uint8Array, secretKey: Uint8Array): Uint8Array;
+            open(signedMsg: Uint8Array, publicKey: Uint8Array): Uint8Array | null;
+            detached: signProps.detached;
+            keyPair: signProps.keyPair;
+            readonly publicKeyLength: number;
+            readonly secretKeyLength: number;
+            readonly seedLength: number;
+            readonly signatureLength: number;
+        }
+        interface hash {
+            (msg: Uint8Array): Uint8Array;
+            readonly hashLength: number;
+        }
+    }
+    export interface INacl {
+        randomBytes(n: number): Uint8Array;
+        secretbox: nacl.secretbox;
+        scalarMult: nacl.scalarMult;
+        box: nacl.box;
+        sign: nacl.sign;
+        hash: nacl.hash;
+        verify(x: Uint8Array, y: Uint8Array): boolean;
+        setPRNG(fn: (x: Uint8Array, n: number) => void): void;
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/constants.ts" />
+declare module "@ijstech/eth-wallet/constants.ts" {
+    export const EIP712DomainAbi: {
+        name: string;
+        type: string;
+    }[];
+    export const TYPED_MESSAGE_SCHEMA: {
+        type: string;
+        properties: {
+            types: {
+                type: string;
+                additionalProperties: {
+                    type: string;
+                    items: {
+                        type: string;
+                        properties: {
+                            name: {
+                                type: string;
+                            };
+                            type: {
+                                type: string;
+                            };
+                        };
+                        required: string[];
+                    };
+                };
+            };
+            primaryType: {
+                type: string;
+            };
+            domain: {
+                type: string;
+            };
+            message: {
+                type: string;
+            };
+        };
+        required: string[];
+    };
+    export enum ClientWalletEvent {
+        AccountsChanged = "accountsChanged",
+        ChainChanged = "chainChanged",
+        Connect = "connect",
+        Disconnect = "disconnect"
+    }
+    export enum RpcWalletEvent {
+        Connected = "connected",
+        Disconnected = "disconnected",
+        ChainChanged = "chainChanged"
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/utils.ts" />
+declare module "@ijstech/eth-wallet/utils.ts" {
+    /*!-----------------------------------------------------------
+    * Copyright (c) IJS Technologies. All rights reserved.
+    * Released under dual AGPLv3/commercial license
+    * https://ijs.network
+    *-----------------------------------------------------------*/
+    import { BigNumber } from "bignumber.js";
+    import { EIP712TypeMap, IEIP712Domain, MessageTypes, TypedMessage } from "@ijstech/eth-wallet/types.ts";
+    import { ISendTxEventsOptions } from "@ijstech/eth-wallet/wallet.ts";
+    export function initWeb3Lib(): any;
+    export function sleep(millisecond: number): Promise<unknown>;
+    export function numberToBytes32(value: number | BigNumber, prefix?: boolean): string;
+    export function padLeft(string: string, chars: number, sign?: string): string;
+    export function padRight(string: string, chars: number, sign?: string): string;
+    type stringArray = string | _stringArray;
+    interface _stringArray extends Array<stringArray> {
+    }
+    export function stringToBytes32(value: string | stringArray): string | string[];
+    export function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+    export function addressToBytes32(value: string, prefix?: boolean): string;
+    export function bytes32ToAddress(value: string): string;
+    export function bytes32ToString(value: string): string;
+    export function addressToBytes32Right(value: string, prefix?: boolean): string;
+    export function toNumber(value: string | number | BigNumber | bigint): number;
+    export function toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+    export function fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+    export function toString(value: any): any;
+    export const nullAddress = "0x0000000000000000000000000000000000000000";
+    export function constructTypedMessageData(domain: IEIP712Domain, customTypes: EIP712TypeMap, primaryType: string, message: Record<string, unknown>): TypedMessage<MessageTypes>;
+    export function soliditySha3(...val: any[]): any;
+    export function toChecksumAddress(address: string): any;
+    export function registerSendTxEvents(sendTxEventHandlers: ISendTxEventsOptions): void;
+    export function uint8ArrayToHex(byteArray: Uint8Array): string;
+    export function stringToUnicodeHex(str: string): string;
+    export function hexToString(hex: string): string;
+}
+/// <amd-module name="@ijstech/eth-wallet/contracts/erc20.ts" />
+declare module "@ijstech/eth-wallet/contracts/erc20.ts" {
+    /*!-----------------------------------------------------------
+    * Copyright (c) IJS Technologies. All rights reserved.
+    * Released under dual AGPLv3/commercial license
+    * https://ijs.network
+    *-----------------------------------------------------------*/
+    import { IWallet, TransactionReceipt, Event } from "@ijstech/eth-wallet/wallet.ts";
+    import { Contract } from "@ijstech/eth-wallet/contract.ts";
+    import { BigNumber } from 'bignumber.js';
+    export class Erc20 extends Contract {
+        private _decimals;
+        constructor(wallet: IWallet, address?: string, decimals?: number);
+        deploy(params: {
+            name: string;
+            symbol: string;
+            minter?: string;
+            cap?: number | BigNumber;
+        }): Promise<string>;
+        parseApprovalEvent(receipt: TransactionReceipt): Erc20.ApprovalEvent[];
+        decodeApprovalEvent(event: Event): Erc20.ApprovalEvent;
+        parseTransferEvent(receipt: TransactionReceipt): Erc20.TransferEvent[];
+        decodeTransferEvent(event: Event): Erc20.TransferEvent;
+        allowance(params: {
+            owner: string;
+            spender: string;
+        }): Promise<BigNumber>;
+        approve(params: {
+            spender: string;
+            amount: number | BigNumber;
+        }): Promise<any>;
+        get balance(): Promise<BigNumber>;
+        balanceOf(address: string): Promise<BigNumber>;
+        get cap(): Promise<BigNumber>;
+        get decimals(): Promise<number>;
+        mint(params: {
+            address: string;
+            amount: number | BigNumber;
+        }): Promise<any>;
+        minter(): Promise<string>;
+        get name(): Promise<string>;
+        get symbol(): Promise<string>;
+        get totalSupply(): Promise<BigNumber>;
+        transfer(params: {
+            address: string;
+            amount: number | BigNumber;
+        }): Promise<TransactionReceipt>;
+    }
+    export module Erc20 {
+        interface ApprovalEvent {
+            owner: string;
+            spender: string;
+            value: BigNumber;
+            _event: Event;
+        }
+        interface TransferEvent {
+            from: string;
+            to: string;
+            value: BigNumber;
+            _event: Event;
+        }
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/eventBus.ts" />
+declare module "@ijstech/eth-wallet/eventBus.ts" {
+    export interface IEventBusRegistry {
+        id: number;
+        event: string;
+        unregister: () => void;
+    }
+    export interface ICallable {
+        [key: string]: Function;
+    }
+    export interface ISubscriber {
+        [key: string]: ICallable;
+    }
+    export interface IEventBus {
+        dispatch<T>(event: string, arg?: T): void;
+        register(sender: any, event: string, callback: Function): IEventBusRegistry;
+    }
+    export class EventBus implements IEventBus {
+        private subscribers;
+        private static nextId;
+        private static instance?;
+        private idEventMap;
+        private constructor();
+        static getInstance(): EventBus;
+        dispatch<T>(event: string, arg?: T): void;
+        register(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregister(id: number): void;
+        private getNextId;
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/providers.json.ts" />
+declare module "@ijstech/eth-wallet/providers.json.ts" {
+    const _default_4: {
+        MetaMask: {
+            displayName: string;
+            image: string;
+            homepage: string;
+        };
+        Web3Modal: {
+            displayName: string;
+            image: string;
+        };
+    };
+    export default _default_4;
+}
+/// <amd-module name="@ijstech/eth-wallet/wallet.ts" />
+declare module "@ijstech/eth-wallet/wallet.ts" {
+    /*!-----------------------------------------------------------
+    * Copyright (c) IJS Technologies. All rights reserved.
+    * Released under dual AGPLv3/commercial license
+    * https://ijs.network
+    *-----------------------------------------------------------*/
+    let Web3: any;
+    import { IWeb3, ConfirmationObject, TransactionReceipt } from "@ijstech/eth-wallet/web3.ts";
+    import { BigNumber } from 'bignumber.js';
+    import { Erc20 } from "@ijstech/eth-wallet/contracts/erc20.ts";
+    import { IAbiDefinition, MessageTypes, TypedMessage } from "@ijstech/eth-wallet/types.ts";
+    import { IEventBusRegistry } from "@ijstech/eth-wallet/eventBus.ts";
+    export { TransactionReceipt, ConfirmationObject };
+    export function toString(value: any): any;
+    export function stringToBytes32(value: string | stringArray): string | string[];
+    export function stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+    export type stringArray = string | _stringArray;
+    export interface _stringArray extends Array<stringArray> {
+    }
+    export interface IWalletUtils {
+        fromDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+        fromWei(value: any, unit?: string): string;
+        hexToUtf8(value: string): string;
+        sha3(value: string): string;
+        stringToBytes(value: string | stringArray, nByte?: number): string | string[];
+        stringToBytes32(value: string | stringArray): string | string[];
+        toDecimals(value: BigNumber | number | string, decimals?: number): BigNumber;
+        toString(value: any): string;
+        toUtf8(value: any): string;
+        toWei(value: string, unit?: string): string;
+    }
+    export interface IWalletTransaction {
+        hash: string;
+        nonce: bigint;
+        blockHash: string | null;
+        blockNumber: bigint | null;
+        transactionIndex: bigint | null;
+        from: string;
+        to: string | null;
+        value: BigNumber;
+        gasPrice: BigNumber;
+        maxPriorityFeePerGas?: bigint | string | BigNumber;
+        maxFeePerGas?: bigint | string | BigNumber;
+        gas: bigint;
+        input: string;
+    }
+    export interface IWalletBlockTransactionObject {
+        number: bigint;
+        hash: string;
+        parentHash: string;
+        nonce: string;
+        sha3Uncles: string;
+        logsBloom: string;
+        transactionRoot: string;
+        stateRoot: string;
+        receiptsRoot: string;
+        miner: string;
+        extraData: string;
+        gasLimit: bigint;
+        gasUsed: bigint;
+        timestamp: bigint | string;
+        baseFeePerGas?: bigint;
+        size: bigint;
+        difficulty: bigint;
+        totalDifficulty: bigint;
+        uncles: string[];
+        transactions: IWalletTransaction[];
+    }
+    export interface ITokenInfo {
+        name: string;
+        symbol: string;
+        totalSupply: BigNumber;
+        decimals: number;
+    }
+    export interface IBatchRequestResult {
+        key: string;
+        result: any;
+    }
+    export interface IBatchRequestObj {
+        batch: any;
+        promises: Promise<IBatchRequestResult>[];
+        execute: (batch: IBatchRequestObj, promises: Promise<IBatchRequestResult>[]) => Promise<IBatchRequestResult[]>;
+    }
+    export interface IConnectWalletEventPayload {
+        userTriggeredConnect?: boolean;
+        [key: string]: any;
+    }
+    export interface IWallet {
+        account: IAccount;
+        accounts: Promise<string[]>;
+        address: string;
+        balance: Promise<BigNumber>;
+        balanceOf(address: string): Promise<BigNumber>;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+        chainId: number;
+        createAccount(): IAccount;
+        decode(abi: any, event: Log | EventLog, raw?: {
+            data: string;
+            topics: string[];
+        }): Event;
+        decodeErrorMessage(msg: string): any;
+        decodeEventData(data: Log, events?: any): Promise<Event>;
+        decodeLog(inputs: any, hexString: string, topics: any): any;
+        defaultAccount: string;
+        getAbiEvents(abi: any[]): any;
+        getAbiTopics(abi: any[], eventNames: string[]): any[];
+        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
+        getBlockNumber(): Promise<number>;
+        getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
+        getChainId(): Promise<number>;
+        getContractAbi(address: string): any;
+        getContractAbiEvents(address: string): any;
+        getTransaction(transactionHash: string): Promise<Transaction>;
+        methods(...args: any): Promise<any>;
+        privateKey: string;
+        recoverSigner(msg: string, signature: string): Promise<string>;
+        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): any;
+        send(to: string, amount: number): Promise<TransactionReceipt>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+        scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+        scanEvents(params: {
+            fromBlock: number;
+            toBlock?: number | string;
+            topics?: any;
+            events?: any;
+            address?: string | string[];
+        }): Promise<Event[]>;
+        signMessage(msg: string): Promise<string>;
+        signTransaction(tx: any, privateKey?: string): Promise<string>;
+        soliditySha3(...val: any[]): string;
+        toChecksumAddress(address: string): string;
+        isAddress(address: string): boolean;
+        tokenInfo(address: string): Promise<ITokenInfo>;
+        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+        utils: IWalletUtils;
+        verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+        multiCall(calls: {
+            to: string;
+            data: string;
+        }[], gasBuffer?: string): Promise<{
+            results: string[];
+            lastSuccessIndex: BigNumber;
+        }>;
+        doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
+        encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+            [K in keyof T]: T[K] extends Function ? K : never;
+        }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
+        decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
+            [K in keyof T]: T[K] extends Function ? K : never;
+        }[keyof T]>>(contract: T, methodName: F, hexString: string): any;
+    }
+    export interface IClientWallet extends IWallet {
+        init(): Promise<void>;
+        blockGasLimit(): Promise<number>;
+        clientSideProvider: IClientSideProvider;
+        initClientWallet(config: IClientWalletConfig): void;
+        connect(clientSideProvider: IClientSideProvider, eventPayload?: Record<string, any>): Promise<any>;
+        disconnect(): Promise<void>;
+        getGasPrice(): Promise<BigNumber>;
+        getTransaction(transactionHash: string): Promise<Transaction>;
+        getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+        isConnected: boolean;
+        newContract(abi: any, address?: string): IContract;
+        provider: any;
+        registerEvent(abi: any, eventMap: {
+            [topics: string]: any;
+        }, address: string, handler: any): any;
+        registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
+        sendSignedTransaction(signedTransaction: string): Promise<TransactionReceipt>;
+        sendTransaction(transaction: Transaction): Promise<TransactionReceipt>;
+        signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+        switchNetwork(chainId: number): Promise<boolean>;
+        transactionCount(): Promise<number>;
+        getNetworkInfo(chainId: number): INetwork;
+        setNetworkInfo(network: INetwork): void;
+        setMultipleNetworksInfo(networks: INetwork[]): void;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(registry: IEventBusRegistry): void;
+        unregisterAllWalletEvents(): void;
+        destoryRpcWalletInstance(instanceId: string): void;
+        initRpcWallet(config: IRpcWalletConfig): string;
+        encrypt: (key: string) => Promise<string>;
+        decrypt: (data: string) => Promise<string>;
+    }
+    export interface IRpcWallet extends IWallet {
+        init(): Promise<void>;
+        instanceId: string;
+        isConnected: boolean;
+        switchNetwork(chainId: number): Promise<boolean>;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterAllWalletEvents(): void;
+        unregisterWalletEvent(registry: IEventBusRegistry): void;
+    }
+    export interface IContractMethod {
+        call: any;
+        estimateGas(...params: any[]): Promise<bigint>;
+        encodeABI(): string;
+    }
+    export interface IContract {
+        deploy(params: {
+            data: string;
+            arguments?: any[];
+        }): IContractMethod;
+        methods: {
+            [methodName: string]: (...params: any[]) => IContractMethod;
+        };
+        options: {
+            address: string;
+        };
+    }
+    export interface Event {
+        name: string;
+        address: string;
+        blockNumber: bigint;
+        logIndex: bigint;
+        topics: string[];
+        transactionHash: string;
+        transactionIndex: bigint;
+        data: any;
+        rawData: any;
+    }
+    export interface Log {
+        address: string;
+        data: string;
+        topics: Array<string>;
+        logIndex: bigint;
+        transactionHash?: string;
+        transactionIndex: bigint;
+        blockHash?: string;
+        type?: string;
+        blockNumber: bigint;
+    }
+    export interface EventLog {
+        event: string;
+        address: string;
+        returnValues: any;
+        logIndex: bigint;
+        transactionIndex: bigint;
+        transactionHash: string;
+        blockHash: string;
+        blockNumber: bigint;
+        raw?: {
+            data: string;
+            topics: string[];
+        };
+    }
+    export interface Transaction {
+        from?: string;
+        to?: string;
+        nonce?: number;
+        gas?: number;
+        gasLimit?: number;
+        gasPrice?: BigNumber | number;
+        data?: string;
+        value?: BigNumber | number;
+    }
+    export interface TransactionOptions {
+        from?: string;
+        to?: string;
+        nonce?: number;
+        gas?: number;
+        gasLimit?: number;
+        gasPrice?: string | BigNumber | number;
+        data?: string;
+        value?: BigNumber | number | string;
+    }
+    export interface IKMS {
+    }
+    export interface IAccount {
+        address: string;
+        privateKey?: string;
+        kms?: IKMS;
+        sign?(): Promise<string>;
+        signTransaction?(): Promise<any>;
+    }
+    export interface ITokenOption {
+        address: string;
+        symbol: string;
+        decimals: number;
+        image?: string;
+    }
+    export interface INetwork {
+        image?: string;
+        chainId: number;
+        chainName: string;
+        nativeCurrency: {
+            name: string;
+            symbol: string;
+            decimals: number;
+        };
+        rpcUrls: string[];
+        blockExplorerUrls?: string[];
+        iconUrls?: string[];
+    }
+    export interface IClientSideProviderEvents {
+        onAccountChanged?: (account: string) => void;
+        onChainChanged?: (chainId: string) => void;
+        onConnect?: (connectInfo: any) => void;
+        onDisconnect?: (error: any) => void;
+    }
+    export interface IMulticallInfo {
+        chainId: number;
+        contractAddress: string;
+        gasBuffer: string;
+    }
+    export type NetworksMapType = {
+        [chainId: number]: INetwork;
+    };
+    export type MulticallInfoMapType = {
+        [chainId: number]: IMulticallInfo;
+    };
+    export interface IMulticallContractCall {
+        to: string;
+        contract: IAbiDefinition;
+        methodName: string;
+        params: any[];
+    }
+    export interface IRpcWalletConfig {
+        networks: INetwork[];
+        defaultChainId?: number;
+        infuraId: string;
+        multicalls?: IMulticallInfo[];
+    }
+    export interface IClientWalletConfig {
+        defaultChainId: number;
+        networks: INetwork[];
+        infuraId: string;
+        multicalls?: IMulticallInfo[];
+    }
+    export interface IClientProviderOptions {
+        name?: string;
+        image?: string;
+        infuraId?: string;
+        useDefaultProvider?: boolean;
+        [key: string]: any;
+    }
+    export interface IClientSideProvider {
+        name: string;
+        displayName: string;
+        provider: any;
+        selectedAddress: string;
+        image: string;
+        homepage?: string;
+        events?: IClientSideProviderEvents;
+        options?: IClientProviderOptions;
+        installed(): boolean;
+        isConnected(): boolean;
+        connect: (eventPayload?: Record<string, any>) => Promise<void>;
+        disconnect: () => Promise<void>;
+        switchNetwork?: (chainId: number, onChainChanged?: (chainId: string) => void) => Promise<boolean>;
+        encrypt: (key: string) => Promise<string>;
+        decrypt: (data: string) => Promise<string>;
+    }
+    export class EthereumProvider implements IClientSideProvider {
+        protected wallet: Wallet;
+        protected _events?: IClientSideProviderEvents;
+        protected _options?: IClientProviderOptions;
+        protected _isConnected: boolean;
+        protected _name: string;
+        protected _image: string;
+        protected _selectedAddress: string;
+        onAccountChanged: (account: string) => void;
+        onChainChanged: (chainId: string) => void;
+        onConnect: (connectInfo: any) => void;
+        onDisconnect: (error: any) => void;
+        private handleAccountsChanged;
+        private handleChainChanged;
+        private handleConnect;
+        private handleDisconnect;
+        constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
+        get name(): string;
+        get displayName(): string;
+        get provider(): any;
+        get image(): string;
+        installed(): boolean;
+        get events(): IClientSideProviderEvents;
+        get options(): IClientProviderOptions;
+        get selectedAddress(): string;
+        protected toChecksumAddress(address: string): string;
+        protected removeListeners(): void;
+        private _handleAccountsChanged;
+        protected initEvents(): void;
+        connect(eventPayload?: IConnectWalletEventPayload): Promise<any>;
+        disconnect(): Promise<void>;
+        isConnected(): boolean;
+        addToken(option: ITokenOption, type?: string): Promise<boolean>;
+        switchNetwork(chainId: number): Promise<boolean>;
+        encrypt(key: string): Promise<string>;
+        decrypt(data: string): Promise<string>;
+    }
+    export class MetaMaskProvider extends EthereumProvider {
+        get displayName(): string;
+        get image(): string;
+        get homepage(): string;
+        installed(): boolean;
+        encrypt(key: string): Promise<string>;
+        decrypt(data: string): Promise<string>;
+    }
+    export class Web3ModalProvider extends EthereumProvider {
+        private _provider;
+        constructor(wallet: Wallet, events?: IClientSideProviderEvents, options?: IClientProviderOptions);
+        get name(): string;
+        get displayName(): string;
+        get provider(): any;
+        get image(): string;
+        get homepage(): any;
+        installed(): boolean;
+        get options(): IClientProviderOptions;
+        private initializeWeb3Modal;
+        connect(eventPayload?: IConnectWalletEventPayload): Promise<any>;
+        disconnect(): Promise<void>;
+    }
+    export interface ISendTxEventsOptions {
+        transactionHash?: (error: Error, receipt?: string) => void;
+        confirmation?: (receipt: any) => void;
+    }
+    export class Wallet implements IClientWallet {
+        protected _web3: IWeb3;
+        protected _account: IAccount;
+        private _accounts;
+        protected _provider: any;
+        private _eventTopicAbi;
+        private _eventHandler;
+        protected _sendTxEventHandler: ISendTxEventsOptions;
+        protected _contracts: {};
+        protected _blockGasLimit: number;
+        private _networksMap;
+        private _multicallInfoMap;
+        chainId: number;
+        clientSideProvider: IClientSideProvider;
+        private _infuraId;
+        protected _utils: IWalletUtils;
+        private static _rpcWalletPoolMap;
+        protected _walletEventIds: Set<number>;
+        constructor(provider?: any, account?: IAccount | IAccount[]);
+        private static readonly instance;
+        static getInstance(): IWallet;
+        static getClientInstance(): IClientWallet;
+        static getRpcWalletInstance(instanceId: string): IRpcWallet;
+        static initWeb3(): Promise<void>;
+        init(): Promise<void>;
+        get isConnected(): boolean;
+        switchNetwork(chainId: number): Promise<any>;
+        initClientWallet(config: IClientWalletConfig): void;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+        unregisterWalletEvent(registry: IEventBusRegistry): void;
+        unregisterAllWalletEvents(): void;
+        destoryRpcWalletInstance(instanceId: string): void;
+        private generateUUID;
+        initRpcWallet(config: IRpcWalletConfig): string;
+        setDefaultProvider(): void;
+        connect(clientSideProvider: IClientSideProvider, eventPayload?: IConnectWalletEventPayload): Promise<void>;
+        disconnect(): Promise<void>;
+        encrypt(key: string): Promise<string>;
+        decrypt(data: string): Promise<string>;
+        get accounts(): Promise<string[]>;
+        get address(): string;
+        get account(): IAccount;
+        set account(value: IAccount);
+        get infuraId(): string;
+        set infuraId(value: string);
+        get networksMap(): NetworksMapType;
+        getNetworkInfo(chainId: number): INetwork;
+        setNetworkInfo(network: INetwork): void;
+        setMultipleNetworksInfo(networks: INetwork[]): void;
+        createAccount(): IAccount;
+        decodeLog(inputs: any, hexString: string, topics: any): any;
+        get defaultAccount(): string;
+        set defaultAccount(address: string);
+        getChainId(): Promise<number>;
+        get provider(): any;
+        set provider(value: any);
+        sendSignedTransaction(tx: string): Promise<TransactionReceipt>;
+        signTransaction(tx: any, privateKey?: string): Promise<string>;
+        registerSendTxEvents(eventsOptions: ISendTxEventsOptions): void;
+        private getContract;
+        _call(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<any>;
+        private _getMethod;
+        _txObj(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<Transaction>;
+        _send(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<TransactionReceipt>;
+        _txData(abiHash: string, address: string, methodName: string, params?: any[], options?: number | BigNumber | TransactionOptions): Promise<string>;
+        _methods(...args: any[]): Promise<{
+            to: any;
+            data: any;
+        }>;
+        methods(...args: any): Promise<any>;
+        get balance(): Promise<BigNumber>;
+        balanceOf(address: string): Promise<BigNumber>;
+        recoverSigner(msg: string, signature: string): Promise<string>;
+        getBlock(blockHashOrBlockNumber?: number | string, returnTransactionObjects?: boolean): Promise<IWalletBlockTransactionObject>;
+        getBlockNumber(): Promise<number>;
+        getBlockTimestamp(blockHashOrBlockNumber?: number | string): Promise<number>;
+        set privateKey(value: string);
+        registerEvent(abi: any, eventMap: {
+            [topics: string]: any;
+        }, address: string, handler: any): Promise<void>;
+        private _abiHashDict;
+        private _abiContractDict;
+        private _abiAddressDict;
+        private _abiEventDict;
+        getAbiEvents(abi: any[]): any;
+        getAbiTopics(abi: any[], eventNames?: string[]): any[];
+        getContractAbi(address: string): any;
+        getContractAbiEvents(address: string): any;
+        registerAbi(abi: any[] | string, address?: string | string[], handler?: any): string;
+        registerAbiContracts(abiHash: string, address: string | string[], handler?: any): void;
+        decode(abi: any, event: Log | EventLog, raw?: {
+            data: string;
+            topics: string[];
+        }): Event;
+        decodeEventData(data: Log, events?: any): Promise<Event>;
+        scanEvents(params: {
+            fromBlock: number;
+            toBlock?: number | string;
+            topics?: any;
+            events?: any;
+            address?: string | string[];
+        }): Promise<Event[]>;
+        scanEvents(fromBlock: number, toBlock?: number | string, topics?: any, events?: any, address?: string | string[]): Promise<Event[]>;
+        send(to: string, amount: number | BigNumber): Promise<TransactionReceipt>;
+        setBlockTime(time: number): Promise<any>;
+        increaseBlockTime(value: number): Promise<any>;
+        signMessage(msg: string): Promise<string>;
+        signTypedDataV4(data: TypedMessage<MessageTypes>): Promise<string>;
+        token(tokenAddress: string, decimals?: number): Erc20;
+        tokenInfo(tokenAddress: string): Promise<ITokenInfo>;
+        get utils(): IWalletUtils;
+        verifyMessage(account: string, msg: string, signature: string): Promise<boolean>;
+        private _gasLimit;
+        blockGasLimit(): Promise<number>;
+        getGasPrice(): Promise<BigNumber>;
+        transactionCount(): Promise<number>;
+        private monitorTransactionEvents;
+        sendTransaction(transaction: TransactionOptions): Promise<TransactionReceipt>;
+        getTransaction(transactionHash: string): Promise<Transaction>;
+        getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt>;
+        call(transaction: Transaction): Promise<any>;
+        newContract(abi: any, address?: string): IContract;
+        decodeErrorMessage(msg: string): any;
+        newBatchRequest(): Promise<IBatchRequestObj>;
+        soliditySha3(...val: any[]): string;
+        toChecksumAddress(address: string): string;
+        isAddress(address: string): boolean;
+        multiCall(calls: {
+            to: string;
+            data: string;
+        }[], gasBuffer?: string): Promise<{
+            results: string[];
+            lastSuccessIndex: BigNumber;
+        }>;
+        doMulticall(contracts: IMulticallContractCall[], gasBuffer?: string): Promise<any[]>;
+        encodeFunctionCall<T extends IAbiDefinition, F extends Extract<keyof T, {
+            [K in keyof T]: T[K] extends Function ? K : never;
+        }[keyof T]>>(contract: T, methodName: F, params: string[]): string;
+        decodeAbiEncodedParameters<T extends IAbiDefinition, F extends Extract<keyof T, {
+            [K in keyof T]: T[K] extends Function ? K : never;
+        }[keyof T]>>(contract: T, methodName: F, hexString: string): {
+            [key: string]: any;
+        };
+        get web3(): typeof Web3;
+    }
+    export class RpcWallet extends Wallet implements IRpcWallet {
+        static rpcWalletRegistry: Record<string, IRpcWallet>;
+        instanceId: string;
+        private _address;
+        get address(): string;
+        set address(value: string);
+        setProvider(provider: any): void;
+        get isConnected(): boolean;
+        static getRpcWallet(chainId: number): IRpcWallet;
+        switchNetwork(chainId: number): Promise<any>;
+        initWalletEvents(): void;
+        registerWalletEvent(sender: any, event: string, callback: Function): IEventBusRegistry;
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" />
+declare module "@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts" {
+    import { BigNumber } from 'bignumber.js';
+    import { IRpcWallet, TransactionReceipt } from "@ijstech/eth-wallet/wallet.ts";
+    import { ITokenObject } from "@ijstech/eth-wallet/types.ts";
+    export const getERC20Allowance: (wallet: IRpcWallet, token: ITokenObject, spenderAddress: string) => Promise<BigNumber>;
+    export interface IERC20ApprovalEventOptions {
+        sender: any;
+        payAction: () => Promise<void>;
+        onToBeApproved: (token: ITokenObject, data?: any) => Promise<void>;
+        onToBePaid: (token: ITokenObject, data?: any) => Promise<void>;
+        onApproving: (token: ITokenObject, receipt?: string, data?: any) => Promise<void>;
+        onApproved: (token: ITokenObject, data?: any, receipt?: TransactionReceipt) => Promise<void>;
+        onPaying: (receipt?: string, data?: any) => Promise<void>;
+        onPaid: (data?: any, receipt?: TransactionReceipt) => Promise<void>;
+        onApprovingError: (token: ITokenObject, err: Error) => Promise<void>;
+        onPayingError: (err: Error) => Promise<void>;
+    }
+    export interface IERC20ApprovalOptions extends IERC20ApprovalEventOptions {
+        spenderAddress: string;
+    }
+    export interface IERC20ApprovalAction {
+        doApproveAction: (token: ITokenObject, inputAmount: string, data?: any) => Promise<void>;
+        doPayAction: (data?: any) => Promise<void>;
+        checkAllowance: (token: ITokenObject, inputAmount: string, data?: any) => Promise<void>;
+    }
+    export class ERC20ApprovalModel {
+        private wallet;
+        private options;
+        constructor(wallet: IRpcWallet, options: IERC20ApprovalOptions);
+        set spenderAddress(value: string);
+        private checkAllowance;
+        private doApproveAction;
+        private doPayAction;
+        getAction: () => IERC20ApprovalAction;
+    }
+}
+/// <amd-module name="@ijstech/eth-wallet/approvalModel/index.ts" />
+declare module "@ijstech/eth-wallet/approvalModel/index.ts" {
+    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "@ijstech/eth-wallet/approvalModel/ERC20ApprovalModel.ts";
+}
+/// <amd-module name="@ijstech/eth-wallet" />
+declare module "@ijstech/eth-wallet" {
+    /*!-----------------------------------------------------------
+    * Copyright (c) IJS Technologies. All rights reserved.
+    * Released under dual AGPLv3/commercial license
+    * https://ijs.network
+    *-----------------------------------------------------------*/
+    export { IWallet, IWalletUtils, IAccount, Wallet, Transaction, Event, TransactionReceipt, ISendTxEventsOptions, IClientProviderOptions, IBatchRequestObj, INetwork, EthereumProvider, MetaMaskProvider, Web3ModalProvider, IClientSideProviderEvents, IClientSideProvider, IClientWalletConfig, IClientWallet, IMulticallInfo, RpcWallet, IRpcWalletConfig, IRpcWallet, IConnectWalletEventPayload, IMulticallContractCall } from "@ijstech/eth-wallet/wallet.ts";
+    export { Contract } from "@ijstech/eth-wallet/contract.ts";
+    export { BigNumber } from "bignumber.js";
+    export { Erc20 } from "@ijstech/eth-wallet/contracts/erc20.ts";
+    export * as Utils from "@ijstech/eth-wallet/utils.ts";
+    export * as Contracts from "@ijstech/eth-wallet/contracts/index.ts";
+    export * as Types from "@ijstech/eth-wallet/types.ts";
+    export * as Constants from "@ijstech/eth-wallet/constants.ts";
+    export { IEventBusRegistry, EventBus } from "@ijstech/eth-wallet/eventBus.ts";
+    export { getERC20Allowance, IERC20ApprovalEventOptions, IERC20ApprovalOptions, IERC20ApprovalAction, ERC20ApprovalModel } from "@ijstech/eth-wallet/approvalModel/index.ts";
+}
+`;
+});
+define("@scom/scom-designer/types/dataSource.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    ///<amd-module name='@scom/scom-designer/types/dataSource.ts'/> 
+    exports.default = `/// <amd-module name="@scom/scom-chart-data-source-setup/index.css.ts" />
+declare module "@scom/scom-chart-data-source-setup/index.css.ts" {
+    export const comboBoxStyle: string;
+    export const uploadStyle: string;
+}
+/// <amd-module name="@scom/scom-chart-data-source-setup/interface.ts" />
+declare module "@scom/scom-chart-data-source-setup/interface.ts" {
+    export enum ModeType {
+        LIVE = "Live",
+        SNAPSHOT = "Snapshot"
+    }
+    export enum DataSource {
+        Dune = "Dune",
+        Flipside = "Flipside",
+        Custom = "Custom"
+    }
+    export enum ChartType {
+        Counter = "scom-counter",
+        Table = "scom-table",
+        Pie = "scom-pie-chart",
+        Bar = "scom-bar-chart",
+        Line = "scom-line-chart",
+        Area = "scom-area-chart",
+        Scatter = "scom-scatter-chart",
+        Mixed = "scom-mixed-chart"
+    }
+    export interface IFileData {
+        cid?: string;
+        name?: string;
+    }
+    export interface IConfigData {
+        chartType?: ChartType;
+        isChartTypeChanged?: boolean;
+        mode: ModeType;
+        dataSource: DataSource;
+        apiEndpoint?: string;
+        queryId?: string;
+        file?: IFileData;
+        chartData?: string;
+    }
+    export interface IFetchDataOptions {
+        dataSource: DataSource;
+        queryId?: string;
+        apiEndpoint?: string;
+    }
+}
+/// <amd-module name="@scom/scom-chart-data-source-setup/utils.ts" />
+declare module "@scom/scom-chart-data-source-setup/utils.ts" {
+    import { ChartType, DataSource, IFetchDataOptions, ModeType } from "@scom/scom-chart-data-source-setup/interface.ts";
+    export const callAPI: (options: IFetchDataOptions) => Promise<any>;
+    export const getExternalLink: (options: IFetchDataOptions) => string;
+    export const modeOptions: {
+        label: string;
+        value: ModeType;
+    }[];
+    export const dataSourceOptions: {
+        label: string;
+        value: DataSource;
+    }[];
+    export const chartOptions: {
+        label: string;
+        value: ChartType;
+    }[];
+    export const fetchContentByCID: (ipfsCid: string) => Promise<any>;
+}
+/// <amd-module name="@scom/scom-chart-data-source-setup" />
+declare module "@scom/scom-chart-data-source-setup" {
+    import { Module, Container, ControlElement } from '@ijstech/components';
+    import "@scom/scom-chart-data-source-setup/index.css.ts";
+    import { ChartType, DataSource, IConfigData, IFileData } from "@scom/scom-chart-data-source-setup/interface.ts";
+    import { ModeType } from "@scom/scom-chart-data-source-setup/interface.ts";
+    import { callAPI, fetchContentByCID } from "@scom/scom-chart-data-source-setup/utils.ts";
+    export { fetchContentByCID, callAPI, ModeType, DataSource, ChartType };
+    interface ScomChartDataElement extends ControlElement {
+        chartType?: ChartType;
+        isChartTypeShown?: boolean;
+        mode?: ModeType;
+        dataSource?: DataSource;
+        apiEndpoint?: string;
+        queryId?: string;
+        file?: IFileData;
+        onCustomDataChanged?: (data: IConfigData) => Promise<void>;
+        onCustomChartTypeChanged?: (data: IConfigData) => Promise<void>;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-chart-data-source-setup']: ScomChartDataElement;
+            }
+        }
+    }
+    export default class ScomChartDataSourceSetup extends Module {
+        private _data;
+        private isChartTypeShown;
+        private currentChartType;
+        private vstackChartType;
+        private chartSelect;
+        private modeSelect;
+        private comboDataSource;
+        private endpointInput;
+        private captureBtn;
+        private downloadBtn;
+        private mdAlert;
+        private fileNameLb;
+        private pnlUpload;
+        private pnlFile;
+        private pnlDataSource;
+        private pnlEndpoint;
+        private pnlLoading;
+        private lbEndpointCaption;
+        constructor(parent?: Container, options?: any);
+        static create(options?: ScomChartDataElement, parent?: Container): Promise<ScomChartDataSourceSetup>;
+        get data(): IConfigData;
+        set data(value: IConfigData);
+        get mode(): ModeType;
+        set mode(value: ModeType);
+        get dataSource(): DataSource;
+        set dataSource(value: DataSource);
+        get queryId(): string;
+        set queryId(value: string);
+        get file(): IFileData;
+        set file(value: IFileData);
+        private get fetchDataOptions();
+        onCustomDataChanged(data: IConfigData): Promise<void>;
+        onCustomChartTypeChanged(value: ChartType): Promise<void>;
+        private renderUI;
+        private onChartChanged;
+        private onModeChanged;
+        private onDataSourceChanged;
+        private updateMode;
+        private updateChartData;
+        private onUpdateEndpoint;
+        private onCapture;
+        private onUploadToIPFS;
+        private onImportFile;
+        private onExportFile;
+        openLink(): void;
+        init(): void;
+        render(): any;
+    }
+}
+`;
+});
+define("@scom/scom-designer/types/index.ts", ["require", "exports", "@scom/scom-designer/types/components.ts", "@scom/scom-designer/types/ethContract.ts", "@scom/scom-designer/types/ethWallet.ts", "@scom/scom-designer/types/dataSource.ts"], function (require, exports, components_32, ethContract_1, ethWallet_1, dataSource_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.dataSource = exports.ethWallet = exports.ethContract = exports.components = void 0;
+    exports.components = components_32.default;
+    exports.ethContract = ethContract_1.default;
+    exports.ethWallet = ethWallet_1.default;
+    exports.dataSource = dataSource_1.default;
+});
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/types/index.ts", "@ijstech/compiler", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_33, index_css_23, Dts, compiler_1, utils_11) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
-    let ScomDesigner = class ScomDesigner extends components_32.Module {
+    let ScomDesigner = class ScomDesigner extends components_33.Module {
         addEventHandler(designer, eventName, funcName) {
             let control = designer.selectedControl?.control;
             let fileName = this.fileName;
@@ -17839,6 +20622,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.value = result;
             return true;
         }
+        registerWidget(designer, name, type) {
+            components_33.CodeEditor.addLib(name, type);
+            this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
+        }
         constructor(parent, options) {
             super(parent, options);
             this._data = {
@@ -17887,12 +20674,16 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         addLib() {
             try {
-                components_32.CodeEditor.addLib('@ijstech/components', Dts.components);
+                components_33.CodeEditor.addLib('@ijstech/components', Dts.components);
+                components_33.CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet);
+                components_33.CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract);
+                components_33.CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource);
                 if (!this.compiler)
                     this.compiler = new compiler_1.Compiler();
-                this.compiler.addPackage('@ijstech/components', {
-                    dts: { 'index.d.ts': Dts.components },
-                });
+                this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components } });
+                this.compiler.addPackage('@ijstech/eth-wallet', { dts: { 'index.d.ts': Dts.ethWallet } });
+                this.compiler.addPackage('@ijstech/eth-contract', { dts: { 'index.d.ts': Dts.ethContract } });
+                this.compiler.addPackage('@scom/scom-chart-data-source-setup', { dts: { 'index.d.ts': Dts.dataSource } });
             }
             catch { }
         }
@@ -17928,7 +20719,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     items: []
                 };
             }
-            root.path = components_32.IdUtils.generateUUID();
+            root.path = components_33.IdUtils.generateUUID();
             if (!root.items)
                 root.items = [];
             if (root.items.length) {
@@ -17938,7 +20729,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         updatePath(items, path) {
             return [...items].map((item) => {
-                item.path = components_32.IdUtils.generateUUID();
+                item.path = components_33.IdUtils.generateUUID();
                 item.parent = path;
                 if (!item.items)
                     item.items = [];
@@ -17992,7 +20783,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (url)
                 this.setData({ url });
             this.addLib();
-            this.classList.add(index_css_22.blockStyle);
+            this.classList.add(index_css_23.blockStyle);
         }
         // Configuration
         updateTag(type, value) {
@@ -18141,7 +20932,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         render() {
             return (this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden', background: { color: '#202020' } },
-                this.$render("i-tabs", { id: "designTabs", class: index_css_22.codeTabsStyle, dock: 'fill', draggable: false, closable: false, onChanged: this.handleTabChanged },
+                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, dock: 'fill', draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
                         this.$render("i-code-editor", { id: "codeEditor", dock: 'fill', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
@@ -18157,7 +20948,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
     };
     ScomDesigner = __decorate([
-        (0, components_32.customElements)('i-scom-designer')
+        (0, components_33.customElements)('i-scom-designer')
     ], ScomDesigner);
     exports.ScomDesigner = ScomDesigner;
 });

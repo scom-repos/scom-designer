@@ -101,6 +101,10 @@ export const customFormStyle = Styles.style({
         },
         'i-combo-box .selection': {
           padding: '0 1rem'
+        },
+        '.tabs-nav-wrap i-tab': {
+          padding: '0 1rem !important',
+          margin: '0px !important'
         }
       }
     }

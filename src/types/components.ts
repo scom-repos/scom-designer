@@ -3713,6 +3713,7 @@ declare module "packages/base/src/component" {
         transform?: TextTransform;
         underline?: boolean;
         weight?: number | string;
+        shadow?: string;
     }
     export interface ISpace {
         top?: string | number;
@@ -3834,6 +3835,7 @@ declare module "packages/base/src/style/base.css" {
     import { BorderStylesSideType, IBorder, IBorderSideStyles, IOverflow, IBackground, IControlMediaQuery, DisplayType, IMediaQuery } from "@ijstech/components/base";
     export const disabledStyle: string;
     export const containerStyle: string;
+    export const getBorderSideObj: (side: BorderStylesSideType, value: IBorderSideStyles) => any;
     export const getBorderSideStyleClass: (side: BorderStylesSideType, value: IBorderSideStyles) => string;
     export const getBorderStyleClass: (value: IBorder) => string;
     export const getOverflowStyleClass: (value: IOverflow) => string;
@@ -4092,6 +4094,7 @@ declare module "packages/base/src/control" {
         protected _contextMenuControl: Control | null;
         private _opacity;
         protected _zIndex: string;
+        protected _designMode: boolean;
         protected propertyClassMap: Record<string, string>;
         _container?: HTMLElement;
         tag: any;
@@ -4139,6 +4142,8 @@ declare module "packages/base/src/control" {
         set maxWidth(value: number | string);
         get minWidth(): string | number;
         set minWidth(value: string | number);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         observables(propName: string): any;
         get onClick(): notifyMouseEventCallback;
         set onClick(callback: notifyMouseEventCallback);
@@ -4304,6 +4309,7 @@ declare module "@ijstech/components/base" {
         cursor?: CursorType;
         letterSpacing?: string | number;
         boxShadow?: string;
+        designMode?: boolean;
         mediaQueries?: IControlMediaQuery[];
         onClick?: notifyMouseEventCallback;
         onDblClick?: notifyMouseEventCallback;
@@ -5243,6 +5249,7 @@ declare module "packages/layout/src/grid" {
         mediaQueries?: IGridLayoutMediaQuery[];
     }
     export const gridSchemaProps: any;
+    export const gridProps: any;
     export class GridLayout extends Container {
         private _templateColumns;
         private _templateRows;
@@ -5877,6 +5884,8 @@ declare module "packages/datepicker/src/datepicker" {
         set placeholder(value: string);
         get type(): dateType;
         set type(value: dateType);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         private get formatString();
         private _onDatePickerChange;
         private _onBlur;
@@ -5940,6 +5949,8 @@ declare module "packages/range/src/range" {
         set width(value: number | string);
         get enabled(): boolean;
         set enabled(value: boolean);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         get tooltipVisible(): boolean;
         set tooltipVisible(value: boolean);
         get trackColor(): Types.Color;
@@ -9918,7 +9929,6 @@ declare module "packages/data-grid/src/dataGrid" {
     export type cellValueChangedCallback = (source: DataGrid, cell: DataGridCell, oldValue: any, newValue: any) => void;
     export interface IDataGridElement extends ControlElement {
         caption?: string;
-        mode?: GridMode;
     }
     global {
         namespace JSX {
@@ -10097,7 +10107,6 @@ declare module "packages/data-grid/src/dataGrid" {
         getRow(index: number): TGridRow;
     }
     export type TGridLayout = 'grid' | 'card';
-    export type GridMode = 'vertical' | 'horizontal';
     export class DataGrid extends Control {
         private _colResizing;
         private _listOfValue;
@@ -10119,7 +10128,6 @@ declare module "packages/data-grid/src/dataGrid" {
         private data;
         columns: TGridColumns;
         gridRows: TGridRows;
-        private _mode;
         private _colCount;
         private _rowCount;
         private editor;
@@ -10198,7 +10206,6 @@ declare module "packages/data-grid/src/dataGrid" {
         set row(value: number);
         get colCount(): number;
         set colCount(value: number);
-        get mode(): GridMode;
         get readOnly(): boolean;
         set readOnly(value: boolean);
         get rowCount(): number;
@@ -10339,8 +10346,6 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         hideModeSwitch?: boolean;
         value?: string;
         viewer?: boolean;
-        width?: string;
-        height?: string;
         toolbarItems?: any[];
         plugins?: any[];
         widgetRules?: {
@@ -10389,11 +10394,13 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         set previewStyle(value: 'tab' | 'vertical');
         get viewer(): boolean;
         set viewer(value: boolean);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         get value(): string;
         set value(value: string);
         setValue(value: string): Promise<void>;
-        get height(): string;
-        set height(value: string);
+        get height(): string | number;
+        set height(value: string | number);
         get toolbarItems(): any[];
         set toolbarItems(items: any[]);
         get plugins(): any[];
@@ -11371,6 +11378,7 @@ declare module "packages/carousel/src/carousel" {
         set activeSlide(value: number);
         get items(): CarouselItemElement[];
         set items(nodes: CarouselItemElement[]);
+        add(control: Control): Control;
         get type(): 'dot' | 'arrow';
         set type(value: 'dot' | 'arrow');
         get swipe(): boolean;
@@ -11430,6 +11438,8 @@ declare module "packages/video/src/video" {
         set url(value: string);
         get border(): Border;
         set border(value: IBorder);
+        get designMode(): boolean;
+        set designMode(value: boolean);
         getPlayer(): any;
         private getVideoTypeFromExtension;
         protected init(): void;
@@ -12101,4 +12111,4 @@ declare module "@ijstech/components" {
     export { Form, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/index";
     export { ColorPicker } from "packages/color/src/index";
 }
-`
+`;

@@ -16,7 +16,6 @@ import {
   Icon,
   Image,
   Tabs,
-  RadioGroup,
   TreeView,
   Modal,
   VStack,
@@ -115,6 +114,7 @@ export class ScomDesignerForm extends Module {
   private selectedComponent: IControl
   private currentParent: IComponent;
   private designPos: any = {};
+  private libsMap: Record<string, boolean> = {}
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
   private handleMouseUpBound: (event: MouseEvent) => void;
@@ -204,17 +204,15 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
-  private createControl(parent: Control, name: string, options?: any): Control {
+  private async createControl(parent: Control, name: string, options?: any) {
     const controlConstructor: any = window.customElements.get(name);
     options = options || {}
-    if (name === 'i-stack') {
-      options = {direction: 'vertical', ...options};
-    }
     let newOptions = {}
     try {
       newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     } catch {}
-    const control: Control = new controlConstructor(parent, {...newOptions, designMode: true});
+    const control = await controlConstructor.create({...newOptions, designMode: true, cursor: 'pointer'});
+    parent.append(control);
     const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
     return control;
@@ -288,6 +286,7 @@ export class ScomDesignerForm extends Module {
 
   clear() {
     this.pathMapping = new Map();
+    this.libsMap = {};
   }
 
   private onScreenChanged(screen: IScreen) {}
@@ -415,10 +414,11 @@ export class ScomDesignerForm extends Module {
     return newComponent;
   }
 
-  private renderComponent(parent: Control, component: IControl, select?: boolean) {
+  private async renderComponent(parent: Control, component: IControl, select?: boolean) {
     if (!component?.name) return;
-    let control = this.renderControl(parent, component);
+    let control = await this.renderControl(parent, component);
     if (!control) return;
+    await control.ready();
     if (!control.style.position) control.style.position = "relative";
     (component as IControl).control = control;
     control.onclick = null;
@@ -430,7 +430,7 @@ export class ScomDesignerForm extends Module {
     if (select || (beforeSelected && beforeSelected === component.path)) this.handleSelectControl(component);
   }
 
-  private renderControl(parent: Control, component: IControl) {
+  private async renderControl(parent: Control, component: IControl) {
     const options: any = parseProps(component.props);
     let control = null;
     let isTab = component.name === 'i-tab' && parent instanceof Tabs;
@@ -439,10 +439,10 @@ export class ScomDesignerForm extends Module {
     if (isTab || isMenu || isTree) {
       control = (parent as any).add({...(options || {})});
     } else if (parent instanceof CarouselSlider) {
-      const childControl = this.createControl(undefined, component.name, options);
+      const childControl = await this.createControl(undefined, component.name, options);
       control = parent.add(childControl);
     } else {
-      control = this.createControl(parent, component.name, options);
+      control = await this.createControl(parent, component.name, options);
     }
     return control;
   }
@@ -480,6 +480,12 @@ export class ScomDesignerForm extends Module {
     if (this.selectedControl) this.selectedControl.control.tag.hideResizers();
     this.selectedControl = target;
     this.selectedControl.control.tag.showResizers();
+    const name = this.selectedControl.name;
+    if ((this.selectedControl?.control as any)?.register && !this.libsMap[name]) {
+      this.libsMap[name] = true;
+      const { types, defaultData } = (this.selectedControl?.control as any).register();
+      this.studio.registerWidget(this, name, types);
+    }
     this.showDesignProperties();
   }
 
@@ -491,7 +497,7 @@ export class ScomDesignerForm extends Module {
     this.mdPicker.visible = false
   }
 
-  private handleAddControl(event?: MouseEvent, parent?: Control) {
+  private async handleAddControl(event?: MouseEvent, parent?: Control) {
     if (event) event.stopPropagation();
     this.modified = true;
     if (this.selectedComponent) {
@@ -504,7 +510,7 @@ export class ScomDesignerForm extends Module {
         control: null
       };
       if (parent) {
-        this.renderComponent(parent, com, true);
+        await this.renderComponent(parent, com, true);
       } else {
         let pos = { x: event?.offsetX || 0, y: event?.offsetY || 0};
         com.props = {
@@ -512,7 +518,7 @@ export class ScomDesignerForm extends Module {
           left: `{${pos.x}}`,
           top: `{${pos.y}}`,
         }
-        this.renderComponent(this.pnlFormDesigner, com, true);
+        await this.renderComponent(this.pnlFormDesigner, com, true);
         if (!this._rootComponent.items) this._rootComponent.items = [];
         this._rootComponent.items.push(com);
         this.updateStructure();
@@ -534,6 +540,7 @@ export class ScomDesignerForm extends Module {
         props = {
           width: '100%',
           position: 'relative',
+          direction: 'vertical',
           padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
         }
         break;
@@ -562,12 +569,6 @@ export class ScomDesignerForm extends Module {
       case 'i-markdown-editor':
       case 'i-iframe':
       case 'i-code-editor':
-      case 'i-line-chart':
-      case 'i-bar-chart':
-      case 'i-pie-chart':
-      case 'i-scatter-chart':
-      case 'i-scatter-line-chart':
-      case 'i-bar-stack-chart':
       case 'i-tabs':
         props = {
           width: '100%',
@@ -578,6 +579,22 @@ export class ScomDesignerForm extends Module {
       case 'i-tab':
         props = {
           caption: 'Tab Title',
+        }
+        break;
+      case 'i-scom-line-chart':
+        props = {
+          width: '100%',
+          minHeight: '{200}',
+          data: '{{"mode":"Live","dataSource": "Dune", "queryId": "2360905", "title": "ETH Withdrawals after Shanghai Unlock vs ETH price", "options": { "xColumn": { "key": "time", "type": "time" }, "yColumns": ["eth_price"], "seriesOptions": [{ "key": "eth_price", "title": "ETH Price", "color": "#EE2020" }], "xAxis": { "title": "Date", "tickFormat": "MMM DD" }, "yAxis": { "labelFormat": "0,000.00$", "position": "left"}}}}',
+          display: 'block'
+        }
+        break;
+      case 'i-scom-bar-chart':
+        props = {
+          width: '100%',
+          minHeight: '{200}',
+          data: '{{"mode":"Live","dataSource":"Dune","queryId":"2360815","title":"ETH Withdrawals after Shanghai Unlock","options":{"xColumn":{"key":"time","type":"time"},"yColumns":["ETH"],"groupBy":"category","stacking":true,"legend":{"show":true},"seriesOptions":[{"key":"Reward","color":"#378944"},{"key":"Full Withdraw","color":"#b03030"}],"xAxis":{"title":"Date","tickFormat":"MMM DD"},"yAxis":{"title":"ETH","position":"left","labelFormat":"0,000.ma"}}}}',
+          display: 'block'
         }
         break;
       case 'i-table':
@@ -604,6 +621,7 @@ export class ScomDesignerForm extends Module {
       case 'i-image':
         props = {
           url: 'https://placehold.co/600x400?text=No+Image',
+          display: 'block',
           width: '100%'
         }
         break;
@@ -706,7 +724,7 @@ export class ScomDesignerForm extends Module {
     this.pnlComponentPicker.append(...nodeItems)
   }
 
-  private onAddComponent(target: Control, component: IComponentItem) {
+  private async onAddComponent(target: Control, component: IComponentItem) {
     this.selectedComponent = { ...component, control: target } as any;
     if (this.selectedComponent) {
       const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
@@ -714,7 +732,7 @@ export class ScomDesignerForm extends Module {
     }
     if (this.isParentGroup(this.selectedComponent.control)) {
       const parentControl = this.pathMapping.get(this.currentParent.path);
-      const com = this.handleAddControl(undefined, parentControl?.control);
+      const com = await this.handleAddControl(undefined, parentControl?.control);
       if (com && parentControl) {
         com.parent = this.currentParent.path;
         parentControl.items = parentControl.items || [];

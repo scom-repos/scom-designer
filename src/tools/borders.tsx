@@ -117,7 +117,7 @@ export default class DesignerToolBorders extends Module {
     this.designerHeader.isQueryChanged = !!this.hasMediaQuery();
     const { border = {} } = data;
     this.updateOverall(border);
-    this.styleSelector.activeItem = border?.style || '';
+    this.styleSelector.activeItem = border?.style || 'solid';
     this.bgColor.value = border?.color ?? '';
 
     this.updateButtons(data);
@@ -192,7 +192,6 @@ export default class DesignerToolBorders extends Module {
   }
 
   private onShowSpacingModal(target: Button, type: string, position: string) {
-    let data = this.currentData;
     let value = '';
     if (type === 'width') {
       value = this.widthObj[position];
@@ -259,9 +258,6 @@ export default class DesignerToolBorders extends Module {
     this.handleValueChanged(prop, newVal);
   }
 
-  // private onOverallChanged(type: string, value: string) {
-  // }
-
   private onSpacingChanged(type: string, position: string, value: string, needUpdate = true) {
     if (type === 'width') {
       this.widthObj[position] = value;
@@ -283,7 +279,7 @@ export default class DesignerToolBorders extends Module {
       } else {
         this._data.border[type] = value;
       }
-      if (this.onChanged) this.onChanged('border', this._data.border);
+      if (this.onChanged && needUpdate) this.onChanged('border', this._data.border);
     }
     if (needUpdate) this.renderUI();
   }
