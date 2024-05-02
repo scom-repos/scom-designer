@@ -5151,10 +5151,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.selectedControl = target;
             this.selectedControl.control.tag.showResizers();
             const name = this.selectedControl.name;
-            if (this.selectedControl?.control?.register && !this.libsMap[name]) {
+            const control = this.selectedControl?.control;
+            if (control?.register && !this.libsMap[name]) {
                 this.libsMap[name] = true;
                 const packageName = '@scom/' + name.replace(/^i-/, '');
-                const { types, defaultData } = (this.selectedControl?.control).register();
+                const { types, defaultData } = control.register();
+                control._setDesignPropValue('data', defaultData);
+                control.setData(defaultData, defaultData);
                 this.studio.registerWidget(this, packageName, types);
             }
             this.showDesignProperties();
@@ -5252,18 +5255,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     };
                     break;
                 case 'i-scom-line-chart':
-                    props = {
-                        width: '100%',
-                        minHeight: '{200}',
-                        data: '{{"mode":"Live","dataSource": "Dune", "queryId": "2360905", "title": "ETH Withdrawals after Shanghai Unlock vs ETH price", "options": { "xColumn": { "key": "time", "type": "time" }, "yColumns": ["eth_price"], "seriesOptions": [{ "key": "eth_price", "title": "ETH Price", "color": "#EE2020" }], "xAxis": { "title": "Date", "tickFormat": "MMM DD" }, "yAxis": { "labelFormat": "0,000.00$", "position": "left"}}}}',
-                        display: 'block'
-                    };
-                    break;
                 case 'i-scom-bar-chart':
+                case 'i-scom-scatter-chart':
+                case 'i-scom-pie-chart':
+                case 'i-scom-area-chart':
+                case 'i-scom-mixed-chart':
+                case 'i-scom-counter':
+                case 'i-scom-table':
                     props = {
                         width: '100%',
                         minHeight: '{200}',
-                        data: '{{"mode":"Live","dataSource":"Dune","queryId":"2360815","title":"ETH Withdrawals after Shanghai Unlock","options":{"xColumn":{"key":"time","type":"time"},"yColumns":["ETH"],"groupBy":"category","stacking":true,"legend":{"show":true},"seriesOptions":[{"key":"Reward","color":"#378944"},{"key":"Full Withdraw","color":"#b03030"}],"xAxis":{"title":"Date","tickFormat":"MMM DD"},"yAxis":{"title":"ETH","position":"left","labelFormat":"0,000.ma"}}}}',
                         display: 'block'
                     };
                     break;
@@ -5457,7 +5458,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 const imageEl = new components_31.Image(control, { width: '1rem', height: '1rem', display: 'flex', ...value });
                 control[prop] = imageEl;
             }
-            if (prop === "id" && oldVal !== value)
+            if (prop === "id" && value && oldVal !== value)
                 this.studio.renameComponent(this, oldVal, value);
             this.pathMapping.set(this.selectedControl.path, this.selectedControl);
         }
@@ -5628,7 +5629,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const control = this.selectedControl?.control;
             if (control?.resize && (this.designPos.width || this.designPos.height)) {
                 control.resize();
-                console.log('resize');
             }
             this.designPos = {};
             this.designerProperties.onUpdate();
