@@ -137,6 +137,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.value = result
     return true
   }
+  registerWidget(designer: ScomDesignerForm, name: string, type: string): void {
+    CodeEditor.addLib(name, type)
+    this.compiler.addPackage(name, { dts: { 'index.d.ts': type }});
+  }
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -191,10 +195,15 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private addLib() {
     try {
       CodeEditor.addLib('@ijstech/components', Dts.components)
+      CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet)
+      CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract)
+      CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource)
       if (!this.compiler) this.compiler = new Compiler()
-      this.compiler.addPackage('@ijstech/components', {
-        dts: { 'index.d.ts': Dts.components },
-      })
+      this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
+      this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
+      this.compiler.addPackage('@ijstech/eth-contract', {dts: { 'index.d.ts': Dts.ethContract }});
+      this.compiler.addPackage('bignumber.js', {dts: { 'index.d.ts': Dts.bignumber }});
+      this.compiler.addPackage('@scom/scom-chart-data-source-setup', {dts: { 'index.d.ts': Dts.dataSource }});
     } catch {}
   }
 

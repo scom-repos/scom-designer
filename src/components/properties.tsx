@@ -5,7 +5,8 @@ import {
   customElements,
   HStack,
   Container,
-  Input
+  Input,
+  Modal
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
 import { IControl, onChangedCallback, onEventChangedCallback, onEventDblClickCallback } from '../interface';
@@ -30,7 +31,8 @@ import {
   DESIGNER_SPACING_PROPS,
   DESIGNER_LAYOUT_PROPS,
   DESIGNER_CONTENT_PROPS,
-  DESIGNER_EFFECT_PROPS
+  DESIGNER_EFFECT_PROPS,
+  DesignerToolWidget
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
@@ -76,6 +78,8 @@ export default class DesignerProperties extends Module {
   private previewSelector: DesignerSelector;
   private designerTrigger: DesignerTrigger;
   private inputId: Input;
+  private designerWidget: DesignerToolWidget;
+  private mdActions: Modal;
 
   private _component: IControl;
 
@@ -91,6 +95,7 @@ export default class DesignerProperties extends Module {
     this.onUpdateUI = this.onUpdateUI.bind(this);
     this.onControlEventChanged = this.onControlEventChanged.bind(this);
     this.onBreakpointClick = this.onBreakpointClick.bind(this);
+    this.onShowConfig = this.onShowConfig.bind(this);
   }
 
   static async create(options?: DesignerPropertiesElement, parent?: Container) {
@@ -124,6 +129,7 @@ export default class DesignerProperties extends Module {
     const events = this._component?.control?._getCustomProperties()?.events;
     const designProps = this.component?.control._getDesignProps();
     this.designerTrigger.setData({ events, props: designProps });
+    this.designerWidget.visible = !!(this.component?.control as any)?.showConfigurator;
   }
 
   private renderCustomGroup() {
@@ -310,6 +316,12 @@ export default class DesignerProperties extends Module {
   private onPreviewClick(type: string, value: any) {
   }
 
+  private onShowConfig() {
+    if (this.component?.control) {
+      (this.component.control as any).showConfigurator(this.mdActions, 'Data');
+    }
+  }
+
   init() {
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -422,6 +434,13 @@ export default class DesignerProperties extends Module {
                   />
                 </i-hstack>
               </i-grid-layout>
+              <designer-tool-widget-settings
+                id="designerWidget"
+                display="block"
+                onChanged={this.onGroupChanged}
+                onConfig={this.onShowConfig}
+                visible={false}
+              />
               <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
@@ -458,6 +477,16 @@ export default class DesignerProperties extends Module {
             </i-vstack>
           </i-tab>
         </i-tabs>
+        <i-modal
+          id="mdActions"
+          title='Widget Settings'
+          closeIcon={{ name: 'times' }}
+          width={600}
+          maxWidth='100%'
+          height={'100dvh'}
+          overflow={{y: 'auto'}}
+          closeOnBackdropClick={false}
+        ></i-modal>
       </i-vstack>
     )
   }

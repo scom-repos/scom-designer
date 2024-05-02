@@ -8,6 +8,7 @@ export interface IStudio {
   removeComponent(designer: ScomDesignerForm): void;
   renameComponent(designer: ScomDesignerForm, oldId: string, newId: string): boolean;
   renameEventHandler(designer: ScomDesignerForm, funcName: string, newFuncName: string): boolean;
+  registerWidget(designer: ScomDesignerForm, name: string, type: string): void;
 }
 
 export interface IScreen {

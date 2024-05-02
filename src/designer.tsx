@@ -16,7 +16,6 @@ import {
   Icon,
   Image,
   Tabs,
-  RadioGroup,
   TreeView,
   Modal,
   VStack,
@@ -115,6 +114,7 @@ export class ScomDesignerForm extends Module {
   private selectedComponent: IControl
   private currentParent: IComponent;
   private designPos: any = {};
+  private libsMap: Record<string, boolean> = {}
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
   private handleMouseUpBound: (event: MouseEvent) => void;
@@ -204,17 +204,15 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
-  private createControl(parent: Control, name: string, options?: any): Control {
+  private async createControl(parent: Control, name: string, options?: any) {
     const controlConstructor: any = window.customElements.get(name);
     options = options || {}
-    if (name === 'i-stack') {
-      options = {direction: 'vertical', ...options};
-    }
     let newOptions = {}
     try {
       newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     } catch {}
-    const control: Control = new controlConstructor(parent, {...newOptions, designMode: true});
+    const control = await controlConstructor.create({...newOptions, designMode: true, cursor: 'pointer'});
+    parent.append(control);
     const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
     return control;
@@ -288,6 +286,7 @@ export class ScomDesignerForm extends Module {
 
   clear() {
     this.pathMapping = new Map();
+    this.libsMap = {};
   }
 
   private onScreenChanged(screen: IScreen) {}
@@ -374,12 +373,12 @@ export class ScomDesignerForm extends Module {
     }
   }
 
-  private onDuplicateComponent(component: IComponent) {
+  private async onDuplicateComponent(component: IComponent) {
     this.modified = true;
     const control = this.pathMapping.get(component.path);
     const newComponent = this.duplicateItem(component);
     const parentControl = control?.control?.parent;
-    this.renderComponent(parentControl, newComponent, true);
+    await this.renderComponent(parentControl, newComponent, true);
     if (control.control && newComponent.control) {
       control.control.insertAdjacentElement('afterend', newComponent.control);
     }
@@ -415,9 +414,9 @@ export class ScomDesignerForm extends Module {
     return newComponent;
   }
 
-  private renderComponent(parent: Control, component: IControl, select?: boolean) {
+  private async renderComponent(parent: Control, component: IControl, select?: boolean) {
     if (!component?.name) return;
-    let control = this.renderControl(parent, component);
+    let control = await this.renderControl(parent, component);
     if (!control) return;
     if (!control.style.position) control.style.position = "relative";
     (component as IControl).control = control;
@@ -430,7 +429,7 @@ export class ScomDesignerForm extends Module {
     if (select || (beforeSelected && beforeSelected === component.path)) this.handleSelectControl(component);
   }
 
-  private renderControl(parent: Control, component: IControl) {
+  private async renderControl(parent: Control, component: IControl) {
     const options: any = parseProps(component.props);
     let control = null;
     let isTab = component.name === 'i-tab' && parent instanceof Tabs;
@@ -439,10 +438,10 @@ export class ScomDesignerForm extends Module {
     if (isTab || isMenu || isTree) {
       control = (parent as any).add({...(options || {})});
     } else if (parent instanceof CarouselSlider) {
-      const childControl = this.createControl(undefined, component.name, options);
+      const childControl = await this.createControl(undefined, component.name, options);
       control = parent.add(childControl);
     } else {
-      control = this.createControl(parent, component.name, options);
+      control = await this.createControl(parent, component.name, options);
     }
     return control;
   }
@@ -480,6 +479,16 @@ export class ScomDesignerForm extends Module {
     if (this.selectedControl) this.selectedControl.control.tag.hideResizers();
     this.selectedControl = target;
     this.selectedControl.control.tag.showResizers();
+    const name = this.selectedControl.name;
+    const control = this.selectedControl?.control as any;
+    if (control?.register && !this.libsMap[name]) {
+      this.libsMap[name] = true;
+      const packageName = '@scom/' + name.replace(/^i-/, '');
+      const { types, defaultData } = control.register();
+      control._setDesignPropValue('data', defaultData);
+      control.setData(defaultData, defaultData);
+      this.studio.registerWidget(this, packageName, types);
+    }
     this.showDesignProperties();
   }
 
@@ -491,7 +500,7 @@ export class ScomDesignerForm extends Module {
     this.mdPicker.visible = false
   }
 
-  private handleAddControl(event?: MouseEvent, parent?: Control) {
+  private async handleAddControl(event?: MouseEvent, parent?: Control) {
     if (event) event.stopPropagation();
     this.modified = true;
     if (this.selectedComponent) {
@@ -504,7 +513,7 @@ export class ScomDesignerForm extends Module {
         control: null
       };
       if (parent) {
-        this.renderComponent(parent, com, true);
+        await this.renderComponent(parent, com, true);
       } else {
         let pos = { x: event?.offsetX || 0, y: event?.offsetY || 0};
         com.props = {
@@ -512,7 +521,7 @@ export class ScomDesignerForm extends Module {
           left: `{${pos.x}}`,
           top: `{${pos.y}}`,
         }
-        this.renderComponent(this.pnlFormDesigner, com, true);
+        await this.renderComponent(this.pnlFormDesigner, com, true);
         if (!this._rootComponent.items) this._rootComponent.items = [];
         this._rootComponent.items.push(com);
         this.updateStructure();
@@ -534,6 +543,7 @@ export class ScomDesignerForm extends Module {
         props = {
           width: '100%',
           position: 'relative',
+          direction: 'vertical',
           padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
         }
         break;
@@ -562,12 +572,6 @@ export class ScomDesignerForm extends Module {
       case 'i-markdown-editor':
       case 'i-iframe':
       case 'i-code-editor':
-      case 'i-line-chart':
-      case 'i-bar-chart':
-      case 'i-pie-chart':
-      case 'i-scatter-chart':
-      case 'i-scatter-line-chart':
-      case 'i-bar-stack-chart':
       case 'i-tabs':
         props = {
           width: '100%',
@@ -578,6 +582,20 @@ export class ScomDesignerForm extends Module {
       case 'i-tab':
         props = {
           caption: 'Tab Title',
+        }
+        break;
+      case 'i-scom-line-chart':
+      case 'i-scom-bar-chart':
+      case 'i-scom-scatter-chart':
+      case 'i-scom-pie-chart':
+      case 'i-scom-area-chart':
+      case 'i-scom-mixed-chart':
+      case 'i-scom-counter':
+      case 'i-scom-table':
+        props = {
+          width: '100%',
+          minHeight: '{200}',
+          display: 'block'
         }
         break;
       case 'i-table':
@@ -604,6 +622,7 @@ export class ScomDesignerForm extends Module {
       case 'i-image':
         props = {
           url: 'https://placehold.co/600x400?text=No+Image',
+          display: 'block',
           width: '100%'
         }
         break;
@@ -706,7 +725,7 @@ export class ScomDesignerForm extends Module {
     this.pnlComponentPicker.append(...nodeItems)
   }
 
-  private onAddComponent(target: Control, component: IComponentItem) {
+  private async onAddComponent(target: Control, component: IComponentItem) {
     this.selectedComponent = { ...component, control: target } as any;
     if (this.selectedComponent) {
       const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
@@ -714,7 +733,7 @@ export class ScomDesignerForm extends Module {
     }
     if (this.isParentGroup(this.selectedComponent.control)) {
       const parentControl = this.pathMapping.get(this.currentParent.path);
-      const com = this.handleAddControl(undefined, parentControl?.control);
+      const com = await this.handleAddControl(undefined, parentControl?.control);
       if (com && parentControl) {
         com.parent = this.currentParent.path;
         parentControl.items = parentControl.items || [];
@@ -769,7 +788,7 @@ export class ScomDesignerForm extends Module {
       const imageEl = new Image(control, {width: '1rem', height: '1rem', display: 'flex', ...value});
       control[prop] = imageEl;
     }
-    if (prop === "id" && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
+    if (prop === "id" && value && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
     this.pathMapping.set(this.selectedControl.path, this.selectedControl);
   }
 
@@ -940,6 +959,10 @@ export class ScomDesignerForm extends Module {
   private updateDesignPosition() {
     for (let prop in this.designPos) {
       this.onPropertiesChanged(prop, this.designPos[prop]);
+    }
+    const control = this.selectedControl?.control as any;
+    if (control?.resize && (this.designPos.width || this.designPos.height)) {
+      control.resize();
     }
     this.designPos = {};
     this.designerProperties.onUpdate();
