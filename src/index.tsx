@@ -202,6 +202,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
       this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
       this.compiler.addPackage('@ijstech/eth-contract', {dts: { 'index.d.ts': Dts.ethContract }});
+      this.compiler.addPackage('bignumber.js', {dts: { 'index.d.ts': Dts.bignumber }});
       this.compiler.addPackage('@scom/scom-chart-data-source-setup', {dts: { 'index.d.ts': Dts.dataSource }});
     } catch {}
   }

@@ -373,12 +373,12 @@ export class ScomDesignerForm extends Module {
     }
   }
 
-  private onDuplicateComponent(component: IComponent) {
+  private async onDuplicateComponent(component: IComponent) {
     this.modified = true;
     const control = this.pathMapping.get(component.path);
     const newComponent = this.duplicateItem(component);
     const parentControl = control?.control?.parent;
-    this.renderComponent(parentControl, newComponent, true);
+    await this.renderComponent(parentControl, newComponent, true);
     if (control.control && newComponent.control) {
       control.control.insertAdjacentElement('afterend', newComponent.control);
     }
@@ -418,7 +418,6 @@ export class ScomDesignerForm extends Module {
     if (!component?.name) return;
     let control = await this.renderControl(parent, component);
     if (!control) return;
-    await control.ready();
     if (!control.style.position) control.style.position = "relative";
     (component as IControl).control = control;
     control.onclick = null;
@@ -483,8 +482,9 @@ export class ScomDesignerForm extends Module {
     const name = this.selectedControl.name;
     if ((this.selectedControl?.control as any)?.register && !this.libsMap[name]) {
       this.libsMap[name] = true;
+      const packageName = '@scom/' + name.replace(/^i-/, '');
       const { types, defaultData } = (this.selectedControl?.control as any).register();
-      this.studio.registerWidget(this, name, types);
+      this.studio.registerWidget(this, packageName, types);
     }
     this.showDesignProperties();
   }
@@ -958,6 +958,10 @@ export class ScomDesignerForm extends Module {
   private updateDesignPosition() {
     for (let prop in this.designPos) {
       this.onPropertiesChanged(prop, this.designPos[prop]);
+    }
+    const control = this.selectedControl?.control as any;
+    if (control?.resize && (this.designPos.width || this.designPos.height)) {
+      control.resize();
     }
     this.designPos = {};
     this.designerProperties.onUpdate();
