@@ -210,7 +210,7 @@ export default class DesignerToolLayout extends Module {
     this.alignContentSelector.visible = isStack;
     this.pnlFlexItems.visible = isStack;
     this.pnlFlexContent.visible = isStack;
-    this.pnlSelectedItem.visible = !isStack;
+    this.pnlSelectedItem.visible = true;
   }
 
   private onCollapse(isShown: boolean) {
@@ -326,7 +326,7 @@ export default class DesignerToolLayout extends Module {
                   title="Direction"
                   stack={{grow: '1', shrink: '1'}}
                   items={[
-                    { value: 'vertical', tooltip: 'Column', type: 'direction', isActive: true, icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
+                    { value: 'vertical', tooltip: 'Column', type: 'direction', icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
                     { value: 'horizontal', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
                   ]}
                   onChanged={this.onSelectChanged}

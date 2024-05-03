@@ -1460,10 +1460,15 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         if (value.startsWith('{') && value.endsWith('}')) {
             value = value.substring(1, value.length - 1);
             if (value.startsWith('{') && value.endsWith('}')) {
-                const parsedObject = JSON.parse(value
-                    .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
-                    .replace(/'/g, '"'));
-                return parsedObject;
+                try {
+                    return JSON.parse(value);
+                }
+                catch {
+                    const parsedObject = JSON.parse(value
+                        .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
+                        .replace(/'/g, '"'));
+                    return parsedObject;
+                }
             }
             else if (value.startsWith('[') && value.endsWith(']')) {
                 return JSON.parse(value);
@@ -1915,7 +1920,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
             this.alignContentSelector.visible = isStack;
             this.pnlFlexItems.visible = isStack;
             this.pnlFlexContent.visible = isStack;
-            this.pnlSelectedItem.visible = !isStack;
+            this.pnlSelectedItem.visible = true;
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
@@ -2005,7 +2010,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
                         this.$render("i-vstack", { gap: 12 },
                             this.$render("i-hstack", { verticalAlignment: 'center', gap: "5px" },
                                 this.$render("designer-selector", { id: "directionSelector", title: "Direction", stack: { grow: '1', shrink: '1' }, items: [
-                                        { value: 'vertical', tooltip: 'Column', type: 'direction', isActive: true, icon: { image: { url: assets_3.default.fullPath('img/designer/layout/column.svg') } } },
+                                        { value: 'vertical', tooltip: 'Column', type: 'direction', icon: { image: { url: assets_3.default.fullPath('img/designer/layout/column.svg') } } },
                                         { value: 'horizontal', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets_3.default.fullPath('img/designer/layout/column.svg') } } },
                                     ], onChanged: this.onSelectChanged }),
                                 this.$render("i-hstack", { gap: 4, verticalAlignment: "center", stack: { grow: '1', shrink: '1' } },
@@ -2698,7 +2703,7 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             const spacing = {
                 type,
                 position,
-                value: data[type]?.[position] || ''
+                value: data[type]?.[position] ?? ''
             };
             const breakpoint = (0, config_3.getBreakpointInfo)((0, store_3.getBreakpoint)());
             const config = {
@@ -2709,6 +2714,8 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
             this.mdSpacing.onShowModal(target, spacing, config);
         }
         onSpacingChanged(type, position, value) {
+            if (type === 'margin' && value === '')
+                value = 'auto';
             this.handleValueChanged(type, value, position);
         }
         handleValueChanged(type, value, position) {
@@ -4086,6 +4093,9 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         get designerProps() {
             return this.component?.control._getDesignProps() || {};
         }
+        get isCustomWidget() {
+            return !!this.component?.control?.showConfigurator;
+        }
         clear() {
             this.component = null;
             this.renderUI();
@@ -4097,7 +4107,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             const events = this._component?.control?._getCustomProperties()?.events;
             const designProps = this.component?.control._getDesignProps();
             this.designerTrigger.setData({ events, props: designProps });
-            this.designerWidget.visible = !!this.component?.control?.showConfigurator;
+            this.designerWidget.visible = this.isCustomWidget;
         }
         renderCustomGroup() {
             const designProps = (0, utils_9.parseProps)(this.designerProps);
@@ -4230,7 +4240,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         onShowConfig() {
             if (this.component?.control) {
-                this.component.control.showConfigurator(this.mdActions, 'Data');
+                this.component.control.showConfigurator(this.mdActions, 'Data', this.onPropChanged);
             }
         }
         init() {
@@ -4874,6 +4884,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             return data_1.blockComponents;
         }
+        isCustomWidget() {
+            return !!this.selectedControl?.control?.showConfigurator;
+        }
         async createControl(parent, name, options) {
             const controlConstructor = window.customElements.get(name);
             options = options || {};
@@ -4883,9 +4896,24 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             catch { }
             const control = await controlConstructor.create({ ...newOptions, designMode: true, cursor: 'pointer' });
-            parent.append(control);
+            if (parent)
+                parent.append(control);
             const breakpointProps = (0, config_8.getMediaQueryProps)(options.mediaQueries);
             control._setDesignProps(options, breakpointProps);
+            const hasBackground = 'background' in newOptions;
+            const hasFont = 'font' in newOptions;
+            const isCustomWidget = !!control?.showConfigurator;
+            if (isCustomWidget && (hasBackground || hasFont)) {
+                let customTag = { ...(control.tag || {}) };
+                const value = newOptions[hasBackground ? 'background' : 'font'];
+                customTag.customBackgroundColor = true;
+                customTag.backgroundColor = value?.color || '';
+                customTag.customFontColor = true;
+                customTag.fontColor = value?.color || '';
+                console.log(hasBackground, customTag, value);
+                if (control?.setTag)
+                    control.setTag(customTag);
+            }
             return control;
         }
         updateDesignProps(component) {
@@ -4903,6 +4931,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     props[prop] = (props[prop] || []).filter(v => (v && Object.keys(v.properties).length > 0));
                     if (props[prop].length === 0) {
                         continue;
+                    }
+                }
+                if (typeof props[prop] === 'object') {
+                    for (let subProp in props[prop]) {
+                        if (props[prop][subProp] === '') {
+                            delete props[prop][subProp];
+                        }
                     }
                 }
                 if ((0, utils_10.isSameValue)(defaultValue, props[prop]) || props[prop] === undefined) {
@@ -5093,7 +5128,11 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             control.onclick = null;
             this.bindControlEvents(component);
             control.tag = new ControlResizer(control);
-            component.items?.forEach(item => this.renderComponent(control, { ...item, control: null }));
+            if (component?.items?.length) {
+                for (let item of component.items) {
+                    await this.renderComponent(control, { ...item, control: null });
+                }
+            }
             this.pathMapping.set(component.path, { ...component });
             const beforeSelected = this.selectedControl?.path;
             if (select || (beforeSelected && beforeSelected === component.path))
@@ -5106,7 +5145,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             let isMenu = component.name === 'i-menu-item' && parent instanceof components_31.Menu;
             let isTree = component.name === 'i-tree-node' && parent instanceof components_31.TreeView;
             if (isTab || isMenu || isTree) {
-                control = parent.add({ ...(options || {}) });
+                const customOptions = { ...(options || {}) };
+                control = parent.add(customOptions);
             }
             else if (parent instanceof components_31.CarouselSlider) {
                 const childControl = await this.createControl(undefined, component.name, options);
@@ -5156,8 +5196,11 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.libsMap[name] = true;
                 const packageName = '@scom/' + name.replace(/^i-/, '');
                 const { types, defaultData } = control.register();
-                control._setDesignPropValue('data', defaultData);
-                control.setData(defaultData, defaultData);
+                const hasData = control._getDesignPropValue('data');
+                if (!hasData) {
+                    control._setDesignPropValue('data', defaultData);
+                    control.setData(defaultData, defaultData);
+                }
                 this.studio.registerWidget(this, packageName, types);
             }
             this.showDesignProperties();
@@ -5213,8 +5256,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     props = {
                         width: '100%',
                         position: 'relative',
-                        direction: 'vertical',
-                        padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
+                        direction: 'vertical'
                     };
                     break;
                 case 'i-grid-layout':
@@ -5261,18 +5303,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-scom-area-chart':
                 case 'i-scom-mixed-chart':
                 case 'i-scom-counter':
-                case 'i-scom-table':
                     props = {
                         width: '100%',
                         minHeight: '{200}',
                         display: 'block'
                     };
                     break;
-                case 'i-table':
+                case 'i-scom-table':
                     props = {
                         width: '100%',
-                        heading: '{true}',
-                        columns: '{[{"title":"Column 1","fieldName":"col_1","textAlign":"left"},{"title":"Column 2","fieldName":"col_2","textAlign":"left"},{"title":"Column 3","fieldName":"col_3","textAlign":"left"}]}'
+                        display: 'block'
                     };
                     break;
                 case 'i-carousel-slider':
@@ -5425,7 +5465,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.modified = true;
             const oldVal = control._getDesignPropValue(prop);
             if (prop === 'mediaQueries') {
-                const mediaQueries = control._getDesignPropValue(prop) || [];
+                const mediaQueries = control._getDesignPropValue('mediaQueries') || [];
                 const findedIndex = mediaQueries.findIndex((v) => v && v.minWidth === value.minWidth);
                 if (findedIndex !== -1) {
                     mediaQueries[findedIndex] = value;
@@ -5433,10 +5473,23 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 else {
                     mediaQueries.push(value);
                 }
-                control._setDesignPropValue(prop, mediaQueries);
+                control._setDesignPropValue('mediaQueries', mediaQueries);
             }
             else {
                 control._setDesignPropValue(prop, value);
+                if (this.isCustomWidget && (prop === 'background' || prop === 'font')) {
+                    let customTag = { ...(control.tag || {}) };
+                    if (prop === 'background') {
+                        customTag.customBackgroundColor = true;
+                        customTag.backgroundColor = value?.color || '';
+                    }
+                    else if (prop === 'font') {
+                        customTag.customFontColor = true;
+                        customTag.fontColor = value?.color || '';
+                    }
+                    if (control?.setTag)
+                        control.setTag(customTag);
+                }
             }
             if (mediaQueryProp) {
                 const breakpointProps = (0, config_8.getMediaQueryProps)(control._getDesignPropValue('mediaQueries'));
@@ -5447,7 +5500,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 value.name = 'angle-down';
             }
             if (prop === 'link' && value.href) {
-                const linkEl = new components_31.Link(control, value);
+                const linkEl = new components_31.Link(control, { ...value, designMode: true });
                 control[prop] = linkEl;
             }
             else if (prop.includes('icon') && (value.name || value.image?.url)) {

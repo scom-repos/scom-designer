@@ -1339,6 +1339,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         get component(): IControl;
         set component(value: IControl);
         private get designerProps();
+        private get isCustomWidget();
         clear(): void;
         private renderUI;
         private renderCustomGroup;
@@ -1535,6 +1536,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
+        private isCustomWidget;
         private createControl;
         private updateDesignProps;
         private formatDesignProp;

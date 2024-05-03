@@ -117,6 +117,10 @@ export default class DesignerProperties extends Module {
     return this.component?.control._getDesignProps() || {};
   }
 
+  private get isCustomWidget() {
+    return !!(this.component?.control as any)?.showConfigurator;
+  }
+
   clear() {
     this.component = null;
     this.renderUI();
@@ -129,7 +133,7 @@ export default class DesignerProperties extends Module {
     const events = this._component?.control?._getCustomProperties()?.events;
     const designProps = this.component?.control._getDesignProps();
     this.designerTrigger.setData({ events, props: designProps });
-    this.designerWidget.visible = !!(this.component?.control as any)?.showConfigurator;
+    this.designerWidget.visible = this.isCustomWidget;
   }
 
   private renderCustomGroup() {
@@ -318,7 +322,7 @@ export default class DesignerProperties extends Module {
 
   private onShowConfig() {
     if (this.component?.control) {
-      (this.component.control as any).showConfigurator(this.mdActions, 'Data');
+      (this.component.control as any).showConfigurator(this.mdActions, 'Data', this.onPropChanged);
     }
   }
 
