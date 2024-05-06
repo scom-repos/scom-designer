@@ -1328,6 +1328,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private inputId;
         private designerWidget;
         private mdActions;
+        private propTabs;
         private _component;
         onChanged: onChangedCallback;
         onBreakpointChanged: (value: number) => void;
@@ -1342,6 +1343,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private get isCustomWidget();
         clear(): void;
         private renderUI;
+        private renderTrigger;
         private renderCustomGroup;
         private updateInfo;
         onUpdate(): void;

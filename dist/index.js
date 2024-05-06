@@ -4077,6 +4077,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onBreakpointClick = this.onBreakpointClick.bind(this);
             this.onShowConfig = this.onShowConfig.bind(this);
+            this.renderTrigger = this.renderTrigger.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -4104,10 +4105,14 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             this.updateInfo();
             this.updateProps();
             this.renderCustomGroup();
+            if (this.propTabs.activeTabIndex === 1)
+                this.renderTrigger();
+            this.designerWidget.visible = this.isCustomWidget;
+        }
+        renderTrigger() {
             const events = this._component?.control?._getCustomProperties()?.events;
             const designProps = this.component?.control._getDesignProps();
             this.designerTrigger.setData({ events, props: designProps });
-            this.designerWidget.visible = this.isCustomWidget;
         }
         renderCustomGroup() {
             const designProps = (0, utils_9.parseProps)(this.designerProps);
@@ -4264,7 +4269,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                     this.$render("designer-selector", { id: "previewSelector", title: 'PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
                         , items: config_7.previews, direction: 'vertical', stack: { grow: '1', shrink: '1' }, onChanged: this.onPreviewClick.bind(this) })),
                 this.$render("i-hstack", { id: "hStackInfo", width: "100%", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' }, visible: false }),
-                this.$render("i-tabs", { mode: "horizontal", activeTabIndex: 0, class: index_css_18.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
+                this.$render("i-tabs", { id: "propTabs", mode: "horizontal", activeTabIndex: 0, class: index_css_18.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
                     this.$render("i-tab", { icon: { name: 'sliders-h', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
                             this.$render("i-grid-layout", { id: "gridSelector", templateColumns: ['70px', 'auto'], verticalAlignment: "center", gap: { column: '0.5rem', row: '0.5rem' }, padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
@@ -4282,7 +4287,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                             this.$render("designer-tool-size", { id: "designerSize", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }),
                             this.$render("designer-tool-stylesheet", { id: "designerStylesheet", display: "block", onChanged: this.onPropChanged }),
                             this.$render("designer-tool-content", { id: "designerContent", display: "block", onChanged: this.onPropChanged, onUpdate: this.onUpdateUI }))),
-                    this.$render("i-tab", { icon: { name: 'magic', width: '1.5rem', height: '1.5rem' } },
+                    this.$render("i-tab", { icon: { name: 'magic', width: '1.5rem', height: '1.5rem' }, onClick: this.renderTrigger },
                         this.$render("i-vstack", { gap: 1, width: "100%", height: '100%' },
                             this.$render("designer-trigger", { id: "designerTrigger", display: "block", width: "100%", minHeight: 250, onChanged: this.onControlEventChanged, onEventDblClick: (name) => this.onEventDblClick && this.onEventDblClick(name) })))),
                 this.$render("i-modal", { id: "mdActions", title: 'Widget Settings', closeIcon: { name: 'times' }, width: 600, maxWidth: '100%', height: '100dvh', overflow: { y: 'auto' }, closeOnBackdropClick: false })));
@@ -4910,7 +4915,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 customTag.backgroundColor = value?.color || '';
                 customTag.customFontColor = true;
                 customTag.fontColor = value?.color || '';
-                console.log(hasBackground, customTag, value);
                 if (control?.setTag)
                     control.setTag(customTag);
             }
