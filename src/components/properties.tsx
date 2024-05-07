@@ -153,12 +153,14 @@ export default class DesignerProperties extends Module {
       const keys = Object.keys(properties);
       defaultValue = this.getDefaultValues(keys);
     }
+    const mediaQuery = getMediaQuery(this.designerProps.mediaQueries || []);
     this.customGroup.setData({
       title: 'Custom Properties',
       tooltip: 'Set custom properties for component',
       uiSchema: null,
       dataSchema: dataSchema,
       props: {...designProps},
+      mediaQuery,
       default: defaultValue
     })
   }
@@ -280,9 +282,13 @@ export default class DesignerProperties extends Module {
     if (this.onChanged) this.onChanged(prop, value, mediaQueryProp);
   }
 
-  private onGroupChanged(data: any) {
-    for (let prop in data) {
-      this.onPropChanged(prop, data[prop]);
+  private onGroupChanged(data: any, mediaQuery?: any) {
+    if (mediaQuery) {
+      this.onPropChanged('mediaQueries', mediaQuery);
+    } else {
+      for (let prop in data) {
+        this.onPropChanged(prop, data[prop]);
+      }
     }
   }
 
@@ -296,15 +302,18 @@ export default class DesignerProperties extends Module {
     const breakpointProps: any = findedBreakpoint?.properties || {};
     const customProps = this.component?.control?._getCustomProperties()?.props || {};
     for (let prop of props) {
+      const breakpointVal = breakpointProps?.[prop];
+      const designerVal = designerProps?.[prop];
+      const defaultVal = customProps?.[prop]?.default;
       if (isChecked) {
-        if (typeof breakpointProps?.[prop] === 'object') {
-          const value = {...(designerProps?.[prop] ?? customProps?.[prop]?.default) as any, ...breakpointProps?.[prop]};
+        if (typeof breakpointVal === 'object' && !Array.isArray(breakpointVal)) {
+          const value = {...(designerVal ?? defaultVal) as any, ...breakpointVal};
           this.component.control[prop] = value;
         }
         else
-          this.component.control[prop] = breakpointProps?.[prop] ?? designerProps?.[prop] ?? customProps?.[prop]?.default;
+          this.component.control[prop] = breakpointVal ?? designerVal ?? defaultVal;
       } else {
-        this.component.control[prop] = designerProps?.[prop] ?? customProps?.[prop]?.default;
+        this.component.control[prop] = designerVal ?? defaultVal;
       }
     }
     if (!this.component.control.position) this.component.control.position = 'relative';
@@ -453,7 +462,7 @@ export default class DesignerProperties extends Module {
                 onConfig={this.onShowConfig}
                 visible={false}
               />
-              <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged}/>
+              <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged} visible={false} onUpdate={this.onUpdateUI} />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />

@@ -93,7 +93,10 @@ export default class DesignerComponents extends Module {
   private updateActiveStyle(el: Control) {
     const currentElm = this.vStackComponents?.querySelector(`.${rowItemActiveStyled}`);
     if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
-    if (el) el.classList.add(rowItemActiveStyled);
+    if (el) {
+      el.classList.add(rowItemActiveStyled);
+      this.vStackComponents.scrollTo({ top: el.offsetTop });
+    }
   }
 
   renderUI() {
