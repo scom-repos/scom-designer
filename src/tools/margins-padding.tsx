@@ -239,7 +239,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
     const spacing = {
       type,
       position,
-      value: data[type]?.[position] || ''
+      value: data[type]?.[position] ?? ''
     }
     const breakpoint = getBreakpointInfo(getBreakpoint())
     const config = {
@@ -251,6 +251,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   private onSpacingChanged(type: string, position: string, value: string) {
+    if (type === 'margin' && value === '') value = 'auto';
     this.handleValueChanged(type, value, position);
   }
 

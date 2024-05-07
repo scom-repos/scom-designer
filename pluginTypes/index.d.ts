@@ -1328,6 +1328,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private inputId;
         private designerWidget;
         private mdActions;
+        private propTabs;
         private _component;
         onChanged: onChangedCallback;
         onBreakpointChanged: (value: number) => void;
@@ -1339,8 +1340,10 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         get component(): IControl;
         set component(value: IControl);
         private get designerProps();
+        private get isCustomWidget();
         clear(): void;
         private renderUI;
+        private renderTrigger;
         private renderCustomGroup;
         private updateInfo;
         onUpdate(): void;
@@ -1535,6 +1538,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
+        private isCustomWidget;
         private createControl;
         private updateDesignProps;
         private formatDesignProp;

@@ -6,7 +6,8 @@ import {
   HStack,
   Container,
   Input,
-  Modal
+  Modal,
+  Tabs
 } from '@ijstech/components'
 import { customTabStyled } from '../index.css';
 import { IControl, onChangedCallback, onEventChangedCallback, onEventDblClickCallback } from '../interface';
@@ -80,6 +81,7 @@ export default class DesignerProperties extends Module {
   private inputId: Input;
   private designerWidget: DesignerToolWidget;
   private mdActions: Modal;
+  private propTabs: Tabs;
 
   private _component: IControl;
 
@@ -96,6 +98,7 @@ export default class DesignerProperties extends Module {
     this.onControlEventChanged = this.onControlEventChanged.bind(this);
     this.onBreakpointClick = this.onBreakpointClick.bind(this);
     this.onShowConfig = this.onShowConfig.bind(this);
+    this.renderTrigger = this.renderTrigger.bind(this);
   }
 
   static async create(options?: DesignerPropertiesElement, parent?: Container) {
@@ -117,6 +120,10 @@ export default class DesignerProperties extends Module {
     return this.component?.control._getDesignProps() || {};
   }
 
+  private get isCustomWidget() {
+    return !!(this.component?.control as any)?.showConfigurator;
+  }
+
   clear() {
     this.component = null;
     this.renderUI();
@@ -126,10 +133,14 @@ export default class DesignerProperties extends Module {
     this.updateInfo();
     this.updateProps();
     this.renderCustomGroup();
+    if (this.propTabs.activeTabIndex === 1) this.renderTrigger();
+    this.designerWidget.visible = this.isCustomWidget;
+  }
+
+  private renderTrigger() {
     const events = this._component?.control?._getCustomProperties()?.events;
     const designProps = this.component?.control._getDesignProps();
     this.designerTrigger.setData({ events, props: designProps });
-    this.designerWidget.visible = !!(this.component?.control as any)?.showConfigurator;
   }
 
   private renderCustomGroup() {
@@ -318,7 +329,7 @@ export default class DesignerProperties extends Module {
 
   private onShowConfig() {
     if (this.component?.control) {
-      (this.component.control as any).showConfigurator(this.mdActions, 'Data');
+      (this.component.control as any).showConfigurator(this.mdActions, 'Data', this.onPropChanged);
     }
   }
 
@@ -397,6 +408,7 @@ export default class DesignerProperties extends Module {
           visible={false}
         />
         <i-tabs
+          id="propTabs"
           mode="horizontal"
           activeTabIndex={0}
           class={customTabStyled}
@@ -465,7 +477,7 @@ export default class DesignerProperties extends Module {
               <designer-data-linking display="block" />
             </i-vstack>
           </i-tab> */}
-          <i-tab icon={{ name: 'magic', width: '1.5rem', height: '1.5rem' }}>
+          <i-tab icon={{ name: 'magic', width: '1.5rem', height: '1.5rem' }} onClick={this.renderTrigger}>
             <i-vstack gap={1} width="100%" height={'100%'}>
               <designer-trigger
                 id="designerTrigger"

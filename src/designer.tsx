@@ -204,6 +204,10 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
+  private isCustomWidget() {
+    return !!(this.selectedControl?.control as any)?.showConfigurator;
+  }
+
   private async createControl(parent: Control, name: string, options?: any) {
     const controlConstructor: any = window.customElements.get(name);
     options = options || {}
@@ -212,9 +216,22 @@ export class ScomDesignerForm extends Module {
       newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     } catch {}
     const control = await controlConstructor.create({...newOptions, designMode: true, cursor: 'pointer'});
-    parent.append(control);
+    if (parent) parent.append(control);
     const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
+
+    const hasBackground = 'background' in newOptions;
+    const hasFont = 'font' in newOptions;
+    const isCustomWidget = !!(control as any)?.showConfigurator;
+    if (isCustomWidget && (hasBackground || hasFont)) {
+      let customTag = {...(control.tag || {})};
+      const value = newOptions[hasBackground ? 'background' : 'font'];
+      customTag.customBackgroundColor = true;
+      customTag.backgroundColor = value?.color || '';
+      customTag.customFontColor = true;
+      customTag.fontColor = value?.color || '';
+      if (control?.setTag) control.setTag(customTag);
+    }
     return control;
   }
 
@@ -231,6 +248,13 @@ export class ScomDesignerForm extends Module {
         props[prop] = (props[prop] || []).filter(v => (v && Object.keys(v.properties).length > 0));
         if (props[prop].length === 0) {
           continue;
+        }
+      }
+      if (typeof props[prop] === 'object') {
+        for (let subProp in props[prop]) {
+          if (props[prop][subProp] === '') {
+            delete props[prop][subProp];
+          }
         }
       }
       if (isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
@@ -423,7 +447,11 @@ export class ScomDesignerForm extends Module {
     control.onclick = null;
     this.bindControlEvents(component as IControl);
     control.tag = new ControlResizer(control);
-    component.items?.forEach(item => this.renderComponent(control, {...item, control: null}));
+    if (component?.items?.length) {
+      for (let item of component.items) {
+        await this.renderComponent(control, {...item, control: null});
+      }
+    }
     this.pathMapping.set(component.path, {...component});
     const beforeSelected = this.selectedControl?.path;
     if (select || (beforeSelected && beforeSelected === component.path)) this.handleSelectControl(component);
@@ -436,7 +464,8 @@ export class ScomDesignerForm extends Module {
     let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
     let isTree = component.name === 'i-tree-node' && parent instanceof TreeView;
     if (isTab || isMenu || isTree) {
-      control = (parent as any).add({...(options || {})});
+      const customOptions = {...(options || {})};
+      control = (parent as any).add(customOptions);
     } else if (parent instanceof CarouselSlider) {
       const childControl = await this.createControl(undefined, component.name, options);
       control = parent.add(childControl);
@@ -485,8 +514,11 @@ export class ScomDesignerForm extends Module {
       this.libsMap[name] = true;
       const packageName = '@scom/' + name.replace(/^i-/, '');
       const { types, defaultData } = control.register();
-      control._setDesignPropValue('data', defaultData);
-      control.setData(defaultData, defaultData);
+      const hasData = control._getDesignPropValue('data');
+      if (!hasData) {
+        control._setDesignPropValue('data', defaultData);
+        control.setData(defaultData, defaultData);
+      }
       this.studio.registerWidget(this, packageName, types);
     }
     this.showDesignProperties();
@@ -543,8 +575,7 @@ export class ScomDesignerForm extends Module {
         props = {
           width: '100%',
           position: 'relative',
-          direction: 'vertical',
-          padding: '{{"top":"8px","right":"8px","bottom":"8px","left":"8px"}}'
+          direction: 'vertical'
         }
         break;
       case 'i-grid-layout':
@@ -591,18 +622,16 @@ export class ScomDesignerForm extends Module {
       case 'i-scom-area-chart':
       case 'i-scom-mixed-chart':
       case 'i-scom-counter':
-      case 'i-scom-table':
         props = {
           width: '100%',
           minHeight: '{200}',
           display: 'block'
         }
         break;
-      case 'i-table':
+      case 'i-scom-table':
         props = {
           width: '100%',
-          heading: '{true}',
-          columns: '{[{"title":"Column 1","fieldName":"col_1","textAlign":"left"},{"title":"Column 2","fieldName":"col_2","textAlign":"left"},{"title":"Column 3","fieldName":"col_3","textAlign":"left"}]}'
+          display: 'block'
         }
         break;
       case 'i-carousel-slider':
@@ -753,21 +782,32 @@ export class ScomDesignerForm extends Module {
   }
 
   private onPropertiesChanged(prop: string, value: any, mediaQueryProp?: string) {
-    const control = this.selectedControl?.control
+    const control = this.selectedControl?.control as any;
     if (!control) return;
     this.modified = true;
     const oldVal: any = control._getDesignPropValue(prop);
     if (prop === 'mediaQueries') {
-      const mediaQueries: any = control._getDesignPropValue(prop) || [];
+      const mediaQueries: any = control._getDesignPropValue('mediaQueries') || [];
       const findedIndex = mediaQueries.findIndex((v: any) => v && v.minWidth === value.minWidth);
       if (findedIndex !== -1) {
         mediaQueries[findedIndex] = value;
       } else {
         mediaQueries.push(value);
       }
-      control._setDesignPropValue(prop, mediaQueries);
+      control._setDesignPropValue('mediaQueries', mediaQueries);
     } else {
       control._setDesignPropValue(prop, value);
+      if (this.isCustomWidget && (prop === 'background' || prop === 'font')) {
+        let customTag = {...(control.tag || {})};
+        if (prop === 'background') {
+          customTag.customBackgroundColor = true;
+          customTag.backgroundColor = value?.color || '';
+        } else if (prop === 'font') {
+          customTag.customFontColor = true;
+          customTag.fontColor = value?.color || '';
+        }
+        if (control?.setTag) control.setTag(customTag);
+      }
     }
 
     if (mediaQueryProp) {
@@ -779,7 +819,7 @@ export class ScomDesignerForm extends Module {
       value.name = 'angle-down';
     }
     if (prop === 'link' && value.href) {
-      const linkEl = new Link(control, value);
+      const linkEl = new Link(control, {...value, designMode: true});
       control[prop] = linkEl;
     } else if (prop.includes('icon') && (value.name || value.image?.url)) {
       const iconEl = new Icon(control, {width: '1rem', height: '1rem', display: 'flex', ...value});

@@ -388,12 +388,16 @@ export const parsePropValue = (value: any) => {
   if (value.startsWith('{') && value.endsWith('}')) {
     value = value.substring(1, value.length - 1);
     if (value.startsWith('{') && value.endsWith('}')) {
-      const parsedObject = JSON.parse(
-        value
-          .replace(/(['"])?([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
-          .replace(/'/g, '"')
-      );
-      return parsedObject;
+      try {
+        return JSON.parse(value);
+      } catch {
+        const parsedObject = JSON.parse(
+          value
+            .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
+            .replace(/'/g, '"')
+        );
+        return parsedObject;
+      }
     } else if (value.startsWith('[') && value.endsWith(']')) {
       return JSON.parse(value);
     } else {
