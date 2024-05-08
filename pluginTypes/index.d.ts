@@ -1068,6 +1068,8 @@ declare module "@scom/scom-designer/tools/widgetSetting.tsx" {
 /// <amd-module name="@scom/scom-designer/tools/group.tsx" />
 declare module "@scom/scom-designer/tools/group.tsx" {
     import { Module, ControlElement, Container, IDataSchema, IUISchema } from '@ijstech/components';
+    import { IMediaQuery, onUpdateCallback } from "@scom/scom-designer/interface.ts";
+    type onChangedCallback = (data: any, mediaQuery?: any) => void;
     interface DesignerToolGroupElement extends ControlElement {
         title?: string;
         tooltip?: string;
@@ -1075,7 +1077,8 @@ declare module "@scom/scom-designer/tools/group.tsx" {
         dataSchema?: IDataSchema;
         props?: any;
         customControls?: any;
-        onChanged?: (data: any) => void;
+        onChanged?: onChangedCallback;
+        onUpdate?: onUpdateCallback;
     }
     interface IDesignerGroup {
         title?: string;
@@ -1087,6 +1090,7 @@ declare module "@scom/scom-designer/tools/group.tsx" {
         default?: {
             [name: string]: any;
         };
+        mediaQuery?: IMediaQuery;
     }
     global {
         namespace JSX {
@@ -1100,11 +1104,17 @@ declare module "@scom/scom-designer/tools/group.tsx" {
         private designerHeader;
         private form;
         private _data;
-        onChanged: (data: any) => void;
+        onChanged: onChangedCallback;
+        onUpdate: onUpdateCallback;
         constructor(parent?: Container, options?: DesignerToolGroupElement);
+        private get isChecked();
+        private get customProps();
+        private hasMediaQuery;
+        private get currentData();
         setData(value: IDesignerGroup): void;
         private onCollapse;
         private renderUI;
+        private onToggleMediaQuery;
         private onResetData;
         init(): void;
         render(): any;

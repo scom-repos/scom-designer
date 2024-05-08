@@ -359,7 +359,9 @@ export class ScomDesignerForm extends Module {
     const path = component.path;
     if (path) {
       const control = this.pathMapping.get(path);
-      if (control) this.handleSelectControl(control);
+      if (control) {
+        this.handleSelectControl(control);
+      }
     }
   }
 
