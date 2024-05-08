@@ -32,6 +32,7 @@ export interface IComponentItem extends Parser.IComponent {
   icon?: IconName;
   category?: string;
   parent?: string;
+  repeater?: string;
 }
 
 export interface IComponent extends IComponentItem {

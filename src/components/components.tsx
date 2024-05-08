@@ -18,7 +18,7 @@ import {
 import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
 import './index.css';
-import { getMediaQueryProps } from '../helpers/config';
+import { getMediaQueryProps, CONTAINERS } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -33,8 +33,6 @@ interface DesignerComponentsElement extends ControlElement {
   onUpdate?: () => void;
   screen?: IScreen;
 }
-
-const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider'];
 
 declare global {
   namespace JSX {
