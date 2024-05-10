@@ -23,14 +23,15 @@ import {
   Tabs,
   TreeView,
   VStack
-} from '@ijstech/components'
+} from '@ijstech/components';
+import {Compiler} from '@ijstech/compiler';
 import {
   DesignerScreens,
   DesignerComponents,
   DesignerProperties,
   DesignerPickerComponents,
   DesignerPickerBlocks
-} from './components/index'
+} from './components/index';
 import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio } from './interface'
 import { customLabelTabStyled, customTransition, labelActiveStyled } from './index.css'
 import {
@@ -1065,6 +1066,8 @@ export class ScomDesignerForm extends Module {
       this.pnlFormDesigner.visible = false;
       this.pnlPreview.visible = true;
       if (this.onPreview){
+        if (!this.ifrPreview.url)
+          this.ifrPreview.url = 'https://decom.dev/debug.html';
         let result = await this.onPreview();
         if (result){
             this.ifrPreview.postMessage(JSON.stringify(result));
