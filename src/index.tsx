@@ -25,6 +25,7 @@ interface ScomDesignerElement extends ControlElement {
   url?: string;
   onSave?: onSaveCallback;
   onChanged?: (value: string) => void;
+  onPreview?: ()=> Promise<string>;
 }
 
 declare global {
@@ -50,11 +51,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private contentChangeTimer: any
   private _data: IDesigner = {
     url: ''
-  }
-  private updateDesigner: boolean = true
+  };
+  private updateDesigner: boolean = true;
 
-  onSave: onSaveCallback
-  onChanged?: (value: string) => void
+  onSave: onSaveCallback;
+  onChanged?: (value: string) => void;
+  onPreview?: ()=> Promise<string>;
   tag: any = {}
 
   addEventHandler(
@@ -93,6 +95,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         editor.setCursor(result.lineNumber, result.columnNumber)
     }
     this.designTabs.activeTabIndex = 0
+  }
+  set previewUrl(url: string){
+    this.formDesigner.previewUrl = url;
   }
   locateMethod(designer: ScomDesignerForm, funcName: string): void {
     let fileName = this.fileName
@@ -267,7 +272,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }, 500)
     if (this.onChanged) this.onChanged(this.codeEditor.value)
   }
-
+  private handleDesignerPreview(): Promise<string> {
+    if (this.onPreview)
+        return this.onPreview();
+  }
   private updateDesignerCode(fileName: string, modified?: boolean): string {
     if (modified || this.formDesigner?.modified) {
       let code = this.compiler.renderUI(
@@ -498,6 +506,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             <i-scom-designer--form
               id="formDesigner"
               dock='fill'
+              onPreview={this.handleDesignerPreview.bind(this)}
             />
           </i-tab>
         </i-tabs>

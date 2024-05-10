@@ -1,28 +1,29 @@
 import {
-  Module,
-  customElements,
-  Styles,
-  Panel,
-  GridLayout,
-  Input,
-  ControlElement,
+  CarouselSlider,
   Container,
   Control,
-  IdUtils,
+  ControlElement,
+  customElements,
   getCustomElements,
-  IconName,
-  Menu,
-  Link,
+  GridLayout,
   Icon,
+  IconName,
+  IdUtils,
+  Iframe,
   Image,
+  Input,
+  Link,
+  Menu,
+  Modal,
+  Module,
+  Panel,
+  Repeater,
+  Styles,
   Tabs,
   TreeView,
-  Modal,
-  VStack,
-  CarouselSlider,
-  Repeater,
   AccordionItem,
-  Accordion
+  Accordion,
+  VStack
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -80,11 +81,8 @@ class ControlResizer {
   }
 }
 
-interface ScomDesignerFormElement extends ControlElement {}
-
-const controlMapper: { [key: string]: string } = {
-  'i-accordion': 'i-accordion-item',
-  'i-tabs': 'i-tab'
+interface ScomDesignerFormElement extends ControlElement {
+  onPreview?: ()=> Promise<string>;
 }
 
 declare global {
@@ -107,6 +105,8 @@ export class ScomDesignerForm extends Module {
   private inputSearch: Input
   private currentTab = TABS.BITS
   private pnlFormDesigner: Panel
+  private pnlPreview: Panel;
+  private ifrPreview: Iframe;
   private mdPicker: Modal
   private designerWrapper: VStack
   private pnlScreens: Panel
@@ -129,6 +129,7 @@ export class ScomDesignerForm extends Module {
   selectedControl: IControl
   modified: boolean;
   studio: IStudio;
+  onPreview?: ()=> Promise<{module: string, script: string}>;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -140,6 +141,7 @@ export class ScomDesignerForm extends Module {
     this.onVisibleComponent = this.onVisibleComponent.bind(this);
     this.handleBreakpoint = this.handleBreakpoint.bind(this);
     this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
+    this.onAddItem = this.onAddItem.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -149,7 +151,9 @@ export class ScomDesignerForm extends Module {
   }
 
   setData() {}
-
+  set previewUrl(url: string){
+    this.ifrPreview.url = url;
+  }
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
     if (this.currentTab === TABS.RECENT) {
@@ -200,25 +204,12 @@ export class ScomDesignerForm extends Module {
       const component = components[name];
       const icon: any = component?.icon as IconName;
       const group = component?.group ?? 'Basic';
-
-      if (controlMapper[parentName]) {
-        if (controlMapper[parentName] === name) {
-          result[group]['items'].push({
-            ...component,
-            icon,
-            path: '',
-            name: component.tagName
-          });
-          break;
-        }
-      } else {
-        result[group]['items'].push({
-          ...component,
-          icon,
-          path: '',
-          name: component.tagName
-        });
-      }
+      result[group]['items'].push({
+        ...component,
+        icon,
+        path: '',
+        name: component.tagName
+      });
     }
 
     return result;
@@ -530,12 +521,9 @@ export class ScomDesignerForm extends Module {
       control = (parent as any).add({...config.options, designMode: true, cursor: 'pointer'});
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
-    } else if (parent instanceof CarouselSlider || parent instanceof Repeater) {
-      const childControl = await this.createControl(undefined, component.name, config);
+    } else if (parent instanceof CarouselSlider || parent instanceof Repeater || parent instanceof AccordionItem) {
+      const childControl = await this.createControl(parent instanceof AccordionItem ? parent : undefined, component.name, config);
       control = parent.add(childControl);
-    } else if (parent instanceof AccordionItem) {
-      const childControl = await this.createControl(undefined, component.name, config);
-      control = parent.contentControl.appendChild(childControl);
     } else {
       control = await this.createControl(parent, component.name, config);
     }
@@ -854,6 +842,18 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  private onAddItem(parent: IComponent) {
+    const name = 'i-accordion-item';
+    const props = this.getDefaultProps(name);
+    const component: IComponentItem = {
+      props: { ...props, name: '' },
+      items: [],
+      path: '',
+      name
+    }
+    this.onAddComponent(null, component);
+  }
+
   private initBlockPicker() {
     const pickerElm = new DesignerPickerBlocks(undefined, {
       items: this.pickerBlocksFiltered,
@@ -1098,11 +1098,29 @@ export class ScomDesignerForm extends Module {
     this.designPos = {};
     this.designerProperties.onUpdate();
   }
-
+  private async handlePreviewChanged(type: string, value: string) {
+    if (value == '1'){
+      this.pnlFormDesigner.visible = false;
+      this.pnlPreview.visible = true;
+      if (this.onPreview){
+        this.updateDesignProps(this._rootComponent);
+        let result = await this.onPreview();
+        if (result){
+            this.ifrPreview.postMessage(JSON.stringify(result));
+          }
+      }
+    }
+    else{
+      this.ifrPreview.reload();
+      this.pnlFormDesigner.visible = true;
+      this.pnlPreview.visible = false;
+    }
+  }
   private handleBreakpoint(value: number) {
     const { minWidth } = breakpointsMap[value];
     if (minWidth !== undefined) {
       this.pnlFormDesigner.width = minWidth;
+      this.pnlPreview.width = minWidth;
     }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.onUpdateDesigner();
@@ -1196,6 +1214,7 @@ export class ScomDesignerForm extends Module {
               onDelete={this.onDeleteComponent}
               onDuplicate={this.onDuplicateComponent}
               onUpdate={this.onUpdateDesigner}
+              onAdd={this.onAddItem}
             />
              <i-modal
               id="mdPicker"
@@ -1322,6 +1341,23 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             ></i-panel>
+            <i-panel
+              id="pnlPreview"
+              width={'auto'} minHeight={'100%'}
+              background={{ color: '#26324b' }}
+              overflow={'hidden'}
+              visible={false}
+              mediaQueries={[
+                {
+                  maxWidth: '1024px',
+                  properties: {
+                    maxHeight: '100%'
+                  }
+                }
+              ]}
+            >
+              <i-iframe id="ifrPreview" width={'100%'} height={'100%'}></i-iframe>
+            </i-panel>
           </i-vstack>
           <i-panel
             id="pnlProperties"
@@ -1358,6 +1394,7 @@ export class ScomDesignerForm extends Module {
               onEventChanged={this.onControlEventChanged}
               onEventDblClick={this.onControlEventDblClick}
               onBreakpointChanged={this.handleBreakpoint}
+              onPreviewChanged={this.handlePreviewChanged}
             />
           </i-panel>
         </i-hstack>
