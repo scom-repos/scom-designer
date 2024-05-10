@@ -4352,6 +4352,8 @@ declare module "packages/image/src/image" {
         private _objectFit;
         private _borderValue;
         constructor(parent?: Control, options?: any);
+        get fallbackUrl(): string;
+        set fallbackUrl(value: string);
         get rotate(): number;
         set rotate(value: any);
         get url(): string;
@@ -5884,7 +5886,6 @@ declare module "packages/datepicker/src/datepicker" {
         set placeholder(value: string);
         get type(): dateType;
         set type(value: dateType);
-        get designMode(): boolean;
         set designMode(value: boolean);
         private get formatString();
         private _onDatePickerChange;
@@ -5949,7 +5950,6 @@ declare module "packages/range/src/range" {
         set width(value: number | string);
         get enabled(): boolean;
         set enabled(value: boolean);
-        get designMode(): boolean;
         set designMode(value: boolean);
         get tooltipVisible(): boolean;
         set tooltipVisible(value: boolean);
@@ -10322,6 +10322,7 @@ declare module "packages/markdown/src/markdown" {
         get padding(): ISpace;
         set padding(value: ISpace);
         private getRenderer;
+        getTokens(text: string): Promise<any>;
         load(text: string): Promise<any>;
         private preParse;
         beforeRender(text: string): Promise<void>;
@@ -10394,7 +10395,6 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         set previewStyle(value: 'tab' | 'vertical');
         get viewer(): boolean;
         set viewer(value: boolean);
-        get designMode(): boolean;
         set designMode(value: boolean);
         get value(): string;
         set value(value: string);
@@ -11438,7 +11438,6 @@ declare module "packages/video/src/video" {
         set url(value: string);
         get border(): Border;
         set border(value: IBorder);
-        get designMode(): boolean;
         set designMode(value: boolean);
         getPlayer(): any;
         private getVideoTypeFromExtension;
@@ -12066,6 +12065,106 @@ declare module "packages/form/src/form" {
 declare module "packages/form/src/index" {
     export { Form, FormElement, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/form";
 }
+declare module "packages/repeater/src/style/repeater.css" { }
+declare module "packages/repeater/src/repeater" {
+    import { Control, ControlElement, Container } from "@ijstech/components/base";
+    import "packages/repeater/src/style/repeater.css";
+    type onRenderCallback = (parent: Control, index: number) => void;
+    export interface RepeaterElement extends ControlElement {
+        onRender?: onRenderCallback;
+        count?: number;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-repeater']: RepeaterElement;
+            }
+        }
+    }
+    export class Repeater extends Container {
+        private _count;
+        private wrapper;
+        private templateEl;
+        onRender: onRenderCallback;
+        constructor(parent?: Control, options?: any);
+        get count(): number;
+        set count(value: number);
+        private cloneItems;
+        add(item: Control): Control;
+        update(): void;
+        clear(): void;
+        protected init(): void;
+        static create(options?: RepeaterElement, parent?: Container): Promise<Repeater>;
+    }
+}
+declare module "packages/repeater/src/index" {
+    export { Repeater, RepeaterElement } from "packages/repeater/src/repeater";
+}
+declare module "packages/accordion/src/interface" {
+    import { Control, ControlElement } from "@ijstech/components/base";
+    export interface IAccordionItem extends ControlElement {
+        name: string;
+        defaultExpanded?: boolean;
+        showRemove?: boolean;
+        onRender: (item: IAccordionItem) => Control;
+    }
+    export interface IAccordion {
+        items: IAccordionItem[];
+        isFlush?: boolean;
+    }
+}
+declare module "packages/accordion/src/style/accordion.css" {
+    export const customStyles: string;
+    export const expandablePanelStyle: string;
+}
+declare module "packages/accordion/src/accordion" {
+    import { Control, Container, ControlElement } from "@ijstech/components/base";
+    import { IAccordionItem } from "packages/accordion/src/interface";
+    export { IAccordionItem };
+    type onCustomItemRemovedCallback = (item: Control) => Promise<void>;
+    type onCustomRenderCallback = (target: Control, data: IAccordionItem) => Control;
+    export interface AccordionElement extends ControlElement {
+        items?: IAccordionItem[];
+        isFlush?: boolean;
+        onCustomItemRemoved?: onCustomItemRemovedCallback;
+        onCustomRender?: onCustomRenderCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ["i-accordion"]: AccordionElement;
+            }
+        }
+    }
+    export interface IAccordionMessage {
+    }
+    export class Accordion extends Control {
+        private wrapper;
+        private _items;
+        private _isFlush;
+        private accordionItemMapper;
+        onCustomItemRemoved: onCustomItemRemovedCallback;
+        onCustomRender: onCustomRenderCallback;
+        static create(options?: AccordionElement, parent?: Container): Promise<Accordion>;
+        constructor(parent?: Container, options?: any);
+        get isFlush(): boolean;
+        set isFlush(value: boolean);
+        get items(): IAccordionItem[];
+        set items(value: IAccordionItem[]);
+        private createAccordionItem;
+        private onItemClick;
+        private onRemoveClick;
+        add(item: IAccordionItem): void;
+        updateItemName(id: string, name: string): void;
+        removeItem(id: string): void;
+        clear(): void;
+        private updateAccordion;
+        protected init(): Promise<void>;
+    }
+}
+declare module "packages/accordion/src/index" {
+    export { Accordion, AccordionElement, IAccordionItem } from "packages/accordion/src/accordion";
+}
 declare module "@ijstech/components" {
     export * as Styles from "packages/style/src/index";
     export { application, EventBus, IEventBus, IHasDependencies, IModuleOptions, IModuleRoute, IModuleMenuItem, IRenderUIOptions, DataSchemaValidator, renderUI, FormatUtils, IFormatNumberOptions, IdUtils } from "packages/application/src/index";
@@ -12110,5 +12209,7 @@ declare module "@ijstech/components" {
     export { Breadcrumb } from "packages/breadcrumb/src/index";
     export { Form, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/index";
     export { ColorPicker } from "packages/color/src/index";
+    export { Repeater } from "packages/repeater/src/index";
+    export { Accordion, IAccordionItem } from "packages/accordion/src/index";
 }
-`;
+`

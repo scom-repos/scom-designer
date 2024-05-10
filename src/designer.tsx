@@ -20,7 +20,8 @@ import {
   Modal,
   VStack,
   Tab,
-  CarouselSlider
+  CarouselSlider,
+  Repeater
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -37,7 +38,7 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
 import { isSameValue, parseProps } from './helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps } from './helpers/config'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS } from './helpers/config'
 import { getBreakpoint } from './helpers/store'
 
 const Theme = Styles.Theme.ThemeVars
@@ -208,15 +209,20 @@ export class ScomDesignerForm extends Module {
     return !!(this.selectedControl?.control as any)?.showConfigurator;
   }
 
-  private async createControl(parent: Control, name: string, options?: any) {
+  private async createControl(parent: Control|undefined, name: string, options?: any) {
     const controlConstructor: any = window.customElements.get(name);
+    if (!controlConstructor) return;
     options = options || {}
     let newOptions = {}
     try {
       newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
     } catch {}
     const control = await controlConstructor.create({...newOptions, designMode: true, cursor: 'pointer'});
-    if (parent) parent.append(control);
+    parent?.appendChild(control);
+    if (name === 'i-icon') { // TODO: fix this
+      control.setAttribute('name', options.name);
+    }
+
     const breakpointProps = getMediaQueryProps(options.mediaQueries);
     control._setDesignProps(options, breakpointProps);
 
@@ -230,7 +236,7 @@ export class ScomDesignerForm extends Module {
       customTag.backgroundColor = value?.color || '';
       customTag.customFontColor = true;
       customTag.fontColor = value?.color || '';
-      if (control?.setTag) control.setTag(customTag);
+      if ((control as any)?.setTag) (control as any).setTag(customTag);
     }
     return control;
   }
@@ -250,6 +256,9 @@ export class ScomDesignerForm extends Module {
           continue;
         }
       }
+      if (isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
+        continue;
+      }
       if (typeof props[prop] === 'object') {
         for (let subProp in props[prop]) {
           if (props[prop][subProp] === '') {
@@ -257,7 +266,7 @@ export class ScomDesignerForm extends Module {
           }
         }
       }
-      if (isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
+      if (typeof props[prop] === 'object' && Object.keys(props[prop]).length === 0) {
         continue;
       }
       newProps[prop] = this.formatDesignProp(prop, props[prop], control);
@@ -401,15 +410,17 @@ export class ScomDesignerForm extends Module {
 
   private async onDuplicateComponent(component: IComponent) {
     this.modified = true;
+    this.updateDesignProps(this._rootComponent);
     const control = this.pathMapping.get(component.path);
     const newComponent = this.duplicateItem(component);
-    const parentControl = control?.control?.parent;
-    await this.renderComponent(parentControl, newComponent, true);
+    const parentPath = component.parent;
+    const parent = this.pathMapping.get(parentPath);
+
+    await this.renderComponent(parent, newComponent, true);
     if (control.control && newComponent.control) {
       control.control.insertAdjacentElement('afterend', newComponent.control);
     }
-    const parentPath = component.parent;
-    const parent = this.pathMapping.get(parentPath);
+
     if (parent) {
       parent.items = parent.items || [];
       const index = parent.items.findIndex(x => x.path === component.path);
@@ -440,23 +451,32 @@ export class ScomDesignerForm extends Module {
     return newComponent;
   }
 
-  private async renderComponent(parent: Control, component: IControl, select?: boolean) {
+  private async renderComponent(parent: IControl|undefined, component: IControl, select?: boolean) {
     if (!component?.name) return;
-    let control = await this.renderControl(parent, component);
+    const parentControl = parent?.control || this.pnlFormDesigner;
+    const control: Control = await this.renderControl(parentControl, component);
     if (!control) return;
-    if (!control.style.position) control.style.position = "relative";
-    (component as IControl).control = control;
     control.onclick = null;
-    this.bindControlEvents(component as IControl);
+    if (!control.style.position) control.style.position = "relative";
+    component.control = control;
+    component.parent = parent?.path;
+    component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
     control.tag = new ControlResizer(control);
+    this.bindControlEvents(component as IControl);
+    this.pathMapping.set(component.path, component);
     if (component?.items?.length) {
       for (let item of component.items) {
-        await this.renderComponent(control, {...item, control: null});
+        await this.renderComponent(component, {...item, control: null});
       }
     }
-    this.pathMapping.set(component.path, {...component});
     const beforeSelected = this.selectedControl?.path;
-    if (select || (beforeSelected && beforeSelected === component.path)) this.handleSelectControl(component);
+    if (select || (beforeSelected && beforeSelected === component.path)) {
+      this.handleSelectControl(component);
+    }
+    if (component.repeater) {
+      this.updateRepeater(component.repeater);
+    }
+    return component;
   }
 
   private async renderControl(parent: Control, component: IControl) {
@@ -466,9 +486,8 @@ export class ScomDesignerForm extends Module {
     let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
     let isTree = component.name === 'i-tree-node' && parent instanceof TreeView;
     if (isTab || isMenu || isTree) {
-      const customOptions = {...(options || {})};
-      control = (parent as any).add(customOptions);
-    } else if (parent instanceof CarouselSlider) {
+      control = (parent as any).add(options);
+    } else if (parent instanceof CarouselSlider || parent instanceof Repeater) {
       const childControl = await this.createControl(undefined, component.name, options);
       control = parent.add(childControl);
     } else {
@@ -477,13 +496,14 @@ export class ScomDesignerForm extends Module {
     return control;
   }
 
-  private isParentGroup(control: Control) {
-    return control instanceof Container ||
-      control instanceof Tabs ||
-      control instanceof Tab ||
-      control instanceof Menu ||
-      control instanceof TreeView ||
-      control instanceof CarouselSlider;
+  private updateRepeater(path: string) {
+    const repeater = this.pathMapping.get(path)?.control as Repeater;
+    if (repeater) repeater.update();
+  }
+
+  private isParentGroup(name: string) {
+    if (!name) return false;
+    return CONTAINERS.includes(name);
   }
 
   private bindControlEvents(control: IControl) {
@@ -534,7 +554,8 @@ export class ScomDesignerForm extends Module {
     this.mdPicker.visible = false
   }
 
-  private async handleAddControl(event?: MouseEvent, parent?: Control) {
+  private async handleAddControl(parent: IControl, event?: MouseEvent) {
+    if (!parent) return;
     if (event) event.stopPropagation();
     this.modified = true;
     if (this.selectedComponent) {
@@ -555,7 +576,7 @@ export class ScomDesignerForm extends Module {
           left: `{${pos.x}}`,
           top: `{${pos.y}}`,
         }
-        await this.renderComponent(this.pnlFormDesigner, com, true);
+        await this.renderComponent(undefined, com, true);
         if (!this._rootComponent.items) this._rootComponent.items = [];
         this._rootComponent.items.push(com);
         this.updateStructure();
@@ -645,6 +666,19 @@ export class ScomDesignerForm extends Module {
         }
         break;
       case 'i-video':
+        props = {
+          width: '100%',
+          display: 'block'
+        }
+        break;
+      case 'i-repeater':
+        props = {
+          width: '100%',
+          display: 'block',
+          count: '{3}'
+        }
+        break;
+      case 'i-accordion':
         props = {
           width: '100%',
           display: 'block'
@@ -762,11 +796,10 @@ export class ScomDesignerForm extends Module {
       const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
       if (!finded) this.recentComponents.push(this.selectedComponent);
     }
-    if (this.isParentGroup(this.selectedComponent.control)) {
+    if (this.isParentGroup(this.currentParent?.name)) {
       const parentControl = this.pathMapping.get(this.currentParent.path);
-      const com = await this.handleAddControl(undefined, parentControl?.control);
+      const com = await this.handleAddControl(parentControl);
       if (com && parentControl) {
-        com.parent = this.currentParent.path;
         parentControl.items = parentControl.items || [];
         parentControl.items.push(com);
         this.pathMapping.set(this.currentParent.path, parentControl);
@@ -784,7 +817,7 @@ export class ScomDesignerForm extends Module {
   }
 
   private onPropertiesChanged(prop: string, value: any, mediaQueryProp?: string) {
-    const control = this.selectedControl?.control as any;
+    const control = this.selectedControl?.control as Control;
     if (!control) return;
     this.modified = true;
     const oldVal: any = control._getDesignPropValue(prop);
@@ -808,7 +841,7 @@ export class ScomDesignerForm extends Module {
           customTag.customFontColor = true;
           customTag.fontColor = value?.color || '';
         }
-        if (control?.setTag) control.setTag(customTag);
+        if ((control as any)?.setTag) (control as any).setTag(customTag);
       }
     }
 
@@ -831,6 +864,13 @@ export class ScomDesignerForm extends Module {
       control[prop] = imageEl;
     }
     if (prop === "id" && value && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
+    if (this.selectedControl.repeater) {
+      this.updateDesignProps(this.selectedControl);
+      if (this.selectedControl.name === 'i-icon' && control._getDesignPropValue('name')) {
+        control.setAttribute('name', control._getDesignPropValue('name') as string);
+      }
+      this.updateRepeater(this.selectedControl.repeater);
+    }
     this.pathMapping.set(this.selectedControl.path, this.selectedControl);
   }
 
@@ -857,14 +897,17 @@ export class ScomDesignerForm extends Module {
       id: '',
       elements: [this._rootComponent]
     }
-    this.onUpdateDesigner();
+    this.onUpdateDesigner(false);
     this.designerProperties.clear();
   }
 
-  private onUpdateDesigner() {
+  private onUpdateDesigner(refresh = true) {
+    if (refresh) {
+      this.updateDesignProps(this._rootComponent);
+    }
     this.pnlFormDesigner.clearInnerHTML();
     this.pathMapping = new Map();
-    this.renderComponent(this.pnlFormDesigner, {
+    this.renderComponent(undefined, {
       ...this._rootComponent,
       control: null
     });
@@ -1016,7 +1059,6 @@ export class ScomDesignerForm extends Module {
       this.pnlFormDesigner.width = minWidth;
     }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
-    this.updateDesignProps(this._rootComponent);
     this.onUpdateDesigner();
     this.designerComponents.renderUI();
   }

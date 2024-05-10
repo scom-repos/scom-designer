@@ -241,18 +241,19 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     (root as IComponent).path = IdUtils.generateUUID();
     if (!root.items) root.items = [];
     if (root.items.length) {
-      root.items = this.updatePath(root.items, (root as IComponent).path);
+      root.items = this.updatePath(root.items, root as IComponent);
     }
     return {...root} as IComponent;
   }
 
-  private updatePath(items: Parser.IComponent[], path: string) {
+  private updatePath(items: Parser.IComponent[], parent: IComponent) {
     return [...items].map((item) => {
       (item as IComponent).path = IdUtils.generateUUID();
-      (item as IComponent).parent = path;
+      (item as IComponent).parent = parent.path;
+      (item as IComponent).repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
       if (!item.items) item.items = [];
       if (item.items.length) {
-        item.items = this.updatePath(item.items, (item as IComponent).path);
+        item.items = this.updatePath(item.items, item as IComponent);
       }
       return item;
     })

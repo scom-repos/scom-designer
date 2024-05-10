@@ -157,6 +157,9 @@ const GroupMetadata = {
   }
 }
 
+// TODO: check treeView, menu
+const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider', 'i-repeater'];
+
 export {
   BREAKPOINTS,
   breakpoints,
@@ -168,5 +171,6 @@ export {
   getBreakpointInfo,
   getMediaQueryProps,
   getMediaQuery,
-  getFont
+  getFont,
+  CONTAINERS
 }

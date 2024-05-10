@@ -274,7 +274,7 @@ define("@scom/scom-designer/helpers/store.ts", ["require", "exports"], function 
 define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech/components", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_4, assets_1, store_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
+    exports.CONTAINERS = exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
     const Theme = components_4.Styles.Theme.ThemeVars;
     const iconProps = { width: '1.5rem', height: '1.5rem', padding: { top: 6, left: 6, right: 6, bottom: 6 } };
     const breakpoints = [
@@ -416,12 +416,14 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         }
     };
     exports.GroupMetadata = GroupMetadata;
+    // TODO: check treeView, menu
+    const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider', 'i-repeater'];
+    exports.CONTAINERS = CONTAINERS;
 });
 define("@scom/scom-designer/components/components.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/components/index.css.ts"], function (require, exports, components_5, index_css_1, config_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_5.Styles.Theme.ThemeVars;
-    const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider'];
     let DesignerComponents = class DesignerComponents extends components_5.Module {
         constructor() {
             super(...arguments);
@@ -450,7 +452,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.updateActiveStyle(elm);
         }
         get isContainer() {
-            return this.currentComponent?.name && CONTAINERS.includes(this.currentComponent?.name);
+            return this.currentComponent?.name && config_1.CONTAINERS.includes(this.currentComponent?.name);
         }
         updateActiveStyle(el) {
             const currentElm = this.vStackComponents?.querySelector(`.${index_css_1.rowItemActiveStyled}`);
@@ -4972,6 +4974,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         async createControl(parent, name, options) {
             const controlConstructor = window.customElements.get(name);
+            if (!controlConstructor)
+                return;
             options = options || {};
             let newOptions = {};
             try {
@@ -4979,8 +4983,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             catch { }
             const control = await controlConstructor.create({ ...newOptions, designMode: true, cursor: 'pointer' });
-            if (parent)
-                parent.append(control);
+            parent?.appendChild(control);
+            if (name === 'i-icon') { // TODO: fix this
+                control.setAttribute('name', options.name);
+            }
             const breakpointProps = (0, config_8.getMediaQueryProps)(options.mediaQueries);
             control._setDesignProps(options, breakpointProps);
             const hasBackground = 'background' in newOptions;
@@ -5015,6 +5021,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         continue;
                     }
                 }
+                if ((0, utils_11.isSameValue)(defaultValue, props[prop]) || props[prop] === undefined) {
+                    continue;
+                }
                 if (typeof props[prop] === 'object') {
                     for (let subProp in props[prop]) {
                         if (props[prop][subProp] === '') {
@@ -5022,7 +5031,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         }
                     }
                 }
-                if ((0, utils_11.isSameValue)(defaultValue, props[prop]) || props[prop] === undefined) {
+                if (typeof props[prop] === 'object' && Object.keys(props[prop]).length === 0) {
                     continue;
                 }
                 newProps[prop] = this.formatDesignProp(prop, props[prop], control);
@@ -5162,15 +5171,15 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         async onDuplicateComponent(component) {
             this.modified = true;
+            this.updateDesignProps(this._rootComponent);
             const control = this.pathMapping.get(component.path);
             const newComponent = this.duplicateItem(component);
-            const parentControl = control?.control?.parent;
-            await this.renderComponent(parentControl, newComponent, true);
+            const parentPath = component.parent;
+            const parent = this.pathMapping.get(parentPath);
+            await this.renderComponent(parent, newComponent, true);
             if (control.control && newComponent.control) {
                 control.control.insertAdjacentElement('afterend', newComponent.control);
             }
-            const parentPath = component.parent;
-            const parent = this.pathMapping.get(parentPath);
             if (parent) {
                 parent.items = parent.items || [];
                 const index = parent.items.findIndex(x => x.path === component.path);
@@ -5202,24 +5211,32 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         async renderComponent(parent, component, select) {
             if (!component?.name)
                 return;
-            let control = await this.renderControl(parent, component);
+            const parentControl = parent?.control || this.pnlFormDesigner;
+            const control = await this.renderControl(parentControl, component);
             if (!control)
                 return;
+            control.onclick = null;
             if (!control.style.position)
                 control.style.position = "relative";
             component.control = control;
-            control.onclick = null;
-            this.bindControlEvents(component);
+            component.parent = parent?.path;
+            component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
             control.tag = new ControlResizer(control);
+            this.bindControlEvents(component);
+            this.pathMapping.set(component.path, component);
             if (component?.items?.length) {
                 for (let item of component.items) {
-                    await this.renderComponent(control, { ...item, control: null });
+                    await this.renderComponent(component, { ...item, control: null });
                 }
             }
-            this.pathMapping.set(component.path, { ...component });
             const beforeSelected = this.selectedControl?.path;
-            if (select || (beforeSelected && beforeSelected === component.path))
+            if (select || (beforeSelected && beforeSelected === component.path)) {
                 this.handleSelectControl(component);
+            }
+            if (component.repeater) {
+                this.updateRepeater(component.repeater);
+            }
+            return component;
         }
         async renderControl(parent, component) {
             const options = (0, utils_11.parseProps)(component.props);
@@ -5228,10 +5245,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             let isMenu = component.name === 'i-menu-item' && parent instanceof components_31.Menu;
             let isTree = component.name === 'i-tree-node' && parent instanceof components_31.TreeView;
             if (isTab || isMenu || isTree) {
-                const customOptions = { ...(options || {}) };
-                control = parent.add(customOptions);
+                control = parent.add(options);
             }
-            else if (parent instanceof components_31.CarouselSlider) {
+            else if (parent instanceof components_31.CarouselSlider || parent instanceof components_31.Repeater) {
                 const childControl = await this.createControl(undefined, component.name, options);
                 control = parent.add(childControl);
             }
@@ -5240,13 +5256,15 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             return control;
         }
-        isParentGroup(control) {
-            return control instanceof components_31.Container ||
-                control instanceof components_31.Tabs ||
-                control instanceof components_31.Tab ||
-                control instanceof components_31.Menu ||
-                control instanceof components_31.TreeView ||
-                control instanceof components_31.CarouselSlider;
+        updateRepeater(path) {
+            const repeater = this.pathMapping.get(path)?.control;
+            if (repeater)
+                repeater.update();
+        }
+        isParentGroup(name) {
+            if (!name)
+                return false;
+            return config_8.CONTAINERS.includes(name);
         }
         bindControlEvents(control) {
             control.control.onMouseDown = () => {
@@ -5294,7 +5312,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         onCloseComponentPicker() {
             this.mdPicker.visible = false;
         }
-        async handleAddControl(event, parent) {
+        async handleAddControl(parent, event) {
+            if (!parent)
+                return;
             if (event)
                 event.stopPropagation();
             this.modified = true;
@@ -5317,7 +5337,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         left: `{${pos.x}}`,
                         top: `{${pos.y}}`,
                     };
-                    await this.renderComponent(this.pnlFormDesigner, com, true);
+                    await this.renderComponent(undefined, com, true);
                     if (!this._rootComponent.items)
                         this._rootComponent.items = [];
                     this._rootComponent.items.push(com);
@@ -5407,6 +5427,19 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     };
                     break;
                 case 'i-video':
+                    props = {
+                        width: '100%',
+                        display: 'block'
+                    };
+                    break;
+                case 'i-repeater':
+                    props = {
+                        width: '100%',
+                        display: 'block',
+                        count: '{3}'
+                    };
+                    break;
+                case 'i-accordion':
                     props = {
                         width: '100%',
                         display: 'block'
@@ -5522,11 +5555,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 if (!finded)
                     this.recentComponents.push(this.selectedComponent);
             }
-            if (this.isParentGroup(this.selectedComponent.control)) {
+            if (this.isParentGroup(this.currentParent?.name)) {
                 const parentControl = this.pathMapping.get(this.currentParent.path);
-                const com = await this.handleAddControl(undefined, parentControl?.control);
+                const com = await this.handleAddControl(parentControl);
                 if (com && parentControl) {
-                    com.parent = this.currentParent.path;
                     parentControl.items = parentControl.items || [];
                     parentControl.items.push(com);
                     this.pathMapping.set(this.currentParent.path, parentControl);
@@ -5596,6 +5628,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             if (prop === "id" && value && oldVal !== value)
                 this.studio.renameComponent(this, oldVal, value);
+            if (this.selectedControl.repeater) {
+                this.updateDesignProps(this.selectedControl);
+                if (this.selectedControl.name === 'i-icon' && control._getDesignPropValue('name')) {
+                    control.setAttribute('name', control._getDesignPropValue('name'));
+                }
+                this.updateRepeater(this.selectedControl.repeater);
+            }
             this.pathMapping.set(this.selectedControl.path, this.selectedControl);
         }
         onControlEventChanged(prop, newValue, oldValue) {
@@ -5621,13 +5660,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 id: '',
                 elements: [this._rootComponent]
             };
-            this.onUpdateDesigner();
+            this.onUpdateDesigner(false);
             this.designerProperties.clear();
         }
-        onUpdateDesigner() {
+        onUpdateDesigner(refresh = true) {
+            if (refresh) {
+                this.updateDesignProps(this._rootComponent);
+            }
             this.pnlFormDesigner.clearInnerHTML();
             this.pathMapping = new Map();
-            this.renderComponent(this.pnlFormDesigner, {
+            this.renderComponent(undefined, {
                 ...this._rootComponent,
                 control: null
             });
@@ -5775,7 +5817,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.pnlFormDesigner.width = minWidth;
             }
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
-            this.updateDesignProps(this._rootComponent);
             this.onUpdateDesigner();
             this.designerComponents.renderUI();
         }
@@ -10228,6 +10269,8 @@ declare module "packages/image/src/image" {
         private _objectFit;
         private _borderValue;
         constructor(parent?: Control, options?: any);
+        get fallbackUrl(): string;
+        set fallbackUrl(value: string);
         get rotate(): number;
         set rotate(value: any);
         get url(): string;
@@ -11760,7 +11803,6 @@ declare module "packages/datepicker/src/datepicker" {
         set placeholder(value: string);
         get type(): dateType;
         set type(value: dateType);
-        get designMode(): boolean;
         set designMode(value: boolean);
         private get formatString();
         private _onDatePickerChange;
@@ -11825,7 +11867,6 @@ declare module "packages/range/src/range" {
         set width(value: number | string);
         get enabled(): boolean;
         set enabled(value: boolean);
-        get designMode(): boolean;
         set designMode(value: boolean);
         get tooltipVisible(): boolean;
         set tooltipVisible(value: boolean);
@@ -16198,6 +16239,7 @@ declare module "packages/markdown/src/markdown" {
         get padding(): ISpace;
         set padding(value: ISpace);
         private getRenderer;
+        getTokens(text: string): Promise<any>;
         load(text: string): Promise<any>;
         private preParse;
         beforeRender(text: string): Promise<void>;
@@ -16270,7 +16312,6 @@ declare module "packages/markdown-editor/src/markdown-editor" {
         set previewStyle(value: 'tab' | 'vertical');
         get viewer(): boolean;
         set viewer(value: boolean);
-        get designMode(): boolean;
         set designMode(value: boolean);
         get value(): string;
         set value(value: string);
@@ -17314,7 +17355,6 @@ declare module "packages/video/src/video" {
         set url(value: string);
         get border(): Border;
         set border(value: IBorder);
-        get designMode(): boolean;
         set designMode(value: boolean);
         getPlayer(): any;
         private getVideoTypeFromExtension;
@@ -17942,6 +17982,106 @@ declare module "packages/form/src/form" {
 declare module "packages/form/src/index" {
     export { Form, FormElement, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/form";
 }
+declare module "packages/repeater/src/style/repeater.css" { }
+declare module "packages/repeater/src/repeater" {
+    import { Control, ControlElement, Container } from "@ijstech/components/base";
+    import "packages/repeater/src/style/repeater.css";
+    type onRenderCallback = (parent: Control, index: number) => void;
+    export interface RepeaterElement extends ControlElement {
+        onRender?: onRenderCallback;
+        count?: number;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-repeater']: RepeaterElement;
+            }
+        }
+    }
+    export class Repeater extends Container {
+        private _count;
+        private wrapper;
+        private templateEl;
+        onRender: onRenderCallback;
+        constructor(parent?: Control, options?: any);
+        get count(): number;
+        set count(value: number);
+        private cloneItems;
+        add(item: Control): Control;
+        update(): void;
+        clear(): void;
+        protected init(): void;
+        static create(options?: RepeaterElement, parent?: Container): Promise<Repeater>;
+    }
+}
+declare module "packages/repeater/src/index" {
+    export { Repeater, RepeaterElement } from "packages/repeater/src/repeater";
+}
+declare module "packages/accordion/src/interface" {
+    import { Control, ControlElement } from "@ijstech/components/base";
+    export interface IAccordionItem extends ControlElement {
+        name: string;
+        defaultExpanded?: boolean;
+        showRemove?: boolean;
+        onRender: (item: IAccordionItem) => Control;
+    }
+    export interface IAccordion {
+        items: IAccordionItem[];
+        isFlush?: boolean;
+    }
+}
+declare module "packages/accordion/src/style/accordion.css" {
+    export const customStyles: string;
+    export const expandablePanelStyle: string;
+}
+declare module "packages/accordion/src/accordion" {
+    import { Control, Container, ControlElement } from "@ijstech/components/base";
+    import { IAccordionItem } from "packages/accordion/src/interface";
+    export { IAccordionItem };
+    type onCustomItemRemovedCallback = (item: Control) => Promise<void>;
+    type onCustomRenderCallback = (target: Control, data: IAccordionItem) => Control;
+    export interface AccordionElement extends ControlElement {
+        items?: IAccordionItem[];
+        isFlush?: boolean;
+        onCustomItemRemoved?: onCustomItemRemovedCallback;
+        onCustomRender?: onCustomRenderCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ["i-accordion"]: AccordionElement;
+            }
+        }
+    }
+    export interface IAccordionMessage {
+    }
+    export class Accordion extends Control {
+        private wrapper;
+        private _items;
+        private _isFlush;
+        private accordionItemMapper;
+        onCustomItemRemoved: onCustomItemRemovedCallback;
+        onCustomRender: onCustomRenderCallback;
+        static create(options?: AccordionElement, parent?: Container): Promise<Accordion>;
+        constructor(parent?: Container, options?: any);
+        get isFlush(): boolean;
+        set isFlush(value: boolean);
+        get items(): IAccordionItem[];
+        set items(value: IAccordionItem[]);
+        private createAccordionItem;
+        private onItemClick;
+        private onRemoveClick;
+        add(item: IAccordionItem): void;
+        updateItemName(id: string, name: string): void;
+        removeItem(id: string): void;
+        clear(): void;
+        private updateAccordion;
+        protected init(): Promise<void>;
+    }
+}
+declare module "packages/accordion/src/index" {
+    export { Accordion, AccordionElement, IAccordionItem } from "packages/accordion/src/accordion";
+}
 declare module "@ijstech/components" {
     export * as Styles from "packages/style/src/index";
     export { application, EventBus, IEventBus, IHasDependencies, IModuleOptions, IModuleRoute, IModuleMenuItem, IRenderUIOptions, DataSchemaValidator, renderUI, FormatUtils, IFormatNumberOptions, IdUtils } from "packages/application/src/index";
@@ -17986,6 +18126,8 @@ declare module "@ijstech/components" {
     export { Breadcrumb } from "packages/breadcrumb/src/index";
     export { Form, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/index";
     export { ColorPicker } from "packages/color/src/index";
+    export { Repeater } from "packages/repeater/src/index";
+    export { Accordion, IAccordionItem } from "packages/accordion/src/index";
 }
 `;
 });
@@ -22703,18 +22845,19 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (!root.items)
                 root.items = [];
             if (root.items.length) {
-                root.items = this.updatePath(root.items, root.path);
+                root.items = this.updatePath(root.items, root);
             }
             return { ...root };
         }
-        updatePath(items, path) {
+        updatePath(items, parent) {
             return [...items].map((item) => {
                 item.path = components_33.IdUtils.generateUUID();
-                item.parent = path;
+                item.parent = parent.path;
+                item.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
                 if (!item.items)
                     item.items = [];
                 if (item.items.length) {
-                    item.items = this.updatePath(item.items, item.path);
+                    item.items = this.updatePath(item.items, item);
                 }
                 return item;
             });
