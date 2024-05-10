@@ -1,27 +1,28 @@
 import {
-  Module,
-  customElements,
-  Styles,
-  Panel,
-  GridLayout,
-  Input,
-  ControlElement,
+  CarouselSlider,
   Container,
   Control,
-  IdUtils,
+  ControlElement,
+  customElements,
   getCustomElements,
-  IconName,
-  Menu,
-  Link,
+  GridLayout,
   Icon,
+  IconName,
+  IdUtils,
+  Iframe,
   Image,
+  Input,
+  Link,
+  Menu,
+  Modal,
+  Module,
+  Panel,
+  Repeater,
+  Styles,
+  Tab,
   Tabs,
   TreeView,
-  Modal,
-  VStack,
-  Tab,
-  CarouselSlider,
-  Repeater
+  VStack
 } from '@ijstech/components'
 import {
   DesignerScreens,
@@ -79,7 +80,9 @@ class ControlResizer {
   }
 }
 
-interface ScomDesignerFormElement extends ControlElement {}
+interface ScomDesignerFormElement extends ControlElement {
+  onPreview?: ()=> Promise<string>;
+}
 
 declare global {
   namespace JSX {
@@ -101,6 +104,8 @@ export class ScomDesignerForm extends Module {
   private inputSearch: Input
   private currentTab = TABS.BITS
   private pnlFormDesigner: Panel
+  private pnlPreview: Panel;
+  private ifrPreview: Iframe;
   private mdPicker: Modal
   private designerWrapper: VStack
   private pnlScreens: Panel
@@ -123,6 +128,7 @@ export class ScomDesignerForm extends Module {
   selectedControl: IControl
   modified: boolean;
   studio: IStudio;
+  onPreview?: ()=> Promise<{module: string, script: string}>;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -143,7 +149,9 @@ export class ScomDesignerForm extends Module {
   }
 
   setData() {}
-
+  set previewUrl(url: string){
+    this.ifrPreview.url = url;
+  }
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
     if (this.currentTab === TABS.RECENT) {
@@ -1052,11 +1060,28 @@ export class ScomDesignerForm extends Module {
     this.designPos = {};
     this.designerProperties.onUpdate();
   }
-
+  private async handlePreviewChanged(type: string, value: string) {
+    if (value == '1'){
+      this.pnlFormDesigner.visible = false;
+      this.pnlPreview.visible = true;
+      if (this.onPreview){
+        let result = await this.onPreview();
+        if (result){
+            this.ifrPreview.postMessage(JSON.stringify(result));
+          }
+      }
+    }
+    else{
+      this.ifrPreview.reload();
+      this.pnlFormDesigner.visible = true;
+      this.pnlPreview.visible = false;
+    }
+  }
   private handleBreakpoint(value: number) {
     const { minWidth } = breakpointsMap[value];
     if (minWidth !== undefined) {
       this.pnlFormDesigner.width = minWidth;
+      this.pnlPreview.width = minWidth;
     }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.onUpdateDesigner();
@@ -1275,6 +1300,23 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             ></i-panel>
+            <i-panel
+              id="pnlPreview"
+              width={'auto'} minHeight={'100%'}
+              background={{ color: '#26324b' }}
+              overflow={'hidden'}
+              visible={false}
+              mediaQueries={[
+                {
+                  maxWidth: '1024px',
+                  properties: {
+                    maxHeight: '100%'
+                  }
+                }
+              ]}
+            >
+              <i-iframe id="ifrPreview" width={'100%'} height={'100%'}></i-iframe>
+            </i-panel>
           </i-vstack>
           <i-panel
             id="pnlProperties"
@@ -1311,6 +1353,7 @@ export class ScomDesignerForm extends Module {
               onEventChanged={this.onControlEventChanged}
               onEventDblClick={this.onControlEventDblClick}
               onBreakpointChanged={this.handleBreakpoint}
+              onPreviewChanged={this.handlePreviewChanged}
             />
           </i-panel>
         </i-hstack>

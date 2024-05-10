@@ -271,7 +271,7 @@ define("@scom/scom-designer/helpers/store.ts", ["require", "exports"], function 
     };
     exports.getBreakpoint = getBreakpoint;
 });
-define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech/components", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_4, assets_1, store_1) {
+define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech/components", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_4, store_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CONTAINERS = exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
@@ -355,28 +355,28 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
             type: 'preview',
             value: 1 /* PREVIEWS.WEB */
         },
-        {
-            tooltip: 'iOS Preview',
-            icon: {
-                image: {
-                    url: assets_1.default.fullPath('img/designer/IOS.svg'),
-                    ...iconProps
-                }
-            },
-            type: 'preview',
-            value: 2 /* PREVIEWS.IOS */
-        },
-        {
-            tooltip: 'Android Preview',
-            icon: {
-                image: {
-                    url: assets_1.default.fullPath('img/designer/Android.svg'),
-                    ...iconProps
-                }
-            },
-            type: 'preview',
-            value: 3 /* PREVIEWS.ANDROID */,
-        }
+        // {
+        //   tooltip: 'iOS Preview',
+        //   icon: {
+        //     image: {
+        //       url: assets.fullPath('img/designer/IOS.svg'),
+        //       ...iconProps
+        //     }
+        //   },
+        //   type: 'preview',
+        //   value: PREVIEWS.IOS
+        // },
+        // {
+        //   tooltip: 'Android Preview',
+        //   icon: {
+        //     image: {
+        //       url: assets.fullPath('img/designer/Android.svg'),
+        //       ...iconProps
+        //     }
+        //   },
+        //   type: 'preview',
+        //   value: PREVIEWS.ANDROID,
+        // }
     ];
     exports.previews = previews;
     const getMediaQueries = () => {
@@ -1075,7 +1075,7 @@ define("@scom/scom-designer/tools/stylesheet.tsx", ["require", "exports", "@ijst
     ], DesignerToolStylesheet);
     exports.default = DesignerToolStylesheet;
 });
-define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, assets_2, store_2) {
+define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts"], function (require, exports, assets_1, store_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
@@ -1101,7 +1101,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 type,
                 icon: {
                     image: {
-                        url: assets_2.default.fullPath('img/designer/layout/align-start.svg')
+                        url: assets_1.default.fullPath('img/designer/layout/align-start.svg')
                     }
                 }
             },
@@ -1111,7 +1111,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 type,
                 icon: {
                     image: {
-                        url: assets_2.default.fullPath('img/designer/layout/align-center.svg')
+                        url: assets_1.default.fullPath('img/designer/layout/align-center.svg')
                     }
                 }
             },
@@ -1121,7 +1121,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 type,
                 icon: {
                     image: {
-                        url: assets_2.default.fullPath('img/designer/layout/align-start.svg')
+                        url: assets_1.default.fullPath('img/designer/layout/align-start.svg')
                     }
                 },
                 rotate: 180
@@ -1132,7 +1132,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 type,
                 icon: {
                     image: {
-                        url: assets_2.default.fullPath('img/designer/layout/align-stretch.svg')
+                        url: assets_1.default.fullPath('img/designer/layout/align-stretch.svg')
                     }
                 }
             },
@@ -1142,7 +1142,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 type,
                 icon: {
                     image: {
-                        url: assets_2.default.fullPath('img/designer/layout/align-base-line.svg')
+                        url: assets_1.default.fullPath('img/designer/layout/align-base-line.svg')
                     }
                 }
             }
@@ -1165,7 +1165,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'justifyContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-start.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-start.svg')
                 }
             }
         },
@@ -1175,7 +1175,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'justifyContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-center.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-center.svg')
                 }
             },
         },
@@ -1185,7 +1185,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'justifyContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-start.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-start.svg')
                 }
             },
             rotate: 180
@@ -1196,7 +1196,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'justifyContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-between.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-between.svg')
                 }
             },
         },
@@ -1206,7 +1206,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'justifyContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-around.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-around.svg')
                 }
             },
         },
@@ -1217,7 +1217,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'justifyContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-evenly.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-evenly.svg')
                 }
             }
         }
@@ -1229,7 +1229,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'alignContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/align-start.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/align-start.svg')
                 }
             }
         },
@@ -1239,7 +1239,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'alignContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/align-center.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/align-center.svg')
                 }
             },
         },
@@ -1249,7 +1249,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'alignContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/align-start.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/align-start.svg')
                 }
             },
             rotate: 180
@@ -1260,7 +1260,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'alignContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-between.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-between.svg')
                 }
             },
             rotate: 90
@@ -1271,7 +1271,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'alignContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/justify-around.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/justify-around.svg')
                 }
             },
             rotate: 90
@@ -1282,7 +1282,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'alignContent',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/layout/align-stretch.svg')
+                    url: assets_1.default.fullPath('img/designer/layout/align-stretch.svg')
                 }
             }
         }
@@ -1294,7 +1294,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'style',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/border/solid.svg')
+                    url: assets_1.default.fullPath('img/designer/border/solid.svg')
                 }
             }
         },
@@ -1304,7 +1304,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'style',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/border/dotted.svg')
+                    url: assets_1.default.fullPath('img/designer/border/dotted.svg')
                 }
             }
         },
@@ -1314,7 +1314,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'style',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/border/dashed.svg')
+                    url: assets_1.default.fullPath('img/designer/border/dashed.svg')
                 }
             }
         },
@@ -1352,7 +1352,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'transform',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/font/capitalize.svg')
+                    url: assets_1.default.fullPath('img/designer/font/capitalize.svg')
                 }
             }
         },
@@ -1362,7 +1362,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'transform',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/font/lowercase.svg')
+                    url: assets_1.default.fullPath('img/designer/font/lowercase.svg')
                 }
             }
         },
@@ -1372,7 +1372,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
             type: 'transform',
             icon: {
                 image: {
-                    url: assets_2.default.fullPath('img/designer/font/uppercase.svg')
+                    url: assets_1.default.fullPath('img/designer/font/uppercase.svg')
                 }
             }
         }
@@ -1799,7 +1799,7 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
     ], DesignerToolHeader);
     exports.default = DesignerToolHeader;
 });
-define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts"], function (require, exports, components_10, index_css_6, assets_3, utils_1, config_2) {
+define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/tools/index.css.ts", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts"], function (require, exports, components_10, index_css_6, assets_2, utils_1, config_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DESIGNER_LAYOUT_PROPS = void 0;
@@ -2014,8 +2014,8 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
                         this.$render("i-vstack", { gap: 12 },
                             this.$render("i-hstack", { verticalAlignment: 'center', gap: "5px" },
                                 this.$render("designer-selector", { id: "directionSelector", title: "Direction", stack: { grow: '1', shrink: '1' }, items: [
-                                        { value: 'vertical', tooltip: 'Column', type: 'direction', icon: { image: { url: assets_3.default.fullPath('img/designer/layout/column.svg') } } },
-                                        { value: 'horizontal', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets_3.default.fullPath('img/designer/layout/column.svg') } } },
+                                        { value: 'vertical', tooltip: 'Column', type: 'direction', icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
+                                        { value: 'horizontal', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
                                     ], onChanged: this.onSelectChanged }),
                                 this.$render("i-hstack", { gap: 4, verticalAlignment: "center", stack: { grow: '1', shrink: '1' } },
                                     this.$render("i-switch", { id: "reverseSwitch", onChanged: this.onReverseSwitch }),
@@ -4322,6 +4322,8 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                 this.onBreakpointChanged(value);
         }
         onPreviewClick(type, value) {
+            if (this.onPreviewChanged)
+                this.onPreviewChanged(type, value);
         }
         onShowConfig() {
             if (this.component?.control) {
@@ -4720,7 +4722,7 @@ define("@scom/scom-designer/components/index.ts", ["require", "exports", "@scom/
     exports.DesignerPickerBlocks = pickerBlocks_1.default;
     exports.DesignerPickerComponents = pickerComponents_1.default;
 });
-define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designer/assets.ts"], function (require, exports, assets_4) {
+define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designer/assets.ts"], function (require, exports, assets_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.screen = exports.blockComponents = exports.pickerComponents = exports.recentComponents = void 0;
@@ -4733,12 +4735,12 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Text',
-                    image: assets_4.default.fullPath('img/designer/Text.svg')
+                    image: assets_3.default.fullPath('img/designer/Text.svg')
                 },
                 {
                     path: '',
                     name: 'View',
-                    image: assets_4.default.fullPath('img/designer/View.svg')
+                    image: assets_3.default.fullPath('img/designer/View.svg')
                 }
             ]
         },
@@ -4749,7 +4751,7 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Button',
-                    image: assets_4.default.fullPath('img/designer/Button.svg')
+                    image: assets_3.default.fullPath('img/designer/Button.svg')
                 }
             ]
         }
@@ -4762,17 +4764,17 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Icon',
-                    image: assets_4.default.fullPath('img/designer/Icon.svg')
+                    image: assets_3.default.fullPath('img/designer/Icon.svg')
                 },
                 {
                     path: '',
                     name: 'Text',
-                    image: assets_4.default.fullPath('img/designer/Text.svg')
+                    image: assets_3.default.fullPath('img/designer/Text.svg')
                 },
                 {
                     path: '',
                     name: 'View',
-                    image: assets_4.default.fullPath('img/designer/View.svg')
+                    image: assets_3.default.fullPath('img/designer/View.svg')
                 }
             ]
         },
@@ -4783,12 +4785,12 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
                 {
                     path: '',
                     name: 'Button',
-                    image: assets_4.default.fullPath('img/designer/Button.svg')
+                    image: assets_3.default.fullPath('img/designer/Button.svg')
                 },
                 {
                     path: '',
                     name: 'Link',
-                    image: assets_4.default.fullPath('img/designer/Link.svg')
+                    image: assets_3.default.fullPath('img/designer/Link.svg')
                 }
             ]
         }
@@ -4799,13 +4801,13 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
             id: '1',
             path: '',
             caption: 'My Block 1',
-            image: assets_4.default.fullPath('img/designer/Block.svg')
+            image: assets_3.default.fullPath('img/designer/Block.svg')
         },
         {
             id: '2',
             path: '',
             caption: 'My Block 2',
-            image: assets_4.default.fullPath('img/designer/Block.svg')
+            image: assets_3.default.fullPath('img/designer/Block.svg')
         }
     ];
     exports.screen = {
@@ -4815,32 +4817,32 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
             {
                 path: 'root',
                 name: 'View',
-                image: assets_4.default.fullPath('img/designer/View.svg'),
+                image: assets_3.default.fullPath('img/designer/View.svg'),
                 items: [
                     {
                         path: 'root/text',
                         name: 'Text',
-                        image: assets_4.default.fullPath('img/designer/Text.svg')
+                        image: assets_3.default.fullPath('img/designer/Text.svg')
                     },
                     {
                         path: 'root/button',
                         name: 'Button',
-                        image: assets_4.default.fullPath('img/designer/Button.svg')
+                        image: assets_3.default.fullPath('img/designer/Button.svg')
                     },
                     {
                         path: 'root/view',
                         name: 'View',
-                        image: assets_4.default.fullPath('img/designer/View.svg'),
+                        image: assets_3.default.fullPath('img/designer/View.svg'),
                         items: [
                             {
                                 path: 'root/view/text',
                                 name: 'Text',
-                                image: assets_4.default.fullPath('img/designer/Text.svg')
+                                image: assets_3.default.fullPath('img/designer/Text.svg')
                             },
                             {
                                 path: 'root/view/text-2',
                                 name: 'Text 2',
-                                image: assets_4.default.fullPath('img/designer/Text.svg')
+                                image: assets_3.default.fullPath('img/designer/Text.svg')
                             }
                         ]
                     }
@@ -4914,6 +4916,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             return self;
         }
         setData() { }
+        set previewUrl(url) {
+            this.ifrPreview.url = url;
+        }
         get pickerComponentsFiltered() {
             let components;
             if (this.currentTab === TABS.RECENT) {
@@ -5811,10 +5816,28 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.designPos = {};
             this.designerProperties.onUpdate();
         }
+        async handlePreviewChanged(type, value) {
+            if (value == '1') {
+                this.pnlFormDesigner.visible = false;
+                this.pnlPreview.visible = true;
+                if (this.onPreview) {
+                    let result = await this.onPreview();
+                    if (result) {
+                        this.ifrPreview.postMessage(JSON.stringify(result));
+                    }
+                }
+            }
+            else {
+                this.ifrPreview.reload();
+                this.pnlFormDesigner.visible = true;
+                this.pnlPreview.visible = false;
+            }
+        }
         handleBreakpoint(value) {
             const { minWidth } = config_8.breakpointsMap[value];
             if (minWidth !== undefined) {
                 this.pnlFormDesigner.width = minWidth;
+                this.pnlPreview.width = minWidth;
             }
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
             this.onUpdateDesigner();
@@ -5895,11 +5918,20 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                         maxHeight: '100%'
                                     }
                                 }
-                            ] })),
+                            ] }),
+                        this.$render("i-panel", { id: "pnlPreview", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: 'hidden', visible: false, mediaQueries: [
+                                {
+                                    maxWidth: '1024px',
+                                    properties: {
+                                        maxHeight: '100%'
+                                    }
+                                }
+                            ] },
+                            this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%' }))),
                     this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition, zIndex: 10 },
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
-                        this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint })))));
+                        this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint, onPreviewChanged: this.handlePreviewChanged })))));
         }
     };
     ScomDesignerForm = __decorate([
@@ -22713,6 +22745,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
             this.designTabs.activeTabIndex = 0;
         }
+        set previewUrl(url) {
+            this.formDesigner.previewUrl = url;
+        }
         locateMethod(designer, funcName) {
             let fileName = this.fileName;
             let result = this.compiler.locateMethod(fileName, funcName);
@@ -22871,6 +22906,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }, 500);
             if (this.onChanged)
                 this.onChanged(this.codeEditor.value);
+        }
+        handleDesignerPreview() {
+            if (this.onPreview)
+                return this.onPreview();
         }
         updateDesignerCode(fileName, modified) {
             if (modified || this.formDesigner?.modified) {
@@ -23059,7 +23098,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
                         this.$render("i-code-editor", { id: "codeEditor", dock: 'fill', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
-                        this.$render("i-scom-designer--form", { id: "formDesigner", dock: 'fill' }))),
+                        this.$render("i-scom-designer--form", { id: "formDesigner", dock: 'fill', onPreview: this.handleDesignerPreview.bind(this) }))),
                 this.$render("i-panel", { id: 'pnlMessage', resizer: true, dock: 'bottom', height: 100, visible: false, padding: { top: 5, bottom: 5 }, border: {
                         top: {
                             width: '1px',

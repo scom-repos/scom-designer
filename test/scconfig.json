@@ -20,12 +20,12 @@
     "@scom/scom-line-chart": "*",
     "@scom/scom-bar-chart": "*",
     "@scom/scom-pie-chart": "*",
-    "@scom/scom-table": "*",
     "@scom/scom-scatter-chart": "*",
     "@scom/scom-mixed-chart": "*",
     "@scom/scom-area-chart": "*"
   },
-  "packages": [
+  "packages": [    
+    "@scom/scom-table"
   ],
   "menus": [
   ],

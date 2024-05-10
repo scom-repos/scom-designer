@@ -96,28 +96,28 @@ const previews = [
     type: 'preview',
     value: PREVIEWS.WEB
   },
-  {
-    tooltip: 'iOS Preview',
-    icon: {
-      image: {
-        url: assets.fullPath('img/designer/IOS.svg'),
-        ...iconProps
-      }
-    },
-    type: 'preview',
-    value: PREVIEWS.IOS
-  },
-  {
-    tooltip: 'Android Preview',
-    icon: {
-      image: {
-        url: assets.fullPath('img/designer/Android.svg'),
-        ...iconProps
-      }
-    },
-    type: 'preview',
-    value: PREVIEWS.ANDROID,
-  }
+  // {
+  //   tooltip: 'iOS Preview',
+  //   icon: {
+  //     image: {
+  //       url: assets.fullPath('img/designer/IOS.svg'),
+  //       ...iconProps
+  //     }
+  //   },
+  //   type: 'preview',
+  //   value: PREVIEWS.IOS
+  // },
+  // {
+  //   tooltip: 'Android Preview',
+  //   icon: {
+  //     image: {
+  //       url: assets.fullPath('img/designer/Android.svg'),
+  //       ...iconProps
+  //     }
+  //   },
+  //   type: 'preview',
+  //   value: PREVIEWS.ANDROID,
+  // }
 ]
 
 const getMediaQueries = () => {

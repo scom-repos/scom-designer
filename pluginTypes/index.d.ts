@@ -76,7 +76,7 @@ declare module "@scom/scom-designer/helpers/config.ts" {
         IOS = 2,
         ANDROID = 3
     }
-    const previews: ({
+    const previews: {
         tooltip: string;
         icon: {
             width: string;
@@ -88,28 +88,10 @@ declare module "@scom/scom-designer/helpers/config.ts" {
                 bottom: number;
             };
             name: string;
-            image?: undefined;
         };
         type: string;
         value: PREVIEWS;
-    } | {
-        tooltip: string;
-        icon: {
-            image: {
-                width: string;
-                height: string;
-                padding: {
-                    top: number;
-                    left: number;
-                    right: number;
-                    bottom: number;
-                };
-                url: string;
-            };
-        };
-        type: string;
-        value: PREVIEWS;
-    })[];
+    }[];
     const getMediaQueries: () => IMediaQuery[];
     const getDefaultMediaQuery: (breakpoint: number) => any;
     const getMediaQuery: (mediaQueries: any) => any;
@@ -1501,10 +1483,11 @@ declare module "@scom/scom-designer/data.ts" {
 }
 /// <amd-module name="@scom/scom-designer/designer.tsx" />
 declare module "@scom/scom-designer/designer.tsx" {
-    import { Module, ControlElement, Container } from '@ijstech/components';
+    import { Container, ControlElement, Module } from '@ijstech/components';
     import { IComponent, IComponentPicker, IControl, IStudio } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     interface ScomDesignerFormElement extends ControlElement {
+        onPreview?: () => Promise<string>;
     }
     global {
         namespace JSX {
@@ -1524,6 +1507,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private inputSearch;
         private currentTab;
         private pnlFormDesigner;
+        private pnlPreview;
+        private ifrPreview;
         private mdPicker;
         private designerWrapper;
         private pnlScreens;
@@ -1543,9 +1528,14 @@ declare module "@scom/scom-designer/designer.tsx" {
         selectedControl: IControl;
         modified: boolean;
         studio: IStudio;
+        onPreview?: () => Promise<{
+            module: string;
+            script: string;
+        }>;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
+        set previewUrl(url: string);
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
@@ -1589,6 +1579,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleControlMouseDown;
         private handleControlMouseUp;
         private updateDesignPosition;
+        private handlePreviewChanged;
         private handleBreakpoint;
         private onToggleClick;
         private initEvents;
@@ -1709,6 +1700,7 @@ declare module "@scom/scom-designer" {
         url?: string;
         onSave?: onSaveCallback;
         onChanged?: (value: string) => void;
+        onPreview?: () => Promise<string>;
     }
     global {
         namespace JSX {
@@ -1728,8 +1720,10 @@ declare module "@scom/scom-designer" {
         private updateDesigner;
         onSave: onSaveCallback;
         onChanged?: (value: string) => void;
+        onPreview?: () => Promise<string>;
         tag: any;
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
+        set previewUrl(url: string);
         locateMethod(designer: ScomDesignerForm, funcName: string): void;
         removeComponent(designer: ScomDesignerForm): void;
         renameComponent(designer: ScomDesignerForm, oldId: string, newId: string): boolean;
@@ -1750,6 +1744,7 @@ declare module "@scom/scom-designer" {
         private updateRoot;
         private updatePath;
         private handleCodeEditorChange;
+        private handleDesignerPreview;
         private updateDesignerCode;
         handleGetChangedFiles(): Promise<void>;
         openFile(file: IIPFSData, endpoint: string, parentCid: string, parent: Control): Promise<void>;

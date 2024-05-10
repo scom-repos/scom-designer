@@ -333,7 +333,9 @@ export default class DesignerProperties extends Module {
     if (this.onBreakpointChanged) this.onBreakpointChanged(value);
   }
 
-  private onPreviewClick(type: string, value: any) {
+  private onPreviewClick(type: string, value: any) {    
+    if (this.onPreviewChanged)
+      this.onPreviewChanged(type, value);
   }
 
   private onShowConfig() {
