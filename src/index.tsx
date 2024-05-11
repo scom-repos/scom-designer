@@ -1,4 +1,5 @@
 import {
+  application,
   CodeEditor,
   Container,
   Control,
@@ -11,7 +12,7 @@ import {
   Panel,
   Tab,
   Tabs,
-} from '@ijstech/components'
+} from '@ijstech/components';
 import { blockStyle, codeTabsStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
@@ -25,7 +26,7 @@ interface ScomDesignerElement extends ControlElement {
   url?: string;
   onSave?: onSaveCallback;
   onChanged?: (value: string) => void;
-  onPreview?: ()=> Promise<string>;
+  onPreview?: ()=> Promise<{module: string, script: string}>;
 }
 
 declare global {
@@ -56,7 +57,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   onSave: onSaveCallback;
   onChanged?: (value: string) => void;
-  onPreview?: ()=> Promise<string>;
+  onPreview?: ()=> Promise<{module: string, script: string}>;
   tag: any = {}
 
   addEventHandler(
@@ -272,9 +273,38 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }, 500)
     if (this.onChanged) this.onChanged(this.codeEditor.value)
   }
-  private handleDesignerPreview(): Promise<string> {
+  async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
+    if (isPackage){
+        let content = await application.getContent(`${application.rootDir}libs/${fileName}/index.d.ts`);
+        return {
+            fileName: 'index.d.ts',
+            content: content
+        }
+    };
+  };
+  private async handleDesignerPreview(): Promise<{module: string, script: string}> {
+    this.updateDesignerCode(this.fileName, true)
     if (this.onPreview)
-        return this.onPreview();
+        return this.onPreview()
+    else {
+      let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
+      if (value){
+        let compiler = new Compiler()
+        await compiler.addFile(
+            'index.tsx',
+            value,
+            this.getImportFile
+        );
+        let result = await compiler.compile(false)
+        if (result.errors?.length > 0) 
+          console.log(result.errors)
+        else
+          return {
+              module: '@scom/debug-module',
+              script: result.script['index.js']
+          };
+      }
+    }
   }
   private updateDesignerCode(fileName: string, modified?: boolean): string {
     if (modified || this.formDesigner?.modified) {

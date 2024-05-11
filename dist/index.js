@@ -5861,7 +5861,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.pnlFormDesigner.visible = false;
                 this.pnlPreview.visible = true;
                 if (this.onPreview) {
-                    this.updateDesignProps(this._rootComponent);
+                    if (!this.ifrPreview.url)
+                        this.ifrPreview.url = 'https://decom.dev/debug.html';
                     let result = await this.onPreview();
                     if (result) {
                         this.ifrPreview.postMessage(JSON.stringify(result));
@@ -22994,9 +22995,36 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (this.onChanged)
                 this.onChanged(this.codeEditor.value);
         }
-        handleDesignerPreview() {
+        async getImportFile(fileName, isPackage) {
+            if (isPackage) {
+                let content = await components_33.application.getContent(`${components_33.application.rootDir}libs/${fileName}/index.d.ts`);
+                return {
+                    fileName: 'index.d.ts',
+                    content: content
+                };
+            }
+            ;
+        }
+        ;
+        async handleDesignerPreview() {
+            this.updateDesignerCode(this.fileName, true);
             if (this.onPreview)
                 return this.onPreview();
+            else {
+                let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
+                if (value) {
+                    let compiler = new compiler_1.Compiler();
+                    await compiler.addFile('index.tsx', value, this.getImportFile);
+                    let result = await compiler.compile(false);
+                    if (result.errors?.length > 0)
+                        console.log(result.errors);
+                    else
+                        return {
+                            module: '@scom/debug-module',
+                            script: result.script['index.js']
+                        };
+                }
+            }
         }
         updateDesignerCode(fileName, modified) {
             if (modified || this.formDesigner?.modified) {

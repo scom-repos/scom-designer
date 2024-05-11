@@ -1706,7 +1706,10 @@ declare module "@scom/scom-designer" {
         url?: string;
         onSave?: onSaveCallback;
         onChanged?: (value: string) => void;
-        onPreview?: () => Promise<string>;
+        onPreview?: () => Promise<{
+            module: string;
+            script: string;
+        }>;
     }
     global {
         namespace JSX {
@@ -1726,7 +1729,10 @@ declare module "@scom/scom-designer" {
         private updateDesigner;
         onSave: onSaveCallback;
         onChanged?: (value: string) => void;
-        onPreview?: () => Promise<string>;
+        onPreview?: () => Promise<{
+            module: string;
+            script: string;
+        }>;
         tag: any;
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         set previewUrl(url: string);
@@ -1750,6 +1756,10 @@ declare module "@scom/scom-designer" {
         private updateRoot;
         private updatePath;
         private handleCodeEditorChange;
+        getImportFile(fileName?: string, isPackage?: boolean): Promise<{
+            fileName: string;
+            content: string;
+        }>;
         private handleDesignerPreview;
         private updateDesignerCode;
         handleGetChangedFiles(): Promise<void>;
