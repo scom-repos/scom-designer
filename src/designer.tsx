@@ -19,9 +19,10 @@ import {
   Panel,
   Repeater,
   Styles,
-  Tab,
   Tabs,
   TreeView,
+  AccordionItem,
+  Accordion,
   VStack
 } from '@ijstech/components';
 import {Compiler} from '@ijstech/compiler';
@@ -141,6 +142,7 @@ export class ScomDesignerForm extends Module {
     this.onVisibleComponent = this.onVisibleComponent.bind(this);
     this.handleBreakpoint = this.handleBreakpoint.bind(this);
     this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
+    this.onAddItem = this.onAddItem.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -184,24 +186,33 @@ export class ScomDesignerForm extends Module {
 
   private getComponents() {
     let result: {[name: string]: IComponentPicker} = {};
+
     for (let group in GroupMetadata) {
       result[group] = {...GroupMetadata[group], items: []};
     }
+
     let components = getCustomElements();
+    const parentName = this.currentParent?.name;
+
+    components = Object.entries(components)
+      .filter(([name, component]) => component.icon && component.className)
+      .reduce((obj, [name, component]) => {
+        obj[name] = component;
+        return obj;
+      }, {} as Record<string, any>);
+
     for (let name in components) {
       const component = components[name];
       const icon: any = component?.icon as IconName;
-      const className = component?.className;
       const group = component?.group ?? 'Basic';
-      if (icon && className) {
-        result[group]['items'].push({
-          ...component,
-          icon,
-          path: '',
-          name: component.tagName
-        })
-      }
+      result[group]['items'].push({
+        ...component,
+        icon,
+        path: '',
+        name: component.tagName
+      });
     }
+
     return result;
   }
 
@@ -218,29 +229,25 @@ export class ScomDesignerForm extends Module {
     return !!(this.selectedControl?.control as any)?.showConfigurator;
   }
 
-  private async createControl(parent: Control|undefined, name: string, options?: any) {
+  private async createControl(parent: Control|undefined, name: string, config: {mediaQueries: any, options: any}) {
+    const { mediaQueries, options } = config;
     const controlConstructor: any = window.customElements.get(name);
     if (!controlConstructor) return;
-    options = options || {}
-    let newOptions = {}
-    try {
-      newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
-    } catch {}
-    const control = await controlConstructor.create({...newOptions, designMode: true, cursor: 'pointer'});
+    const control = await controlConstructor.create({...options, designMode: true, cursor: 'pointer'});
     parent?.appendChild(control);
     if (name === 'i-icon') { // TODO: fix this
       control.setAttribute('name', options.name);
     }
 
-    const breakpointProps = getMediaQueryProps(options.mediaQueries);
-    control._setDesignProps(options, breakpointProps);
+    const breakpointProps = getMediaQueryProps(mediaQueries);
+    control._setDesignProps({...options, mediaQueries}, breakpointProps);
 
-    const hasBackground = 'background' in newOptions;
-    const hasFont = 'font' in newOptions;
+    const hasBackground = 'background' in options;
+    const hasFont = 'font' in options;
     const isCustomWidget = !!(control as any)?.showConfigurator;
     if (isCustomWidget && (hasBackground || hasFont)) {
       let customTag = {...(control.tag || {})};
-      const value = newOptions[hasBackground ? 'background' : 'font'];
+      const value = options[hasBackground ? 'background' : 'font'];
       customTag.customBackgroundColor = true;
       customTag.backgroundColor = value?.color || '';
       customTag.customFontColor = true;
@@ -248,6 +255,18 @@ export class ScomDesignerForm extends Module {
       if ((control as any)?.setTag) (control as any).setTag(customTag);
     }
     return control;
+  }
+
+  private getOptions(props: any) {
+    let options: any = parseProps(props) || {};
+    let newOptions = {}
+    try {
+      newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
+    } catch {}
+    return {
+      mediaQueries: options.mediaQueries,
+      options: {...newOptions}
+    };
   }
 
   private updateDesignProps(component: Parser.IComponent) {
@@ -369,8 +388,12 @@ export class ScomDesignerForm extends Module {
   private onShowComponentPicker(component: IComponent) {
     this.mdPicker.linkTo = this.pnlScreens;
     this.mdPicker.height = this.designerComponents.height;
-    this.mdPicker.visible = true;
     this.currentParent = component;
+    this.mdPicker.visible = true;
+  }
+
+  private onModalOpen() {
+    this.initComponentPicker();
   }
 
   private onSelectComponent(component: IComponent) {
@@ -489,18 +512,21 @@ export class ScomDesignerForm extends Module {
   }
 
   private async renderControl(parent: Control, component: IControl) {
-    const options: any = parseProps(component.props);
+    const config = this.getOptions(component.props);
     let control = null;
     let isTab = component.name === 'i-tab' && parent instanceof Tabs;
     let isMenu = component.name === 'i-menu-item' && parent instanceof Menu;
     let isTree = component.name === 'i-tree-node' && parent instanceof TreeView;
-    if (isTab || isMenu || isTree) {
-      control = (parent as any).add(options);
-    } else if (parent instanceof CarouselSlider || parent instanceof Repeater) {
-      const childControl = await this.createControl(undefined, component.name, options);
+    let isAccordion = component.name === 'i-accordion-item' && parent instanceof Accordion;
+    if (isTab || isMenu || isTree || isAccordion) {
+      control = (parent as any).add({...config.options, designMode: true, cursor: 'pointer'});
+      const breakpointProps = getMediaQueryProps(config.mediaQueries);
+      control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
+    } else if (parent instanceof CarouselSlider || parent instanceof Repeater || parent instanceof AccordionItem) {
+      const childControl = await this.createControl(parent instanceof AccordionItem ? parent : undefined, component.name, config);
       control = parent.add(childControl);
     } else {
-      control = await this.createControl(parent, component.name, options);
+      control = await this.createControl(parent, component.name, config);
     }
     return control;
   }
@@ -688,9 +714,9 @@ export class ScomDesignerForm extends Module {
         }
         break;
       case 'i-accordion':
+      case 'i-accordion-item':
         props = {
-          width: '100%',
-          display: 'block'
+          width: '100%'
         }
         break;
       case 'i-image':
@@ -815,6 +841,18 @@ export class ScomDesignerForm extends Module {
         this.updateStructure();
       }
     }
+  }
+
+  private onAddItem(parent: IComponent) {
+    const name = 'i-accordion-item';
+    const props = this.getDefaultProps(name);
+    const component: IComponentItem = {
+      props: { ...props, name: '' },
+      items: [],
+      path: '',
+      name
+    }
+    this.onAddComponent(null, component);
   }
 
   private initBlockPicker() {
@@ -1178,6 +1216,7 @@ export class ScomDesignerForm extends Module {
               onDelete={this.onDeleteComponent}
               onDuplicate={this.onDuplicateComponent}
               onUpdate={this.onUpdateDesigner}
+              onAdd={this.onAddItem}
             />
              <i-modal
               id="mdPicker"
@@ -1189,6 +1228,7 @@ export class ScomDesignerForm extends Module {
               popupPlacement='rightTop'
               zIndex={2000}
               padding={{top: 0, bottom: 0, left: 0, right: 0}}
+              onOpen={this.onModalOpen}
             >
               <i-panel
                 width={'100%'}

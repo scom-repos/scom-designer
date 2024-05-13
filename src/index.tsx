@@ -283,6 +283,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     };
   };
   private async handleDesignerPreview(): Promise<{module: string, script: string}> {
+    this.updateDesignerCode(this.fileName, true)
     if (this.onPreview)
         return this.onPreview()
     else {

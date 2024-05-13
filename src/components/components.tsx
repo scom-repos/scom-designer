@@ -30,6 +30,7 @@ interface DesignerComponentsElement extends ControlElement {
   onVisible?: visibleCallback;
   onDelete?: selectCallback;
   onDuplicate?: selectCallback;
+  onAdd?: selectCallback;
   onUpdate?: () => void;
   screen?: IScreen;
 }
@@ -64,6 +65,7 @@ export default class DesignerComponents extends Module {
   onVisible: visibleCallback;
   onDelete: selectCallback;
   onDuplicate: selectCallback;
+  onAdd: selectCallback;
   onUpdate: () => void;
 
   get screen() {
@@ -88,6 +90,9 @@ export default class DesignerComponents extends Module {
     return this.currentComponent?.name && CONTAINERS.includes(this.currentComponent?.name)
   }
 
+  private get hasItem() {
+    return ['i-accordion', 'i-tabs'].includes(this.currentComponent?.name)
+  }
   private updateActiveStyle(el: Control) {
     const currentElm = this.vStackComponents?.querySelector(`.${rowItemActiveStyled}`);
     if (currentElm) currentElm.classList.remove(rowItemActiveStyled);
@@ -163,12 +168,6 @@ export default class DesignerComponents extends Module {
 
       const onShowActions = (target: Control, event: MouseEvent, component: IComponent) => {
         this.currentComponent = component;
-        // const { pageX, pageY, screenX } = event;
-        // let x = pageX;
-        // if (pageX + 112 >= screenX) {
-        //   x = screenX - 112;
-        // }
-        // this.onShowActions(pageY + 5, x);
         this.mdActions.linkTo = target;
         this.mdActions.popupPlacement = 'bottomRight';
         this.onShowActions();
@@ -434,7 +433,9 @@ export default class DesignerComponents extends Module {
     const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
     for (let i = 0; i < children.length; i++) {
       if (i === 0) {
-        (children[i] as Control).visible = this.isContainer;
+        (children[i] as Control).visible = this.isContainer && !this.hasItem;
+      } else if (i === 1) {
+        (children[i] as Control).visible = this.hasItem;
       } else {
         (children[i] as Control).visible = !isTopPanel;
       }
@@ -459,6 +460,15 @@ export default class DesignerComponents extends Module {
         onClick: () => {
           this.mdActions.visible = false;
           if (this.onShowComponentPicker) this.onShowComponentPicker({...this.currentComponent});
+        }
+      },
+      {
+        caption: 'Add Item',
+        icon: 'plus-circle',
+        visible: false,
+        onClick: () => {
+          this.mdActions.visible = false;
+          if (this.onAdd) this.onAdd(this.currentComponent);
         }
       },
       {
@@ -546,6 +556,7 @@ export default class DesignerComponents extends Module {
     this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
     this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
     this.onDuplicate = this.getAttribute('onDuplicate', true) || this.onDuplicate;
+    this.onAdd = this.getAttribute('onAdd', true) || this.onAdd;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
     this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
     this.initModalActions();

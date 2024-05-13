@@ -417,7 +417,7 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
     };
     exports.GroupMetadata = GroupMetadata;
     // TODO: check treeView, menu
-    const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider', 'i-repeater'];
+    const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider', 'i-repeater', 'i-accordion', 'i-accordion-item'];
     exports.CONTAINERS = CONTAINERS;
 });
 define("@scom/scom-designer/components/components.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/components/index.css.ts"], function (require, exports, components_5, index_css_1, config_1) {
@@ -453,6 +453,9 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         }
         get isContainer() {
             return this.currentComponent?.name && config_1.CONTAINERS.includes(this.currentComponent?.name);
+        }
+        get hasItem() {
+            return ['i-accordion', 'i-tabs'].includes(this.currentComponent?.name);
         }
         updateActiveStyle(el) {
             const currentElm = this.vStackComponents?.querySelector(`.${index_css_1.rowItemActiveStyled}`);
@@ -516,12 +519,6 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 });
                 const onShowActions = (target, event, component) => {
                     this.currentComponent = component;
-                    // const { pageX, pageY, screenX } = event;
-                    // let x = pageX;
-                    // if (pageX + 112 >= screenX) {
-                    //   x = screenX - 112;
-                    // }
-                    // this.onShowActions(pageY + 5, x);
                     this.mdActions.linkTo = target;
                     this.mdActions.popupPlacement = 'bottomRight';
                     this.onShowActions();
@@ -767,7 +764,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
             for (let i = 0; i < children.length; i++) {
                 if (i === 0) {
-                    children[i].visible = this.isContainer;
+                    children[i].visible = this.isContainer && !this.hasItem;
+                }
+                else if (i === 1) {
+                    children[i].visible = this.hasItem;
                 }
                 else {
                     children[i].visible = !isTopPanel;
@@ -793,6 +793,16 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                         this.mdActions.visible = false;
                         if (this.onShowComponentPicker)
                             this.onShowComponentPicker({ ...this.currentComponent });
+                    }
+                },
+                {
+                    caption: 'Add Item',
+                    icon: 'plus-circle',
+                    visible: false,
+                    onClick: () => {
+                        this.mdActions.visible = false;
+                        if (this.onAdd)
+                            this.onAdd(this.currentComponent);
                     }
                 },
                 {
@@ -866,6 +876,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
             this.onDelete = this.getAttribute('onDelete', true) || this.onDelete;
             this.onDuplicate = this.getAttribute('onDuplicate', true) || this.onDuplicate;
+            this.onAdd = this.getAttribute('onAdd', true) || this.onAdd;
             this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
             this.onShowComponentPicker = this.getAttribute('onShowComponentPicker', true) || this.onShowComponentPicker;
             this.initModalActions();
@@ -4909,6 +4920,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.onVisibleComponent = this.onVisibleComponent.bind(this);
             this.handleBreakpoint = this.handleBreakpoint.bind(this);
             this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
+            this.onAddItem = this.onAddItem.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -4952,19 +4964,23 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 result[group] = { ...config_8.GroupMetadata[group], items: [] };
             }
             let components = (0, components_31.getCustomElements)();
+            const parentName = this.currentParent?.name;
+            components = Object.entries(components)
+                .filter(([name, component]) => component.icon && component.className)
+                .reduce((obj, [name, component]) => {
+                obj[name] = component;
+                return obj;
+            }, {});
             for (let name in components) {
                 const component = components[name];
                 const icon = component?.icon;
-                const className = component?.className;
                 const group = component?.group ?? 'Basic';
-                if (icon && className) {
-                    result[group]['items'].push({
-                        ...component,
-                        icon,
-                        path: '',
-                        name: component.tagName
-                    });
-                }
+                result[group]['items'].push({
+                    ...component,
+                    icon,
+                    path: '',
+                    name: component.tagName
+                });
             }
             return result;
         }
@@ -4977,29 +4993,24 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         isCustomWidget() {
             return !!this.selectedControl?.control?.showConfigurator;
         }
-        async createControl(parent, name, options) {
+        async createControl(parent, name, config) {
+            const { mediaQueries, options } = config;
             const controlConstructor = window.customElements.get(name);
             if (!controlConstructor)
                 return;
-            options = options || {};
-            let newOptions = {};
-            try {
-                newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
-            }
-            catch { }
-            const control = await controlConstructor.create({ ...newOptions, designMode: true, cursor: 'pointer' });
+            const control = await controlConstructor.create({ ...options, designMode: true, cursor: 'pointer' });
             parent?.appendChild(control);
             if (name === 'i-icon') { // TODO: fix this
                 control.setAttribute('name', options.name);
             }
-            const breakpointProps = (0, config_8.getMediaQueryProps)(options.mediaQueries);
-            control._setDesignProps(options, breakpointProps);
-            const hasBackground = 'background' in newOptions;
-            const hasFont = 'font' in newOptions;
+            const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
+            control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
+            const hasBackground = 'background' in options;
+            const hasFont = 'font' in options;
             const isCustomWidget = !!control?.showConfigurator;
             if (isCustomWidget && (hasBackground || hasFont)) {
                 let customTag = { ...(control.tag || {}) };
-                const value = newOptions[hasBackground ? 'background' : 'font'];
+                const value = options[hasBackground ? 'background' : 'font'];
                 customTag.customBackgroundColor = true;
                 customTag.backgroundColor = value?.color || '';
                 customTag.customFontColor = true;
@@ -5008,6 +5019,18 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     control.setTag(customTag);
             }
             return control;
+        }
+        getOptions(props) {
+            let options = (0, utils_11.parseProps)(props) || {};
+            let newOptions = {};
+            try {
+                newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
+            }
+            catch { }
+            return {
+                mediaQueries: options.mediaQueries,
+                options: { ...newOptions }
+            };
         }
         updateDesignProps(component) {
             if (!component)
@@ -5128,8 +5151,11 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         onShowComponentPicker(component) {
             this.mdPicker.linkTo = this.pnlScreens;
             this.mdPicker.height = this.designerComponents.height;
-            this.mdPicker.visible = true;
             this.currentParent = component;
+            this.mdPicker.visible = true;
+        }
+        onModalOpen() {
+            this.initComponentPicker();
         }
         onSelectComponent(component) {
             const path = component.path;
@@ -5244,20 +5270,23 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             return component;
         }
         async renderControl(parent, component) {
-            const options = (0, utils_11.parseProps)(component.props);
+            const config = this.getOptions(component.props);
             let control = null;
             let isTab = component.name === 'i-tab' && parent instanceof components_31.Tabs;
             let isMenu = component.name === 'i-menu-item' && parent instanceof components_31.Menu;
             let isTree = component.name === 'i-tree-node' && parent instanceof components_31.TreeView;
-            if (isTab || isMenu || isTree) {
-                control = parent.add(options);
+            let isAccordion = component.name === 'i-accordion-item' && parent instanceof components_31.Accordion;
+            if (isTab || isMenu || isTree || isAccordion) {
+                control = parent.add({ ...config.options, designMode: true, cursor: 'pointer' });
+                const breakpointProps = (0, config_8.getMediaQueryProps)(config.mediaQueries);
+                control._setDesignProps({ ...config.options, mediaQueries: config.mediaQueries }, breakpointProps);
             }
-            else if (parent instanceof components_31.CarouselSlider || parent instanceof components_31.Repeater) {
-                const childControl = await this.createControl(undefined, component.name, options);
+            else if (parent instanceof components_31.CarouselSlider || parent instanceof components_31.Repeater || parent instanceof components_31.AccordionItem) {
+                const childControl = await this.createControl(parent instanceof components_31.AccordionItem ? parent : undefined, component.name, config);
                 control = parent.add(childControl);
             }
             else {
-                control = await this.createControl(parent, component.name, options);
+                control = await this.createControl(parent, component.name, config);
             }
             return control;
         }
@@ -5445,9 +5474,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     };
                     break;
                 case 'i-accordion':
+                case 'i-accordion-item':
                     props = {
-                        width: '100%',
-                        display: 'block'
+                        width: '100%'
                     };
                     break;
                 case 'i-image':
@@ -5570,6 +5599,17 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     this.updateStructure();
                 }
             }
+        }
+        onAddItem(parent) {
+            const name = 'i-accordion-item';
+            const props = this.getDefaultProps(name);
+            const component = {
+                props: { ...props, name: '' },
+                items: [],
+                path: '',
+                name
+            };
+            this.onAddComponent(null, component);
         }
         initBlockPicker() {
             const pickerElm = new index_3.DesignerPickerBlocks(undefined, {
@@ -5883,8 +5923,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', right: '0.15rem' })),
                         this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
-                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onDuplicate: this.onDuplicateComponent, onUpdate: this.onUpdateDesigner }),
-                        this.$render("i-modal", { id: "mdPicker", width: '16rem', maxWidth: '100%', height: '100dvh', overflow: 'hidden', showBackdrop: false, popupPlacement: 'rightTop', zIndex: 2000, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onDuplicate: this.onDuplicateComponent, onUpdate: this.onUpdateDesigner, onAdd: this.onAddItem }),
+                        this.$render("i-modal", { id: "mdPicker", width: '16rem', maxWidth: '100%', height: '100dvh', overflow: 'hidden', showBackdrop: false, popupPlacement: 'rightTop', zIndex: 2000, padding: { top: 0, bottom: 0, left: 0, right: 0 }, onOpen: this.onModalOpen },
                             this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden' },
                                 this.$render("i-vstack", { id: 'wrapperComponentPicker', width: '100%', height: '100%', border: {
                                         width: 1,
@@ -18053,11 +18093,12 @@ declare module "packages/repeater/src/index" {
 }
 declare module "packages/accordion/src/interface" {
     import { Control, ControlElement } from "@ijstech/components/base";
+    import { AccordionItem } from "packages/accordion/src/accordion-item";
     export interface IAccordionItem extends ControlElement {
         name: string;
         defaultExpanded?: boolean;
         showRemove?: boolean;
-        onRender: (item: IAccordionItem) => Control;
+        onRender?: (target: AccordionItem) => Control;
     }
     export interface IAccordion {
         items: IAccordionItem[];
@@ -18068,17 +18109,63 @@ declare module "packages/accordion/src/style/accordion.css" {
     export const customStyles: string;
     export const expandablePanelStyle: string;
 }
+declare module "packages/accordion/src/accordion-item" {
+    import { Control, Container } from "@ijstech/components/base";
+    import { IAccordionItem } from "packages/accordion/src/interface";
+    type onSelectedFn = (target: AccordionItem) => void;
+    export interface AccordionItemElement extends IAccordionItem {
+        onSelected?: onSelectedFn;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-accordion-item']: AccordionItemElement;
+            }
+        }
+    }
+    export class AccordionItem extends Control {
+        private pnlAccordionItem;
+        private lbTitle;
+        private pnlContent;
+        private iconExpand;
+        private iconRemove;
+        private _name;
+        private _defaultExpanded;
+        private _expanded;
+        private _showRemove;
+        private _onRender;
+        onSelected: onSelectedFn;
+        onRemoved: onSelectedFn;
+        constructor(parent?: Container, options?: any);
+        static create(options?: AccordionItemElement, parent?: Container): Promise<AccordionItem>;
+        get name(): string;
+        set name(value: string);
+        get defaultExpanded(): boolean;
+        set defaultExpanded(value: boolean);
+        get expanded(): boolean;
+        set expanded(value: boolean);
+        get onRender(): any;
+        set onRender(callback: any);
+        get showRemove(): boolean;
+        set showRemove(value: boolean);
+        get contentControl(): Control;
+        private renderUI;
+        private updatePanel;
+        private onSelectClick;
+        private onRemoveClick;
+        protected init(): Promise<void>;
+    }
+}
 declare module "packages/accordion/src/accordion" {
     import { Control, Container, ControlElement } from "@ijstech/components/base";
+    import { AccordionItem, AccordionItemElement } from "packages/accordion/src/accordion-item";
     import { IAccordionItem } from "packages/accordion/src/interface";
-    export { IAccordionItem };
+    export { AccordionItem, AccordionItemElement };
     type onCustomItemRemovedCallback = (item: Control) => Promise<void>;
-    type onCustomRenderCallback = (target: Control, data: IAccordionItem) => Control;
     export interface AccordionElement extends ControlElement {
         items?: IAccordionItem[];
         isFlush?: boolean;
         onCustomItemRemoved?: onCustomItemRemovedCallback;
-        onCustomRender?: onCustomRenderCallback;
     }
     global {
         namespace JSX {
@@ -18095,7 +18182,6 @@ declare module "packages/accordion/src/accordion" {
         private _isFlush;
         private accordionItemMapper;
         onCustomItemRemoved: onCustomItemRemovedCallback;
-        onCustomRender: onCustomRenderCallback;
         static create(options?: AccordionElement, parent?: Container): Promise<Accordion>;
         constructor(parent?: Container, options?: any);
         get isFlush(): boolean;
@@ -18105,16 +18191,16 @@ declare module "packages/accordion/src/accordion" {
         private createAccordionItem;
         private onItemClick;
         private onRemoveClick;
-        add(item: IAccordionItem): void;
+        add(item: IAccordionItem): AccordionItem;
         updateItemName(id: string, name: string): void;
         removeItem(id: string): void;
         clear(): void;
-        private updateAccordion;
+        private appendItem;
         protected init(): Promise<void>;
     }
 }
 declare module "packages/accordion/src/index" {
-    export { Accordion, AccordionElement, IAccordionItem } from "packages/accordion/src/accordion";
+    export { Accordion, AccordionElement, AccordionItem } from "packages/accordion/src/accordion";
 }
 declare module "@ijstech/components" {
     export * as Styles from "packages/style/src/index";
@@ -18161,7 +18247,7 @@ declare module "@ijstech/components" {
     export { Form, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/index";
     export { ColorPicker } from "packages/color/src/index";
     export { Repeater } from "packages/repeater/src/index";
-    export { Accordion, IAccordionItem } from "packages/accordion/src/index";
+    export { Accordion, AccordionItem } from "packages/accordion/src/index";
 }
 `;
 });
@@ -22921,6 +23007,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         ;
         async handleDesignerPreview() {
+            this.updateDesignerCode(this.fileName, true);
             if (this.onPreview)
                 return this.onPreview();
             else {

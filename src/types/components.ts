@@ -12102,11 +12102,12 @@ declare module "packages/repeater/src/index" {
 }
 declare module "packages/accordion/src/interface" {
     import { Control, ControlElement } from "@ijstech/components/base";
+    import { AccordionItem } from "packages/accordion/src/accordion-item";
     export interface IAccordionItem extends ControlElement {
         name: string;
         defaultExpanded?: boolean;
         showRemove?: boolean;
-        onRender: (item: IAccordionItem) => Control;
+        onRender?: (target: AccordionItem) => Control;
     }
     export interface IAccordion {
         items: IAccordionItem[];
@@ -12117,17 +12118,63 @@ declare module "packages/accordion/src/style/accordion.css" {
     export const customStyles: string;
     export const expandablePanelStyle: string;
 }
+declare module "packages/accordion/src/accordion-item" {
+    import { Control, Container } from "@ijstech/components/base";
+    import { IAccordionItem } from "packages/accordion/src/interface";
+    type onSelectedFn = (target: AccordionItem) => void;
+    export interface AccordionItemElement extends IAccordionItem {
+        onSelected?: onSelectedFn;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-accordion-item']: AccordionItemElement;
+            }
+        }
+    }
+    export class AccordionItem extends Control {
+        private pnlAccordionItem;
+        private lbTitle;
+        private pnlContent;
+        private iconExpand;
+        private iconRemove;
+        private _name;
+        private _defaultExpanded;
+        private _expanded;
+        private _showRemove;
+        private _onRender;
+        onSelected: onSelectedFn;
+        onRemoved: onSelectedFn;
+        constructor(parent?: Container, options?: any);
+        static create(options?: AccordionItemElement, parent?: Container): Promise<AccordionItem>;
+        get name(): string;
+        set name(value: string);
+        get defaultExpanded(): boolean;
+        set defaultExpanded(value: boolean);
+        get expanded(): boolean;
+        set expanded(value: boolean);
+        get onRender(): any;
+        set onRender(callback: any);
+        get showRemove(): boolean;
+        set showRemove(value: boolean);
+        get contentControl(): Control;
+        private renderUI;
+        private updatePanel;
+        private onSelectClick;
+        private onRemoveClick;
+        protected init(): Promise<void>;
+    }
+}
 declare module "packages/accordion/src/accordion" {
     import { Control, Container, ControlElement } from "@ijstech/components/base";
+    import { AccordionItem, AccordionItemElement } from "packages/accordion/src/accordion-item";
     import { IAccordionItem } from "packages/accordion/src/interface";
-    export { IAccordionItem };
+    export { AccordionItem, AccordionItemElement };
     type onCustomItemRemovedCallback = (item: Control) => Promise<void>;
-    type onCustomRenderCallback = (target: Control, data: IAccordionItem) => Control;
     export interface AccordionElement extends ControlElement {
         items?: IAccordionItem[];
         isFlush?: boolean;
         onCustomItemRemoved?: onCustomItemRemovedCallback;
-        onCustomRender?: onCustomRenderCallback;
     }
     global {
         namespace JSX {
@@ -12144,7 +12191,6 @@ declare module "packages/accordion/src/accordion" {
         private _isFlush;
         private accordionItemMapper;
         onCustomItemRemoved: onCustomItemRemovedCallback;
-        onCustomRender: onCustomRenderCallback;
         static create(options?: AccordionElement, parent?: Container): Promise<Accordion>;
         constructor(parent?: Container, options?: any);
         get isFlush(): boolean;
@@ -12154,16 +12200,16 @@ declare module "packages/accordion/src/accordion" {
         private createAccordionItem;
         private onItemClick;
         private onRemoveClick;
-        add(item: IAccordionItem): void;
+        add(item: IAccordionItem): AccordionItem;
         updateItemName(id: string, name: string): void;
         removeItem(id: string): void;
         clear(): void;
-        private updateAccordion;
+        private appendItem;
         protected init(): Promise<void>;
     }
 }
 declare module "packages/accordion/src/index" {
-    export { Accordion, AccordionElement, IAccordionItem } from "packages/accordion/src/accordion";
+    export { Accordion, AccordionElement, AccordionItem } from "packages/accordion/src/accordion";
 }
 declare module "@ijstech/components" {
     export * as Styles from "packages/style/src/index";
@@ -12210,6 +12256,6 @@ declare module "@ijstech/components" {
     export { Form, IDataSchema, IUISchema, IFormOptions } from "packages/form/src/index";
     export { ColorPicker } from "packages/color/src/index";
     export { Repeater } from "packages/repeater/src/index";
-    export { Accordion, IAccordionItem } from "packages/accordion/src/index";
+    export { Accordion, AccordionItem } from "packages/accordion/src/index";
 }
 `
