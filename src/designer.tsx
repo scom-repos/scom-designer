@@ -192,10 +192,10 @@ export class ScomDesignerForm extends Module {
     }
 
     let components = getCustomElements();
-    const parentName = this.currentParent?.name;
+    const hasItem = (className: string) => className === 'AccordionItem' || className === 'Tab';
 
     components = Object.entries(components)
-      .filter(([name, component]) => component.icon && component.className)
+      .filter(([name, component]) => component.icon && component.className && !hasItem(component.className))
       .reduce((obj, [name, component]) => {
         obj[name] = component;
         return obj;
@@ -235,9 +235,6 @@ export class ScomDesignerForm extends Module {
     if (!controlConstructor) return;
     const control = await controlConstructor.create({...options, designMode: true, cursor: 'pointer'});
     parent?.appendChild(control);
-    if (name === 'i-icon') { // TODO: fix this
-      control.setAttribute('name', options.name);
-    }
 
     const breakpointProps = getMediaQueryProps(mediaQueries);
     control._setDesignProps({...options, mediaQueries}, breakpointProps);
@@ -393,7 +390,7 @@ export class ScomDesignerForm extends Module {
   }
 
   private onModalOpen() {
-    this.initComponentPicker();
+    // this.initComponentPicker();
   }
 
   private onSelectComponent(component: IComponent) {
@@ -523,7 +520,7 @@ export class ScomDesignerForm extends Module {
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
     } else if (parent instanceof CarouselSlider || parent instanceof Repeater || parent instanceof AccordionItem) {
-      const childControl = await this.createControl(parent instanceof AccordionItem ? parent : undefined, component.name, config);
+      const childControl = await this.createControl(undefined, component.name, config);
       control = parent.add(childControl);
     } else {
       control = await this.createControl(parent, component.name, config);
@@ -844,7 +841,8 @@ export class ScomDesignerForm extends Module {
   }
 
   private onAddItem(parent: IComponent) {
-    const name = 'i-accordion-item';
+    this.currentParent = parent;
+    const name = parent?.name === 'i-accordion' ? 'i-accordion-item' : 'i-tab';
     const props = this.getDefaultProps(name);
     const component: IComponentItem = {
       props: { ...props, name: '' },

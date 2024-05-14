@@ -4964,9 +4964,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 result[group] = { ...config_8.GroupMetadata[group], items: [] };
             }
             let components = (0, components_31.getCustomElements)();
-            const parentName = this.currentParent?.name;
+            const hasItem = (className) => className === 'AccordionItem' || className === 'Tab';
             components = Object.entries(components)
-                .filter(([name, component]) => component.icon && component.className)
+                .filter(([name, component]) => component.icon && component.className && !hasItem(component.className))
                 .reduce((obj, [name, component]) => {
                 obj[name] = component;
                 return obj;
@@ -5000,9 +5000,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 return;
             const control = await controlConstructor.create({ ...options, designMode: true, cursor: 'pointer' });
             parent?.appendChild(control);
-            if (name === 'i-icon') { // TODO: fix this
-                control.setAttribute('name', options.name);
-            }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
             control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
             const hasBackground = 'background' in options;
@@ -5155,7 +5152,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.mdPicker.visible = true;
         }
         onModalOpen() {
-            this.initComponentPicker();
+            // this.initComponentPicker();
         }
         onSelectComponent(component) {
             const path = component.path;
@@ -5282,7 +5279,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 control._setDesignProps({ ...config.options, mediaQueries: config.mediaQueries }, breakpointProps);
             }
             else if (parent instanceof components_31.CarouselSlider || parent instanceof components_31.Repeater || parent instanceof components_31.AccordionItem) {
-                const childControl = await this.createControl(parent instanceof components_31.AccordionItem ? parent : undefined, component.name, config);
+                const childControl = await this.createControl(undefined, component.name, config);
                 control = parent.add(childControl);
             }
             else {
@@ -5601,7 +5598,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
         }
         onAddItem(parent) {
-            const name = 'i-accordion-item';
+            this.currentParent = parent;
+            const name = parent?.name === 'i-accordion' ? 'i-accordion-item' : 'i-tab';
             const props = this.getDefaultProps(name);
             const component = {
                 props: { ...props, name: '' },

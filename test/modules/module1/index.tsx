@@ -13,7 +13,7 @@ export default class Module1 extends Module {
 
     async init() {
         await super.init();
-        this.scomDesigner.previewUrl = 'https://decom.dev/debug.html';
+        this.scomDesigner.previewUrl = '/0.1.0-beta/libs/@scom/scom-designer/debug.html';
     }
 
     onShow() {
