@@ -242,6 +242,31 @@ export default class DesignerComponents extends Module {
         this.resetData();
         return;
       }
+      const dropControl = this.elementsMap.get(this.targetConfig?.id);
+      const dragControl = this.elementsMap.get(this.dragId);
+      let isInvalid = false;
+      if (dragControl?.name === 'i-accordion-item') {
+        const isOutsideAcc = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+        const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+        isInvalid = !isInsideAcc && !isOutsideAcc;
+      } else if (dragControl?.name === 'i-tab') {
+        const isOutsideTab = this.targetConfig?.side && dropControl?.name === 'i-tab';
+        const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+        isInvalid = !isOutsideTab && !isInsideTab;
+      } else {
+        const isNotContainer = !CONTAINERS.includes(dropControl?.name) && !this.targetConfig?.side;
+        const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+        const isOutsideAccItem = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+        const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+        const isOutsideTabItem = this.targetConfig?.side && dropControl?.name === 'i-tab';
+        isInvalid = isNotContainer || isOutsideAccItem || isInsideAcc || isInsideTab || isOutsideTabItem;
+      }
+      if (isInvalid) {
+        event.preventDefault();
+        this.resetData();
+        return;
+      }
+
       this.handleDragEnd(this.dragId);
       this.resetData();
     })
@@ -379,9 +404,11 @@ export default class DesignerComponents extends Module {
   private changeParent(dragId: string, targetId: string) {
     const targetData = this.elementsMap.get(targetId);
     const dragData = this.elementsMap.get(dragId);
-    if (!dragData || !targetData) return;
+    const isTargetParent = dragData && this.getParentID(dragData, targetId);
+    if (!dragData || !targetData || isTargetParent) return;
 
     const parentPath = this.getParentID(this.screen.elements[0], dragId);
+    const parentId = parentPath && `elm-${parentPath}`;
 
     const targetItems = targetData?.items || [];
     const posProps = ['left', 'top', 'right', 'bottom', 'position'];
@@ -396,7 +423,6 @@ export default class DesignerComponents extends Module {
       this.elementsMap.delete(dragId);
     }
 
-    const parentId = parentPath && `elm-${parentPath}`;
     const parentData = parentId && this.elementsMap.get(parentId);
     if (parentData) {
       parentData.items = parentData.items || [];

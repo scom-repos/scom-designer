@@ -23,7 +23,8 @@ import {
   TreeView,
   AccordionItem,
   Accordion,
-  VStack
+  VStack,
+  Tab
 } from '@ijstech/components';
 import {Compiler} from '@ijstech/compiler';
 import {
@@ -234,7 +235,11 @@ export class ScomDesignerForm extends Module {
     const controlConstructor: any = window.customElements.get(name);
     if (!controlConstructor) return;
     const control = await controlConstructor.create({...options, designMode: true, cursor: 'pointer'});
-    parent?.appendChild(control);
+    if (parent instanceof Tab) {
+      control.parent = parent;
+    } else {
+      parent?.appendChild(control);
+    }
 
     const breakpointProps = getMediaQueryProps(mediaQueries);
     control._setDesignProps({...options, mediaQueries}, breakpointProps);
@@ -619,23 +624,25 @@ export class ScomDesignerForm extends Module {
   }
 
   private getDefaultProps(name: string) {
-    let props: any = {};
+    let props: any = {
+      position: 'relative',
+      width: '100%'
+    };
     switch(name) {
       case 'i-panel':
         props = {
-          width: '100%',
+          width: '100%'
         }
         break;
       case 'i-stack':
         props = {
-          width: '100%',
-          position: 'relative',
+          ...props,
           direction: 'vertical'
         }
         break;
       case 'i-grid-layout':
         props = {
-          width: '100%',
+          ...props,
           minHeight: '100px',
           gap: '{{"column":"8px","row":"8px"}}',
           templateColumns: '{["auto"]}',
@@ -646,7 +653,7 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-card-layout':
         props = {
-          width: '100%',
+          ...props,
           templateColumns: '{["auto"]}',
           templateRows: '{["auto"]}',
           gap: '{{"column":"8px","row":"8px"}}',
@@ -660,13 +667,14 @@ export class ScomDesignerForm extends Module {
       case 'i-code-editor':
       case 'i-tabs':
         props = {
-          width: '100%',
+          ...props,
           height: '{200}',
           display: 'block'
         }
         break;
       case 'i-tab':
         props = {
+          ...props,
           caption: 'Tab Title',
         }
         break;
@@ -678,42 +686,43 @@ export class ScomDesignerForm extends Module {
       case 'i-scom-mixed-chart':
       case 'i-scom-counter':
         props = {
-          width: '100%',
+          ...props,
           minHeight: '{200}',
-          display: 'block'
-        }
-        break;
-      case 'i-scom-table':
-        props = {
-          width: '100%',
           display: 'block'
         }
         break;
       case 'i-carousel-slider':
         props = {
-          width: '100%',
+          ...props,
           type: 'dot',
           minHeight: '100px',
           indicators: '{true}'
         }
         break;
       case 'i-video':
+      case 'i-scom-table':
         props = {
-          width: '100%',
+          ...props,
           display: 'block'
         }
         break;
       case 'i-repeater':
         props = {
-          width: '100%',
+          ...props,
           display: 'block',
           count: '{3}'
         }
         break;
       case 'i-accordion':
+        props = {
+          ...props,
+        }
+        break;
       case 'i-accordion-item':
         props = {
-          width: '100%'
+          ...props,
+          name: 'Accordion Item',
+          defaultExpanded: '{true}'
         }
         break;
       case 'i-image':
@@ -725,18 +734,20 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-label':
         props = {
+          ...props,
           caption: 'Label'
         }
         break;
       case 'i-icon':
         props = {
+          ...props,
           width: '24px',
           height: '24px'
         }
         break;
       case 'i-progress':
         props = {
-          width: '100%',
+          ...props,
           percent: '{100}',
           strokeWidth: '{5}',
           border: '{{"radius":"4px"}}'
@@ -744,7 +755,7 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-pagination':
         props = {
-          width: '100%',
+          ...props,
           pageSize: '{10}',
           currentPage: '{1}',
           totalPages: '{2}',
@@ -752,19 +763,19 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-tree-view':
         props = {
-          width: '100%',
+          ...props,
           data: '{[{"caption":"Tree node 1", "active": true},{"caption":"Tree node 2"}]}'
         }
         break;
       case 'i-menu':
         props = {
-          width: '100%',
+          ...props,
           data: '{[{"title":"Menu item 1","textAlign":"left"}, {"title":"Menu Item 2","textAlign":"left"}]}'
         }
         break;
       case 'i-radio-group':
         props = {
-          width: '100%',
+          ...props,
           radioItems: '{[{"caption":"Option 1","value":"1"},{"caption":"Option 2","value":"2"},{"caption":"Option 3","value":"3"}]}'
         }
         break;
@@ -773,7 +784,7 @@ export class ScomDesignerForm extends Module {
       case 'i-combo-box':
       case 'i-range':
         props = {
-          width: '100%',
+          ...props,
           height: '32px',
           background: '{{"color":"transparent"}}',
         }
@@ -786,6 +797,7 @@ export class ScomDesignerForm extends Module {
         }
       default:
         props = {
+          ...props,
           width: `{100}`,
           height: `{20}`
         }
