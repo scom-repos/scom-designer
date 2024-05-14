@@ -37,7 +37,7 @@
     }
   ],
   "themes": {
-    "default": "light",
+    "default": "dark",
     "dark": {
       "background": {
         "default": "#212128",

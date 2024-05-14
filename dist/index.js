@@ -579,6 +579,32 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                     this.resetData();
                     return;
                 }
+                const dropControl = this.elementsMap.get(this.targetConfig?.id);
+                const dragControl = this.elementsMap.get(this.dragId);
+                let isInvalid = false;
+                if (dragControl?.name === 'i-accordion-item') {
+                    const isOutsideAcc = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+                    const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+                    isInvalid = !isInsideAcc && !isOutsideAcc;
+                }
+                else if (dragControl?.name === 'i-tab') {
+                    const isOutsideTab = this.targetConfig?.side && dropControl?.name === 'i-tab';
+                    const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+                    isInvalid = !isOutsideTab && !isInsideTab;
+                }
+                else {
+                    const isNotContainer = !config_1.CONTAINERS.includes(dropControl?.name) && !this.targetConfig?.side;
+                    const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+                    const isOutsideAccItem = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+                    const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+                    const isOutsideTabItem = this.targetConfig?.side && dropControl?.name === 'i-tab';
+                    isInvalid = isNotContainer || isOutsideAccItem || isInsideAcc || isInsideTab || isOutsideTabItem;
+                }
+                if (isInvalid) {
+                    event.preventDefault();
+                    this.resetData();
+                    return;
+                }
                 this.handleDragEnd(this.dragId);
                 this.resetData();
             });
@@ -710,9 +736,11 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         changeParent(dragId, targetId) {
             const targetData = this.elementsMap.get(targetId);
             const dragData = this.elementsMap.get(dragId);
-            if (!dragData || !targetData)
+            const isTargetParent = dragData && this.getParentID(dragData, targetId);
+            if (!dragData || !targetData || isTargetParent)
                 return;
             const parentPath = this.getParentID(this.screen.elements[0], dragId);
+            const parentId = parentPath && `elm-${parentPath}`;
             const targetItems = targetData?.items || [];
             const posProps = ['left', 'top', 'right', 'bottom', 'position'];
             if (dragData) {
@@ -725,7 +753,6 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 this.elementsMap.set(targetId, targetData);
                 this.elementsMap.delete(dragId);
             }
-            const parentId = parentPath && `elm-${parentPath}`;
             const parentData = parentId && this.elementsMap.get(parentId);
             if (parentData) {
                 parentData.items = parentData.items || [];
@@ -4999,7 +5026,12 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (!controlConstructor)
                 return;
             const control = await controlConstructor.create({ ...options, designMode: true, cursor: 'pointer' });
-            parent?.appendChild(control);
+            if (parent instanceof components_31.Tab) {
+                control.parent = parent;
+            }
+            else {
+                parent?.appendChild(control);
+            }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
             control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
             const hasBackground = 'background' in options;
@@ -5379,23 +5411,25 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
         }
         getDefaultProps(name) {
-            let props = {};
+            let props = {
+                position: 'relative',
+                width: '100%'
+            };
             switch (name) {
                 case 'i-panel':
                     props = {
-                        width: '100%',
+                        width: '100%'
                     };
                     break;
                 case 'i-stack':
                     props = {
-                        width: '100%',
-                        position: 'relative',
+                        ...props,
                         direction: 'vertical'
                     };
                     break;
                 case 'i-grid-layout':
                     props = {
-                        width: '100%',
+                        ...props,
                         minHeight: '100px',
                         gap: '{{"column":"8px","row":"8px"}}',
                         templateColumns: '{["auto"]}',
@@ -5406,7 +5440,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-card-layout':
                     props = {
-                        width: '100%',
+                        ...props,
                         templateColumns: '{["auto"]}',
                         templateRows: '{["auto"]}',
                         gap: '{{"column":"8px","row":"8px"}}',
@@ -5420,13 +5454,14 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-code-editor':
                 case 'i-tabs':
                     props = {
-                        width: '100%',
+                        ...props,
                         height: '{200}',
                         display: 'block'
                     };
                     break;
                 case 'i-tab':
                     props = {
+                        ...props,
                         caption: 'Tab Title',
                     };
                     break;
@@ -5438,42 +5473,43 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-scom-mixed-chart':
                 case 'i-scom-counter':
                     props = {
-                        width: '100%',
+                        ...props,
                         minHeight: '{200}',
-                        display: 'block'
-                    };
-                    break;
-                case 'i-scom-table':
-                    props = {
-                        width: '100%',
                         display: 'block'
                     };
                     break;
                 case 'i-carousel-slider':
                     props = {
-                        width: '100%',
+                        ...props,
                         type: 'dot',
                         minHeight: '100px',
                         indicators: '{true}'
                     };
                     break;
                 case 'i-video':
+                case 'i-scom-table':
                     props = {
-                        width: '100%',
+                        ...props,
                         display: 'block'
                     };
                     break;
                 case 'i-repeater':
                     props = {
-                        width: '100%',
+                        ...props,
                         display: 'block',
                         count: '{3}'
                     };
                     break;
                 case 'i-accordion':
+                    props = {
+                        ...props,
+                    };
+                    break;
                 case 'i-accordion-item':
                     props = {
-                        width: '100%'
+                        ...props,
+                        name: 'Accordion Item',
+                        defaultExpanded: '{true}'
                     };
                     break;
                 case 'i-image':
@@ -5485,18 +5521,20 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-label':
                     props = {
+                        ...props,
                         caption: 'Label'
                     };
                     break;
                 case 'i-icon':
                     props = {
+                        ...props,
                         width: '24px',
                         height: '24px'
                     };
                     break;
                 case 'i-progress':
                     props = {
-                        width: '100%',
+                        ...props,
                         percent: '{100}',
                         strokeWidth: '{5}',
                         border: '{{"radius":"4px"}}'
@@ -5504,7 +5542,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-pagination':
                     props = {
-                        width: '100%',
+                        ...props,
                         pageSize: '{10}',
                         currentPage: '{1}',
                         totalPages: '{2}',
@@ -5512,19 +5550,19 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-tree-view':
                     props = {
-                        width: '100%',
+                        ...props,
                         data: '{[{"caption":"Tree node 1", "active": true},{"caption":"Tree node 2"}]}'
                     };
                     break;
                 case 'i-menu':
                     props = {
-                        width: '100%',
+                        ...props,
                         data: '{[{"title":"Menu item 1","textAlign":"left"}, {"title":"Menu Item 2","textAlign":"left"}]}'
                     };
                     break;
                 case 'i-radio-group':
                     props = {
-                        width: '100%',
+                        ...props,
                         radioItems: '{[{"caption":"Option 1","value":"1"},{"caption":"Option 2","value":"2"},{"caption":"Option 3","value":"3"}]}'
                     };
                     break;
@@ -5533,7 +5571,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-combo-box':
                 case 'i-range':
                     props = {
-                        width: '100%',
+                        ...props,
                         height: '32px',
                         background: '{{"color":"transparent"}}',
                     };
@@ -5546,6 +5584,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     };
                 default:
                     props = {
+                        ...props,
                         width: `{100}`,
                         height: `{20}`
                     };
