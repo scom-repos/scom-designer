@@ -235,10 +235,10 @@ export class ScomDesignerForm extends Module {
     const controlConstructor: any = window.customElements.get(name);
     if (!controlConstructor) return;
     const control = await controlConstructor.create({...options, designMode: true, cursor: 'pointer'});
-    if (parent instanceof Tab) {
-      control.parent = parent;
-    } else {
+    if (name.includes('scom')) {
       parent?.appendChild(control);
+    } else {
+      control.parent = parent;
     }
 
     const breakpointProps = getMediaQueryProps(mediaQueries);
@@ -449,9 +449,8 @@ export class ScomDesignerForm extends Module {
     const newComponent = this.duplicateItem(component);
     const parentPath = component.parent;
     const parent = this.pathMapping.get(parentPath);
-
     await this.renderComponent(parent, newComponent, true);
-    if (control.control && newComponent.control) {
+    if (control.control && newComponent.control && parent.name !== "i-carousel-slider") {
       control.control.insertAdjacentElement('afterend', newComponent.control);
     }
 
@@ -631,7 +630,7 @@ export class ScomDesignerForm extends Module {
     switch(name) {
       case 'i-panel':
         props = {
-          width: '100%'
+          ...props
         }
         break;
       case 'i-stack':
@@ -734,7 +733,7 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-label':
         props = {
-          ...props,
+          position: 'relative',
           caption: 'Label'
         }
         break;
@@ -923,9 +922,6 @@ export class ScomDesignerForm extends Module {
     if (prop === "id" && value && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
     if (this.selectedControl.repeater) {
       this.updateDesignProps(this.selectedControl);
-      if (this.selectedControl.name === 'i-icon' && control._getDesignPropValue('name')) {
-        control.setAttribute('name', control._getDesignPropValue('name') as string);
-      }
       this.updateRepeater(this.selectedControl.repeater);
     }
     this.pathMapping.set(this.selectedControl.path, this.selectedControl);
