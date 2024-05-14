@@ -5026,11 +5026,11 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (!controlConstructor)
                 return;
             const control = await controlConstructor.create({ ...options, designMode: true, cursor: 'pointer' });
-            if (parent instanceof components_31.Tab) {
-                control.parent = parent;
+            if (name.includes('scom')) {
+                parent?.appendChild(control);
             }
             else {
-                parent?.appendChild(control);
+                control.parent = parent;
             }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
             control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
@@ -5237,7 +5237,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const parentPath = component.parent;
             const parent = this.pathMapping.get(parentPath);
             await this.renderComponent(parent, newComponent, true);
-            if (control.control && newComponent.control) {
+            if (control.control && newComponent.control && parent.name !== "i-carousel-slider") {
                 control.control.insertAdjacentElement('afterend', newComponent.control);
             }
             if (parent) {
@@ -5418,7 +5418,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             switch (name) {
                 case 'i-panel':
                     props = {
-                        width: '100%'
+                        ...props
                     };
                     break;
                 case 'i-stack':
@@ -5521,7 +5521,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-label':
                     props = {
-                        ...props,
+                        position: 'relative',
                         caption: 'Label'
                     };
                     break;
@@ -5712,9 +5712,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.studio.renameComponent(this, oldVal, value);
             if (this.selectedControl.repeater) {
                 this.updateDesignProps(this.selectedControl);
-                if (this.selectedControl.name === 'i-icon' && control._getDesignPropValue('name')) {
-                    control.setAttribute('name', control._getDesignPropValue('name'));
-                }
                 this.updateRepeater(this.selectedControl.repeater);
             }
             this.pathMapping.set(this.selectedControl.path, this.selectedControl);
