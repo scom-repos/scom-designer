@@ -10449,7 +10449,7 @@ declare module "packages/menu/src/menu" {
     import { Icon, IconElement } from "packages/icon/src/index";
     export type MenuMode = "horizontal" | "vertical" | "inline";
     type AlignType = 'left' | 'right' | 'center';
-    interface MenuItemElement extends IMenuItem {
+    export interface MenuItemElement extends IMenuItem {
         level?: number;
     }
     export interface IMenuItem extends ControlElement {
@@ -10474,6 +10474,7 @@ declare module "packages/menu/src/menu" {
         namespace JSX {
             interface IntrinsicElements {
                 ["i-menu"]: MenuElement;
+                ["i-menu-item"]: MenuItemElement;
                 ["i-context-menu"]: ContextMenuElement;
             }
         }
@@ -10496,6 +10497,7 @@ declare module "packages/menu/src/menu" {
         set data(value: IMenuItem[]);
         get items(): MenuItem[];
         set items(items: MenuItem[]);
+        private updateItemOptions;
         get menuItems(): MenuItem[];
         private clear;
         private renderItem;
@@ -10571,7 +10573,7 @@ declare module "packages/menu/src/menu" {
     }
 }
 declare module "packages/menu/src/index" {
-    export { Menu, ContextMenu, IMenuItem, MenuElement } from "packages/menu/src/menu";
+    export { Menu, ContextMenu, IMenuItem, MenuElement, MenuItem, MenuItemElement } from "packages/menu/src/menu";
 }
 declare module "packages/tree-view/src/style/treeView.css" { }
 declare module "packages/tree-view/src/treeView" {
@@ -12089,6 +12091,8 @@ declare module "packages/repeater/src/repeater" {
         constructor(parent?: Control, options?: any);
         get count(): number;
         set count(value: number);
+        private foreachNode;
+        private isEmpty;
         private cloneItems;
         add(item: Control): Control;
         update(): void;
@@ -12101,13 +12105,11 @@ declare module "packages/repeater/src/index" {
     export { Repeater, RepeaterElement } from "packages/repeater/src/repeater";
 }
 declare module "packages/accordion/src/interface" {
-    import { Control, ControlElement } from "@ijstech/components/base";
-    import { AccordionItem } from "packages/accordion/src/accordion-item";
+    import { ControlElement } from "@ijstech/components/base";
     export interface IAccordionItem extends ControlElement {
         name: string;
         defaultExpanded?: boolean;
         showRemove?: boolean;
-        onRender?: (target: AccordionItem) => Control;
     }
     export interface IAccordion {
         items: IAccordionItem[];
@@ -12132,7 +12134,7 @@ declare module "packages/accordion/src/accordion-item" {
             }
         }
     }
-    export class AccordionItem extends Control {
+    export class AccordionItem extends Container {
         private pnlAccordionItem;
         private lbTitle;
         private pnlContent;
@@ -12142,7 +12144,6 @@ declare module "packages/accordion/src/accordion-item" {
         private _defaultExpanded;
         private _expanded;
         private _showRemove;
-        private _onRender;
         onSelected: onSelectedFn;
         onRemoved: onSelectedFn;
         constructor(parent?: Container, options?: any);
@@ -12153,8 +12154,6 @@ declare module "packages/accordion/src/accordion-item" {
         set defaultExpanded(value: boolean);
         get expanded(): boolean;
         set expanded(value: boolean);
-        get onRender(): any;
-        set onRender(callback: any);
         get showRemove(): boolean;
         set showRemove(value: boolean);
         get contentControl(): Control;
@@ -12162,6 +12161,7 @@ declare module "packages/accordion/src/accordion-item" {
         private updatePanel;
         private onSelectClick;
         private onRemoveClick;
+        add(item: Control): Control;
         protected init(): Promise<void>;
     }
 }
@@ -12225,7 +12225,7 @@ declare module "@ijstech/components" {
     export { Image } from "packages/image/src/index";
     export { Markdown } from "packages/markdown/src/index";
     export { MarkdownEditor } from "packages/markdown-editor/src/index";
-    export { Menu, ContextMenu, IMenuItem } from "packages/menu/src/index";
+    export { Menu, ContextMenu, IMenuItem, MenuItem } from "packages/menu/src/index";
     export { Module } from "packages/module/src/index";
     export { Label } from "packages/label/src/index";
     export { Tooltip } from "packages/tooltip/src/index";

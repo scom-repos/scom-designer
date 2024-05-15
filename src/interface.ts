@@ -33,6 +33,7 @@ export interface IComponentItem extends Parser.IComponent {
   category?: string;
   parent?: string;
   repeater?: string;
+  isShown?: boolean;
 }
 
 export interface IComponent extends IComponentItem {

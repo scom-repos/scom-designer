@@ -157,8 +157,37 @@ const GroupMetadata = {
   }
 }
 
-// TODO: check treeView, menu
-const CONTAINERS = ['i-stack', 'i-panel', 'i-grid-layout', 'i-card-layout', 'i-tabs', 'i-tab', 'i-carousel-slider', 'i-repeater', 'i-accordion', 'i-accordion-item'];
+const ITEMS = ['i-accordion-item', 'i-tab', 'i-menu-item'];
+
+const ITEM_PARENTS = [
+  'i-accordion',
+  'i-tabs',
+  'i-menu',
+  'i-menu-item'
+];
+
+const CONTAINERS = [
+  ...ITEM_PARENTS,
+  'i-tree-node',
+  'i-tree-view',
+  'i-stack',
+  'i-panel',
+  'i-grid-layout',
+  'i-card-layout',
+  'i-tab',
+  'i-carousel-slider',
+  'i-repeater',
+  'i-accordion-item'
+];
+
+const ControlItemMapper: {[key: string]: string} = {
+  'i-accordion': 'i-accordion-item',
+  'i-tabs': 'i-tab',
+  'i-menu': 'i-menu-item',
+  'i-menu-item': 'i-menu-item',
+  'i-tree-view': 'i-tree-node',
+  'i-tree-node': 'i-tree-node'
+}
 
 export {
   BREAKPOINTS,
@@ -172,5 +201,8 @@ export {
   getMediaQueryProps,
   getMediaQuery,
   getFont,
-  CONTAINERS
+  CONTAINERS,
+  ITEM_PARENTS,
+  ITEMS,
+  ControlItemMapper
 }
