@@ -5,6 +5,8 @@ import {
   Control,
   ControlElement,
   customElements,
+  getCustomElements,
+  IconName,
   IDataSchema,
   IdUtils,
   IUISchema,
@@ -54,6 +56,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     url: ''
   };
   private updateDesigner: boolean = true;
+  private _components = getCustomElements();
 
   onSave: onSaveCallback;
   onChanged?: (value: string) => void;
@@ -245,6 +248,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       }
     }
     (root as IComponent).path = IdUtils.generateUUID();
+    (root as IComponent).icon = (this._components['i-panel']?.icon || '') as IconName;
     if (!root.items) root.items = [];
     if (root.items.length) {
       root.items = this.updatePath(root.items, root as IComponent);
@@ -254,14 +258,16 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private updatePath(items: Parser.IComponent[], parent: IComponent) {
     return [...items].map((item) => {
-      (item as IComponent).path = IdUtils.generateUUID();
-      (item as IComponent).parent = parent.path;
-      (item as IComponent).repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
-      if (!item.items) item.items = [];
-      if (item.items.length) {
-        item.items = this.updatePath(item.items, item as IComponent);
+      const component = item as IComponent;
+      component.path = IdUtils.generateUUID();
+      component.parent = parent.path;
+      component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
+      component.icon = (this._components[component.name]?.icon || '') as IconName;
+      if (!component.items) component.items = [];
+      if (component.items.length) {
+        component.items = this.updatePath(component.items, component);
       }
-      return item;
+      return component;
     })
   }
 

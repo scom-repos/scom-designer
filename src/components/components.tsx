@@ -9,7 +9,6 @@ import {
   HStack,
   Icon,
   Label,
-  Image,
   Modal,
   Alert,
   IconName,
@@ -18,7 +17,7 @@ import {
 import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
 import './index.css';
-import { getMediaQueryProps, CONTAINERS } from '../helpers/config';
+import { getMediaQueryProps, CONTAINERS, ITEM_PARENTS } from '../helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -91,7 +90,7 @@ export default class DesignerComponents extends Module {
   }
 
   private get hasItem() {
-    return ['i-accordion', 'i-tabs'].includes(this.currentComponent?.name)
+    return ITEM_PARENTS.includes(this.currentComponent?.name);
   }
   private updateActiveStyle(el: Control) {
     const currentElm = this.vStackComponents?.querySelector(`.${rowItemActiveStyled}`);
@@ -141,19 +140,20 @@ export default class DesignerComponents extends Module {
       hStack.classList.add('drag-item', rowItemHoverStyled, hoverFullOpacity);
       let icon: Icon;
       if (elm.items?.length) {
-        let isShown = true;
+        let isShown = elm.isShown ?? true;
         icon = new Icon(hStack, { name: 'caret-down', width: 12, height: 12, margin: { right: 2 }, cursor: 'pointer' });
         icon.onClick = () => {
           isShown = !isShown;
+          elm.isShown = isShown;
           icon.name = isShown ? 'caret-down' : 'caret-right';
           vStack2.visible = isShown;
         }
-        const vStack2 = new VStack(vStack1);
+        const vStack2 = new VStack(vStack1, { visible: isShown });
         if (elm.items?.length) {
           this.renderTreeItems(elm.items, vStack2, parentPl + 12);
         }
       }
-      const image = new Image(hStack, { url: elm.image, width: 14, height: 14, display: 'flex' });
+      const image = new Icon(hStack, { name: elm.icon, fill: Theme.text.primary, width: '0.75rem', height: '0.75rem', display: 'flex', margin: {right: '0.25rem'} });
       const label = new Label(hStack, { caption: elm.name, font: { size: '0.75rem' }, lineHeight: 1, opacity: 0.8 });
       const input = new Input(hStack, { value: elm.name, visible: false, font: { size: '0.75rem' }, border: 'none' });
 
@@ -459,7 +459,7 @@ export default class DesignerComponents extends Module {
     const isTopPanel = this.currentComponent?.path && this.currentComponent.path === this.screen.elements[0]?.path;
     for (let i = 0; i < children.length; i++) {
       if (i === 0) {
-        (children[i] as Control).visible = this.isContainer && !this.hasItem;
+        (children[i] as Control).visible = this.isContainer && !this.hasItem && this.currentComponent?.name !== 'i-tree-view';
       } else if (i === 1) {
         (children[i] as Control).visible = this.hasItem;
       } else {
