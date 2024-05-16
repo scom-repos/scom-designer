@@ -1552,6 +1552,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private createControl;
         private getOptions;
         private updateDesignProps;
+        private removeEmptyValue;
         private formatDesignProp;
         get rootComponent(): Parser.IComponent;
         clear(): void;
@@ -1583,6 +1584,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private initBlockPicker;
         private onPropertiesChanged;
         private updateIconProp;
+        private updateLinkProp;
         private updateImageProp;
         private onControlEventChanged;
         private onControlEventDblClick;

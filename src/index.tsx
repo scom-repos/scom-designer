@@ -79,7 +79,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     let event = propInfo.events[eventName]
     if (event) {
       event.forEach((param: any) => {
-        if (param.isControl) classNames.push(param.type)
+        if (param.isControl && param.type !== propInfo.className) classNames.push(param.type)
         if (params) params = params + ', '
         params = params + param.name + ': ' + param.type
       })
