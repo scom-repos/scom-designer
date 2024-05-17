@@ -287,25 +287,36 @@ export class ScomDesignerForm extends Module {
           continue;
         }
       }
+      this.removeEmptyValue(props[prop]);
       if (isSameValue(defaultValue, props[prop]) || props[prop] === undefined) {
         continue;
       }
-      if (typeof props[prop] === 'object') {
-        for (let subProp in props[prop]) {
-          if (props[prop][subProp] === '') {
-            delete props[prop][subProp];
-          }
-        }
-      }
+
       if (typeof props[prop] === 'object' && Object.keys(props[prop]).length === 0) {
         continue;
       }
+
       newProps[prop] = this.formatDesignProp(prop, props[prop], control);
     }
     component.props = {...newProps};
     component.items?.forEach(item => {
       this.updateDesignProps(item);
     });
+  }
+
+  private removeEmptyValue(value: any) {
+    if (typeof value === 'object') {
+      for (let subProp in value) {
+        if (value[subProp] === '' || value[subProp] === undefined) {
+          delete value[subProp];
+        } else if (typeof value[subProp] === 'object') {
+          this.removeEmptyValue(value[subProp]);
+          if (Object.keys(value[subProp]).length === 0) {
+            delete value[subProp];
+          }
+        }
+      }
+    }
   }
 
   private formatDesignProp(prop: string, value: any, control: IControl) {
@@ -567,9 +578,13 @@ export class ScomDesignerForm extends Module {
       if (id) {
         const name = control.control._getDesignPropValue("onClick") as string;
         if (!name) {
+          const fnName = id
+            .split("-")
+            .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
+            .join("");
           this.modified = true;
-          control.control._setDesignPropValue("onClick", `this.${id}Click`);
-          this.studio.addEventHandler(this, "onClick", `${id}Click`);
+          control.control._setDesignPropValue("onClick", `this.${fnName}Click`);
+          this.studio.addEventHandler(this, "onClick", `${fnName}Click`);
         } else if (name.startsWith("this."))
           this.studio.addEventHandler(this, "onClick", name.substring(5));
       }
@@ -764,6 +779,7 @@ export class ScomDesignerForm extends Module {
           ...props,
           percent: '{100}',
           strokeWidth: '{5}',
+          minHeight: '{5}',
           border: '{{"radius":"4px"}}'
         }
         break;
@@ -942,12 +958,11 @@ export class ScomDesignerForm extends Module {
       value.name = 'angle-down';
     }
     if (prop === 'link') {
-      const linkEl = new Link(control, {...value, designMode: true, cursor: 'pointer'});
-      control[prop] = linkEl;
+      this.updateLinkProp(prop, value, control);
     } else if ((prop.toLowerCase()).includes('icon')) {
-      this.updateIconProp(prop, value);
+      this.updateIconProp(prop, value, control);
     } else if (prop === 'image') {
-      this.updateImageProp(prop, value);
+      this.updateImageProp(prop, value, control);
     }
 
     if (prop === "id" && value && oldVal !== value) this.studio.renameComponent(this, oldVal, value);
@@ -958,8 +973,7 @@ export class ScomDesignerForm extends Module {
     this.pathMapping.set(this.selectedControl.path, this.selectedControl);
   }
 
-  private updateIconProp(prop: string, value: any) {
-    const control = this.selectedControl?.control as Control;
+  private updateIconProp(prop: string, value: any, control: Control) {
     if (this.selectedControl?.name === 'i-tree-node') {
       const treeNode = control as TreeNode;
       treeNode[prop].name = value.name || '';
@@ -969,22 +983,39 @@ export class ScomDesignerForm extends Module {
       if (value.height) treeNode[prop].height = value.height;
     } else {
       if (value.name || value.image?.url) {
-        const width = value.width || '1rem';
-        const height = value.height || '1rem';
-        const iconEl = new Icon(control, {display: 'flex', ...value, width, height, designMode: true, cursor: 'pointer'});
-        control[prop] = iconEl;
+        const options: any = {
+          width: value.width || 16,
+          height: value.height || 16,
+          fill: value.fill || Theme.text.primary
+        }
+        if (value.image?.url) {
+          options.image = value.image;
+        } else if (value.name) {
+          options.name = value.name;
+        }
+        control._setDesignPropValue('icon', options);
+        control[prop] = new Icon(control, {...options, display: 'flex', designMode: true, cursor: 'pointer'});
       } else {
         control[prop] = undefined;
       }
     }
   }
 
-  private updateImageProp(prop: string, value: any) {
-    const control = this.selectedControl?.control as Control;
+  private updateLinkProp(prop: string, value: any, control: Control) {
+    if (value?.href) {
+      const linkEl = new Link(control, {...value, designMode: true, cursor: 'pointer'});
+      control[prop] = linkEl;
+    } else {
+      control[prop] = undefined;
+    }
+  }
+
+  private updateImageProp(prop: string, value: any, control: Control) {
     if (value.url) {
       const width = value.width || '1rem';
       const height = value.height || '1rem';
       const imageEl = new Image(control, {display: 'flex', ...value, width, height, designMode: true, cursor: 'pointer'});
+      control._setDesignPropValue('name', '');
       control[prop] = imageEl;
     } else {
       control[prop] = undefined;
@@ -1163,7 +1194,7 @@ export class ScomDesignerForm extends Module {
       this.onPropertiesChanged(prop, this.designPos[prop]);
     }
     const control = this.selectedControl?.control as any;
-    if (control?.resize && (this.designPos.width || this.designPos.height)) {
+    if (typeof control?.resize === 'function' && (this.designPos.width || this.designPos.height)) {
       control.resize();
     }
     this.designPos = {};

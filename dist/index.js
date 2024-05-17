@@ -5109,15 +5109,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         continue;
                     }
                 }
+                this.removeEmptyValue(props[prop]);
                 if ((0, utils_11.isSameValue)(defaultValue, props[prop]) || props[prop] === undefined) {
                     continue;
-                }
-                if (typeof props[prop] === 'object') {
-                    for (let subProp in props[prop]) {
-                        if (props[prop][subProp] === '') {
-                            delete props[prop][subProp];
-                        }
-                    }
                 }
                 if (typeof props[prop] === 'object' && Object.keys(props[prop]).length === 0) {
                     continue;
@@ -5128,6 +5122,21 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             component.items?.forEach(item => {
                 this.updateDesignProps(item);
             });
+        }
+        removeEmptyValue(value) {
+            if (typeof value === 'object') {
+                for (let subProp in value) {
+                    if (value[subProp] === '' || value[subProp] === undefined) {
+                        delete value[subProp];
+                    }
+                    else if (typeof value[subProp] === 'object') {
+                        this.removeEmptyValue(value[subProp]);
+                        if (Object.keys(value[subProp]).length === 0) {
+                            delete value[subProp];
+                        }
+                    }
+                }
+            }
         }
         formatDesignProp(prop, value, control) {
             if (value === undefined)
@@ -5384,9 +5393,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 if (id) {
                     const name = control.control._getDesignPropValue("onClick");
                     if (!name) {
+                        const fnName = id
+                            .split("-")
+                            .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
+                            .join("");
                         this.modified = true;
-                        control.control._setDesignPropValue("onClick", `this.${id}Click`);
-                        this.studio.addEventHandler(this, "onClick", `${id}Click`);
+                        control.control._setDesignPropValue("onClick", `this.${fnName}Click`);
+                        this.studio.addEventHandler(this, "onClick", `${fnName}Click`);
                     }
                     else if (name.startsWith("this."))
                         this.studio.addEventHandler(this, "onClick", name.substring(5));
@@ -5582,6 +5595,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         ...props,
                         percent: '{100}',
                         strokeWidth: '{5}',
+                        minHeight: '{5}',
                         border: '{{"radius":"4px"}}'
                     };
                     break;
@@ -5760,14 +5774,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 value.name = 'angle-down';
             }
             if (prop === 'link') {
-                const linkEl = new components_31.Link(control, { ...value, designMode: true, cursor: 'pointer' });
-                control[prop] = linkEl;
+                this.updateLinkProp(prop, value, control);
             }
             else if ((prop.toLowerCase()).includes('icon')) {
-                this.updateIconProp(prop, value);
+                this.updateIconProp(prop, value, control);
             }
             else if (prop === 'image') {
-                this.updateImageProp(prop, value);
+                this.updateImageProp(prop, value, control);
             }
             if (prop === "id" && value && oldVal !== value)
                 this.studio.renameComponent(this, oldVal, value);
@@ -5777,8 +5790,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             this.pathMapping.set(this.selectedControl.path, this.selectedControl);
         }
-        updateIconProp(prop, value) {
-            const control = this.selectedControl?.control;
+        updateIconProp(prop, value, control) {
             if (this.selectedControl?.name === 'i-tree-node') {
                 const treeNode = control;
                 treeNode[prop].name = value.name || '';
@@ -5792,22 +5804,40 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             else {
                 if (value.name || value.image?.url) {
-                    const width = value.width || '1rem';
-                    const height = value.height || '1rem';
-                    const iconEl = new components_31.Icon(control, { display: 'flex', ...value, width, height, designMode: true, cursor: 'pointer' });
-                    control[prop] = iconEl;
+                    const options = {
+                        width: value.width || 16,
+                        height: value.height || 16,
+                        fill: value.fill || Theme.text.primary
+                    };
+                    if (value.image?.url) {
+                        options.image = value.image;
+                    }
+                    else if (value.name) {
+                        options.name = value.name;
+                    }
+                    control._setDesignPropValue('icon', options);
+                    control[prop] = new components_31.Icon(control, { ...options, display: 'flex', designMode: true, cursor: 'pointer' });
                 }
                 else {
                     control[prop] = undefined;
                 }
             }
         }
-        updateImageProp(prop, value) {
-            const control = this.selectedControl?.control;
+        updateLinkProp(prop, value, control) {
+            if (value?.href) {
+                const linkEl = new components_31.Link(control, { ...value, designMode: true, cursor: 'pointer' });
+                control[prop] = linkEl;
+            }
+            else {
+                control[prop] = undefined;
+            }
+        }
+        updateImageProp(prop, value, control) {
             if (value.url) {
                 const width = value.width || '1rem';
                 const height = value.height || '1rem';
                 const imageEl = new components_31.Image(control, { display: 'flex', ...value, width, height, designMode: true, cursor: 'pointer' });
+                control._setDesignPropValue('name', '');
                 control[prop] = imageEl;
             }
             else {
@@ -5982,7 +6012,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.onPropertiesChanged(prop, this.designPos[prop]);
             }
             const control = this.selectedControl?.control;
-            if (control?.resize && (this.designPos.width || this.designPos.height)) {
+            if (typeof control?.resize === 'function' && (this.designPos.width || this.designPos.height)) {
                 control.resize();
             }
             this.designPos = {};
@@ -22948,7 +22978,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             let event = propInfo.events[eventName];
             if (event) {
                 event.forEach((param) => {
-                    if (param.isControl)
+                    if (param.isControl && param.type !== propInfo.className)
                         classNames.push(param.type);
                     if (params)
                         params = params + ', ';
