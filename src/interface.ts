@@ -60,7 +60,7 @@ export type onEventChangedCallback = (prop: string, newValue: string, oldValue: 
 export type onEventDblClickCallback = (funcName: string) => void;
 
 export interface IFileHandler {
-  openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
+  openFile(file: IIPFSData, parentCid: string, parent: Control, config: any): Promise<void>;
 }
 
 export interface IIPFSData {

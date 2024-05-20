@@ -23077,7 +23077,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.designTabs.activeTabIndex = 0;
             this.updateDesigner = true;
             await this.codeEditor.loadContent(content, 'typescript', fileName);
-            this.pnlMessage.visible = true;
+            this.pnlMessage.visible = false;
         }
         addLib() {
             try {
@@ -23096,7 +23096,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             catch { }
         }
         handleTabChanged(target, tab) {
-            this.pnlMessage.visible = tab.id === 'codeTab';
+            // this.pnlMessage.visible = tab.id === 'codeTab';
             const fileName = this.fileName;
             if (tab.id === 'designTab') {
                 if (this.updateDesigner) {
@@ -23211,10 +23211,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             // ChangedFiles = Object.assign({}, tempFiles);
             // await this.loadChangedFiles();
         }
-        async openFile(file, endpoint, parentCid, parent) {
+        async openFile(file, parentCid, parent, config) {
             parent.append(this);
             this.updateDesigner = true;
             const path = file.path.startsWith('/') ? file.path.slice(1) : file.path;
+            const endpoint = config?.transportEndpoint || '';
             const mediaUrl = `${endpoint}/ipfs/${parentCid}/${path}`;
             this.setData({ url: mediaUrl });
         }

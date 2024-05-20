@@ -1655,7 +1655,7 @@ declare module "@scom/scom-designer/interface.ts" {
     export type onEventChangedCallback = (prop: string, newValue: string, oldValue: string) => void;
     export type onEventDblClickCallback = (funcName: string) => void;
     export interface IFileHandler {
-        openFile(file: IIPFSData, transportEndpoint: string, parentCid: string, parent: Control): Promise<void>;
+        openFile(file: IIPFSData, parentCid: string, parent: Control, config: any): Promise<void>;
     }
     export interface IIPFSData {
         cid: string;
@@ -1775,7 +1775,7 @@ declare module "@scom/scom-designer" {
         private handleDesignerPreview;
         private updateDesignerCode;
         handleGetChangedFiles(): Promise<void>;
-        openFile(file: IIPFSData, endpoint: string, parentCid: string, parent: Control): Promise<void>;
+        openFile(file: IIPFSData, parentCid: string, parent: Control, config: any): Promise<void>;
         init(): void;
         private updateTag;
         private setTag;
