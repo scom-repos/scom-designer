@@ -198,7 +198,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.designTabs.activeTabIndex = 0
     this.updateDesigner = true;
     await this.codeEditor.loadContent(content, 'typescript', fileName)
-    this.pnlMessage.visible = true
+    this.pnlMessage.visible = false;
   }
 
   private addLib() {
@@ -217,7 +217,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private handleTabChanged(target: Tabs, tab: Tab) {
-    this.pnlMessage.visible = tab.id === 'codeTab';
+    // this.pnlMessage.visible = tab.id === 'codeTab';
     const fileName = this.fileName
     if (tab.id === 'designTab') {
       if (this.updateDesigner) {
@@ -339,13 +339,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   async openFile(
     file: IIPFSData,
-    endpoint: string,
     parentCid: string,
-    parent: Control
+    parent: Control,
+    config: any
   ) {
     parent.append(this)
     this.updateDesigner = true;
     const path = file.path.startsWith('/') ? file.path.slice(1) : file.path
+    const endpoint = config?.transportEndpoint || '';
     const mediaUrl = `${endpoint}/ipfs/${parentCid}/${path}`
     this.setData({ url: mediaUrl })
   }
