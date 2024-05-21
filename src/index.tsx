@@ -26,6 +26,10 @@ type onSaveCallback = (path: string, content: string) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
+  file?: {
+    path: string;
+    content: string;
+  }
   onSave?: onSaveCallback;
   onChanged?: (value: string) => void;
   onPreview?: ()=> Promise<{module: string, script: string}>;
@@ -39,8 +43,14 @@ declare global {
   }
 }
 
+interface IFileData {
+  path: string;
+  content: string;
+}
+
 interface IDesigner {
-  url: string;
+  url?: string;
+  file?: IFileData;
 }
 
 @customElements('i-scom-designer')
@@ -53,7 +63,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private contentChangeTimer: any
   private _data: IDesigner = {
-    url: ''
+    url: '',
+    file: {
+      path: '',
+      content: ''
+    }
   };
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
@@ -169,7 +183,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   get fileName() {
-    const name = this.url ? extractFileName(this.url) : '';
+    const name = this._data.file?.path || (this.url ? extractFileName(this.url) : '');
     return name || 'File name'
   }
 
@@ -186,15 +200,15 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return this._data
   }
 
-  setValue(url: string) {
-    this.setData({ url })
+  setValue(value: IDesigner) {
+    this.setData(value);
   }
 
   private async renderUI() {
     this.formDesigner.studio = this;
-    const { url = '' } = this._data
-    const content = url ? await getFileContent(url) : ''
-    const fileName = this.fileName
+    const { url = '', file } = this._data
+    const content = url ? await getFileContent(url) : file?.content || '';
+    const fileName = this.fileName;
     this.designTabs.activeTabIndex = 0
     this.updateDesigner = true;
     await this.codeEditor.loadContent(content, 'typescript', fileName)
