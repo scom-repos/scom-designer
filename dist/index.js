@@ -23035,7 +23035,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         constructor(parent, options) {
             super(parent, options);
             this._data = {
-                url: ''
+                url: '',
+                file: {
+                    path: '',
+                    content: ''
+                }
             };
             this.updateDesigner = true;
             this._components = (0, components_33.getCustomElements)();
@@ -23053,7 +23057,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._data.url = value;
         }
         get fileName() {
-            const name = this.url ? (0, utils_12.extractFileName)(this.url) : '';
+            const name = this._data.file?.path || (this.url ? (0, utils_12.extractFileName)(this.url) : '');
             return name || 'File name';
         }
         get value() {
@@ -23066,13 +23070,13 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         getData() {
             return this._data;
         }
-        setValue(url) {
-            this.setData({ url });
+        setValue(value) {
+            this.setData(value);
         }
         async renderUI() {
             this.formDesigner.studio = this;
-            const { url = '' } = this._data;
-            const content = url ? await (0, utils_12.getFileContent)(url) : '';
+            const { url = '', file } = this._data;
+            const content = url ? await (0, utils_12.getFileContent)(url) : file?.content || '';
             const fileName = this.fileName;
             this.designTabs.activeTabIndex = 0;
             this.updateDesigner = true;

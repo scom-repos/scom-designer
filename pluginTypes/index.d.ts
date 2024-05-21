@@ -1715,6 +1715,10 @@ declare module "@scom/scom-designer" {
     type onSaveCallback = (path: string, content: string) => void;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
+        file?: {
+            path: string;
+            content: string;
+        };
         onSave?: onSaveCallback;
         onChanged?: (value: string) => void;
         onPreview?: () => Promise<{
@@ -1728,6 +1732,14 @@ declare module "@scom/scom-designer" {
                 ['i-scom-designer']: ScomDesignerElement;
             }
         }
+    }
+    interface IFileData {
+        path: string;
+        content: string;
+    }
+    interface IDesigner {
+        url?: string;
+        file?: IFileData;
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
         private designTabs;
@@ -1761,7 +1773,7 @@ declare module "@scom/scom-designer" {
         get value(): string;
         private setData;
         private getData;
-        setValue(url: string): void;
+        setValue(value: IDesigner): void;
         private renderUI;
         private addLib;
         private handleTabChanged;
