@@ -23162,8 +23162,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.contentChangeTimer = setTimeout(async () => {
                 this.handleGetChangedFiles();
             }, 500);
-            if (this.onChanged)
-                this.onChanged(this.codeEditor.value);
+            if (this.onChange)
+                this.onChange(this, event);
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {
@@ -23226,7 +23226,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         init() {
             super.init();
             this.onSave = this.getAttribute('onSave', true) || this.onSave;
-            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.onChange = this.getAttribute('onChange', true) || this.onChange;
             const url = this.getAttribute('url', true);
             if (url)
                 this.setData({ url });

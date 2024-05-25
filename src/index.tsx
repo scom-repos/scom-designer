@@ -23,6 +23,7 @@ import { Compiler, Parser } from '@ijstech/compiler'
 import { extractFileName, getFileContent } from './helpers/utils'
 
 type onSaveCallback = (path: string, content: string) => void;
+type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -31,7 +32,7 @@ interface ScomDesignerElement extends ControlElement {
     content: string;
   }
   onSave?: onSaveCallback;
-  onChanged?: (value: string) => void;
+  onChange?: onChangeCallback;
   onPreview?: ()=> Promise<{module: string, script: string}>;
 }
 
@@ -73,7 +74,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private _components = getCustomElements();
 
   onSave: onSaveCallback;
-  onChanged?: (value: string) => void;
+  onChange?: onChangeCallback;
   onPreview?: ()=> Promise<{module: string, script: string}>;
   tag: any = {}
 
@@ -285,13 +286,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     })
   }
 
-  private handleCodeEditorChange(target: CodeEditor, event: any) {
+  private handleCodeEditorChange(target: CodeEditor, event: Event) {
     this.updateDesigner = true;
     if (this.contentChangeTimer) clearTimeout(this.contentChangeTimer)
     this.contentChangeTimer = setTimeout(async () => {
       this.handleGetChangedFiles()
     }, 500)
-    if (this.onChanged) this.onChanged(this.codeEditor.value)
+    if (this.onChange) this.onChange(this, event)
   }
   async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
     if (isPackage){
@@ -368,7 +369,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   init() {
     super.init()
     this.onSave = this.getAttribute('onSave', true) || this.onSave
-    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged
+    this.onChange = this.getAttribute('onChange', true) || this.onChange
     const url = this.getAttribute('url', true)
     if (url) this.setData({ url })
     this.addLib()
