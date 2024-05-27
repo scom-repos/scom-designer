@@ -1775,6 +1775,7 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): void;
+        updateFileName(oldValue: string, newValue: string): void;
         private renderUI;
         private addLib;
         private handleTabChanged;

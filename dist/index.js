@@ -23073,6 +23073,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         setValue(value) {
             this.setData(value);
         }
+        updateFileName(oldValue, newValue) {
+            if (typeof this.codeEditor?.updateFileName === 'function')
+                this.codeEditor.updateFileName(oldValue, newValue);
+        }
         async renderUI() {
             this.formDesigner.studio = this;
             const { url = '', file } = this._data;

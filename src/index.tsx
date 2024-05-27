@@ -205,6 +205,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.setData(value);
   }
 
+  updateFileName(oldValue: string, newValue: string) {
+    if (typeof this.codeEditor?.updateFileName === 'function')
+      this.codeEditor.updateFileName(oldValue, newValue);
+  }
+
   private async renderUI() {
     this.formDesigner.studio = this;
     const { url = '', file } = this._data
