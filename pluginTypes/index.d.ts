@@ -1713,6 +1713,7 @@ declare module "@scom/scom-designer" {
     import { IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
     type onSaveCallback = (path: string, content: string) => void;
+    type onChangeCallback = (target: ScomDesigner, event: Event) => void;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
@@ -1720,7 +1721,7 @@ declare module "@scom/scom-designer" {
             content: string;
         };
         onSave?: onSaveCallback;
-        onChanged?: (value: string) => void;
+        onChange?: onChangeCallback;
         onPreview?: () => Promise<{
             module: string;
             script: string;
@@ -1752,7 +1753,7 @@ declare module "@scom/scom-designer" {
         private updateDesigner;
         private _components;
         onSave: onSaveCallback;
-        onChanged?: (value: string) => void;
+        onChange?: onChangeCallback;
         onPreview?: () => Promise<{
             module: string;
             script: string;
@@ -1774,6 +1775,7 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): void;
+        updateFileName(oldValue: string, newValue: string): void;
         private renderUI;
         private addLib;
         private handleTabChanged;
