@@ -210,6 +210,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.codeEditor.updateFileName(oldValue, newValue);
   }
 
+  dispose() {
+    if (typeof this.codeEditor?.dispose === 'function') {
+      this.codeEditor.dispose();
+      this.onChange = null;
+    }
+  }
+
   private async renderUI() {
     this.formDesigner.studio = this;
     const { url = '', file } = this._data
@@ -293,11 +300,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private handleCodeEditorChange(target: CodeEditor, event: Event) {
     this.updateDesigner = true;
-    if (this.contentChangeTimer) clearTimeout(this.contentChangeTimer)
-    this.contentChangeTimer = setTimeout(async () => {
-      this.handleGetChangedFiles()
-    }, 500)
-    if (this.onChange) this.onChange(this, event)
+    if (typeof this.onChange === 'function') this.onChange(this, event)
   }
   async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
     if (isPackage){
