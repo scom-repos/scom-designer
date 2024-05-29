@@ -23077,6 +23077,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (typeof this.codeEditor?.updateFileName === 'function')
                 this.codeEditor.updateFileName(oldValue, newValue);
         }
+        dispose() {
+            if (typeof this.codeEditor?.dispose === 'function') {
+                this.codeEditor.dispose();
+                this.onChange = null;
+            }
+        }
         async renderUI() {
             this.formDesigner.studio = this;
             const { url = '', file } = this._data;
@@ -23161,12 +23167,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         handleCodeEditorChange(target, event) {
             this.updateDesigner = true;
-            if (this.contentChangeTimer)
-                clearTimeout(this.contentChangeTimer);
-            this.contentChangeTimer = setTimeout(async () => {
-                this.handleGetChangedFiles();
-            }, 500);
-            if (this.onChange)
+            if (typeof this.onChange === 'function')
                 this.onChange(this, event);
         }
         async getImportFile(fileName, isPackage) {
