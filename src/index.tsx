@@ -536,15 +536,16 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   render() {
     return (
-      <i-panel
+      <i-vstack
         width={'100%'} height={'100%'}
         overflow={'hidden'}
+        position='relative'
         background={{ color: '#202020' }}
       >
         <i-tabs
           id="designTabs"
           class={codeTabsStyle}
-          dock='fill'
+          stack={{'grow': '1'}}
           draggable={false}
           closable={false}
           onChanged={this.handleTabChanged}
@@ -555,7 +556,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           >
             <i-code-editor
               id="codeEditor"
-              dock='fill'
+              width={'100%'} height={'100%'}
               onChange={this.handleCodeEditorChange.bind(this)}
             />
           </i-tab>
@@ -565,7 +566,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           >
             <i-scom-designer--form
               id="formDesigner"
-              dock='fill'
+              width={'100%'} height={'100%'}
               onPreview={this.handleDesignerPreview.bind(this)}
             />
           </i-tab>
@@ -575,6 +576,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           resizer={true}
           dock='bottom'
           height={100}
+          maxHeight={'70%'}
           visible={false}
           padding={{ top: 5, bottom: 5 }}
           border={{
@@ -587,7 +589,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         >
           <i-code-editor dock='fill'></i-code-editor>
         </i-panel>
-      </i-panel>
+      </i-vstack>
     )
   }
 }

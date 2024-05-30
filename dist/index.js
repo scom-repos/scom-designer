@@ -23384,13 +23384,13 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             };
         }
         render() {
-            return (this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden', background: { color: '#202020' } },
-                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, dock: 'fill', draggable: false, closable: false, onChanged: this.handleTabChanged },
+            return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
+                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
-                        this.$render("i-code-editor", { id: "codeEditor", dock: 'fill', onChange: this.handleCodeEditorChange.bind(this) })),
+                        this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
-                        this.$render("i-scom-designer--form", { id: "formDesigner", dock: 'fill', onPreview: this.handleDesignerPreview.bind(this) }))),
-                this.$render("i-panel", { id: 'pnlMessage', resizer: true, dock: 'bottom', height: 100, visible: false, padding: { top: 5, bottom: 5 }, border: {
+                        this.$render("i-scom-designer--form", { id: "formDesigner", width: '100%', height: '100%', onPreview: this.handleDesignerPreview.bind(this) }))),
+                this.$render("i-panel", { id: 'pnlMessage', resizer: true, dock: 'bottom', height: 100, maxHeight: '70%', visible: false, padding: { top: 5, bottom: 5 }, border: {
                         top: {
                             width: '1px',
                             style: 'solid',
