@@ -225,7 +225,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.designTabs.activeTabIndex = 0
     this.updateDesigner = true;
     await this.codeEditor.loadContent(content, 'typescript', fileName)
-    this.pnlMessage.visible = false;
+    this.pnlMessage.visible = this.designTabs?.activeTab?.id === 'codeTab';
   }
 
   private addLib() {
@@ -244,7 +244,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private handleTabChanged(target: Tabs, tab: Tab) {
-    // this.pnlMessage.visible = tab.id === 'codeTab';
+    this.pnlMessage.visible = tab.id === 'codeTab';
     const fileName = this.fileName
     if (tab.id === 'designTab') {
       if (this.updateDesigner) {
@@ -546,6 +546,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           id="designTabs"
           class={codeTabsStyle}
           stack={{'grow': '1'}}
+          maxHeight={`100%`}
           draggable={false}
           closable={false}
           onChanged={this.handleTabChanged}

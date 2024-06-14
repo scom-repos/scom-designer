@@ -23091,7 +23091,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.designTabs.activeTabIndex = 0;
             this.updateDesigner = true;
             await this.codeEditor.loadContent(content, 'typescript', fileName);
-            this.pnlMessage.visible = false;
+            this.pnlMessage.visible = this.designTabs?.activeTab?.id === 'codeTab';
         }
         addLib() {
             try {
@@ -23110,7 +23110,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             catch { }
         }
         handleTabChanged(target, tab) {
-            // this.pnlMessage.visible = tab.id === 'codeTab';
+            this.pnlMessage.visible = tab.id === 'codeTab';
             const fileName = this.fileName;
             if (tab.id === 'designTab') {
                 if (this.updateDesigner) {
@@ -23385,7 +23385,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         render() {
             return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
-                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, draggable: false, closable: false, onChanged: this.handleTabChanged },
+                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, maxHeight: `100%`, draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
                         this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
