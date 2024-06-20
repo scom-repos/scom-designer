@@ -105,6 +105,7 @@ export const customIconTabActiveStyled = Styles.style({
 })
 
 export const customTabStyled = Styles.style({
+  flexDirection: 'column',
   $nest: {
     '.tabs-nav': {
       width: '100%'
@@ -135,6 +136,7 @@ export const customTabStyled = Styles.style({
 
 
 export const codeTabsStyle = Styles.style({
+  flexDirection: 'column',
   $nest: {
       "> .tabs-nav-wrap": {
           background: "#181818",

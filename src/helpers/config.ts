@@ -177,7 +177,9 @@ const CONTAINERS = [
   'i-tab',
   'i-carousel-slider',
   'i-repeater',
-  'i-accordion-item'
+  'i-accordion-item',
+  'i-hstack',
+  'i-vstack'
 ];
 
 const ControlItemMapper: {[key: string]: string} = {

@@ -117,6 +117,7 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
         }
     });
     exports.customTabStyled = components_1.Styles.style({
+        flexDirection: 'column',
         $nest: {
             '.tabs-nav': {
                 width: '100%'
@@ -145,6 +146,7 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
         }
     });
     exports.codeTabsStyle = components_1.Styles.style({
+        flexDirection: 'column',
         $nest: {
             "> .tabs-nav-wrap": {
                 background: "#181818",
@@ -436,7 +438,9 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         'i-tab',
         'i-carousel-slider',
         'i-repeater',
-        'i-accordion-item'
+        'i-accordion-item',
+        'i-hstack',
+        'i-vstack'
     ];
     exports.CONTAINERS = CONTAINERS;
     const ControlItemMapper = {
@@ -4419,7 +4423,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
                     this.$render("designer-selector", { id: "previewSelector", title: 'PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
                         , items: config_7.previews, direction: 'vertical', stack: { grow: '1', shrink: '1' }, onChanged: this.onPreviewClick.bind(this) })),
                 this.$render("i-hstack", { id: "hStackInfo", width: "100%", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' }, visible: false }),
-                this.$render("i-tabs", { id: "propTabs", mode: "horizontal", activeTabIndex: 0, class: index_css_18.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
+                this.$render("i-tabs", { id: "propTabs", mode: "horizontal", activeTabIndex: 0, display: 'flex', class: index_css_18.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
                     this.$render("i-tab", { icon: { name: 'sliders-h', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
                             this.$render("i-grid-layout", { id: "gridSelector", templateColumns: ['70px', 'auto'], verticalAlignment: "center", gap: { column: '0.5rem', row: '0.5rem' }, padding: { top: '1rem', bottom: '1rem', left: '0.75rem', right: '0.75rem' } },
@@ -5475,8 +5479,17 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             };
             switch (name) {
                 case 'i-panel':
+                case 'i-vstack':
+                case 'i-hstack':
                     props = {
                         ...props
+                    };
+                    break;
+                case 'i-markdown':
+                    props = {
+                        ...props,
+                        display: 'block',
+                        minHeight: `{10}`
                     };
                     break;
                 case 'i-stack':
@@ -23385,7 +23398,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         render() {
             return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
-                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, maxHeight: `100%`, draggable: false, closable: false, onChanged: this.handleTabChanged },
+                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, maxHeight: `100%`, display: 'flex', draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
                         this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
