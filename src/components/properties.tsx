@@ -422,6 +422,7 @@ export default class DesignerProperties extends Module {
           id="propTabs"
           mode="horizontal"
           activeTabIndex={0}
+          display='flex'
           class={customTabStyled}
           stack={{grow: '1'}} overflow={'hidden'}
         >

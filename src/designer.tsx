@@ -659,8 +659,17 @@ export class ScomDesignerForm extends Module {
     };
     switch(name) {
       case 'i-panel':
+      case 'i-vstack':
+      case 'i-hstack':
         props = {
           ...props
+        }
+        break;
+      case 'i-markdown':
+        props = {
+          ...props,
+          display: 'block',
+          minHeight: `{10}`
         }
         break;
       case 'i-stack':

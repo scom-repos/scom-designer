@@ -547,6 +547,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           class={codeTabsStyle}
           stack={{'grow': '1'}}
           maxHeight={`100%`}
+          display='flex'
           draggable={false}
           closable={false}
           onChanged={this.handleTabChanged}
