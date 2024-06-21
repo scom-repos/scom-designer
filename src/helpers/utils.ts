@@ -1,5 +1,7 @@
 import assets from "../assets";
 import { getBreakpoint } from "./store";
+import { Styles } from "@ijstech/components";
+const Theme = Styles.Theme.ThemeVars;
 
 export const backgroundOptions = [
   {
@@ -391,15 +393,33 @@ export const parsePropValue = (value: any) => {
       try {
         return JSON.parse(value);
       } catch {
-        const parsedObject = JSON.parse(
+        const newValue =
           value
             .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
             .replace(/'/g, '"')
-        );
-        return parsedObject;
+            .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"');
+
+        const parsedData = JSON.parse(newValue, (key, value) => {
+          if (typeof value === 'string' && value.startsWith('Theme')) {
+            const parsedValue = value.split('.');
+            let themeValue = Theme;
+            for(let i = 1; i < parsedValue.length; i++) {
+              themeValue = themeValue[parsedValue[i]]
+            }
+            return themeValue;
+          }
+          return value;
+        });
+
+        return parsedData;
       }
     } else if (value.startsWith('[') && value.endsWith(']')) {
-      return JSON.parse(value);
+      try {
+        return JSON.parse(value);
+      } catch {
+        const parsedArray = JSON.parse(value.replace(/'/g, '"'));
+        return parsedArray;
+      }
     } else {
       if (value === 'true' || value === 'false') {
         value = value === 'true' ? true : false;
