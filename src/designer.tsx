@@ -125,6 +125,7 @@ export class ScomDesignerForm extends Module {
   private designPos: any = {};
   private libsMap: Record<string, boolean> = {}
   private _customElements = getCustomElements();
+  private isPreviewing: boolean = false;
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
   private handleMouseUpBound: (event: MouseEvent) => void;
@@ -145,6 +146,7 @@ export class ScomDesignerForm extends Module {
     this.handleBreakpoint = this.handleBreakpoint.bind(this);
     this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
     this.onAddItem = this.onAddItem.bind(this);
+    this.handlePreviewChanged = this.handlePreviewChanged.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -1213,19 +1215,22 @@ export class ScomDesignerForm extends Module {
     if (value == '1'){
       this.pnlFormDesigner.visible = false;
       this.pnlPreview.visible = true;
+      if (this.isPreviewing) return;
+      this.isPreviewing = true;
       if (this.onPreview){
         if (!this.ifrPreview.url)
           this.ifrPreview.url = 'https://decom.dev/debug.html';
         let result = await this.onPreview();
         if (result){
-            this.ifrPreview.postMessage(JSON.stringify(result));
-          }
+          this.ifrPreview.postMessage(JSON.stringify(result));
+        }
       }
+      this.isPreviewing = false;
     }
     else{
-      this.ifrPreview.reload();
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
+      this.ifrPreview.reload();
     }
   }
   private handleBreakpoint(value: number) {
