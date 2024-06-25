@@ -18,6 +18,7 @@ import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemAct
 import { IComponent, IScreen } from '../interface';
 import './index.css';
 import { getMediaQueryProps, CONTAINERS, ITEM_PARENTS } from '../helpers/config';
+import { handleParse } from '../helpers/utils';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -182,7 +183,7 @@ export default class DesignerComponents extends Module {
         />
       );
       const queriesStr = elm.props?.mediaQueries;
-      const mediaQueries = typeof queriesStr === 'string' ? JSON.parse(queriesStr.substring(1, queriesStr.length - 1)) : [];
+      const mediaQueries = typeof queriesStr === 'string' ? handleParse(queriesStr.substring(1, queriesStr.length - 1)) : [];
       const breakpointProps = getMediaQueryProps(mediaQueries);
       let isHidden = false;
       if (Object.hasOwnProperty.call(breakpointProps, 'visible')) {

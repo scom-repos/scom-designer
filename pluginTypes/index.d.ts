@@ -122,6 +122,125 @@ declare module "@scom/scom-designer/helpers/config.ts" {
     };
     export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper };
 }
+/// <amd-module name="@scom/scom-designer/helpers/utils.ts" />
+declare module "@scom/scom-designer/helpers/utils.ts" {
+    export const backgroundOptions: {
+        value: string;
+        label: string;
+    }[];
+    export function getAlignProps(type: string): any;
+    export const justifyProps: ({
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate?: undefined;
+        placement?: undefined;
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate: number;
+        placement?: undefined;
+    } | {
+        tooltip: string;
+        placement: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate?: undefined;
+    })[];
+    export const alignContentProps: ({
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate?: undefined;
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+        rotate: number;
+    })[];
+    export const borderStyles: {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+        };
+    }[];
+    export const fontStyles: {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            name: string;
+        };
+    }[];
+    export const fontTransforms: ({
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            name: string;
+            image?: undefined;
+        };
+    } | {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            image: {
+                url: string;
+            };
+            name?: undefined;
+        };
+    })[];
+    export const fontDecorations: {
+        tooltip: string;
+        value: string;
+        type: string;
+        icon: {
+            name: string;
+        };
+    }[];
+    export const getFileContent: (url: string) => Promise<string>;
+    export const extractFileName: (path: string) => string;
+    export const parseProps: (props: any) => {};
+    export const parsePropValue: (value: any) => any;
+    export const handleParse: (value: string) => any;
+    export const parseNumberValue: (value: string | number) => {
+        value: any;
+        unit: string;
+    };
+    export const isSameValue: (defaultVal: any, value: any) => boolean;
+    export const isNumber: (value: string | number) => boolean;
+}
 /// <amd-module name="@scom/scom-designer/components/components.tsx" />
 declare module "@scom/scom-designer/components/components.tsx" {
     import { Module, ControlElement } from '@ijstech/components';
@@ -243,124 +362,6 @@ declare module "@scom/scom-designer/tools/stylesheet.tsx" {
         render(): any;
     }
 }
-/// <amd-module name="@scom/scom-designer/helpers/utils.ts" />
-declare module "@scom/scom-designer/helpers/utils.ts" {
-    export const backgroundOptions: {
-        value: string;
-        label: string;
-    }[];
-    export function getAlignProps(type: string): any;
-    export const justifyProps: ({
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        rotate?: undefined;
-        placement?: undefined;
-    } | {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        rotate: number;
-        placement?: undefined;
-    } | {
-        tooltip: string;
-        placement: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        rotate?: undefined;
-    })[];
-    export const alignContentProps: ({
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        rotate?: undefined;
-    } | {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-        rotate: number;
-    })[];
-    export const borderStyles: {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-        };
-    }[];
-    export const fontStyles: {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            name: string;
-        };
-    }[];
-    export const fontTransforms: ({
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            name: string;
-            image?: undefined;
-        };
-    } | {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            image: {
-                url: string;
-            };
-            name?: undefined;
-        };
-    })[];
-    export const fontDecorations: {
-        tooltip: string;
-        value: string;
-        type: string;
-        icon: {
-            name: string;
-        };
-    }[];
-    export const getFileContent: (url: string) => Promise<string>;
-    export const extractFileName: (path: string) => string;
-    export const parseProps: (props: any) => {};
-    export const parsePropValue: (value: any) => any;
-    export const parseNumberValue: (value: string | number) => {
-        value: any;
-        unit: string;
-    };
-    export const isSameValue: (defaultVal: any, value: any) => boolean;
-    export const isNumber: (value: string | number) => boolean;
-}
 /// <amd-module name="@scom/scom-designer/tools/selector.tsx" />
 declare module "@scom/scom-designer/tools/selector.tsx" {
     import { ControlElement, Module } from "@ijstech/components";
@@ -405,6 +406,7 @@ declare module "@scom/scom-designer/tools/selector.tsx" {
         private listMap;
         onChanged: selectorChanged;
         private _data;
+        private selectedItem;
         get items(): IItem[];
         set items(value: IItem[]);
         get title(): string;
@@ -1532,6 +1534,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private designPos;
         private libsMap;
         private _customElements;
+        private isPreviewing;
         private handleMouseMoveBound;
         private handleMouseUpBound;
         selectedControl: IControl;
@@ -1714,6 +1717,10 @@ declare module "@scom/scom-designer" {
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
     type onSaveCallback = (path: string, content: string) => void;
     type onChangeCallback = (target: ScomDesigner, event: Event) => void;
+    type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{
+        fileName: string;
+        content: string;
+    } | null>;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
@@ -1726,6 +1733,7 @@ declare module "@scom/scom-designer" {
             module: string;
             script: string;
         }>;
+        onImportFile?: onImportCallback;
     }
     global {
         namespace JSX {
@@ -1748,7 +1756,6 @@ declare module "@scom/scom-designer" {
         private codeEditor;
         private pnlMessage;
         private compiler;
-        private contentChangeTimer;
         private _data;
         private updateDesigner;
         private _components;
@@ -1758,6 +1765,7 @@ declare module "@scom/scom-designer" {
             module: string;
             script: string;
         }>;
+        onImportFile?: onImportCallback;
         tag: any;
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         set previewUrl(url: string);
@@ -1789,7 +1797,6 @@ declare module "@scom/scom-designer" {
         }>;
         private handleDesignerPreview;
         private updateDesignerCode;
-        handleGetChangedFiles(): Promise<void>;
         openFile(file: IIPFSData, parentCid: string, parent: Control, config: any): Promise<void>;
         init(): void;
         private updateTag;

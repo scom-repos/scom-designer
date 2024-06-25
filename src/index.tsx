@@ -24,6 +24,7 @@ import { extractFileName, getFileContent } from './helpers/utils'
 
 type onSaveCallback = (path: string, content: string) => void;
 type onChangeCallback = (target: ScomDesigner, event: Event) => void;
+type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -34,6 +35,7 @@ interface ScomDesignerElement extends ControlElement {
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: ()=> Promise<{module: string, script: string}>;
+  onImportFile?: onImportCallback;
 }
 
 declare global {
@@ -62,7 +64,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private pnlMessage: Panel
   private compiler: Compiler
 
-  private contentChangeTimer: any
   private _data: IDesigner = {
     url: '',
     file: {
@@ -76,6 +77,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: ()=> Promise<{module: string, script: string}>;
+  onImportFile?: onImportCallback;
   tag: any = {}
 
   addEventHandler(
@@ -126,7 +128,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.setCursor(result.lineNumber, result.columnNumber)
   }
   removeComponent(designer: ScomDesignerForm): void {
-    console.log('removeComponent', this.formDesigner.rootComponent)
+    // console.log('removeComponent', this.formDesigner.rootComponent)
   }
   renameComponent(
     designer: ScomDesignerForm,
@@ -234,6 +236,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet)
       CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract)
       CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource)
+      // TODO: check
       if (!this.compiler) this.compiler = new Compiler()
       this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
       this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
@@ -243,7 +246,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     } catch {}
   }
 
-  private handleTabChanged(target: Tabs, tab: Tab) {
+  private async handleTabChanged(target: Tabs, tab: Tab) {
     this.pnlMessage.visible = tab.id === 'codeTab';
     const fileName = this.fileName
     if (tab.id === 'designTab') {
@@ -251,11 +254,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         this.updateDesigner = false
         const code = this.codeEditor.value
         try {
-          this.compiler.addFile(fileName, code)
+          await this.compiler.addFile(fileName, code, async (fileName: string, isPackage?: boolean) => {
+            if (this.onImportFile) return await this.onImportFile(fileName, isPackage);
+            return null;
+          })
           const ui = this.compiler.parseUI(fileName)
           this.formDesigner.renderUI(this.updateRoot(ui))
         } catch(error) {
-          console.log(error)
+          console.error('parse UI error:', error);
         }
       }
     } else if (tab.id === 'codeTab') {
@@ -326,7 +332,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         );
         let result = await compiler.compile(false)
         if (result.errors?.length > 0) 
-          console.log(result.errors)
+          console.error(result.errors)
         else
           return {
               module: '@scom/debug-module',
@@ -349,17 +355,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
-  async handleGetChangedFiles() {
-    // const diffFiles = await this.fileStorage.onGetDiff();
-    // let tempFiles = {};
-    // for (let diffFile of diffFiles) {
-    //     const data = await diffFile.readText();
-    //     tempFiles[diffFile.fullPath] = { content: data, action: diffFile.action };
-    // }
-    // ChangedFiles = Object.assign({}, tempFiles);
-    // await this.loadChangedFiles();
-  }
-
   async openFile(
     file: IIPFSData,
     parentCid: string,
@@ -378,6 +373,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     super.init()
     this.onSave = this.getAttribute('onSave', true) || this.onSave
     this.onChange = this.getAttribute('onChange', true) || this.onChange
+    this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile
     const url = this.getAttribute('url', true)
     if (url) this.setData({ url })
     this.addLib()

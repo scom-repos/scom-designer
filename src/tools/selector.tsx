@@ -55,6 +55,7 @@ export default class DesignerSelector extends Module {
     direction: 'horizontal',
     isChanged: false
   }
+  private selectedItem: IItem = null;
 
   get items() {
     return this._data.items || [];
@@ -167,7 +168,9 @@ export default class DesignerSelector extends Module {
 
   private onActiveChanged(target: Control, event: MouseEvent, type: string, value: string|number) {
     event.preventDefault();
+    if (this.selectedItem && this.selectedItem.value === value) return;
     this.updateActiveItem(target);
+    this.selectedItem = { type, value };
     if (this.onChanged) this.onChanged(type, value);
   }
   

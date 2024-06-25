@@ -393,32 +393,13 @@ export const parsePropValue = (value: any) => {
       try {
         return JSON.parse(value);
       } catch {
-        const newValue =
-          value
-            .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
-            .replace(/'/g, '"')
-            .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"');
-
-        const parsedData = JSON.parse(newValue, (key, value) => {
-          if (typeof value === 'string' && value.startsWith('Theme')) {
-            const parsedValue = value.split('.');
-            let themeValue = Theme;
-            for(let i = 1; i < parsedValue.length; i++) {
-              themeValue = themeValue[parsedValue[i]]
-            }
-            return themeValue;
-          }
-          return value;
-        });
-
-        return parsedData;
+        return handleParse(value);
       }
     } else if (value.startsWith('[') && value.endsWith(']')) {
       try {
         return JSON.parse(value);
       } catch {
-        const parsedArray = JSON.parse(value.replace(/'/g, '"'));
-        return parsedArray;
+        return handleParse(value);
       }
     } else {
       if (value === 'true' || value === 'false') {
@@ -440,6 +421,33 @@ export const parsePropValue = (value: any) => {
   }
   return value;
 };
+
+export const handleParse = (value: string) => {
+  try {
+    const newValue =
+      value
+        .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
+        .replace(/'/g, '"')
+        .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"');
+
+    const parsedData = JSON.parse(newValue, (key, value) => {
+      if (typeof value === 'string' && value.startsWith('Theme')) {
+        const parsedValue = value.split('.');
+        let themeValue = Theme;
+        for(let i = 1; i < parsedValue.length; i++) {
+          themeValue = themeValue[parsedValue[i]]
+        }
+        return themeValue;
+      }
+    return value;
+  });
+
+  console.log('parsedData', newValue, parsedData)
+  return parsedData;
+  } catch {
+    return value;
+  }
+}
 
 export const parseNumberValue = (value: string | number) => {
   let result = {
