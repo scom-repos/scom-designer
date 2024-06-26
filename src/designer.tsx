@@ -1,5 +1,4 @@
 import {
-  CarouselSlider,
   Container,
   Control,
   ControlElement,
@@ -13,18 +12,13 @@ import {
   Image,
   Input,
   Link,
-  Menu,
   Modal,
   Module,
   Panel,
   Repeater,
   Styles,
-  Tabs,
   TreeView,
-  AccordionItem,
-  Accordion,
   VStack,
-  MenuItem,
   TreeNode
 } from '@ijstech/components';
 import {
@@ -531,11 +525,17 @@ export class ScomDesignerForm extends Module {
     const config = this.getOptions(component.props);
     let control = null;
 
-    const isAddOption = (component.name === 'i-tab' && parent instanceof Tabs) ||
-      (component.name === 'i-menu-item' && parent instanceof Menu) ||
-      (component.name === 'i-menu-item' && parent instanceof MenuItem) ||
-      (component.name === 'i-accordion-item' && parent instanceof Accordion);
-    const isAddControl = (parent instanceof CarouselSlider) || (parent instanceof Repeater) || (parent instanceof AccordionItem);
+    if (parent.id === 'pnlFormDesigner') {
+      control = await this.createControl(parent, component.name, config);
+      return control;
+    }
+
+    const parenNodeName = parent.nodeName;
+    const isAddOption = (component.name === 'i-tab' && parenNodeName === 'I-TABS') ||
+      (component.name === 'i-menu-item' && parenNodeName === 'I-MENU') ||
+      (component.name === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
+      (component.name === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
+    const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') || (parenNodeName === 'I-REPEATER') || (parenNodeName === 'I-ACCORDION-ITEM');
 
     if (isAddOption) {
       control = (parent as any).add({...config.options, designMode: true, cursor: 'pointer'});
@@ -543,22 +543,21 @@ export class ScomDesignerForm extends Module {
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
     } else if (isAddControl) {
       const childControl = await this.createControl(undefined, component.name, config);
-      control = parent.add(childControl);
-    } else if (component.name === 'i-tree-node' && parent instanceof TreeView) {
-      control = parent.add(null, config.options?.caption || '');
+      control = (parent as any).add(childControl);
+    } else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
+      control = (parent as TreeView).add(null, config.options?.caption || '');
       control.designMode = true;
       control.cursor = 'pointer';
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
-    } else if (component.name === 'i-tree-node' && parent instanceof TreeNode) {
+    } else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-NODE') {
       const childControl = await this.createControl(undefined, component.name, config);
-      control = parent.appendNode(childControl);
+      control = (parent as TreeNode).appendNode(childControl);
     } else {
       control = await this.createControl(parent, component.name, config);
     }
     return control;
   }
-
   private updateRepeater(path: string) {
     const repeater = this.pathMapping.get(path)?.control as Repeater;
     if (repeater) repeater.update();
@@ -1228,9 +1227,9 @@ export class ScomDesignerForm extends Module {
       this.isPreviewing = false;
     }
     else{
+      if (this.ifrPreview) this.ifrPreview.reload();
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
-      this.ifrPreview.reload();
     }
   }
   private handleBreakpoint(value: number) {

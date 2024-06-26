@@ -154,7 +154,7 @@ export default class DesignerComponents extends Module {
           this.renderTreeItems(elm.items, vStack2, parentPl + 12);
         }
       }
-      const image = new Icon(hStack, { name: elm.icon, fill: Theme.text.primary, width: '0.75rem', height: '0.75rem', display: 'flex', margin: {right: '0.25rem'} });
+      const image = new Icon(hStack, { name: elm.icon || 'square', fill: Theme.text.primary, width: '0.75rem', height: '0.75rem', display: 'flex', margin: {right: '0.25rem'} });
       const label = new Label(hStack, { caption: elm.name, font: { size: '0.75rem' }, lineHeight: 1, opacity: 0.8 });
       const input = new Input(hStack, { value: elm.name, visible: false, font: { size: '0.75rem' }, border: 'none' });
 

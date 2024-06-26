@@ -442,7 +442,6 @@ export const handleParse = (value: string) => {
     return value;
   });
 
-  console.log('parsedData', newValue, parsedData)
   return parsedData;
   } catch {
     return value;
