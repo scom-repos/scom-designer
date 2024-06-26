@@ -18,7 +18,7 @@ import {
 import { blockStyle, codeTabsStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
-import * as Dts from './types/index'
+// import * as Dts from './types/index'
 import { Compiler, Parser } from '@ijstech/compiler'
 import { extractFileName, getFileContent } from './helpers/utils'
 
@@ -73,6 +73,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   };
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
+  private imported: Record<string, string> = {};
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
@@ -226,38 +227,49 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const fileName = this.fileName;
     this.designTabs.activeTabIndex = 0
     this.updateDesigner = true;
+    this.onAddFile(fileName, content);
     await this.codeEditor.loadContent(content, 'typescript', fileName)
-    this.pnlMessage.visible = this.designTabs?.activeTab?.id === 'codeTab';
+    this.pnlMessage.visible = false // this.designTabs?.activeTab?.id === 'codeTab';
   }
 
   private addLib() {
     try {
-      CodeEditor.addLib('@ijstech/components', Dts.components)
-      CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet)
-      CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract)
-      CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource)
-      // TODO: check
+      // CodeEditor.addLib('@ijstech/components', Dts.components)
+      // CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet)
+      // CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract)
+      // CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource)
       if (!this.compiler) this.compiler = new Compiler()
-      this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
-      this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
-      this.compiler.addPackage('@ijstech/eth-contract', {dts: { 'index.d.ts': Dts.ethContract }});
-      this.compiler.addPackage('bignumber.js', {dts: { 'index.d.ts': Dts.bignumber }});
-      this.compiler.addPackage('@scom/scom-chart-data-source-setup', {dts: { 'index.d.ts': Dts.dataSource }});
+      // this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
+      // this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
+      // this.compiler.addPackage('@ijstech/eth-contract', {dts: { 'index.d.ts': Dts.ethContract }});
+      // this.compiler.addPackage('bignumber.js', {dts: { 'index.d.ts': Dts.bignumber }});
+      // this.compiler.addPackage('@scom/scom-chart-data-source-setup', {dts: { 'index.d.ts': Dts.dataSource }});
     } catch {}
   }
 
+  private async onAddFile(name: string, content: string) {
+    await this.compiler.addFile(name, content, async (fileName: string, isPackage?: boolean) => {
+      let result = this.getFile(fileName);
+      if (this.onImportFile) {
+        const result = await this.onImportFile(fileName, isPackage);
+        const importedName = isPackage ? fileName : result.fileName;
+        if (result) this.imported[importedName] = result?.content || '';
+        const name = isPackage ? fileName : `file://${fileName}`;
+        CodeEditor.addLib(name, result.content);
+        return result;
+      }
+      return null;
+    })
+  }
+
   private async handleTabChanged(target: Tabs, tab: Tab) {
-    this.pnlMessage.visible = tab.id === 'codeTab';
+    this.pnlMessage.visible = false // tab.id === 'codeTab';
     const fileName = this.fileName
     if (tab.id === 'designTab') {
       if (this.updateDesigner) {
         this.updateDesigner = false
-        const code = this.codeEditor.value
         try {
-          await this.compiler.addFile(fileName, code, async (fileName: string, isPackage?: boolean) => {
-            if (this.onImportFile) return await this.onImportFile(fileName, isPackage);
-            return null;
-          })
+          await this.onAddFile(fileName, this.codeEditor.value)
           const ui = this.compiler.parseUI(fileName)
           this.formDesigner.renderUI(this.updateRoot(ui))
         } catch(error) {
@@ -308,15 +320,58 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.updateDesigner = true;
     if (typeof this.onChange === 'function') this.onChange(this, event)
   }
+
   async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
-    if (isPackage){
-        let content = await application.getContent(`${application.rootDir}libs/${fileName}/index.d.ts`);
-        return {
-            fileName: 'index.d.ts',
-            content: content
-        }
-    };
+    if (isPackage) {
+      const content = await application.getContent(`${application.rootDir}libs/${fileName}/index.d.ts`) || this.imported[fileName];
+      return {
+        fileName: 'index.d.ts',
+        content
+      }
+    }
+    else {
+      return this.getFile(fileName);
+    }
   };
+
+  private getFile(fileName: string) {
+    let fName = '';
+    let fContent = '';
+    for (let f in this.imported) {
+      if (f.endsWith(fileName)) {
+        fName = fileName;
+        fContent = this.imported[f];
+        break;
+      }
+      else if (f.endsWith(fileName + '.ts')) {
+        fName = fileName + '.ts';
+        fContent = this.imported[f];
+        break;
+      }
+      else if (f.endsWith(fileName + '.tsx')) {
+        fName = fileName + '.tsx';
+        fContent = this.imported[f];
+        break;
+      }
+      else if (f.endsWith(fileName + '.d.ts')) {
+        fName = fileName + '.d.ts';
+        fContent = this.imported[f];
+        break;
+      }
+      else if (f.endsWith(fileName + '/index.ts')) {
+        fName = fileName + '/index.ts';
+        fContent = this.imported[f];
+        break;
+      }
+    }
+    if (fName) {
+      return {
+        fileName: fName,
+        content: fContent
+      }
+    }
+    return null;
+  }
   private async handleDesignerPreview(): Promise<{module: string, script: string}> {
     this.updateDesignerCode(this.fileName, true)
     if (this.onPreview)
@@ -328,15 +383,15 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         await compiler.addFile(
             'index.tsx',
             value,
-            this.getImportFile
+            this.getImportFile.bind(this)
         );
-        let result = await compiler.compile(false)
-        if (result.errors?.length > 0) 
+        let result = await compiler.compile(true)
+        if (result.errors?.length > 0)
           console.error(result.errors)
         else
           return {
-              module: '@scom/debug-module',
-              script: result.script['index.js']
+            module: '@scom/debug-module',
+            script: result?.script['index.js']
           };
       }
     }
@@ -576,6 +631,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           height={100}
           maxHeight={'70%'}
           visible={false}
+          background={{ color: '#202020' }}
           padding={{ top: 5, bottom: 5 }}
           border={{
             top: {
