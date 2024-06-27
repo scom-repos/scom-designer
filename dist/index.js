@@ -440,7 +440,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         'i-repeater',
         'i-accordion-item',
         'i-hstack',
-        'i-vstack'
+        'i-vstack',
+        'i-modal'
     ];
     exports.CONTAINERS = CONTAINERS;
     const ControlItemMapper = {
@@ -5547,9 +5548,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-panel':
                 case 'i-vstack':
                 case 'i-hstack':
-                    props = {
-                        ...props
-                    };
+                case 'i-accordion':
+                case 'i-menu':
+                case 'i-tree-view':
+                    props = { ...props };
                     break;
                 case 'i-markdown':
                     props = {
@@ -5637,11 +5639,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         count: '{3}'
                     };
                     break;
-                case 'i-accordion':
-                    props = {
-                        ...props,
-                    };
-                    break;
                 case 'i-accordion-item':
                     props = {
                         ...props,
@@ -5686,22 +5683,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         totalPages: '{2}',
                     };
                     break;
-                case 'i-tree-view':
-                    props = {
-                        ...props,
-                        // data: '{[{"caption":"Tree node 1", "active": true},{"caption":"Tree node 2"}]}'
-                    };
-                    break;
                 case 'i-tree-node':
                     props = {
                         position: 'relative',
                         caption: 'Tree Node'
-                    };
-                    break;
-                case 'i-menu':
-                    props = {
-                        ...props,
-                        // data: '{[{"title":"Menu item 1","textAlign":"left"}, {"title":"Menu Item 2","textAlign":"left"}]}'
                     };
                     break;
                 case 'i-menu-item':
@@ -5733,6 +5718,12 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         caption: 'Button',
                         border: '{{"radius":"4px"}}',
                     };
+                    break;
+                case 'i-modal':
+                    props = {
+                        minWidth: '300px'
+                    };
+                    break;
                 default:
                     props = {
                         ...props,
