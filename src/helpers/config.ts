@@ -179,7 +179,8 @@ const CONTAINERS = [
   'i-repeater',
   'i-accordion-item',
   'i-hstack',
-  'i-vstack'
+  'i-vstack',
+  'i-modal'
 ];
 
 const ControlItemMapper: {[key: string]: string} = {

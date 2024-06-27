@@ -679,9 +679,10 @@ export class ScomDesignerForm extends Module {
       case 'i-panel':
       case 'i-vstack':
       case 'i-hstack':
-        props = {
-          ...props
-        }
+      case 'i-accordion':
+      case 'i-menu':
+      case 'i-tree-view':
+        props = {...props}
         break;
       case 'i-markdown':
         props = {
@@ -769,11 +770,6 @@ export class ScomDesignerForm extends Module {
           count: '{3}'
         }
         break;
-      case 'i-accordion':
-        props = {
-          ...props,
-        }
-        break;
       case 'i-accordion-item':
         props = {
           ...props,
@@ -818,22 +814,10 @@ export class ScomDesignerForm extends Module {
           totalPages: '{2}',
         }
         break;
-      case 'i-tree-view':
-        props = {
-          ...props,
-          // data: '{[{"caption":"Tree node 1", "active": true},{"caption":"Tree node 2"}]}'
-        }
-        break;
       case 'i-tree-node':
         props = {
           position: 'relative',
           caption: 'Tree Node'
-        }
-        break;
-      case 'i-menu':
-        props = {
-          ...props,
-          // data: '{[{"title":"Menu item 1","textAlign":"left"}, {"title":"Menu Item 2","textAlign":"left"}]}'
         }
         break;
       case 'i-menu-item':
@@ -865,6 +849,12 @@ export class ScomDesignerForm extends Module {
           caption: 'Button',
           border: '{{"radius":"4px"}}',
         }
+        break;
+      case 'i-modal':
+        props = {
+          minWidth: '300px'
+        }
+        break;
       default:
         props = {
           ...props,
