@@ -871,6 +871,12 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 else if (value === 'undefined') {
                     value = undefined;
                 }
+                else if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.substring(1, value.length - 1);
+                }
+                else if (value.startsWith("'") && value.endsWith("'")) {
+                    value = value.substring(1, value.length - 1);
+                }
             }
         }
         else if (value.startsWith('"') && value.endsWith('"')) {
@@ -5133,7 +5139,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (!component)
                 return;
             const control = this.pathMapping.get(component.path);
-            const props = control?.control?._getDesignProps();
+            let props = control?.control?._getDesignProps();
             if (!props)
                 return;
             const customProps = control?.control?._getCustomProperties()?.props || {};
@@ -5179,35 +5185,57 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (value === undefined)
                 return `{undefined}`;
             let props = control.control._getCustomProperties();
-            let property = props.props[prop];
+            // let property = props.props[prop];
             let valueStr = value;
-            if (property) {
-                switch (property.type) {
-                    case "number": {
-                        valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
-                        break;
-                    }
-                    case "string": {
-                        valueStr = '"' + value + '"';
-                        break;
-                    }
-                    case "boolean": {
+            // if (property) {
+            //   switch (property.type) {
+            //     case "number": {
+            //       valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
+            //       break;
+            //     }
+            //     case "string": {
+            //       valueStr = '"' + value + '"';
+            //       break;
+            //     }
+            //     case "boolean": {
+            //       valueStr = "{" + value + "}";
+            //       break;
+            //     }
+            //     case "object": {
+            //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
+            //       break;
+            //     }
+            //     case "array": {
+            //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
+            //       break;
+            //     }
+            //   }
+            //   control.props[prop] = valueStr;
+            // }
+            if (props.events[prop]) {
+                valueStr = `{${value}}`;
+            }
+            else {
+                if (typeof value === 'number') {
+                    valueStr = "{" + value + "}";
+                }
+                else if (typeof value === 'boolean') {
+                    valueStr = "{" + value + "}";
+                }
+                else if (typeof value === 'object') {
+                    valueStr = `{${JSON.stringify(value)}}`;
+                }
+                else if (typeof value === 'string') {
+                    if (value.startsWith('()') || value.startsWith('this.')) {
                         valueStr = "{" + value + "}";
-                        break;
                     }
-                    case "object": {
-                        valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-                        break;
+                    else if (value.includes("'")) {
+                        valueStr = '"' + value + '"';
                     }
-                    case "array": {
-                        valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-                        break;
+                    else {
+                        valueStr = "'" + value + "'";
                     }
                 }
-                control.props[prop] = valueStr;
-            }
-            else if (props.events[prop]) {
-                valueStr = `{${value}}`;
             }
             return valueStr;
         }
@@ -6356,13 +6384,23 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         async onAddFile(name, content) {
             await this.compiler.addFile(name, content, async (fileName, isPackage) => {
                 let result = this.getFile(fileName);
+                if (result) {
+                    return result;
+                }
                 if (this.onImportFile) {
                     const result = await this.onImportFile(fileName, isPackage);
-                    const importedName = isPackage ? fileName : result.fileName;
-                    if (result)
-                        this.imported[importedName] = result?.content || '';
-                    const name = isPackage ? fileName : `file://${fileName}`;
-                    components_33.CodeEditor.addLib(name, result.content);
+                    if (result) {
+                        const importedName = isPackage ? fileName : result.fileName;
+                        this.imported[importedName] = result.content || '';
+                        if (isPackage) {
+                            components_33.CodeEditor.addLib(fileName, result.content);
+                            this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
+                        }
+                        else {
+                            components_33.CodeEditor.addFile(importedName, result.content);
+                            this.compiler.addFile(importedName, result.content);
+                        }
+                    }
                     return result;
                 }
                 return null;
@@ -6501,7 +6539,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         updateDesignerCode(fileName, modified) {
             if (modified || this.formDesigner?.modified) {
-                let code = this.compiler.renderUI(fileName, 'render', this.formDesigner.rootComponent);
+                const root = this.formDesigner.rootComponent;
+                let code = this.compiler.renderUI(fileName, 'render', root);
                 this.compiler.updateFile(fileName, code);
                 this.codeEditor.value = code;
                 this.formDesigner.modified = false;

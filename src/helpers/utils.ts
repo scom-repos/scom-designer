@@ -410,6 +410,11 @@ export const parsePropValue = (value: any) => {
         value = null;
       } else if (value === 'undefined') {
         value = undefined;
+      } else if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.substring(1, value.length - 1);
+      }
+      else if (value.startsWith("'") && value.endsWith("'")) {
+        value = value.substring(1, value.length - 1);
       }
     }
   }
