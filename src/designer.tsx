@@ -271,7 +271,7 @@ export class ScomDesignerForm extends Module {
   private updateDesignProps(component: Parser.IComponent) {
     if (!component) return;
     const control = this.pathMapping.get((component as IComponent).path);
-    const props: any = control?.control?._getDesignProps();
+    let props: any = control?.control?._getDesignProps();
     if (!props) return;
     const customProps = control?.control?._getCustomProperties()?.props || {};
     const newProps: any = {};
@@ -318,34 +318,51 @@ export class ScomDesignerForm extends Module {
   private formatDesignProp(prop: string, value: any, control: IControl) {
     if (value === undefined) return `{undefined}`;
     let props = control.control._getCustomProperties();
-    let property = props.props[prop];
+    // let property = props.props[prop];
     let valueStr = value;
-    if (property) {
-      switch (property.type) {
-        case "number": {
-          valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
-          break;
-        }
-        case "string": {
-          valueStr = '"' + value + '"';
-          break;
-        }
-        case "boolean": {
+    // if (property) {
+    //   switch (property.type) {
+    //     case "number": {
+    //       valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
+    //       break;
+    //     }
+    //     case "string": {
+    //       valueStr = '"' + value + '"';
+    //       break;
+    //     }
+    //     case "boolean": {
+    //       valueStr = "{" + value + "}";
+    //       break;
+    //     }
+    //     case "object": {
+    //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
+    //       break;
+    //     }
+    //     case "array": {
+    //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
+    //       break;
+    //     }
+    //   }
+    //   control.props[prop] = valueStr;
+    // }
+    if (props.events[prop]) {
+      valueStr = `{${value}}`;
+    } else {
+      if (typeof value === 'number') {
+        valueStr = "{" + value + "}";
+      } else if (typeof value === 'boolean') {
+        valueStr = "{" + value + "}";
+      } else if (typeof value === 'object') {
+        valueStr = `{${JSON.stringify(value)}}`;
+      } else if (typeof value === 'string') {
+        if (value.startsWith('()') || value.startsWith('this.')) {
           valueStr = "{" + value + "}";
-          break;
-        }
-        case "object": {
-          valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-          break;
-        }
-        case "array": {
-          valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-          break;
+        } else if (value.includes("'")) {
+          valueStr = '"' + value + '"';
+        } else {
+          valueStr = "'" + value + "'";
         }
       }
-      control.props[prop] = valueStr;
-    } else if (props.events[prop]) {
-      valueStr = `{${value}}`;
     }
     return valueStr;
   }

@@ -250,12 +250,22 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async onAddFile(name: string, content: string) {
     await this.compiler.addFile(name, content, async (fileName: string, isPackage?: boolean) => {
       let result = this.getFile(fileName);
+      if (result) {
+        return result
+      }
       if (this.onImportFile) {
         const result = await this.onImportFile(fileName, isPackage);
-        const importedName = isPackage ? fileName : result.fileName;
-        if (result) this.imported[importedName] = result?.content || '';
-        const name = isPackage ? fileName : `file://${fileName}`;
-        CodeEditor.addLib(name, result.content);
+        if (result) {
+          const importedName = isPackage ? fileName : result.fileName;
+          this.imported[importedName] = result.content || '';
+          if (isPackage) {
+            CodeEditor.addLib(fileName, result.content);
+            this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content }});
+          } else {
+            CodeEditor.addFile(importedName, result.content);
+            this.compiler.addFile(importedName, result.content);
+          }
+        }
         return result;
       }
       return null;
@@ -398,10 +408,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
   private updateDesignerCode(fileName: string, modified?: boolean): string {
     if (modified || this.formDesigner?.modified) {
+      const root = this.formDesigner.rootComponent;
       let code = this.compiler.renderUI(
         fileName,
         'render',
-        this.formDesigner.rootComponent
+        root
       )
       this.compiler.updateFile(fileName, code)
       this.codeEditor.value = code
