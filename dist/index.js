@@ -6306,6 +6306,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._components = (0, components_33.getCustomElements)();
             this.imported = {};
             this.tag = {};
+            this.importCallback = this.importCallback.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -6352,50 +6353,49 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const fileName = this.fileName;
             this.designTabs.activeTabIndex = 0;
             this.updateDesigner = true;
-            this.onAddFile(fileName, content);
             await this.codeEditor.loadContent(content, 'typescript', fileName);
+            this.onAddFile(fileName, content);
             this.pnlMessage.visible = false; // this.designTabs?.activeTab?.id === 'codeTab';
         }
         addLib() {
-            try {
-                // CodeEditor.addLib('@ijstech/components', Dts.components)
-                // CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet)
-                // CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract)
-                // CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource)
-                if (!this.compiler)
-                    this.compiler = new compiler_1.Compiler();
-                // this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
-                // this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
-                // this.compiler.addPackage('@ijstech/eth-contract', {dts: { 'index.d.ts': Dts.ethContract }});
-                // this.compiler.addPackage('bignumber.js', {dts: { 'index.d.ts': Dts.bignumber }});
-                // this.compiler.addPackage('@scom/scom-chart-data-source-setup', {dts: { 'index.d.ts': Dts.dataSource }});
-            }
-            catch { }
+            if (!this.compiler)
+                this.compiler = new compiler_1.Compiler();
         }
         async onAddFile(name, content) {
-            await this.compiler.addFile(name, content, async (fileName, isPackage) => {
-                let result = this.getFile(fileName);
+            await this.compiler.addFile(name, content, this.importCallback);
+        }
+        async importCallback(fileName, isPackage) {
+            let result = this.getFile(fileName);
+            if (result)
+                return result;
+            if (this.onImportFile) {
+                result = await this.onImportFile(fileName, isPackage);
                 if (result) {
-                    return result;
-                }
-                if (this.onImportFile) {
-                    const result = await this.onImportFile(fileName, isPackage);
-                    if (result) {
-                        const importedName = isPackage ? fileName : result.fileName;
-                        this.imported[importedName] = result.content || '';
-                        if (isPackage) {
+                    if (fileName === '@ijstech/compiler') {
+                        result.content = `
+            declare module '${fileName}' {
+              ${result.content}
+            } \n
+          `;
+                    }
+                    const importedName = isPackage ? fileName : result.fileName;
+                    this.imported[importedName] = result.content || '';
+                    if (isPackage) {
+                        if (result.fileName.endsWith('index.d.ts')) {
                             components_33.CodeEditor.addLib(fileName, result.content);
-                            this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
                         }
                         else {
-                            components_33.CodeEditor.addFile(importedName, result.content);
-                            this.compiler.addFile(importedName, result.content);
+                            components_33.CodeEditor.addLib(result.fileName, result.content);
                         }
+                        this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
                     }
-                    return result;
+                    else {
+                        components_33.CodeEditor.addFile(importedName, result.content);
+                        this.compiler.addFile(importedName, result.content);
+                    }
                 }
-                return null;
-            });
+            }
+            return result;
         }
         async handleTabChanged(target, tab) {
             this.pnlMessage.visible = false; // tab.id === 'codeTab';
@@ -6456,6 +6456,14 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.updateDesigner = true;
             if (typeof this.onChange === 'function')
                 this.onChange(this, event);
+        }
+        handleCodeEditorSave(target, event) {
+            if (event.code === 'KeyS' && event.ctrlKey) {
+                event.stopPropagation();
+                event.preventDefault();
+                if (typeof this.onSave === 'function')
+                    this.onSave(target, event);
+            }
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {
@@ -6552,9 +6560,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.onChange = this.getAttribute('onChange', true) || this.onChange;
             this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile;
             const url = this.getAttribute('url', true);
+            this.addLib();
             if (url)
                 this.setData({ url });
-            this.addLib();
             this.classList.add(index_css_23.blockStyle);
         }
         // Configuration
@@ -6706,7 +6714,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
                 this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, maxHeight: `100%`, display: 'flex', draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
-                        this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange.bind(this) })),
+                        this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange.bind(this), onKeyDown: this.handleCodeEditorSave.bind(this) })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
                         this.$render("i-scom-designer--form", { id: "formDesigner", width: '100%', height: '100%', onPreview: this.handleDesignerPreview.bind(this) }))),
                 this.$render("i-panel", { id: 'pnlMessage', resizer: true, dock: 'bottom', height: 100, maxHeight: '70%', visible: false, background: { color: '#202020' }, padding: { top: 5, bottom: 5 }, border: {

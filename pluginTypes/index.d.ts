@@ -1678,10 +1678,10 @@ declare module "@scom/scom-designer/interface.ts" {
 }
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
-    import { Container, Control, ControlElement, Module } from '@ijstech/components';
+    import { CodeEditor, Container, Control, ControlElement, Module } from '@ijstech/components';
     import { IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
-    type onSaveCallback = (path: string, content: string) => void;
+    type onSaveCallback = (target: CodeEditor, event: any) => void;
     type onChangeCallback = (target: ScomDesigner, event: Event) => void;
     type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{
         fileName: string;
@@ -1755,10 +1755,12 @@ declare module "@scom/scom-designer" {
         private renderUI;
         private addLib;
         private onAddFile;
+        private importCallback;
         private handleTabChanged;
         private updateRoot;
         private updatePath;
         private handleCodeEditorChange;
+        private handleCodeEditorSave;
         getImportFile(fileName?: string, isPackage?: boolean): Promise<{
             fileName: string;
             content: string;
