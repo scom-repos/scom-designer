@@ -18,11 +18,10 @@ import {
 import { blockStyle, codeTabsStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
-// import * as Dts from './types/index'
 import { Compiler, Parser } from '@ijstech/compiler'
 import { extractFileName, getFileContent } from './helpers/utils'
 
-type onSaveCallback = (path: string, content: string) => void;
+type onSaveCallback = (target: CodeEditor, event: any) => void;
 type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 
@@ -34,7 +33,7 @@ interface ScomDesignerElement extends ControlElement {
   }
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
-  onPreview?: ()=> Promise<{module: string, script: string}>;
+  onPreview?: () => Promise<{ module: string, script: string }>;
   onImportFile?: onImportCallback;
 }
 
@@ -77,7 +76,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
-  onPreview?: ()=> Promise<{module: string, script: string}>;
+  onPreview?: () => Promise<{ module: string, script: string }>;
   onImportFile?: onImportCallback;
   tag: any = {}
 
@@ -118,7 +117,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
     this.designTabs.activeTabIndex = 0
   }
-  set previewUrl(url: string){
+  set previewUrl(url: string) {
     this.formDesigner.previewUrl = url;
   }
   locateMethod(designer: ScomDesignerForm, funcName: string): void {
@@ -166,11 +165,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
   registerWidget(designer: ScomDesignerForm, name: string, type: string): void {
     CodeEditor.addLib(name, type)
-    this.compiler.addPackage(name, { dts: { 'index.d.ts': type }});
+    this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
   }
 
   constructor(parent?: Container, options?: any) {
-    super(parent, options)
+    super(parent, options);
+    this.importCallback = this.importCallback.bind(this);
   }
 
   static async create(options?: ScomDesignerElement, parent?: Container) {
@@ -227,49 +227,49 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const fileName = this.fileName;
     this.designTabs.activeTabIndex = 0
     this.updateDesigner = true;
+    await this.codeEditor.loadContent(content, 'typescript', fileName);
     this.onAddFile(fileName, content);
-    await this.codeEditor.loadContent(content, 'typescript', fileName)
     this.pnlMessage.visible = false // this.designTabs?.activeTab?.id === 'codeTab';
   }
 
   private addLib() {
-    try {
-      // CodeEditor.addLib('@ijstech/components', Dts.components)
-      // CodeEditor.addLib('@ijstech/eth-wallet', Dts.ethWallet)
-      // CodeEditor.addLib('@ijstech/eth-contract', Dts.ethContract)
-      // CodeEditor.addLib('@scom/scom-chart-data-source-setup', Dts.dataSource)
-      if (!this.compiler) this.compiler = new Compiler()
-      // this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': Dts.components }})
-      // this.compiler.addPackage('@ijstech/eth-wallet', {dts: { 'index.d.ts': Dts.ethWallet }});
-      // this.compiler.addPackage('@ijstech/eth-contract', {dts: { 'index.d.ts': Dts.ethContract }});
-      // this.compiler.addPackage('bignumber.js', {dts: { 'index.d.ts': Dts.bignumber }});
-      // this.compiler.addPackage('@scom/scom-chart-data-source-setup', {dts: { 'index.d.ts': Dts.dataSource }});
-    } catch {}
+    if (!this.compiler) this.compiler = new Compiler()
   }
 
   private async onAddFile(name: string, content: string) {
-    await this.compiler.addFile(name, content, async (fileName: string, isPackage?: boolean) => {
-      let result = this.getFile(fileName);
+    await this.compiler.addFile(name, content, this.importCallback);
+  }
+
+  private async importCallback(fileName: string, isPackage?: boolean) {
+    let result = this.getFile(fileName);
+    if (result) return result;
+
+    if (this.onImportFile) {
+      result = await this.onImportFile(fileName, isPackage);
       if (result) {
-        return result
-      }
-      if (this.onImportFile) {
-        const result = await this.onImportFile(fileName, isPackage);
-        if (result) {
-          const importedName = isPackage ? fileName : result.fileName;
-          this.imported[importedName] = result.content || '';
-          if (isPackage) {
-            CodeEditor.addLib(fileName, result.content);
-            this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content }});
-          } else {
-            CodeEditor.addFile(importedName, result.content);
-            this.compiler.addFile(importedName, result.content);
-          }
+        if (fileName === '@ijstech/compiler') {
+          result.content = `
+            declare module '${fileName}' {
+              ${result.content}
+            } \n
+          `;
         }
-        return result;
+        const importedName = isPackage ? fileName : result.fileName;
+        this.imported[importedName] = result.content || '';
+        if (isPackage) {
+          if (result.fileName.endsWith('index.d.ts')) {
+            CodeEditor.addLib(fileName, result.content);
+          } else {
+            CodeEditor.addLib(result.fileName, result.content);
+          }
+          this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
+        } else {
+          CodeEditor.addFile(importedName, result.content);
+          this.compiler.addFile(importedName, result.content);
+        }
       }
-      return null;
-    })
+    }
+    return result;
   }
 
   private async handleTabChanged(target: Tabs, tab: Tab) {
@@ -282,7 +282,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           await this.onAddFile(fileName, this.codeEditor.value)
           const ui = this.compiler.parseUI(fileName)
           this.formDesigner.renderUI(this.updateRoot(ui))
-        } catch(error) {
+        } catch (error) {
           console.error('parse UI error:', error);
         }
       }
@@ -308,7 +308,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (root.items.length) {
       root.items = this.updatePath(root.items, root as IComponent);
     }
-    return {...root} as IComponent;
+    return { ...root } as IComponent;
   }
 
   private updatePath(items: Parser.IComponent[], parent: IComponent) {
@@ -331,7 +331,15 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (typeof this.onChange === 'function') this.onChange(this, event)
   }
 
-  async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
+  private handleCodeEditorSave(target: CodeEditor, event: KeyboardEvent) {
+    if (event.code === 'KeyS' && event.ctrlKey) {
+      event.stopPropagation();
+      event.preventDefault();
+      if (typeof this.onSave === 'function') this.onSave(target, event);
+    }
+  }
+
+  async getImportFile(fileName?: string, isPackage?: boolean): Promise<{ fileName: string, content: string }> {
     if (isPackage) {
       const content = await application.getContent(`${application.rootDir}libs/${fileName}/index.d.ts`) || this.imported[fileName];
       return {
@@ -382,18 +390,18 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
     return null;
   }
-  private async handleDesignerPreview(): Promise<{module: string, script: string}> {
+  private async handleDesignerPreview(): Promise<{ module: string, script: string }> {
     this.updateDesignerCode(this.fileName, true)
     if (this.onPreview)
-        return this.onPreview()
+      return this.onPreview()
     else {
       let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
-      if (value){
+      if (value) {
         let compiler = new Compiler()
         await compiler.addFile(
-            'index.tsx',
-            value,
-            this.getImportFile.bind(this)
+          'index.tsx',
+          value,
+          this.getImportFile.bind(this)
         );
         let result = await compiler.compile(true)
         if (result.errors?.length > 0)
@@ -441,8 +449,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onChange = this.getAttribute('onChange', true) || this.onChange
     this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile
     const url = this.getAttribute('url', true)
-    if (url) this.setData({ url })
     this.addLib()
+    if (url) this.setData({ url })
     this.classList.add(blockStyle)
   }
 
@@ -607,7 +615,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         <i-tabs
           id="designTabs"
           class={codeTabsStyle}
-          stack={{'grow': '1'}}
+          stack={{ 'grow': '1' }}
           maxHeight={`100%`}
           display='flex'
           draggable={false}
@@ -622,6 +630,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
               id="codeEditor"
               width={'100%'} height={'100%'}
               onChange={this.handleCodeEditorChange.bind(this)}
+              onKeyDown={this.handleCodeEditorSave.bind(this)}
             />
           </i-tab>
           <i-tab
