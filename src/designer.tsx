@@ -78,7 +78,7 @@ class ControlResizer {
 }
 
 interface ScomDesignerFormElement extends ControlElement {
-  onPreview?: ()=> Promise<string>;
+  onPreview?: ()=> Promise<{module: string, script: string}>;
 }
 
 declare global {
