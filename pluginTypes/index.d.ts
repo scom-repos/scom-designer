@@ -1497,7 +1497,10 @@ declare module "@scom/scom-designer/designer.tsx" {
     import { IComponent, IComponentPicker, IControl, IStudio } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     interface ScomDesignerFormElement extends ControlElement {
-        onPreview?: () => Promise<string>;
+        onPreview?: () => Promise<{
+            module: string;
+            script: string;
+        }>;
     }
     global {
         namespace JSX {
@@ -1749,7 +1752,7 @@ declare module "@scom/scom-designer" {
         get value(): string;
         private setData;
         private getData;
-        setValue(value: IDesigner): void;
+        setValue(value: IDesigner): Promise<void>;
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         private renderUI;

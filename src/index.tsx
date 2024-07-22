@@ -171,6 +171,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   constructor(parent?: Container, options?: any) {
     super(parent, options);
     this.importCallback = this.importCallback.bind(this);
+    this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
   }
 
   static async create(options?: ScomDesignerElement, parent?: Container) {
@@ -204,8 +205,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return this._data
   }
 
-  setValue(value: IDesigner) {
-    this.setData(value);
+  async setValue(value: IDesigner) {
+    await this.setData(value);
   }
 
   updateFileName(oldValue: string, newValue: string) {
@@ -227,8 +228,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const fileName = this.fileName;
     this.designTabs.activeTabIndex = 0
     this.updateDesigner = true;
+    this.compiler.addFile(fileName, content, this.importCallback);
     await this.codeEditor.loadContent(content, 'typescript', fileName);
-    this.onAddFile(fileName, content);
     this.pnlMessage.visible = false // this.designTabs?.activeTab?.id === 'codeTab';
   }
 
@@ -629,8 +630,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             <i-code-editor
               id="codeEditor"
               width={'100%'} height={'100%'}
-              onChange={this.handleCodeEditorChange.bind(this)}
-              onKeyDown={this.handleCodeEditorSave.bind(this)}
+              onChange={this.handleCodeEditorChange}
+              onKeyDown={this.handleCodeEditorSave}
             />
           </i-tab>
           <i-tab
@@ -640,7 +641,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             <i-scom-designer--form
               id="formDesigner"
               width={'100%'} height={'100%'}
-              onPreview={this.handleDesignerPreview.bind(this)}
+              onPreview={this.handleDesignerPreview}
             />
           </i-tab>
         </i-tabs>

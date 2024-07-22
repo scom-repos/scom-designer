@@ -6307,6 +6307,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.imported = {};
             this.tag = {};
             this.importCallback = this.importCallback.bind(this);
+            this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -6333,8 +6334,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         getData() {
             return this._data;
         }
-        setValue(value) {
-            this.setData(value);
+        async setValue(value) {
+            await this.setData(value);
         }
         updateFileName(oldValue, newValue) {
             if (typeof this.codeEditor?.updateFileName === 'function')
@@ -6353,8 +6354,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const fileName = this.fileName;
             this.designTabs.activeTabIndex = 0;
             this.updateDesigner = true;
+            this.compiler.addFile(fileName, content, this.importCallback);
             await this.codeEditor.loadContent(content, 'typescript', fileName);
-            this.onAddFile(fileName, content);
             this.pnlMessage.visible = false; // this.designTabs?.activeTab?.id === 'codeTab';
         }
         addLib() {
@@ -6714,9 +6715,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
                 this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, maxHeight: `100%`, display: 'flex', draggable: false, closable: false, onChanged: this.handleTabChanged },
                     this.$render("i-tab", { id: "codeTab", caption: 'Code' },
-                        this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange.bind(this), onKeyDown: this.handleCodeEditorSave.bind(this) })),
+                        this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange, onKeyDown: this.handleCodeEditorSave })),
                     this.$render("i-tab", { id: "designTab", caption: 'Design' },
-                        this.$render("i-scom-designer--form", { id: "formDesigner", width: '100%', height: '100%', onPreview: this.handleDesignerPreview.bind(this) }))),
+                        this.$render("i-scom-designer--form", { id: "formDesigner", width: '100%', height: '100%', onPreview: this.handleDesignerPreview }))),
                 this.$render("i-panel", { id: 'pnlMessage', resizer: true, dock: 'bottom', height: 100, maxHeight: '70%', visible: false, background: { color: '#202020' }, padding: { top: 5, bottom: 5 }, border: {
                         top: {
                             width: '1px',
