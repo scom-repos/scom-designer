@@ -21,7 +21,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.customTransition = exports.blockStyle = exports.codeTabsStyle = exports.customTabStyled = exports.customIconTabActiveStyled = exports.customIconTabStyled = exports.labelActiveStyled = exports.customLabelTabStyled = exports.blockItemHoverStyled = exports.iconButtonStyled = exports.rowDragOverActiveStyled = exports.rowItemActiveStyled = exports.rowItemHoverStyled = exports.hoverFullOpacity = void 0;
+    exports.customTransition = exports.blockStyle = exports.customTabStyled = exports.customIconTabActiveStyled = exports.customIconTabStyled = exports.labelActiveStyled = exports.customLabelTabStyled = exports.blockItemHoverStyled = exports.iconButtonStyled = exports.rowDragOverActiveStyled = exports.rowItemActiveStyled = exports.rowItemHoverStyled = exports.hoverFullOpacity = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.hoverFullOpacity = components_1.Styles.style({
         $nest: {
@@ -145,14 +145,14 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
             },
         }
     });
-    exports.codeTabsStyle = components_1.Styles.style({
-        flexDirection: 'column',
-        $nest: {
-            "> .tabs-nav-wrap": {
-                background: "#181818",
-            },
-        },
-    });
+    // export const codeTabsStyle = Styles.style({
+    //   flexDirection: 'column',
+    //   $nest: {
+    //       "> .tabs-nav-wrap": {
+    //           background: "#181818",
+    //       },
+    //   },
+    // });
     exports.blockStyle = components_1.Styles.style({
         display: 'block',
         width: '100%',
@@ -6254,15 +6254,16 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 if (result.lineNumber)
                     editor.setCursor(result.lineNumber, result.columnNumber);
             }
-            this.designTabs.activeTabIndex = 0;
+            this.resetTab();
         }
         set previewUrl(url) {
-            this.formDesigner.previewUrl = url;
+            if (this.formDesigner)
+                this.formDesigner.previewUrl = url;
         }
         locateMethod(designer, funcName) {
             let fileName = this.fileName;
             let result = this.compiler.locateMethod(fileName, funcName);
-            this.designTabs.activeTabIndex = 0;
+            this.resetTab();
             this.codeEditor.focus();
             this.codeEditor.setCursor(result.lineNumber, result.columnNumber);
         }
@@ -6305,6 +6306,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.updateDesigner = true;
             this._components = (0, components_33.getCustomElements)();
             this.imported = {};
+            this.activeTab = 'codeTab';
             this.tag = {};
             this.importCallback = this.importCallback.bind(this);
             this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
@@ -6345,25 +6347,65 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (typeof this.codeEditor?.dispose === 'function') {
                 this.codeEditor.dispose();
                 this.onChange = null;
+                this.onSave = null;
+                this.onImportFile = null;
+                this.onPreview = null;
             }
         }
         async renderUI() {
-            this.formDesigner.studio = this;
+            this.activeTab = 'codeTab';
+            this.updateDesigner = true;
+            this.renderContent(true);
+        }
+        async renderContent(init = false) {
+            if (this.activeTab === 'codeTab' && !this.codeEditor) {
+                this.codeEditor = await components_33.CodeEditor.create({
+                    width: '100%',
+                    height: '100%',
+                    display: 'block',
+                    stack: { grow: '1' }
+                });
+                this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
+                this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
+                this.codeEditor.parent = this.pnlMain;
+            }
+            else if (this.activeTab === 'designTab' && !this.formDesigner) {
+                this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
+                this.formDesigner.width = '100%';
+                this.formDesigner.height = '100%';
+                this.formDesigner.stack = { grow: '1' };
+                this.formDesigner.onPreview = this.handleDesignerPreview;
+                this.formDesigner.studio = this;
+            }
+            if (this.formDesigner)
+                this.formDesigner.visible = this.activeTab === 'designTab';
+            if (this.codeEditor)
+                this.codeEditor.visible = this.activeTab === 'codeTab';
+            if (init) {
+                this.loadContent();
+            }
+            this.updateButtons();
+        }
+        async loadContent() {
             const { url = '', file } = this._data;
             const content = url ? await (0, utils_13.getFileContent)(url) : file?.content || '';
             const fileName = this.fileName;
-            this.designTabs.activeTabIndex = 0;
-            this.updateDesigner = true;
-            this.compiler.addFile(fileName, content, this.importCallback);
             await this.codeEditor.loadContent(content, 'typescript', fileName);
-            this.pnlMessage.visible = false; // this.designTabs?.activeTab?.id === 'codeTab';
+            this.compiler.addFile(fileName, content, this.importCallback);
+        }
+        resetTab() {
+            this.activeTab = 'codeTab';
+            this.formDesigner.visible = false;
+            this.codeEditor.visible = true;
+            this.updateButtons();
+        }
+        updateButtons() {
+            this.codeTab.background = { color: this.activeTab === 'codeTab' ? '#1d1d1d' : '#252525' };
+            this.designTab.background = { color: this.activeTab === 'designTab' ? '#1d1d1d' : '#252525' };
         }
         addLib() {
             if (!this.compiler)
                 this.compiler = new compiler_1.Compiler();
-        }
-        async onAddFile(name, content) {
-            await this.compiler.addFile(name, content, this.importCallback);
         }
         async importCallback(fileName, isPackage) {
             let result = this.getFile(fileName);
@@ -6398,14 +6440,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
             return result;
         }
-        async handleTabChanged(target, tab) {
-            this.pnlMessage.visible = false; // tab.id === 'codeTab';
+        async handleTabChanged(target, event) {
+            this.activeTab = target.id;
             const fileName = this.fileName;
-            if (tab.id === 'designTab') {
+            this.renderContent();
+            if (target.id === 'designTab') {
                 if (this.updateDesigner) {
                     this.updateDesigner = false;
                     try {
-                        await this.onAddFile(fileName, this.codeEditor.value);
+                        await this.compiler.addFile(fileName, this.codeEditor.value);
                         const ui = this.compiler.parseUI(fileName);
                         this.formDesigner.renderUI(this.updateRoot(ui));
                     }
@@ -6414,7 +6457,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     }
                 }
             }
-            else if (tab.id === 'codeTab') {
+            else if (target.id === 'codeTab') {
                 this.updateDesignerCode(fileName);
             }
         }
@@ -6561,9 +6604,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.onChange = this.getAttribute('onChange', true) || this.onChange;
             this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile;
             const url = this.getAttribute('url', true);
+            const file = this.getAttribute('file', true);
             this.addLib();
-            if (url)
-                this.setData({ url });
+            if (url || file)
+                this.setData({ url, file });
             this.classList.add(index_css_23.blockStyle);
         }
         // Configuration
@@ -6713,19 +6757,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         render() {
             return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
-                this.$render("i-tabs", { id: "designTabs", class: index_css_23.codeTabsStyle, stack: { 'grow': '1' }, maxHeight: `100%`, display: 'flex', draggable: false, closable: false, onChanged: this.handleTabChanged },
-                    this.$render("i-tab", { id: "codeTab", caption: 'Code' },
-                        this.$render("i-code-editor", { id: "codeEditor", width: '100%', height: '100%', onChange: this.handleCodeEditorChange, onKeyDown: this.handleCodeEditorSave })),
-                    this.$render("i-tab", { id: "designTab", caption: 'Design' },
-                        this.$render("i-scom-designer--form", { id: "formDesigner", width: '100%', height: '100%', onPreview: this.handleDesignerPreview }))),
-                this.$render("i-panel", { id: 'pnlMessage', resizer: true, dock: 'bottom', height: 100, maxHeight: '70%', visible: false, background: { color: '#202020' }, padding: { top: 5, bottom: 5 }, border: {
-                        top: {
-                            width: '1px',
-                            style: 'solid',
-                            color: 'rgba(255, 255, 255, 0.08)',
-                        },
-                    } },
-                    this.$render("i-code-editor", { dock: 'fill' }))));
+                this.$render("i-hstack", { verticalAlignment: 'center', stack: { shrink: '0' } },
+                    this.$render("i-button", { id: "codeTab", caption: 'Code', padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: '#252525' }, stack: { shrink: '0' }, border: { width: '1px', style: 'solid', color: '#252525' }, minHeight: '2.25rem', onClick: this.handleTabChanged }),
+                    this.$render("i-button", { id: "designTab", caption: 'Design', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: '#252525' }, border: { width: '1px', style: 'solid', color: '#252525' }, minHeight: '2.25rem', font: { color: '#fff' }, onClick: this.handleTabChanged })),
+                this.$render("i-vstack", { id: "pnlMain", maxHeight: '100%', overflow: 'hidden', stack: { 'grow': '1' } })));
         }
     };
     ScomDesigner = __decorate([
