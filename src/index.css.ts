@@ -135,14 +135,14 @@ export const customTabStyled = Styles.style({
 })
 
 
-export const codeTabsStyle = Styles.style({
-  flexDirection: 'column',
-  $nest: {
-      "> .tabs-nav-wrap": {
-          background: "#181818",
-      },
-  },
-});
+// export const codeTabsStyle = Styles.style({
+//   flexDirection: 'column',
+//   $nest: {
+//       "> .tabs-nav-wrap": {
+//           background: "#181818",
+//       },
+//   },
+// });
 
 export const blockStyle = Styles.style({
   display: 'block',

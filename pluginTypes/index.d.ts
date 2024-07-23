@@ -11,7 +11,6 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customIconTabStyled: string;
     export const customIconTabActiveStyled: string;
     export const customTabStyled: string;
-    export const codeTabsStyle: string;
     export const blockStyle: string;
     export const customTransition: string;
 }
@@ -1720,15 +1719,17 @@ declare module "@scom/scom-designer" {
         file?: IFileData;
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
-        private designTabs;
         private formDesigner;
         private codeEditor;
-        private pnlMessage;
         private compiler;
+        private pnlMain;
+        private codeTab;
+        private designTab;
         private _data;
         private updateDesigner;
         private _components;
         private imported;
+        private activeTab;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -1756,8 +1757,11 @@ declare module "@scom/scom-designer" {
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         private renderUI;
+        private renderContent;
+        private loadContent;
+        private resetTab;
+        private updateButtons;
         private addLib;
-        private onAddFile;
         private importCallback;
         private handleTabChanged;
         private updateRoot;

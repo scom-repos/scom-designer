@@ -1,5 +1,6 @@
 import {
   application,
+  Button,
   CodeEditor,
   Container,
   Control,
@@ -11,11 +12,9 @@ import {
   IdUtils,
   IUISchema,
   Module,
-  Panel,
-  Tab,
-  Tabs,
+  VStack,
 } from '@ijstech/components';
-import { blockStyle, codeTabsStyle } from './index.css'
+import { blockStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import { Compiler, Parser } from '@ijstech/compiler'
@@ -57,11 +56,12 @@ interface IDesigner {
 
 @customElements('i-scom-designer')
 export class ScomDesigner extends Module implements IFileHandler, IStudio {
-  private designTabs: Tabs
   private formDesigner: ScomDesignerForm
   private codeEditor: CodeEditor
-  private pnlMessage: Panel
   private compiler: Compiler
+  private pnlMain: VStack;
+  private codeTab: Button;
+  private designTab: Button;
 
   private _data: IDesigner = {
     url: '',
@@ -73,6 +73,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
   private imported: Record<string, string> = {};
+  private activeTab: string = 'codeTab';
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
@@ -115,15 +116,16 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (result.lineNumber)
         editor.setCursor(result.lineNumber, result.columnNumber)
     }
-    this.designTabs.activeTabIndex = 0
+    this.resetTab();
   }
   set previewUrl(url: string) {
-    this.formDesigner.previewUrl = url;
+    if (this.formDesigner)
+      this.formDesigner.previewUrl = url;
   }
   locateMethod(designer: ScomDesignerForm, funcName: string): void {
     let fileName = this.fileName
     let result = this.compiler.locateMethod(fileName, funcName)
-    this.designTabs.activeTabIndex = 0
+    this.resetTab();
     this.codeEditor.focus()
     this.codeEditor.setCursor(result.lineNumber, result.columnNumber)
   }
@@ -218,27 +220,69 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (typeof this.codeEditor?.dispose === 'function') {
       this.codeEditor.dispose();
       this.onChange = null;
+      this.onSave = null;
+      this.onImportFile = null;
+      this.onPreview = null;
     }
   }
 
   private async renderUI() {
-    this.formDesigner.studio = this;
+    this.activeTab = 'codeTab';
+    this.updateDesigner = true;
+    this.renderContent(true);
+  }
+
+  private async renderContent(init = false) {
+    if (this.activeTab === 'codeTab' && !this.codeEditor) {
+      this.codeEditor = await CodeEditor.create({
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        stack: {grow: '1'}
+      }) as CodeEditor;
+      this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
+      this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
+      this.codeEditor.parent = this.pnlMain;
+    } else if (this.activeTab === 'designTab' && !this.formDesigner) {
+      this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
+      this.formDesigner.width = '100%';
+      this.formDesigner.height = '100%';
+      this.formDesigner.stack = {grow: '1'};
+      this.formDesigner.onPreview = this.handleDesignerPreview;
+      this.formDesigner.studio = this;
+    }
+    if (this.formDesigner)
+      this.formDesigner.visible = this.activeTab === 'designTab';
+    if (this.codeEditor)
+      this.codeEditor.visible = this.activeTab === 'codeTab';
+    if (init) {
+      this.loadContent();
+    }
+    this.updateButtons();
+  }
+
+  private async loadContent() {
     const { url = '', file } = this._data
     const content = url ? await getFileContent(url) : file?.content || '';
     const fileName = this.fileName;
-    this.designTabs.activeTabIndex = 0
-    this.updateDesigner = true;
-    this.compiler.addFile(fileName, content, this.importCallback);
     await this.codeEditor.loadContent(content, 'typescript', fileName);
-    this.pnlMessage.visible = false // this.designTabs?.activeTab?.id === 'codeTab';
+    this.compiler.addFile(fileName, content, this.importCallback);
+  }
+
+  private resetTab() {
+    this.activeTab = 'codeTab';
+    this.formDesigner.visible = false;
+    this.codeEditor.visible = true;
+    this.updateButtons();
+  }
+
+  private updateButtons() {
+    this.codeTab.background = {color: this.activeTab === 'codeTab' ? '#1d1d1d' : '#252525'};
+    this.designTab.background = {color: this.activeTab === 'designTab' ? '#1d1d1d' : '#252525'}
   }
 
   private addLib() {
     if (!this.compiler) this.compiler = new Compiler()
-  }
-
-  private async onAddFile(name: string, content: string) {
-    await this.compiler.addFile(name, content, this.importCallback);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
@@ -273,21 +317,22 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return result;
   }
 
-  private async handleTabChanged(target: Tabs, tab: Tab) {
-    this.pnlMessage.visible = false // tab.id === 'codeTab';
-    const fileName = this.fileName
-    if (tab.id === 'designTab') {
+  private async handleTabChanged(target: Button, event: Event) {
+    this.activeTab = target.id;
+    const fileName = this.fileName;
+    this.renderContent();
+    if (target.id === 'designTab') {
       if (this.updateDesigner) {
         this.updateDesigner = false
         try {
-          await this.onAddFile(fileName, this.codeEditor.value)
+          await this.compiler.addFile(fileName, this.codeEditor.value)
           const ui = this.compiler.parseUI(fileName)
           this.formDesigner.renderUI(this.updateRoot(ui))
         } catch (error) {
           console.error('parse UI error:', error);
         }
       }
-    } else if (tab.id === 'codeTab') {
+    } else if (target.id === 'codeTab') {
       this.updateDesignerCode(fileName)
     }
   }
@@ -391,6 +436,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
     return null;
   }
+
   private async handleDesignerPreview(): Promise<{ module: string, script: string }> {
     this.updateDesignerCode(this.fileName, true)
     if (this.onPreview)
@@ -415,6 +461,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       }
     }
   }
+
   private updateDesignerCode(fileName: string, modified?: boolean): string {
     if (modified || this.formDesigner?.modified) {
       const root = this.formDesigner.rootComponent;
@@ -450,8 +497,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onChange = this.getAttribute('onChange', true) || this.onChange
     this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile
     const url = this.getAttribute('url', true)
+    const file = this.getAttribute('file', true)
     this.addLib()
-    if (url) this.setData({ url })
+    if (url || file) this.setData({ url, file })
     this.classList.add(blockStyle)
   }
 
@@ -613,7 +661,34 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         position='relative'
         background={{ color: '#202020' }}
       >
-        <i-tabs
+        <i-hstack
+          verticalAlignment='center'
+          stack={{ shrink: '0' }}
+        >
+          <i-button
+            id="codeTab"
+            caption='Code'
+            padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
+            background={{color: '#252525'}}
+            stack={{ shrink: '0' }}
+            border={{width: '1px', style: 'solid', color: '#252525'}}
+            minHeight={'2.25rem'}
+            onClick={this.handleTabChanged}
+          ></i-button>
+          <i-button
+            id="designTab"
+            caption='Design'
+            stack={{ shrink: '0' }}
+            padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
+            background={{color: '#252525'}}
+            border={{width: '1px', style: 'solid', color: '#252525'}}
+            minHeight={'2.25rem'}
+            font={{color: '#fff'}}
+            onClick={this.handleTabChanged}
+          ></i-button>
+        </i-hstack>
+        <i-vstack id="pnlMain" maxHeight={'100%'} overflow={'hidden'} stack={{ 'grow': '1' }}></i-vstack>
+        {/* <i-tabs
           id="designTabs"
           class={codeTabsStyle}
           stack={{ 'grow': '1' }}
@@ -644,8 +719,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
               onPreview={this.handleDesignerPreview}
             />
           </i-tab>
-        </i-tabs>
-        <i-panel
+        </i-tabs> */}
+        {/* <i-panel
           id='pnlMessage'
           resizer={true}
           dock='bottom'
@@ -663,7 +738,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           }}
         >
           <i-code-editor dock='fill'></i-code-editor>
-        </i-panel>
+        </i-panel> */}
       </i-vstack>
     )
   }
