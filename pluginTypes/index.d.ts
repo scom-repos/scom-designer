@@ -292,6 +292,11 @@ declare module "@scom/scom-designer/components/components.tsx" {
         renderUI(): void;
         private renderTreeItems;
         private initEvents;
+        private onDragStart;
+        private onDragEnd;
+        private onDrop;
+        private removeEvents;
+        onHide(): void;
         private isRootPanel;
         private showHightlight;
         private clearHoverStyle;
@@ -1537,6 +1542,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private libsMap;
         private _customElements;
         private isPreviewing;
+        baseUrl: string;
         private handleMouseMoveBound;
         private handleMouseUpBound;
         selectedControl: IControl;
@@ -1555,6 +1561,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
         private isCustomWidget;
         private createControl;
+        private getRealImageUrl;
+        private revertImageUrl;
         private getOptions;
         private updateDesignProps;
         private removeEmptyValue;
@@ -1604,6 +1612,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleBreakpoint;
         private onToggleClick;
         private initEvents;
+        onHide(): void;
         init(): void;
         render(): any;
     }
@@ -1695,6 +1704,7 @@ declare module "@scom/scom-designer" {
             path: string;
             content: string;
         };
+        baseUrl?: string;
         onSave?: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -1717,6 +1727,7 @@ declare module "@scom/scom-designer" {
     interface IDesigner {
         url?: string;
         file?: IFileData;
+        baseUrl?: string;
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
         private formDesigner;
@@ -1751,11 +1762,14 @@ declare module "@scom/scom-designer" {
         set url(value: string);
         get fileName(): string;
         get value(): string;
+        get baseUrl(): string;
+        set baseUrl(value: string);
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
+        disposeEditor(): void;
         private renderUI;
         private renderContent;
         private loadContent;

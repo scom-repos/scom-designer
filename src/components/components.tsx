@@ -226,67 +226,75 @@ export default class DesignerComponents extends Module {
   }
 
   private initEvents() {
-    this.addEventListener('dragstart', (event) => {
-      const target = (event.target as HTMLElement).closest('.drag-item');
-      const isDragRoot = this.isRootPanel(target?.id);
-      if (!target || isDragRoot) {
-        event.preventDefault()
-        return;
-      }
-      this.dragId = target.id;
-    })
+    this.addEventListener('dragstart', this.onDragStart.bind(this));
+    this.addEventListener('dragend', this.onDragEnd.bind(this));
+    this.addEventListener('drop', this.onDrop.bind(this));
+  }
 
-    this.addEventListener('dragend', (event) => {
-      const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
-      if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
-        event.preventDefault();
-        this.resetData();
-        return;
-      }
-      const dropControl = this.elementsMap.get(this.targetConfig?.id);
-      const dragControl = this.elementsMap.get(this.dragId);
-      let isInvalid = false;
-      if (dragControl?.name === 'i-accordion-item') {
-        const isOutsideAcc = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
-        const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
-        isInvalid = !isInsideAcc && !isOutsideAcc;
-      } else if (dragControl?.name === 'i-tab') {
-        const isOutsideTab = this.targetConfig?.side && dropControl?.name === 'i-tab';
-        const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
-        isInvalid = !isOutsideTab && !isInsideTab;
-      } else {
-        const isNotContainer = !CONTAINERS.includes(dropControl?.name) && !this.targetConfig?.side;
-        const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
-        const isOutsideAccItem = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
-        const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
-        const isOutsideTabItem = this.targetConfig?.side && dropControl?.name === 'i-tab';
-        isInvalid = isNotContainer || isOutsideAccItem || isInsideAcc || isInsideTab || isOutsideTabItem;
-      }
-      if (isInvalid) {
-        event.preventDefault();
-        this.resetData();
-        return;
-      }
+  private onDragStart(event: MouseEvent) {
+    const target = (event.target as HTMLElement).closest('.drag-item');
+    const isDragRoot = this.isRootPanel(target?.id);
+    if (!target || isDragRoot) {
+      event.preventDefault()
+      return;
+    }
+    this.dragId = target.id;
+  }
 
-      this.handleDragEnd(this.dragId);
-      this.resetData();
-    })
-
-    this.addEventListener('dragover', (event) => {
+  private onDragEnd(event: MouseEvent) {
+    const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
+    if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
       event.preventDefault();
-      if (!this.dragId) {
-        event.preventDefault();
-        return;
-      }
-      this.showHightlight(event.x, event.y);
-    });
+      this.resetData();
+      return;
+    }
+    const dropControl = this.elementsMap.get(this.targetConfig?.id);
+    const dragControl = this.elementsMap.get(this.dragId);
+    let isInvalid = false;
+    if (dragControl?.name === 'i-accordion-item') {
+      const isOutsideAcc = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+      const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+      isInvalid = !isInsideAcc && !isOutsideAcc;
+    } else if (dragControl?.name === 'i-tab') {
+      const isOutsideTab = this.targetConfig?.side && dropControl?.name === 'i-tab';
+      const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+      isInvalid = !isOutsideTab && !isInsideTab;
+    } else {
+      const isNotContainer = !CONTAINERS.includes(dropControl?.name) && !this.targetConfig?.side;
+      const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+      const isOutsideAccItem = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+      const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+      const isOutsideTabItem = this.targetConfig?.side && dropControl?.name === 'i-tab';
+      isInvalid = isNotContainer || isOutsideAccItem || isInsideAcc || isInsideTab || isOutsideTabItem;
+    }
+    if (isInvalid) {
+      event.preventDefault();
+      this.resetData();
+      return;
+    }
 
-    this.addEventListener('drop', (event) => {
-      if (!this.dragId) {
-        event.preventDefault();
-        return;
-      }
-    });
+    this.handleDragEnd(this.dragId);
+    this.resetData();
+  }
+
+  private onDrop(event: MouseEvent) {
+    if (!this.dragId) {
+      event.preventDefault();
+      return;
+    }
+  }
+
+  private removeEvents() {
+    this.removeEventListener('dragstart', this.onDragStart.bind(this));
+    this.removeEventListener('dragend', this.onDragEnd.bind(this));
+    this.removeEventListener('drop', this.onDrop.bind(this));
+  }
+
+  onHide(): void {
+    this.removeEvents();
+    if (this.screen) this.screen.elements = [];
+    this.clearHoverStyle();
+    this.resetData();
   }
 
   private isRootPanel(id: string) {

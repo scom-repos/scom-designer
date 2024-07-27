@@ -444,6 +444,14 @@ export const handleParse = (value: string) => {
         }
         return themeValue;
       }
+      // else if (typeof value === 'string' && value.startsWith('assets')) {
+      //   const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
+      //   const matches = regex.exec(value);
+      //   if (matches) {
+      //     value = matches[2];
+      //     return assets.fullPath(value);
+      //   }
+      // }
     return value;
   });
 
