@@ -120,6 +120,7 @@ export class ScomDesignerForm extends Module {
   private libsMap: Record<string, boolean> = {}
   private _customElements = getCustomElements();
   private isPreviewing: boolean = false;
+  baseUrl: string = '';
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
   private handleMouseUpBound: (event: MouseEvent) => void;
@@ -231,7 +232,15 @@ export class ScomDesignerForm extends Module {
     const { mediaQueries, options } = config;
     const controlConstructor: any = window.customElements.get(name);
     if (!controlConstructor) return;
-    const control = await controlConstructor.create({...options, designMode: true, cursor: 'pointer'});
+    let controlProps = {...options};
+    if (controlProps?.url) {
+      controlProps.url = this.getRealImageUrl(options.url);
+    }
+    if (controlProps?.fallbackUrl) {
+      controlProps.fallbackUrl = this.getRealImageUrl(options.fallbackUrl);
+    }
+    const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
+
     if (name.includes('scom')) {
       parent?.appendChild(control);
     } else {
@@ -239,7 +248,7 @@ export class ScomDesignerForm extends Module {
     }
 
     const breakpointProps = getMediaQueryProps(mediaQueries);
-    control._setDesignProps({...options, mediaQueries}, breakpointProps);
+    control._setDesignProps({...controlProps, mediaQueries}, breakpointProps);
 
     const hasBackground = 'background' in options;
     const hasFont = 'font' in options;
@@ -254,6 +263,27 @@ export class ScomDesignerForm extends Module {
       if ((control as any)?.setTag) (control as any).setTag(customTag);
     }
     return control;
+  }
+
+  private getRealImageUrl(value: string) {
+    if (typeof value === 'string') {
+      const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
+      const matches = regex.exec(value);
+      if (matches) {
+        value = matches[2];
+        const imgURL = `${this.baseUrl}/assets/${value}`;
+        return imgURL;
+      }
+    }
+    return value;
+  }
+
+  private revertImageUrl(value: string) {
+    if (value && typeof value === 'string') {
+      const arr = value.split(`${this.baseUrl}/assets/`);
+      if (arr[1]) value = `{assets.fullPath(${arr[1]})}`;
+    }
+    return value;
   }
 
   private getOptions(props: any) {
@@ -355,6 +385,9 @@ export class ScomDesignerForm extends Module {
       } else if (typeof value === 'object') {
         valueStr = `{${JSON.stringify(value)}}`;
       } else if (typeof value === 'string') {
+        if (this.baseUrl && value.startsWith(this.baseUrl)) {
+          valueStr = this.revertImageUrl(value);
+        }
         if (value.startsWith('()') || value.startsWith('this.')) {
           valueStr = "{" + value + "}";
         } else if (value.includes("'")) {
@@ -1268,6 +1301,14 @@ export class ScomDesignerForm extends Module {
 
   private initEvents() {
     this.pnlFormDesigner.addEventListener('mousedown', this.handleControlMouseDown.bind(this));
+  }
+
+  onHide(): void {
+    super.onHide();
+    this.designerComponents?.onHide();
+    this.pnlFormDesigner.removeEventListener('mousedown', this.handleControlMouseDown.bind(this));
+    this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
+    this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
   }
 
   init() {

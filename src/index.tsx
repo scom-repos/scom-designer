@@ -30,6 +30,7 @@ interface ScomDesignerElement extends ControlElement {
     path: string;
     content: string;
   }
+  baseUrl?: string;
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
@@ -52,6 +53,7 @@ interface IFileData {
 interface IDesigner {
   url?: string;
   file?: IFileData;
+  baseUrl?: string;
 }
 
 @customElements('i-scom-designer')
@@ -68,7 +70,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     file: {
       path: '',
       content: ''
-    }
+    },
+    baseUrl: ''
   };
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
@@ -129,9 +132,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.focus()
     this.codeEditor.setCursor(result.lineNumber, result.columnNumber)
   }
-  removeComponent(designer: ScomDesignerForm): void {
-    // console.log('removeComponent', this.formDesigner.rootComponent)
-  }
+  removeComponent(designer: ScomDesignerForm): void {}
   renameComponent(
     designer: ScomDesignerForm,
     oldId: string,
@@ -198,6 +199,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return this.codeEditor?.value || ''
   }
 
+  get baseUrl() {
+    return this._data.baseUrl ?? ''
+  }
+
+  set baseUrl(value: string) {
+    this._data.baseUrl = value ?? ''
+  }
+
   private async setData(value: IDesigner) {
     this._data = value;
     await this.renderUI();
@@ -217,12 +226,30 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   dispose() {
-    if (typeof this.codeEditor?.dispose === 'function') {
-      this.codeEditor.dispose();
-      this.onChange = null;
-      this.onSave = null;
-      this.onImportFile = null;
-      this.onPreview = null;
+    if (this.codeEditor) {
+      if (typeof this.codeEditor?.dispose === 'function') {
+        this.codeEditor.dispose();
+      }
+    }
+    if (this.formDesigner) {
+      this.formDesigner.onHide();
+    }
+  }
+
+  disposeEditor() {
+    if (this.codeEditor) {
+      this.codeEditor.onChange = null;
+      this.codeEditor.onKeyDown = null;
+      if (typeof this.codeEditor?.disposeEditor === 'function') {
+        this.codeEditor.disposeEditor();
+        this.codeEditor.remove();
+      }
+    }
+    if (this.formDesigner) {
+      this.formDesigner.studio = null;
+      this.formDesigner.onPreview = null;
+      this.formDesigner.onHide();
+      this.formDesigner.remove();
     }
   }
 
@@ -251,8 +278,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.onPreview = this.handleDesignerPreview;
       this.formDesigner.studio = this;
     }
-    if (this.formDesigner)
+    if (this.formDesigner) {
       this.formDesigner.visible = this.activeTab === 'designTab';
+      this.formDesigner.baseUrl = this.baseUrl;
+    }
     if (this.codeEditor)
       this.codeEditor.visible = this.activeTab === 'codeTab';
     if (init) {
@@ -288,7 +317,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async importCallback(fileName: string, isPackage?: boolean) {
     let result = this.getFile(fileName);
     if (result) return result;
-
     if (this.onImportFile) {
       result = await this.onImportFile(fileName, isPackage);
       if (result) {
@@ -325,7 +353,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (this.updateDesigner) {
         this.updateDesigner = false
         try {
-          await this.compiler.addFile(fileName, this.codeEditor.value)
+          await this.compiler.addFile(fileName, this.codeEditor.value, this.importCallback);
           const ui = this.compiler.parseUI(fileName)
           this.formDesigner.renderUI(this.updateRoot(ui))
         } catch (error) {

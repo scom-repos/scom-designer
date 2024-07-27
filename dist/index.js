@@ -904,6 +904,14 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                     }
                     return themeValue;
                 }
+                // else if (typeof value === 'string' && value.startsWith('assets')) {
+                //   const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
+                //   const matches = regex.exec(value);
+                //   if (matches) {
+                //     value = matches[2];
+                //     return assets.fullPath(value);
+                //   }
+                // }
                 return value;
             });
             return parsedData;
@@ -1107,65 +1115,72 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             }
         }
         initEvents() {
-            this.addEventListener('dragstart', (event) => {
-                const target = event.target.closest('.drag-item');
-                const isDragRoot = this.isRootPanel(target?.id);
-                if (!target || isDragRoot) {
-                    event.preventDefault();
-                    return;
-                }
-                this.dragId = target.id;
-            });
-            this.addEventListener('dragend', (event) => {
-                const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
-                if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
-                    event.preventDefault();
-                    this.resetData();
-                    return;
-                }
-                const dropControl = this.elementsMap.get(this.targetConfig?.id);
-                const dragControl = this.elementsMap.get(this.dragId);
-                let isInvalid = false;
-                if (dragControl?.name === 'i-accordion-item') {
-                    const isOutsideAcc = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
-                    const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
-                    isInvalid = !isInsideAcc && !isOutsideAcc;
-                }
-                else if (dragControl?.name === 'i-tab') {
-                    const isOutsideTab = this.targetConfig?.side && dropControl?.name === 'i-tab';
-                    const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
-                    isInvalid = !isOutsideTab && !isInsideTab;
-                }
-                else {
-                    const isNotContainer = !config_1.CONTAINERS.includes(dropControl?.name) && !this.targetConfig?.side;
-                    const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
-                    const isOutsideAccItem = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
-                    const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
-                    const isOutsideTabItem = this.targetConfig?.side && dropControl?.name === 'i-tab';
-                    isInvalid = isNotContainer || isOutsideAccItem || isInsideAcc || isInsideTab || isOutsideTabItem;
-                }
-                if (isInvalid) {
-                    event.preventDefault();
-                    this.resetData();
-                    return;
-                }
-                this.handleDragEnd(this.dragId);
-                this.resetData();
-            });
-            this.addEventListener('dragover', (event) => {
+            this.addEventListener('dragstart', this.onDragStart.bind(this));
+            this.addEventListener('dragend', this.onDragEnd.bind(this));
+            this.addEventListener('drop', this.onDrop.bind(this));
+        }
+        onDragStart(event) {
+            const target = event.target.closest('.drag-item');
+            const isDragRoot = this.isRootPanel(target?.id);
+            if (!target || isDragRoot) {
                 event.preventDefault();
-                if (!this.dragId) {
-                    event.preventDefault();
-                    return;
-                }
-                this.showHightlight(event.x, event.y);
-            });
-            this.addEventListener('drop', (event) => {
-                if (!this.dragId) {
-                    event.preventDefault();
-                    return;
-                }
-            });
+                return;
+            }
+            this.dragId = target.id;
+        }
+        onDragEnd(event) {
+            const isTargetRoot = this.isRootPanel(this.targetConfig?.id);
+            if (!this.dragId || (isTargetRoot && this.targetConfig?.side)) {
+                event.preventDefault();
+                this.resetData();
+                return;
+            }
+            const dropControl = this.elementsMap.get(this.targetConfig?.id);
+            const dragControl = this.elementsMap.get(this.dragId);
+            let isInvalid = false;
+            if (dragControl?.name === 'i-accordion-item') {
+                const isOutsideAcc = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+                const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+                isInvalid = !isInsideAcc && !isOutsideAcc;
+            }
+            else if (dragControl?.name === 'i-tab') {
+                const isOutsideTab = this.targetConfig?.side && dropControl?.name === 'i-tab';
+                const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+                isInvalid = !isOutsideTab && !isInsideTab;
+            }
+            else {
+                const isNotContainer = !config_1.CONTAINERS.includes(dropControl?.name) && !this.targetConfig?.side;
+                const isInsideAcc = !this.targetConfig?.side && dropControl?.name === 'i-accordion';
+                const isOutsideAccItem = this.targetConfig?.side && dropControl?.name === 'i-accordion-item';
+                const isInsideTab = !this.targetConfig?.side && dropControl?.name === 'i-tabs';
+                const isOutsideTabItem = this.targetConfig?.side && dropControl?.name === 'i-tab';
+                isInvalid = isNotContainer || isOutsideAccItem || isInsideAcc || isInsideTab || isOutsideTabItem;
+            }
+            if (isInvalid) {
+                event.preventDefault();
+                this.resetData();
+                return;
+            }
+            this.handleDragEnd(this.dragId);
+            this.resetData();
+        }
+        onDrop(event) {
+            if (!this.dragId) {
+                event.preventDefault();
+                return;
+            }
+        }
+        removeEvents() {
+            this.removeEventListener('dragstart', this.onDragStart.bind(this));
+            this.removeEventListener('dragend', this.onDragEnd.bind(this));
+            this.removeEventListener('drop', this.onDrop.bind(this));
+        }
+        onHide() {
+            this.removeEvents();
+            if (this.screen)
+                this.screen.elements = [];
+            this.clearHoverStyle();
+            this.resetData();
         }
         isRootPanel(id) {
             return id ? this.screen?.elements[0]?.path === id.replace('elm-', '') : false;
@@ -5013,6 +5028,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.libsMap = {};
             this._customElements = (0, components_32.getCustomElements)();
             this.isPreviewing = false;
+            this.baseUrl = '';
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
@@ -5100,7 +5116,14 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const controlConstructor = window.customElements.get(name);
             if (!controlConstructor)
                 return;
-            const control = await controlConstructor.create({ ...options, designMode: true, cursor: 'pointer' });
+            let controlProps = { ...options };
+            if (controlProps?.url) {
+                controlProps.url = this.getRealImageUrl(options.url);
+            }
+            if (controlProps?.fallbackUrl) {
+                controlProps.fallbackUrl = this.getRealImageUrl(options.fallbackUrl);
+            }
+            const control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
             if (name.includes('scom')) {
                 parent?.appendChild(control);
             }
@@ -5108,7 +5131,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 control.parent = parent;
             }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
-            control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
+            control._setDesignProps({ ...controlProps, mediaQueries }, breakpointProps);
             const hasBackground = 'background' in options;
             const hasFont = 'font' in options;
             const isCustomWidget = !!control?.showConfigurator;
@@ -5123,6 +5146,26 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     control.setTag(customTag);
             }
             return control;
+        }
+        getRealImageUrl(value) {
+            if (typeof value === 'string') {
+                const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
+                const matches = regex.exec(value);
+                if (matches) {
+                    value = matches[2];
+                    const imgURL = `${this.baseUrl}/assets/${value}`;
+                    return imgURL;
+                }
+            }
+            return value;
+        }
+        revertImageUrl(value) {
+            if (value && typeof value === 'string') {
+                const arr = value.split(`${this.baseUrl}/assets/`);
+                if (arr[1])
+                    value = `{assets.fullPath(${arr[1]})}`;
+            }
+            return value;
         }
         getOptions(props) {
             let options = (0, utils_12.parseProps)(props) || {};
@@ -5227,6 +5270,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     valueStr = `{${JSON.stringify(value)}}`;
                 }
                 else if (typeof value === 'string') {
+                    if (this.baseUrl && value.startsWith(this.baseUrl)) {
+                        valueStr = this.revertImageUrl(value);
+                    }
                     if (value.startsWith('()') || value.startsWith('this.')) {
                         valueStr = "{" + value + "}";
                     }
@@ -6141,6 +6187,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         initEvents() {
             this.pnlFormDesigner.addEventListener('mousedown', this.handleControlMouseDown.bind(this));
         }
+        onHide() {
+            super.onHide();
+            this.designerComponents?.onHide();
+            this.pnlFormDesigner.removeEventListener('mousedown', this.handleControlMouseDown.bind(this));
+            this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
+            this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
+        }
         init() {
             super.init();
             this.wrapperComponentPicker.style.borderBottom = 'none';
@@ -6267,9 +6320,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.focus();
             this.codeEditor.setCursor(result.lineNumber, result.columnNumber);
         }
-        removeComponent(designer) {
-            // console.log('removeComponent', this.formDesigner.rootComponent)
-        }
+        removeComponent(designer) { }
         renameComponent(designer, oldId, newId) {
             let control = designer.selectedControl?.control;
             let fileName = this.fileName;
@@ -6301,7 +6352,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 file: {
                     path: '',
                     content: ''
-                }
+                },
+                baseUrl: ''
             };
             this.updateDesigner = true;
             this._components = (0, components_33.getCustomElements)();
@@ -6329,6 +6381,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         get value() {
             return this.codeEditor?.value || '';
         }
+        get baseUrl() {
+            return this._data.baseUrl ?? '';
+        }
+        set baseUrl(value) {
+            this._data.baseUrl = value ?? '';
+        }
         async setData(value) {
             this._data = value;
             await this.renderUI();
@@ -6344,12 +6402,29 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.codeEditor.updateFileName(oldValue, newValue);
         }
         dispose() {
-            if (typeof this.codeEditor?.dispose === 'function') {
-                this.codeEditor.dispose();
-                this.onChange = null;
-                this.onSave = null;
-                this.onImportFile = null;
-                this.onPreview = null;
+            if (this.codeEditor) {
+                if (typeof this.codeEditor?.dispose === 'function') {
+                    this.codeEditor.dispose();
+                }
+            }
+            if (this.formDesigner) {
+                this.formDesigner.onHide();
+            }
+        }
+        disposeEditor() {
+            if (this.codeEditor) {
+                this.codeEditor.onChange = null;
+                this.codeEditor.onKeyDown = null;
+                if (typeof this.codeEditor?.disposeEditor === 'function') {
+                    this.codeEditor.disposeEditor();
+                    this.codeEditor.remove();
+                }
+            }
+            if (this.formDesigner) {
+                this.formDesigner.studio = null;
+                this.formDesigner.onPreview = null;
+                this.formDesigner.onHide();
+                this.formDesigner.remove();
             }
         }
         async renderUI() {
@@ -6377,8 +6452,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.formDesigner.onPreview = this.handleDesignerPreview;
                 this.formDesigner.studio = this;
             }
-            if (this.formDesigner)
+            if (this.formDesigner) {
                 this.formDesigner.visible = this.activeTab === 'designTab';
+                this.formDesigner.baseUrl = this.baseUrl;
+            }
             if (this.codeEditor)
                 this.codeEditor.visible = this.activeTab === 'codeTab';
             if (init) {
@@ -6448,7 +6525,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 if (this.updateDesigner) {
                     this.updateDesigner = false;
                     try {
-                        await this.compiler.addFile(fileName, this.codeEditor.value);
+                        await this.compiler.addFile(fileName, this.codeEditor.value, this.importCallback);
                         const ui = this.compiler.parseUI(fileName);
                         this.formDesigner.renderUI(this.updateRoot(ui));
                     }
