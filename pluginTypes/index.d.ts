@@ -230,9 +230,9 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     }[];
     export const getFileContent: (url: string) => Promise<string>;
     export const extractFileName: (path: string) => string;
-    export const parseProps: (props: any) => {};
-    export const parsePropValue: (value: any) => any;
-    export const handleParse: (value: string) => any;
+    export const parseProps: (props: any, baseUrl?: string) => {};
+    export const parsePropValue: (value: any, baseUrl?: string) => any;
+    export const handleParse: (value: string, baseUrl?: string) => any;
     export const parseNumberValue: (value: string | number) => {
         value: any;
         unit: string;
@@ -242,7 +242,7 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
 }
 /// <amd-module name="@scom/scom-designer/components/components.tsx" />
 declare module "@scom/scom-designer/components/components.tsx" {
-    import { Module, ControlElement } from '@ijstech/components';
+    import { Module, ControlElement, Container } from '@ijstech/components';
     import { IComponent, IScreen } from "@scom/scom-designer/interface.ts";
     import "@scom/scom-designer/components/index.css.ts";
     type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -275,6 +275,10 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private dragId;
         private targetConfig;
         private elementsMap;
+        private handleDragStart;
+        private handleDrop;
+        private handleDragEnd;
+        private handleDragOver;
         onShowComponentPicker: selectCallback;
         onSelect: selectCallback;
         onVisible: visibleCallback;
@@ -282,6 +286,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         onDuplicate: selectCallback;
         onAdd: selectCallback;
         onUpdate: () => void;
+        constructor(parent?: Container, options?: any);
         get screen(): IScreen;
         set screen(value: IScreen);
         get activeComponent(): IComponent;
@@ -294,6 +299,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private initEvents;
         private onDragStart;
         private onDragEnd;
+        private onDragOver;
         private onDrop;
         private removeEvents;
         onHide(): void;
@@ -301,7 +307,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private showHightlight;
         private clearHoverStyle;
         private resetData;
-        private handleDragEnd;
+        private dragEnd;
         private appendItem;
         private changeParent;
         private getParentID;
@@ -1561,7 +1567,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
         private isCustomWidget;
         private createControl;
-        private getRealImageUrl;
         private revertImageUrl;
         private getOptions;
         private updateDesignProps;

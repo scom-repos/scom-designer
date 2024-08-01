@@ -233,12 +233,6 @@ export class ScomDesignerForm extends Module {
     const controlConstructor: any = window.customElements.get(name);
     if (!controlConstructor) return;
     let controlProps = {...options};
-    if (controlProps?.url) {
-      controlProps.url = this.getRealImageUrl(options.url);
-    }
-    if (controlProps?.fallbackUrl) {
-      controlProps.fallbackUrl = this.getRealImageUrl(options.fallbackUrl);
-    }
     const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
 
     if (name.includes('scom')) {
@@ -265,29 +259,22 @@ export class ScomDesignerForm extends Module {
     return control;
   }
 
-  private getRealImageUrl(value: string) {
-    if (typeof value === 'string') {
-      const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
-      const matches = regex.exec(value);
-      if (matches) {
-        value = matches[2];
-        const imgURL = `${this.baseUrl}/assets/${value}`;
-        return imgURL;
+  private revertImageUrl(value: string) {
+    let result = '';
+    if (value && typeof value === 'string') {
+      const baseUrl = `${this.baseUrl || ''}/assets/`;
+      if (value.includes(baseUrl)) {
+        const newValue = value.replace(baseUrl, '');
+        if (newValue) result = `assets.fullPath('${newValue}')`;
+      } else if (value.includes('assets.fullPath')) {
+        result = value;
       }
     }
-    return value;
-  }
-
-  private revertImageUrl(value: string) {
-    if (value && typeof value === 'string') {
-      const arr = value.split(`${this.baseUrl}/assets/`);
-      if (arr[1]) value = `{assets.fullPath(${arr[1]})}`;
-    }
-    return value;
+    return result;
   }
 
   private getOptions(props: any) {
-    let options: any = parseProps(props) || {};
+    let options: any = parseProps(props, this.baseUrl) || {};
     let newOptions: any = {}
     try {
       newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
@@ -383,12 +370,25 @@ export class ScomDesignerForm extends Module {
       } else if (typeof value === 'boolean') {
         valueStr = "{" + value + "}";
       } else if (typeof value === 'object') {
-        valueStr = `{${JSON.stringify(value)}}`;
-      } else if (typeof value === 'string') {
-        if (this.baseUrl && value.startsWith(this.baseUrl)) {
-          valueStr = this.revertImageUrl(value);
+        let revertedValue = '';
+        if (value?.image?.url) {
+          revertedValue = this.revertImageUrl(value.image.url);
+          if (revertedValue) value.image.url = '{assets}';
+        } else if (value?.url) {
+          revertedValue = this.revertImageUrl(value.url);
+          if (revertedValue) value.url = '{assets}';
         }
-        if (value.startsWith('()') || value.startsWith('this.')) {
+        valueStr = `{${JSON.stringify(value)}}`;
+        if (revertedValue) {
+          valueStr = valueStr.replace(/\:\s*\"\{assets\}\"/, `:${revertedValue}`);
+        }
+      } else if (typeof value === 'string') {
+        if ((this.baseUrl && value.startsWith(this.baseUrl))) {
+          const reverted = this.revertImageUrl(value);
+          valueStr = reverted ? `{${reverted}}` : value;
+        } else if (value.startsWith('assets.fullPath')) {
+          valueStr = `{${value}}`;
+        } else if (value.startsWith('()') || value.startsWith('this.')) {
           valueStr = "{" + value + "}";
         } else if (value.includes("'")) {
           valueStr = '"' + value + '"';

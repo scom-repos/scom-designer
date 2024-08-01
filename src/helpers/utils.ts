@@ -360,7 +360,7 @@ export const extractFileName = (path: string): string => {
   return items[items.length - 1];
 }
 
-export const parseProps = (props: any) => {
+export const parseProps = (props: any, baseUrl = '') => {
   if (!props) return null;
   const breakpoint = getBreakpoint();
   let newProps = {...(props || {})};
@@ -380,12 +380,12 @@ export const parseProps = (props: any) => {
   const newObj = {};
   for (let key in newProps) {
     const value = newProps[key];
-    newObj[key] = typeof value === "string" ? parsePropValue(newProps[key]) : value;
+    newObj[key] = typeof value === "string" ? parsePropValue(newProps[key], baseUrl) : value;
   }
   return newObj;
 }
 
-export const parsePropValue = (value: any) => {
+export const parsePropValue = (value: any, baseUrl?: string) => {
   if (typeof value !== "string") return value;
   if (value.startsWith('{') && value.endsWith('}')) {
     value = value.substring(1, value.length - 1);
@@ -393,13 +393,13 @@ export const parsePropValue = (value: any) => {
       try {
         return JSON.parse(value);
       } catch {
-        return handleParse(value);
+        return handleParse(value, baseUrl);
       }
     } else if (value.startsWith('[') && value.endsWith(']')) {
       try {
         return JSON.parse(value);
       } catch {
-        return handleParse(value);
+        return handleParse(value, baseUrl);
       }
     } else {
       if (value === 'true' || value === 'false') {
@@ -427,13 +427,14 @@ export const parsePropValue = (value: any) => {
   return value;
 };
 
-export const handleParse = (value: string) => {
+export const handleParse = (value: string, baseUrl?: string) => {
   try {
     const newValue =
       value
         .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
         .replace(/'/g, '"')
-        .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"');
+        .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"')
+        .replace(/([a-z0-9A-Z]*)\.fullPath\(("|'_)([^"|']*)("|'_)\)/g, '"$1.fullPath(\'$3\')"');
 
     const parsedData = JSON.parse(newValue, (key, value) => {
       if (typeof value === 'string' && value.startsWith('Theme')) {
@@ -443,22 +444,28 @@ export const handleParse = (value: string) => {
           themeValue = themeValue[parsedValue[i]]
         }
         return themeValue;
+      } else if (typeof value === 'string' && value.includes('fullPath')) {
+        return getRealImageUrl(baseUrl, value);
       }
-      // else if (typeof value === 'string' && value.startsWith('assets')) {
-      //   const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
-      //   const matches = regex.exec(value);
-      //   if (matches) {
-      //     value = matches[2];
-      //     return assets.fullPath(value);
-      //   }
-      // }
-    return value;
-  });
-
-  return parsedData;
+      return value;
+    });
+    return parsedData;
   } catch {
     return value;
   }
+}
+
+const getRealImageUrl = (baseUrl: string, value: string) => {
+  if (typeof value === 'string') {
+    const regex = /^([a-z0-9A-Z]*)\.fullPath\(('|")([^)]+)('|")\)/gi;
+    const matches = regex.exec(value);
+    if (matches) {
+      value = matches[3];
+      const imgURL = `${baseUrl}/assets/${value}`;
+      return imgURL;
+    }
+  }
+  return value;
 }
 
 export const parseNumberValue = (value: string | number) => {
