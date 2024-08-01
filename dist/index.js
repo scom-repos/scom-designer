@@ -810,7 +810,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         return items[items.length - 1];
     };
     exports.extractFileName = extractFileName;
-    const parseProps = (props) => {
+    const parseProps = (props, baseUrl = '') => {
         if (!props)
             return null;
         const breakpoint = (0, store_2.getBreakpoint)();
@@ -833,12 +833,12 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         const newObj = {};
         for (let key in newProps) {
             const value = newProps[key];
-            newObj[key] = typeof value === "string" ? (0, exports.parsePropValue)(newProps[key]) : value;
+            newObj[key] = typeof value === "string" ? (0, exports.parsePropValue)(newProps[key], baseUrl) : value;
         }
         return newObj;
     };
     exports.parseProps = parseProps;
-    const parsePropValue = (value) => {
+    const parsePropValue = (value, baseUrl) => {
         if (typeof value !== "string")
             return value;
         if (value.startsWith('{') && value.endsWith('}')) {
@@ -848,7 +848,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                     return JSON.parse(value);
                 }
                 catch {
-                    return (0, exports.handleParse)(value);
+                    return (0, exports.handleParse)(value, baseUrl);
                 }
             }
             else if (value.startsWith('[') && value.endsWith(']')) {
@@ -856,7 +856,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                     return JSON.parse(value);
                 }
                 catch {
-                    return (0, exports.handleParse)(value);
+                    return (0, exports.handleParse)(value, baseUrl);
                 }
             }
             else {
@@ -889,12 +889,13 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         return value;
     };
     exports.parsePropValue = parsePropValue;
-    const handleParse = (value) => {
+    const handleParse = (value, baseUrl) => {
         try {
             const newValue = value
                 .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
                 .replace(/'/g, '"')
-                .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"');
+                .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"')
+                .replace(/([a-z0-9A-Z]*)\.fullPath\(("|'_)([^"|']*)("|'_)\)/g, '"$1.fullPath(\'$3\')"');
             const parsedData = JSON.parse(newValue, (key, value) => {
                 if (typeof value === 'string' && value.startsWith('Theme')) {
                     const parsedValue = value.split('.');
@@ -904,14 +905,9 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                     }
                     return themeValue;
                 }
-                // else if (typeof value === 'string' && value.startsWith('assets')) {
-                //   const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
-                //   const matches = regex.exec(value);
-                //   if (matches) {
-                //     value = matches[2];
-                //     return assets.fullPath(value);
-                //   }
-                // }
+                else if (typeof value === 'string' && value.includes('fullPath')) {
+                    return getRealImageUrl(baseUrl, value);
+                }
                 return value;
             });
             return parsedData;
@@ -921,6 +917,18 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         }
     };
     exports.handleParse = handleParse;
+    const getRealImageUrl = (baseUrl, value) => {
+        if (typeof value === 'string') {
+            const regex = /^([a-z0-9A-Z]*)\.fullPath\(('|")([^)]+)('|")\)/gi;
+            const matches = regex.exec(value);
+            if (matches) {
+                value = matches[3];
+                const imgURL = `${baseUrl}/assets/${value}`;
+                return imgURL;
+            }
+        }
+        return value;
+    };
     const parseNumberValue = (value) => {
         let result = {
             value: undefined,
@@ -976,8 +984,8 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_6.Styles.Theme.ThemeVars;
     let DesignerComponents = class DesignerComponents extends components_6.Module {
-        constructor() {
-            super(...arguments);
+        constructor(parent, options) {
+            super(parent, options);
             this.currentComponent = null;
             this._activeComponent = null;
             this.dragId = '';
@@ -986,6 +994,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 id: ''
             };
             this.elementsMap = new Map();
+            this.handleDragStart = this.onDragStart.bind(this);
+            this.handleDragOver = this.onDragOver.bind(this);
+            this.handleDrop = this.onDrop.bind(this);
+            this.handleDragEnd = this.onDragEnd.bind(this);
         }
         get screen() {
             return this._screen;
@@ -1115,9 +1127,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             }
         }
         initEvents() {
-            this.addEventListener('dragstart', this.onDragStart.bind(this));
-            this.addEventListener('dragend', this.onDragEnd.bind(this));
-            this.addEventListener('drop', this.onDrop.bind(this));
+            this.addEventListener('dragstart', this.handleDragStart);
+            this.addEventListener('dragend', this.handleDragEnd);
+            this.addEventListener('dragover', this.handleDragOver);
+            this.addEventListener('drop', this.handleDrop);
         }
         onDragStart(event) {
             const target = event.target.closest('.drag-item');
@@ -1161,8 +1174,16 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 this.resetData();
                 return;
             }
-            this.handleDragEnd(this.dragId);
+            this.dragEnd(this.dragId);
             this.resetData();
+        }
+        onDragOver(event) {
+            event.preventDefault();
+            if (!this.dragId) {
+                event.preventDefault();
+                return;
+            }
+            this.showHightlight(event.x, event.y);
         }
         onDrop(event) {
             if (!this.dragId) {
@@ -1171,9 +1192,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             }
         }
         removeEvents() {
-            this.removeEventListener('dragstart', this.onDragStart.bind(this));
-            this.removeEventListener('dragend', this.onDragEnd.bind(this));
-            this.removeEventListener('drop', this.onDrop.bind(this));
+            this.removeEventListener('dragstart', this.handleDragStart);
+            this.removeEventListener('dragend', this.handleDragEnd);
+            this.removeEventListener('dragover', this.handleDragOver);
+            this.removeEventListener('drop', this.handleDrop);
         }
         onHide() {
             this.removeEvents();
@@ -1240,7 +1262,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             this.dragId = null;
             this.targetConfig = { id: '', side: '' };
         }
-        handleDragEnd(dragId) {
+        dragEnd(dragId) {
             const { side, id } = this.targetConfig;
             if (dragId === id)
                 return;
@@ -5117,12 +5139,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (!controlConstructor)
                 return;
             let controlProps = { ...options };
-            if (controlProps?.url) {
-                controlProps.url = this.getRealImageUrl(options.url);
-            }
-            if (controlProps?.fallbackUrl) {
-                controlProps.fallbackUrl = this.getRealImageUrl(options.fallbackUrl);
-            }
             const control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
             if (name.includes('scom')) {
                 parent?.appendChild(control);
@@ -5147,28 +5163,23 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             return control;
         }
-        getRealImageUrl(value) {
-            if (typeof value === 'string') {
-                const regex = /^assets\.fullPath\(('|")([^)]+)('|")\)/gi;
-                const matches = regex.exec(value);
-                if (matches) {
-                    value = matches[2];
-                    const imgURL = `${this.baseUrl}/assets/${value}`;
-                    return imgURL;
+        revertImageUrl(value) {
+            let result = '';
+            if (value && typeof value === 'string') {
+                const baseUrl = `${this.baseUrl || ''}/assets/`;
+                if (value.includes(baseUrl)) {
+                    const newValue = value.replace(baseUrl, '');
+                    if (newValue)
+                        result = `assets.fullPath('${newValue}')`;
+                }
+                else if (value.includes('assets.fullPath')) {
+                    result = value;
                 }
             }
-            return value;
-        }
-        revertImageUrl(value) {
-            if (value && typeof value === 'string') {
-                const arr = value.split(`${this.baseUrl}/assets/`);
-                if (arr[1])
-                    value = `{assets.fullPath(${arr[1]})}`;
-            }
-            return value;
+            return result;
         }
         getOptions(props) {
-            let options = (0, utils_12.parseProps)(props) || {};
+            let options = (0, utils_12.parseProps)(props, this.baseUrl) || {};
             let newOptions = {};
             try {
                 newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
@@ -5267,13 +5278,31 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     valueStr = "{" + value + "}";
                 }
                 else if (typeof value === 'object') {
+                    let revertedValue = '';
+                    if (value?.image?.url) {
+                        revertedValue = this.revertImageUrl(value.image.url);
+                        if (revertedValue)
+                            value.image.url = '{assets}';
+                    }
+                    else if (value?.url) {
+                        revertedValue = this.revertImageUrl(value.url);
+                        if (revertedValue)
+                            value.url = '{assets}';
+                    }
                     valueStr = `{${JSON.stringify(value)}}`;
+                    if (revertedValue) {
+                        valueStr = valueStr.replace(/\:\s*\"\{assets\}\"/, `:${revertedValue}`);
+                    }
                 }
                 else if (typeof value === 'string') {
-                    if (this.baseUrl && value.startsWith(this.baseUrl)) {
-                        valueStr = this.revertImageUrl(value);
+                    if ((this.baseUrl && value.startsWith(this.baseUrl))) {
+                        const reverted = this.revertImageUrl(value);
+                        valueStr = reverted ? `{${reverted}}` : value;
                     }
-                    if (value.startsWith('()') || value.startsWith('this.')) {
+                    else if (value.startsWith('assets.fullPath')) {
+                        valueStr = `{${value}}`;
+                    }
+                    else if (value.startsWith('()') || value.startsWith('this.')) {
                         valueStr = "{" + value + "}";
                     }
                     else if (value.includes("'")) {

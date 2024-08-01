@@ -12,7 +12,8 @@ import {
   Modal,
   Alert,
   IconName,
-  Panel
+  Panel,
+  Container
 } from '@ijstech/components'
 import { hoverFullOpacity, iconButtonStyled, rowDragOverActiveStyled, rowItemActiveStyled, rowItemHoverStyled } from '../index.css';
 import { IComponent, IScreen } from '../interface';
@@ -59,6 +60,10 @@ export default class DesignerComponents extends Module {
     id: ''
   }
   private elementsMap: Map<string, IComponent> = new Map();
+  private handleDragStart: any;
+  private handleDrop: any;
+  private handleDragEnd: any;
+  private handleDragOver: any;
 
   onShowComponentPicker: selectCallback;
   onSelect: selectCallback;
@@ -67,6 +72,14 @@ export default class DesignerComponents extends Module {
   onDuplicate: selectCallback;
   onAdd: selectCallback;
   onUpdate: () => void;
+
+  constructor(parent?: Container, options?: any) {
+    super(parent, options);
+    this.handleDragStart = this.onDragStart.bind(this);
+    this.handleDragOver = this.onDragOver.bind(this);
+    this.handleDrop = this.onDrop.bind(this);
+    this.handleDragEnd = this.onDragEnd.bind(this);
+  }
 
   get screen() {
     return this._screen;
@@ -226,9 +239,10 @@ export default class DesignerComponents extends Module {
   }
 
   private initEvents() {
-    this.addEventListener('dragstart', this.onDragStart.bind(this));
-    this.addEventListener('dragend', this.onDragEnd.bind(this));
-    this.addEventListener('drop', this.onDrop.bind(this));
+    this.addEventListener('dragstart', this.handleDragStart);
+    this.addEventListener('dragend', this.handleDragEnd);
+    this.addEventListener('dragover', this.handleDragOver);
+    this.addEventListener('drop', this.handleDrop);
   }
 
   private onDragStart(event: MouseEvent) {
@@ -273,8 +287,17 @@ export default class DesignerComponents extends Module {
       return;
     }
 
-    this.handleDragEnd(this.dragId);
+    this.dragEnd(this.dragId);
     this.resetData();
+  }
+
+  private onDragOver(event: MouseEvent) {
+    event.preventDefault();
+    if (!this.dragId) {
+      event.preventDefault();
+      return;
+    }
+    this.showHightlight(event.x, event.y);
   }
 
   private onDrop(event: MouseEvent) {
@@ -285,9 +308,10 @@ export default class DesignerComponents extends Module {
   }
 
   private removeEvents() {
-    this.removeEventListener('dragstart', this.onDragStart.bind(this));
-    this.removeEventListener('dragend', this.onDragEnd.bind(this));
-    this.removeEventListener('drop', this.onDrop.bind(this));
+    this.removeEventListener('dragstart', this.handleDragStart);
+    this.removeEventListener('dragend', this.handleDragEnd);
+    this.removeEventListener('dragover', this.handleDragOver);
+    this.removeEventListener('drop', this.handleDrop);
   }
 
   onHide(): void {
@@ -356,7 +380,7 @@ export default class DesignerComponents extends Module {
     this.targetConfig = {id: '', side: ''}; 
   }
 
-  private handleDragEnd(dragId: string) {
+  private dragEnd(dragId: string) {
     const { side, id } = this.targetConfig;
     if (dragId === id) return;
     if (side) {
