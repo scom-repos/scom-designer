@@ -6184,7 +6184,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             }
             else {
                 if (this.ifrPreview)
-                    this.ifrPreview.reload();
+                    await this.ifrPreview.reload();
                 this.pnlFormDesigner.visible = true;
                 this.pnlPreview.visible = false;
             }
@@ -6199,8 +6199,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.onUpdateDesigner();
             this.designerComponents.renderUI();
         }
-        onToggleClick(target) {
-            const parentEl = target.parent;
+        onToggleClick(target, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const parentEl = target.parent || target.parentElement;
             const icon = target.children[0];
             if (parentEl) {
                 const parentWidth = Number(parentEl.width || 0);
@@ -6292,7 +6294,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                             ] },
                             this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%' }))),
                     this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition, zIndex: 10 },
-                        this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
+                        this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1.5rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
                         this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint, onPreviewChanged: this.handlePreviewChanged })))));
         }

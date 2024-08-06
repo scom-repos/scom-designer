@@ -1269,7 +1269,7 @@ export class ScomDesignerForm extends Module {
       this.isPreviewing = false;
     }
     else{
-      if (this.ifrPreview) this.ifrPreview.reload();
+      if (this.ifrPreview) await this.ifrPreview.reload();
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
     }
@@ -1285,8 +1285,10 @@ export class ScomDesignerForm extends Module {
     this.designerComponents.renderUI();
   }
 
-  private onToggleClick(target: Panel) {
-    const parentEl = target.parent;
+  private onToggleClick(target: Panel, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const parentEl = target.parent || target.parentElement as Control;
     const icon = target.children[0] as Icon;
     if (parentEl) {
       const parentWidth = Number(parentEl.width || 0);
@@ -1536,7 +1538,7 @@ export class ScomDesignerForm extends Module {
           >
             <i-panel
               position='absolute'
-              top={'2.5rem'} left={'-1rem'}
+              top={'2.5rem'} left={'-1.5rem'}
               width={'2rem'} height={'2rem'}
               border={{radius: '50%'}}
               background={{ color: Theme.background.main }}
