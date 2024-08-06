@@ -121,6 +121,7 @@ export class ScomDesignerForm extends Module {
   private _customElements = getCustomElements();
   private isPreviewing: boolean = false;
   baseUrl: string = '';
+  private _previewUrl: string = '';
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
   private handleMouseUpBound: (event: MouseEvent) => void;
@@ -152,6 +153,7 @@ export class ScomDesignerForm extends Module {
 
   setData() {}
   set previewUrl(url: string){
+    this._previewUrl = url;
     this.ifrPreview.url = url;
   }
   get pickerComponentsFiltered() {
@@ -1257,9 +1259,9 @@ export class ScomDesignerForm extends Module {
       if (this.isPreviewing) return;
       this.isPreviewing = true;
       if (this.onPreview){
-        if (!this.ifrPreview.url)
-          this.ifrPreview.url = 'https://decom.dev/debug.html';
         let result = await this.onPreview();
+        if (!this.ifrPreview.url)
+          this.ifrPreview.url = this._previewUrl || 'https://decom.dev/debug.html';
         if (result){
           this.ifrPreview.postMessage(JSON.stringify(result));
         }

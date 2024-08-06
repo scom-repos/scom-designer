@@ -1549,6 +1549,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private _customElements;
         private isPreviewing;
         baseUrl: string;
+        private _previewUrl;
         private handleMouseMoveBound;
         private handleMouseUpBound;
         selectedControl: IControl;

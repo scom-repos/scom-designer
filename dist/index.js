@@ -5051,6 +5051,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this._customElements = (0, components_32.getCustomElements)();
             this.isPreviewing = false;
             this.baseUrl = '';
+            this._previewUrl = '';
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
             this.onControlEventDblClick = this.onControlEventDblClick.bind(this);
@@ -5069,6 +5070,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         setData() { }
         set previewUrl(url) {
+            this._previewUrl = url;
             this.ifrPreview.url = url;
         }
         get pickerComponentsFiltered() {
@@ -6171,9 +6173,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     return;
                 this.isPreviewing = true;
                 if (this.onPreview) {
-                    if (!this.ifrPreview.url)
-                        this.ifrPreview.url = 'https://decom.dev/debug.html';
                     let result = await this.onPreview();
+                    if (!this.ifrPreview.url)
+                        this.ifrPreview.url = this._previewUrl || 'https://decom.dev/debug.html';
                     if (result) {
                         this.ifrPreview.postMessage(JSON.stringify(result));
                     }
