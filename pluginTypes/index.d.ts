@@ -1563,6 +1563,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
         set previewUrl(url: string);
+        get previewUrl(): string;
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];

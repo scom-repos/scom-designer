@@ -330,7 +330,7 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         },
         [1 /* BREAKPOINTS.TABLET */]: {
             minWidth: '768px',
-            maxWidth: '1023px',
+            maxWidth: '1024px',
             properties: {}
         },
         // [BREAKPOINTS.LAPTOP]: {
@@ -339,7 +339,7 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         //   properties: {}
         // },
         [3 /* BREAKPOINTS.DESKTOP */]: {
-            minWidth: '1024px',
+            minWidth: '1025px',
             properties: {}
         }
     };
@@ -5073,6 +5073,9 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this._previewUrl = url;
             this.ifrPreview.url = url;
         }
+        get previewUrl() {
+            return this._previewUrl;
+        }
         get pickerComponentsFiltered() {
             let components;
             if (this.currentTab === TABS.RECENT) {
@@ -6177,14 +6180,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     if (!this.ifrPreview.url)
                         this.ifrPreview.url = this._previewUrl || 'https://decom.dev/debug.html';
                     if (result) {
-                        this.ifrPreview.postMessage(JSON.stringify(result));
+                        const self = this;
+                        this.ifrPreview.reload().then(() => {
+                            self.ifrPreview.postMessage(JSON.stringify(result));
+                        });
                     }
                 }
                 this.isPreviewing = false;
             }
             else {
-                if (this.ifrPreview)
-                    await this.ifrPreview.reload();
+                // if (this.ifrPreview) await this.ifrPreview.reload();
                 this.pnlFormDesigner.visible = true;
                 this.pnlPreview.visible = false;
             }
@@ -6553,7 +6558,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         async handleTabChanged(target, event) {
             this.activeTab = target.id;
             const fileName = this.fileName;
-            this.renderContent();
+            await this.renderContent();
             if (target.id === 'designTab') {
                 if (this.updateDesigner) {
                     this.updateDesigner = false;

@@ -156,6 +156,9 @@ export class ScomDesignerForm extends Module {
     this._previewUrl = url;
     this.ifrPreview.url = url;
   }
+  get previewUrl() {
+    return this._previewUrl
+  }
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
     if (this.currentTab === TABS.RECENT) {
@@ -1263,13 +1266,16 @@ export class ScomDesignerForm extends Module {
         if (!this.ifrPreview.url)
           this.ifrPreview.url = this._previewUrl || 'https://decom.dev/debug.html';
         if (result){
-          this.ifrPreview.postMessage(JSON.stringify(result));
+          const self = this;
+          this.ifrPreview.reload().then(() => {
+            self.ifrPreview.postMessage(JSON.stringify(result));
+          });
         }
       }
       this.isPreviewing = false;
     }
     else{
-      if (this.ifrPreview) await this.ifrPreview.reload();
+      // if (this.ifrPreview) await this.ifrPreview.reload();
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
     }
