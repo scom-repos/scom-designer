@@ -62,7 +62,7 @@ const breakpointsMap: {[key: number]: IMediaQuery} = {
   },
   [BREAKPOINTS.TABLET]: {
     minWidth: '768px',
-    maxWidth: '1023px',
+    maxWidth: '1024px',
     properties: {}
   },
   // [BREAKPOINTS.LAPTOP]: {
@@ -71,7 +71,7 @@ const breakpointsMap: {[key: number]: IMediaQuery} = {
   //   properties: {}
   // },
   [BREAKPOINTS.DESKTOP]: {
-    minWidth: '1024px',
+    minWidth: '1025px',
     properties: {}
   }
 }

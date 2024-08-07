@@ -348,7 +348,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async handleTabChanged(target: Button, event: Event) {
     this.activeTab = target.id;
     const fileName = this.fileName;
-    this.renderContent();
+    await this.renderContent();
     if (target.id === 'designTab') {
       if (this.updateDesigner) {
         this.updateDesigner = false
