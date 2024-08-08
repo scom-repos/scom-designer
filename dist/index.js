@@ -892,8 +892,13 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
     const handleParse = (value, baseUrl) => {
         try {
             const newValue = value
-                .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
+                .replace(/(['"`])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"`])?:/g, '"$2": ')
                 .replace(/'/g, '"')
+                .replace(/\<([^\>]*)\>/g, (match, p1) => {
+                const innerText = p1.replace(/"/g, '\'');
+                return `<${innerText}>`;
+            })
+                .replace(/:\s*(true|false|null|\d+)\s*(,|\})/g, ': $1$2')
                 .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"')
                 .replace(/([a-z0-9A-Z]*)\.fullPath\(("|'_)([^"|']*)("|'_)\)/g, '"$1.fullPath(\'$3\')"');
             const parsedData = JSON.parse(newValue, (key, value) => {
@@ -5143,7 +5148,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const controlConstructor = window.customElements.get(name);
             if (!controlConstructor)
                 return;
-            let controlProps = { ...options };
+            let controlProps = JSON.parse(JSON.stringify(options));
+            for (let key in controlProps) {
+                const value = controlProps?.[key];
+                if (typeof value === 'string' && value.startsWith('this.')) {
+                    delete controlProps[key];
+                }
+            }
             const control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
             if (name.includes('scom')) {
                 parent?.appendChild(control);
@@ -5152,7 +5163,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 control.parent = parent;
             }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
-            control._setDesignProps({ ...controlProps, mediaQueries }, breakpointProps);
+            control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
             const hasBackground = 'background' in options;
             const hasFont = 'font' in options;
             const isCustomWidget = !!control?.showConfigurator;
