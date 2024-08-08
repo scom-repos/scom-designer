@@ -363,7 +363,7 @@ export const extractFileName = (path: string): string => {
 export const parseProps = (props: any, baseUrl = '') => {
   if (!props) return null;
   const breakpoint = getBreakpoint();
-  let newProps = {...(props || {})};
+  let newProps = { ...(props || {}) };
   if (breakpoint !== undefined) {
     newProps.mediaQueries = newProps.mediaQueries || [];
     const mediaQueries = newProps.mediaQueries;
@@ -374,7 +374,7 @@ export const parseProps = (props: any, baseUrl = '') => {
       }
       try {
         newProps.mediaQueries = JSON.parse(value);
-      } catch {}
+      } catch { }
     };
   }
   const newObj = {};
@@ -431,8 +431,13 @@ export const handleParse = (value: string, baseUrl?: string) => {
   try {
     const newValue =
       value
-        .replace(/(['"])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"])?:/g, '"$2": ')
+        .replace(/(['"`])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"`])?:/g, '"$2": ')
         .replace(/'/g, '"')
+        .replace(/\<([^\>]*)\>/g, (match, p1) => {
+          const innerText: string = p1.replace(/"/g, '\'');
+          return `<${innerText}>`;
+        })
+        .replace(/:\s*(true|false|null|\d+)\s*(,|\})/g, ': $1$2')
         .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"')
         .replace(/([a-z0-9A-Z]*)\.fullPath\(("|'_)([^"|']*)("|'_)\)/g, '"$1.fullPath(\'$3\')"');
 
@@ -440,7 +445,7 @@ export const handleParse = (value: string, baseUrl?: string) => {
       if (typeof value === 'string' && value.startsWith('Theme')) {
         const parsedValue = value.split('.');
         let themeValue = Theme;
-        for(let i = 1; i < parsedValue.length; i++) {
+        for (let i = 1; i < parsedValue.length; i++) {
           themeValue = themeValue[parsedValue[i]]
         }
         return themeValue;
@@ -510,6 +515,6 @@ export const isSameValue = (defaultVal: any, value: any): boolean => {
   return false;
 };
 
-export const isNumber = (value: string|number) => {
+export const isNumber = (value: string | number) => {
   return typeof value === 'number' || (value !== '' && !Number.isNaN(Number(value)));
 }

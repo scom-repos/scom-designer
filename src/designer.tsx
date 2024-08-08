@@ -237,9 +237,14 @@ export class ScomDesignerForm extends Module {
     const { mediaQueries, options } = config;
     const controlConstructor: any = window.customElements.get(name);
     if (!controlConstructor) return;
-    let controlProps = {...options};
+    let controlProps = JSON.parse(JSON.stringify(options));
+    for (let key in controlProps) {
+      const value = controlProps?.[key];
+      if (typeof value === 'string' && value.startsWith('this.')) {
+        delete controlProps[key];
+      }
+    }
     const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
-
     if (name.includes('scom')) {
       parent?.appendChild(control);
     } else {
@@ -247,7 +252,7 @@ export class ScomDesignerForm extends Module {
     }
 
     const breakpointProps = getMediaQueryProps(mediaQueries);
-    control._setDesignProps({...controlProps, mediaQueries}, breakpointProps);
+    control._setDesignProps({...options, mediaQueries}, breakpointProps);
 
     const hasBackground = 'background' in options;
     const hasFont = 'font' in options;
