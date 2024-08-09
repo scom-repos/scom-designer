@@ -720,8 +720,8 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
     exports.fontTransforms = [
         {
             tooltip: 'None',
-            value: 'none',
-            type: 'style',
+            value: 'unset',
+            type: 'transform',
             icon: {
                 name: 'remove-format'
             }
@@ -6529,9 +6529,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeTab.background = { color: this.activeTab === 'codeTab' ? '#1d1d1d' : '#252525' };
             this.designTab.background = { color: this.activeTab === 'designTab' ? '#1d1d1d' : '#252525' };
         }
-        addLib() {
+        async addLib() {
             if (!this.compiler)
                 this.compiler = new compiler_1.Compiler();
+            const content = await components_33.application.getContent(`${components_33.application.rootDir}libs/@ijstech/components/index.d.ts`);
+            this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
+            components_33.CodeEditor.addLib('@ijstech/components', content);
         }
         async importCallback(fileName, isPackage) {
             let result = this.getFile(fileName);

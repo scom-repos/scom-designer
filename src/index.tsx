@@ -310,8 +310,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.designTab.background = {color: this.activeTab === 'designTab' ? '#1d1d1d' : '#252525'}
   }
 
-  private addLib() {
+  private async addLib() {
     if (!this.compiler) this.compiler = new Compiler()
+    const content = await application.getContent(`${application.rootDir}libs/@ijstech/components/index.d.ts`);
+    this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
+    CodeEditor.addLib('@ijstech/components', content);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {

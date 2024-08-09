@@ -269,8 +269,8 @@ export const fontStyles = [
 export const fontTransforms = [
   {
     tooltip: 'None',
-    value: 'none',
-    type: 'style',
+    value: 'unset',
+    type: 'transform',
     icon: {
       name: 'remove-format'
     }
