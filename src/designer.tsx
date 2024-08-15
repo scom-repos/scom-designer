@@ -29,7 +29,7 @@ import {
   DesignerPickerBlocks
 } from './components/index';
 import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio } from './interface'
-import { customLabelTabStyled, customTransition, labelActiveStyled } from './index.css'
+import { customLabelTabStyled, customScrollbar, customTransition, labelActiveStyled } from './index.css'
 import {
   blockComponents
 } from './data'
@@ -1274,15 +1274,16 @@ export class ScomDesignerForm extends Module {
           const self = this;
           this.ifrPreview.reload().then(() => {
             self.ifrPreview.postMessage(JSON.stringify(result));
+            self.isPreviewing = false;
           });
         }
       }
-      this.isPreviewing = false;
     }
     else{
-      // if (this.ifrPreview) await this.ifrPreview.reload();
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
+      if (this.ifrPreview)
+        this.ifrPreview.unload();
     }
   }
   private handleBreakpoint(value: number) {
@@ -1303,10 +1304,13 @@ export class ScomDesignerForm extends Module {
     const icon = target.children[0] as Icon;
     if (parentEl) {
       const parentWidth = Number(parentEl.width || 0);
+      const childPanel = parentEl?.id === 'pnlProperties' && parentEl.querySelector('i-panel') as Control;
       if (parentWidth === 0) {
         parentEl.width = '100%';
+        childPanel && (childPanel.left = '-1rem');
       } else {
         parentEl.width = 0;
+        childPanel && (childPanel.left = '-1.5rem');
       }
       if (icon) {
         icon.name = icon.name === 'angle-left' ? 'angle-right' : 'angle-left';
@@ -1324,6 +1328,7 @@ export class ScomDesignerForm extends Module {
     this.pnlFormDesigner.removeEventListener('mousedown', this.handleControlMouseDown.bind(this));
     this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
     this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
+    this.ifrPreview?.clear();
   }
 
   init() {
@@ -1511,6 +1516,7 @@ export class ScomDesignerForm extends Module {
               width={'auto'} minHeight={'100%'}
               background={{ color: '#26324b' }}
               overflow={{x: 'visible', y: 'auto'}}
+              class={customScrollbar}
               mediaQueries={[
                 {
                   maxWidth: '1024px',
@@ -1545,11 +1551,10 @@ export class ScomDesignerForm extends Module {
             width={'100%'}
             height={'100%'}
             class={customTransition}
-            zIndex={10}
           >
             <i-panel
               position='absolute'
-              top={'2.5rem'} left={'-1.5rem'}
+              top={'2.5rem'} left={'-1rem'}
               width={'2rem'} height={'2rem'}
               border={{radius: '50%'}}
               background={{ color: Theme.background.main }}

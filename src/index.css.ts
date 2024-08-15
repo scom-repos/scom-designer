@@ -153,3 +153,12 @@ export const blockStyle = Styles.style({
 export const customTransition = Styles.style({
   transition: 'width 0.2s ease-in-out'
 })
+
+export const customScrollbar = Styles.style({
+  $nest: {
+    '&::-webkit-scrollbar': {
+      width: '0.5rem',
+      height: '0.5rem'
+    }
+  }
+})

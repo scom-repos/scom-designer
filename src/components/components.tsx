@@ -371,7 +371,7 @@ export default class DesignerComponents extends Module {
   private clearHoverStyle() {
     const currentElm = this.vStackComponents.querySelector(`.${rowDragOverActiveStyled}`);
     if (currentElm) currentElm.classList.remove(rowDragOverActiveStyled);
-    this.pnlSide.visible = false;
+    if (this.pnlSide) this.pnlSide.visible = false;
   }
 
   private resetData() {

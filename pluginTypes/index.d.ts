@@ -13,6 +13,7 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customTabStyled: string;
     export const blockStyle: string;
     export const customTransition: string;
+    export const customScrollbar: string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" {
@@ -1762,11 +1763,13 @@ declare module "@scom/scom-designer" {
         removeComponent(designer: ScomDesignerForm): void;
         renameComponent(designer: ScomDesignerForm, oldId: string, newId: string): boolean;
         renameEventHandler(designer: ScomDesignerForm, funcName: string, newFuncName: string): boolean;
-        registerWidget(designer: ScomDesignerForm, name: string, type: string): void;
+        registerWidget(designer: ScomDesignerForm, name: string, type: string): Promise<void>;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerElement, parent?: Container): Promise<ScomDesigner>;
         get url(): string;
         set url(value: string);
+        get file(): IFileData;
+        set file(value: IFileData);
         get fileName(): string;
         get value(): string;
         get baseUrl(): string;
