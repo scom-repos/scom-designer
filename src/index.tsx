@@ -166,9 +166,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.value = result
     return true
   }
-  registerWidget(designer: ScomDesignerForm, name: string, type: string): void {
+  async registerWidget(designer: ScomDesignerForm, name: string, type: string) {
     CodeEditor.addLib(name, type)
-    this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
+    await this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
   }
 
   constructor(parent?: Container, options?: any) {
@@ -188,6 +188,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
   set url(value: string) {
     this._data.url = value;
+  }
+
+  get file(): IFileData {
+    return this._data.file;
+  }
+  set file(value: IFileData) {
+    this._data.file = value;
   }
 
   get fileName() {
@@ -240,8 +247,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (this.codeEditor) {
       this.codeEditor.onChange = null;
       this.codeEditor.onKeyDown = null;
-      if (typeof this.codeEditor?.disposeEditor === 'function') {
-        this.codeEditor.disposeEditor();
+      if (typeof this.codeEditor?.dispose === 'function') {
+        this.codeEditor.dispose();
         this.codeEditor.remove();
       }
     }
@@ -255,7 +262,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private async renderUI() {
     this.activeTab = 'codeTab';
-    this.updateDesigner = true;
+    this.updateDesigner = !!(this.url || this.file?.path);
     this.renderContent(true);
   }
 
@@ -284,7 +291,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
     if (this.codeEditor)
       this.codeEditor.visible = this.activeTab === 'codeTab';
-    if (init) {
+    if (init && !!(this.url || this.file?.path)) {
       this.loadContent();
     }
     this.updateButtons();
@@ -360,7 +367,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           const ui = this.compiler.parseUI(fileName)
           this.formDesigner.renderUI(this.updateRoot(ui))
         } catch (error) {
-          console.error('parse UI error:', error);
+          this.updateDesigner = true
         }
       }
     } else if (target.id === 'codeTab') {
@@ -405,6 +412,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private handleCodeEditorChange(target: CodeEditor, event: Event) {
     this.updateDesigner = true;
+    this.imported = {};
     if (typeof this.onChange === 'function') this.onChange(this, event)
   }
 
@@ -429,7 +437,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   };
 
-  private getFile(fileName: string) {
+  private getFile(fileName: string): { fileName: string, content: string } | null {
     let fName = '';
     let fContent = '';
     for (let f in this.imported) {
@@ -530,7 +538,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
     this.addLib()
-    if (url || file) this.setData({ url, file })
+    this.setData({ url, file });
     this.classList.add(blockStyle)
   }
 

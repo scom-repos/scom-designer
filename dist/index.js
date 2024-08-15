@@ -21,7 +21,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.customTransition = exports.blockStyle = exports.customTabStyled = exports.customIconTabActiveStyled = exports.customIconTabStyled = exports.labelActiveStyled = exports.customLabelTabStyled = exports.blockItemHoverStyled = exports.iconButtonStyled = exports.rowDragOverActiveStyled = exports.rowItemActiveStyled = exports.rowItemHoverStyled = exports.hoverFullOpacity = void 0;
+    exports.customScrollbar = exports.customTransition = exports.blockStyle = exports.customTabStyled = exports.customIconTabActiveStyled = exports.customIconTabStyled = exports.labelActiveStyled = exports.customLabelTabStyled = exports.blockItemHoverStyled = exports.iconButtonStyled = exports.rowDragOverActiveStyled = exports.rowItemActiveStyled = exports.rowItemHoverStyled = exports.hoverFullOpacity = void 0;
     const Theme = components_1.Styles.Theme.ThemeVars;
     exports.hoverFullOpacity = components_1.Styles.style({
         $nest: {
@@ -160,6 +160,14 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
     });
     exports.customTransition = components_1.Styles.style({
         transition: 'width 0.2s ease-in-out'
+    });
+    exports.customScrollbar = components_1.Styles.style({
+        $nest: {
+            '&::-webkit-scrollbar': {
+                width: '0.5rem',
+                height: '0.5rem'
+            }
+        }
     });
 });
 define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
@@ -1260,7 +1268,8 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
             const currentElm = this.vStackComponents.querySelector(`.${index_css_1.rowDragOverActiveStyled}`);
             if (currentElm)
                 currentElm.classList.remove(index_css_1.rowDragOverActiveStyled);
-            this.pnlSide.visible = false;
+            if (this.pnlSide)
+                this.pnlSide.visible = false;
         }
         resetData() {
             this.clearHoverStyle();
@@ -6194,15 +6203,16 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         const self = this;
                         this.ifrPreview.reload().then(() => {
                             self.ifrPreview.postMessage(JSON.stringify(result));
+                            self.isPreviewing = false;
                         });
                     }
                 }
-                this.isPreviewing = false;
             }
             else {
-                // if (this.ifrPreview) await this.ifrPreview.reload();
                 this.pnlFormDesigner.visible = true;
                 this.pnlPreview.visible = false;
+                if (this.ifrPreview)
+                    this.ifrPreview.unload();
             }
         }
         handleBreakpoint(value) {
@@ -6222,11 +6232,14 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const icon = target.children[0];
             if (parentEl) {
                 const parentWidth = Number(parentEl.width || 0);
+                const childPanel = parentEl?.id === 'pnlProperties' && parentEl.querySelector('i-panel');
                 if (parentWidth === 0) {
                     parentEl.width = '100%';
+                    childPanel && (childPanel.left = '-1rem');
                 }
                 else {
                     parentEl.width = 0;
+                    childPanel && (childPanel.left = '-1.5rem');
                 }
                 if (icon) {
                     icon.name = icon.name === 'angle-left' ? 'angle-right' : 'angle-left';
@@ -6242,6 +6255,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.pnlFormDesigner.removeEventListener('mousedown', this.handleControlMouseDown.bind(this));
             this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
             this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
+            this.ifrPreview?.clear();
         }
         init() {
             super.init();
@@ -6292,7 +6306,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                     this.$render("i-panel", { id: 'pnlComponentPicker', width: '100%' }),
                                     this.$render("i-panel", { id: 'pnlBlockPicker', width: '100%', visible: false }))))),
                     this.$render("i-vstack", { id: "designerWrapper", stack: { grow: '1' }, padding: { top: '1rem', bottom: '1rem', left: '1rem', right: '1rem' }, overflow: 'hidden', zIndex: 0, alignItems: 'center', position: 'relative' },
-                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: { x: 'visible', y: 'auto' }, mediaQueries: [
+                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: { x: 'visible', y: 'auto' }, class: index_css_22.customScrollbar, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
                                     properties: {
@@ -6309,8 +6323,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                 }
                             ] },
                             this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%' }))),
-                    this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition, zIndex: 10 },
-                        this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1.5rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
+                    this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition },
+                        this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
                         this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint, onPreviewChanged: this.handlePreviewChanged })))));
         }
@@ -6390,9 +6404,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.value = result;
             return true;
         }
-        registerWidget(designer, name, type) {
+        async registerWidget(designer, name, type) {
             components_33.CodeEditor.addLib(name, type);
-            this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
+            await this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
         }
         constructor(parent, options) {
             super(parent, options);
@@ -6422,6 +6436,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         set url(value) {
             this._data.url = value;
+        }
+        get file() {
+            return this._data.file;
+        }
+        set file(value) {
+            this._data.file = value;
         }
         get fileName() {
             const name = this._data.file?.path || (this.url ? (0, utils_13.extractFileName)(this.url) : '');
@@ -6464,8 +6484,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (this.codeEditor) {
                 this.codeEditor.onChange = null;
                 this.codeEditor.onKeyDown = null;
-                if (typeof this.codeEditor?.disposeEditor === 'function') {
-                    this.codeEditor.disposeEditor();
+                if (typeof this.codeEditor?.dispose === 'function') {
+                    this.codeEditor.dispose();
                     this.codeEditor.remove();
                 }
             }
@@ -6478,7 +6498,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async renderUI() {
             this.activeTab = 'codeTab';
-            this.updateDesigner = true;
+            this.updateDesigner = !!(this.url || this.file?.path);
             this.renderContent(true);
         }
         async renderContent(init = false) {
@@ -6507,7 +6527,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
             if (this.codeEditor)
                 this.codeEditor.visible = this.activeTab === 'codeTab';
-            if (init) {
+            if (init && !!(this.url || this.file?.path)) {
                 this.loadContent();
             }
             this.updateButtons();
@@ -6582,7 +6602,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                         this.formDesigner.renderUI(this.updateRoot(ui));
                     }
                     catch (error) {
-                        console.error('parse UI error:', error);
+                        this.updateDesigner = true;
                     }
                 }
             }
@@ -6627,6 +6647,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         handleCodeEditorChange(target, event) {
             this.updateDesigner = true;
+            this.imported = {};
             if (typeof this.onChange === 'function')
                 this.onChange(this, event);
         }
@@ -6735,8 +6756,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const url = this.getAttribute('url', true);
             const file = this.getAttribute('file', true);
             this.addLib();
-            if (url || file)
-                this.setData({ url, file });
+            this.setData({ url, file });
             this.classList.add(index_css_23.blockStyle);
         }
         // Configuration
