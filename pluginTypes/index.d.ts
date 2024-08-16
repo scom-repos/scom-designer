@@ -1,3 +1,4 @@
+/// <reference path="@ijstech/components/index.d.ts" />
 /// <amd-module name="@scom/scom-designer/index.css.ts" />
 declare module "@scom/scom-designer/index.css.ts" {
     export const hoverFullOpacity: string;
@@ -1777,6 +1778,7 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
+        getErrors(): import("packages/code-editor/src/editor.api").editor.IMarker[];
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         disposeEditor(): void;
