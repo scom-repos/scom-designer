@@ -6466,6 +6466,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         async setValue(value) {
             await this.setData(value);
         }
+        getErrors() {
+            return this.codeEditor?.getErrors();
+        }
         updateFileName(oldValue, newValue) {
             if (typeof this.codeEditor?.updateFileName === 'function')
                 this.codeEditor.updateFileName(oldValue, newValue);
