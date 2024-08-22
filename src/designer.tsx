@@ -106,6 +106,7 @@ export class ScomDesignerForm extends Module {
   private mdPicker: Modal
   private designerWrapper: VStack
   private pnlScreens: Panel
+  private pnlLoading: VStack
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -1265,6 +1266,7 @@ export class ScomDesignerForm extends Module {
       this.pnlFormDesigner.visible = false;
       this.pnlPreview.visible = true;
       if (this.isPreviewing) return;
+      this.pnlLoading.visible = true;
       this.isPreviewing = true;
       if (this.onPreview){
         let result = await this.onPreview();
@@ -1275,6 +1277,7 @@ export class ScomDesignerForm extends Module {
           this.ifrPreview.reload().then(() => {
             self.ifrPreview.postMessage(JSON.stringify(result));
             self.isPreviewing = false;
+            self.pnlLoading.visible = false;
           });
         }
       }
@@ -1328,7 +1331,7 @@ export class ScomDesignerForm extends Module {
     this.pnlFormDesigner.removeEventListener('mousedown', this.handleControlMouseDown.bind(this));
     this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
     this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
-    this.ifrPreview?.clear();
+    if (this.ifrPreview?.clear)this.ifrPreview.clear();
   }
 
   init() {
@@ -1541,6 +1544,39 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             >
+              <i-vstack
+                id="pnlLoading"
+                width="100%" minHeight={200}
+                position="absolute"
+                bottom={0}
+                zIndex={1000}
+                visible={false}
+                background={{ color: Theme.background.main }}
+                class="i-loading-overlay"
+                opacity={0.7}
+                mediaQueries={[
+                  {
+                    maxWidth: '767px',
+                    properties: {
+                      height: 'calc(100% - 3.125rem)',
+                      top: 0
+                    }
+                  }
+                ]}
+              >
+                <i-vstack
+                  horizontalAlignment="center" verticalAlignment="center"
+                  position="absolute" top="calc(50% - 0.75rem)" left="calc(50% - 0.75rem)"
+                >
+                  <i-icon
+                    class="i-loading-spinner_icon"
+                    name="spinner"
+                    width={24}
+                    height={24}
+                    fill={Theme.colors.primary.main}
+                  />
+                </i-vstack>
+              </i-vstack>
               <i-iframe id="ifrPreview" width={'100%'} height={'100%'}></i-iframe>
             </i-panel>
           </i-vstack>

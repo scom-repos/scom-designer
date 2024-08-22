@@ -128,9 +128,9 @@ export default class DesignerToolContent extends Module {
     let result = false;
     let oldVal = '';
     if (this.isChecked) {
-      oldVal = prop ? this._data[type]?.[prop] ?? this._data.default?.[type]?.[prop] : this._data[type] ?? this._data.default?.[type];
+      oldVal = (prop ? this._data[type]?.[prop] ?? this._data.default?.[type]?.[prop] : this._data[type] ?? this._data.default?.[type]) ?? '';
     } else {
-      oldVal = prop ? this._data.default?.[type]?.[prop] : this._data.default?.[type];
+      oldVal = (prop ? this._data.default?.[type]?.[prop] : this._data.default?.[type]) ?? '';
     }
     result = isSameValue(oldVal, newVal);
     return result;

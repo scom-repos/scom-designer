@@ -105,6 +105,7 @@ export default class DesignerSelector extends Module {
 
   setData(value: ISelector) {
     this._data = value;
+    this.selectedItem = null;
     this.renderUI();
   }
 
@@ -168,10 +169,10 @@ export default class DesignerSelector extends Module {
 
   private onActiveChanged(target: Control, event: MouseEvent, type: string, value: string|number) {
     event.preventDefault();
-    if (this.selectedItem && this.selectedItem.value === value) return;
+    if (this.selectedItem?.value && this.selectedItem.value === value) return;
+    if (this.onChanged) this.onChanged(type, value);
     this.updateActiveItem(target);
     this.selectedItem = { type, value };
-    if (this.onChanged) this.onChanged(type, value);
   }
   
   private updateActiveItem(target: Control) {
@@ -179,6 +180,7 @@ export default class DesignerSelector extends Module {
     if (this.currentTarget) this.currentTarget.classList.remove(activeStyle);
     target.classList.add(activeStyle);
     this.currentTarget = target;
+    this.selectedItem = null;
   }
 
   init() {

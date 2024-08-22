@@ -1768,6 +1768,7 @@ define("@scom/scom-designer/tools/selector.tsx", ["require", "exports", "@ijstec
         }
         setData(value) {
             this._data = value;
+            this.selectedItem = null;
             this.renderUI();
         }
         renderUI() {
@@ -1818,12 +1819,12 @@ define("@scom/scom-designer/tools/selector.tsx", ["require", "exports", "@ijstec
         }
         onActiveChanged(target, event, type, value) {
             event.preventDefault();
-            if (this.selectedItem && this.selectedItem.value === value)
+            if (this.selectedItem?.value && this.selectedItem.value === value)
                 return;
-            this.updateActiveItem(target);
-            this.selectedItem = { type, value };
             if (this.onChanged)
                 this.onChanged(type, value);
+            this.updateActiveItem(target);
+            this.selectedItem = { type, value };
         }
         updateActiveItem(target) {
             const activeStyle = this.direction === 'horizontal' ? index_css_3.customIconLayoutActiveStyled : index_css_4.customIconTabActiveStyled;
@@ -1831,6 +1832,7 @@ define("@scom/scom-designer/tools/selector.tsx", ["require", "exports", "@ijstec
                 this.currentTarget.classList.remove(activeStyle);
             target.classList.add(activeStyle);
             this.currentTarget = target;
+            this.selectedItem = null;
         }
         init() {
             super.init();
@@ -3706,10 +3708,10 @@ define("@scom/scom-designer/tools/content.tsx", ["require", "exports", "@ijstech
             let result = false;
             let oldVal = '';
             if (this.isChecked) {
-                oldVal = prop ? this._data[type]?.[prop] ?? this._data.default?.[type]?.[prop] : this._data[type] ?? this._data.default?.[type];
+                oldVal = (prop ? this._data[type]?.[prop] ?? this._data.default?.[type]?.[prop] : this._data[type] ?? this._data.default?.[type]) ?? '';
             }
             else {
-                oldVal = prop ? this._data.default?.[type]?.[prop] : this._data.default?.[type];
+                oldVal = (prop ? this._data.default?.[type]?.[prop] : this._data.default?.[type]) ?? '';
             }
             result = (0, utils_9.isSameValue)(oldVal, newVal);
             return result;
@@ -6194,6 +6196,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.pnlPreview.visible = true;
                 if (this.isPreviewing)
                     return;
+                this.pnlLoading.visible = true;
                 this.isPreviewing = true;
                 if (this.onPreview) {
                     let result = await this.onPreview();
@@ -6204,6 +6207,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.ifrPreview.reload().then(() => {
                             self.ifrPreview.postMessage(JSON.stringify(result));
                             self.isPreviewing = false;
+                            self.pnlLoading.visible = false;
                         });
                     }
                 }
@@ -6255,7 +6259,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.pnlFormDesigner.removeEventListener('mousedown', this.handleControlMouseDown.bind(this));
             this.pnlFormDesigner.removeEventListener('mousemove', this.handleMouseMoveBound);
             this.pnlFormDesigner.removeEventListener('mouseup', this.handleMouseUpBound);
-            this.ifrPreview?.clear();
+            if (this.ifrPreview?.clear)
+                this.ifrPreview.clear();
         }
         init() {
             super.init();
@@ -6322,6 +6327,17 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                     }
                                 }
                             ] },
+                            this.$render("i-vstack", { id: "pnlLoading", width: "100%", minHeight: 200, position: "absolute", bottom: 0, zIndex: 1000, visible: false, background: { color: Theme.background.main }, class: "i-loading-overlay", opacity: 0.7, mediaQueries: [
+                                    {
+                                        maxWidth: '767px',
+                                        properties: {
+                                            height: 'calc(100% - 3.125rem)',
+                                            top: 0
+                                        }
+                                    }
+                                ] },
+                                this.$render("i-vstack", { horizontalAlignment: "center", verticalAlignment: "center", position: "absolute", top: "calc(50% - 0.75rem)", left: "calc(50% - 0.75rem)" },
+                                    this.$render("i-icon", { class: "i-loading-spinner_icon", name: "spinner", width: 24, height: 24, fill: Theme.colors.primary.main }))),
                             this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%' }))),
                     this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition },
                         this.$render("i-panel", { position: 'absolute', top: '2.5rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', boxShadow: Theme.shadows[1], onClick: this.onToggleClick.bind(this) },
