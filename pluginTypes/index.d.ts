@@ -1537,6 +1537,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private mdPicker;
         private designerWrapper;
         private pnlScreens;
+        private pnlLoading;
         private pathMapping;
         private mouseDown;
         private resizing;
