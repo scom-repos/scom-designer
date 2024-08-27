@@ -79,6 +79,7 @@ class ControlResizer {
 
 interface ScomDesignerFormElement extends ControlElement {
   onPreview?: ()=> Promise<{module: string, script: string}>;
+  onTogglePreview?: (value: boolean) => void;
 }
 
 declare global {
@@ -107,6 +108,8 @@ export class ScomDesignerForm extends Module {
   private designerWrapper: VStack
   private pnlScreens: Panel
   private pnlLoading: VStack
+  private pnlRightIcon: Panel
+  private pnlLeftIcon: Panel
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -131,6 +134,7 @@ export class ScomDesignerForm extends Module {
   modified: boolean;
   studio: IStudio;
   onPreview?: ()=> Promise<{module: string, script: string}>;
+  onTogglePreview?: (value: boolean) => void;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -154,11 +158,11 @@ export class ScomDesignerForm extends Module {
 
   setData() {}
   set previewUrl(url: string){
-    this._previewUrl = url;
+    this._previewUrl = url || 'https://decom.dev/debug.html';
     this.ifrPreview.url = url;
   }
   get previewUrl() {
-    return this._previewUrl
+    return this._previewUrl ?? 'https://decom.dev/debug.html';
   }
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
@@ -1054,7 +1058,7 @@ export class ScomDesignerForm extends Module {
         } else if (value.name) {
           options.name = value.name;
         }
-        control._setDesignPropValue('icon', options);
+        control._setDesignPropValue(prop, options);
         control[prop] = new Icon(control, {...options, display: 'flex', designMode: true, cursor: 'pointer'});
       } else {
         control[prop] = undefined;
@@ -1262,32 +1266,44 @@ export class ScomDesignerForm extends Module {
     this.designerProperties.onUpdate();
   }
   private async handlePreviewChanged(type: string, value: string) {
-    if (value == '1'){
+    const isPreviewMode = value == '1';
+    if (typeof this.onTogglePreview === 'function')
+      this.onTogglePreview(isPreviewMode);
+    this.togglePanels(isPreviewMode);
+    if (isPreviewMode) {
       this.pnlFormDesigner.visible = false;
       this.pnlPreview.visible = true;
-      if (this.isPreviewing) return;
       this.pnlLoading.visible = true;
+      if (this.isPreviewing) return;
       this.isPreviewing = true;
-      if (this.onPreview){
+      if (typeof this.onPreview === 'function') {
         let result = await this.onPreview();
-        if (!this.ifrPreview.url)
-          this.ifrPreview.url = this._previewUrl || 'https://decom.dev/debug.html';
-        if (result){
-          const self = this;
-          this.ifrPreview.reload().then(() => {
-            self.ifrPreview.postMessage(JSON.stringify(result));
-            self.isPreviewing = false;
-            self.pnlLoading.visible = false;
-          });
+        if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
+          this.ifrPreview.url = this._previewUrl;
+        if (result) {
+          await this.ifrPreview.reload();
+          this.ifrPreview.postMessage(JSON.stringify(result));
         }
       }
+      this.isPreviewing = false;
+      this.pnlLoading.visible = false;
     }
-    else{
+    else {
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
+      this.pnlLoading.visible = false;
       if (this.ifrPreview)
         this.ifrPreview.unload();
     }
+  }
+  private togglePanels(value: boolean) {
+    if (this.pnlScreens) this.pnlScreens.width = value ? 0 : '100%';
+    if (this.designerProperties) {
+      this.designerProperties.show(value);
+      this.designerProperties.height = value ? 'auto' : '100%';
+    }
+    if (this.pnlRightIcon) this.pnlRightIcon.visible = !value;
+    if (this.pnlLeftIcon) this.pnlLeftIcon.visible = !value;
   }
   private handleBreakpoint(value: number) {
     const { minWidth } = breakpointsMap[value];
@@ -1366,6 +1382,7 @@ export class ScomDesignerForm extends Module {
             class={customTransition}
           >
             <i-panel
+              id="pnlLeftIcon"
               position='absolute'
               top={'2.5rem'} right={'-1rem'}
               width={'2rem'} height={'2rem'}
@@ -1514,6 +1531,39 @@ export class ScomDesignerForm extends Module {
             alignItems='center'
             position='relative'
           >
+            <i-vstack
+              id="pnlLoading"
+              width="100%" minHeight={200}
+              position="absolute"
+              bottom={0}
+              zIndex={1000}
+              visible={false}
+              background={{ color: Theme.background.main }}
+              class="i-loading-overlay"
+              opacity={0.7}
+              mediaQueries={[
+                {
+                  maxWidth: '767px',
+                  properties: {
+                    height: 'calc(100% - 3.125rem)',
+                    top: 0
+                  }
+                }
+              ]}
+            >
+              <i-vstack
+                horizontalAlignment="center" verticalAlignment="center"
+                position="absolute" top="calc(50% - 0.75rem)" left="calc(50% - 0.75rem)"
+              >
+                <i-icon
+                  class="i-loading-spinner_icon"
+                  name="spinner"
+                  width={24}
+                  height={24}
+                  fill={Theme.colors.primary.main}
+                />
+              </i-vstack>
+            </i-vstack>
             <i-panel
               id="pnlFormDesigner"
               width={'auto'} minHeight={'100%'}
@@ -1544,39 +1594,6 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             >
-              <i-vstack
-                id="pnlLoading"
-                width="100%" minHeight={200}
-                position="absolute"
-                bottom={0}
-                zIndex={1000}
-                visible={false}
-                background={{ color: Theme.background.main }}
-                class="i-loading-overlay"
-                opacity={0.7}
-                mediaQueries={[
-                  {
-                    maxWidth: '767px',
-                    properties: {
-                      height: 'calc(100% - 3.125rem)',
-                      top: 0
-                    }
-                  }
-                ]}
-              >
-                <i-vstack
-                  horizontalAlignment="center" verticalAlignment="center"
-                  position="absolute" top="calc(50% - 0.75rem)" left="calc(50% - 0.75rem)"
-                >
-                  <i-icon
-                    class="i-loading-spinner_icon"
-                    name="spinner"
-                    width={24}
-                    height={24}
-                    fill={Theme.colors.primary.main}
-                  />
-                </i-vstack>
-              </i-vstack>
               <i-iframe id="ifrPreview" width={'100%'} height={'100%'}></i-iframe>
             </i-panel>
           </i-vstack>
@@ -1589,6 +1606,7 @@ export class ScomDesignerForm extends Module {
             class={customTransition}
           >
             <i-panel
+              id="pnlRightIcon"
               position='absolute'
               top={'2.5rem'} left={'-1rem'}
               width={'2rem'} height={'2rem'}

@@ -439,7 +439,8 @@ export const handleParse = (value: string, baseUrl?: string) => {
         })
         .replace(/:\s*(true|false|null|\d+)\s*(,|\})/g, ': $1$2')
         .replace(/(Theme\.[a-z0-9A-Z\.\[\]_]+)/, '"$1"')
-        .replace(/([a-z0-9A-Z]*)\.fullPath\(("|'_)([^"|']*)("|'_)\)/g, '"$1.fullPath(\'$3\')"');
+        .replace(/([a-z0-9A-Z]*)\.fullPath\(("|'_)([^"|']*)("|'_)\)/g, '"$1.fullPath(\'$3\')"')
+        .replace(/,\s+\}$/g, '}');
 
     const parsedData = JSON.parse(newValue, (key, value) => {
       if (typeof value === 'string' && value.startsWith('Theme')) {

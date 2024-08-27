@@ -1356,6 +1356,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         set component(value: IControl);
         private get designerProps();
         private get isCustomWidget();
+        show(isPreview: boolean): void;
         clear(): void;
         private renderUI;
         private renderTrigger;
@@ -1513,6 +1514,7 @@ declare module "@scom/scom-designer/designer.tsx" {
             module: string;
             script: string;
         }>;
+        onTogglePreview?: (value: boolean) => void;
     }
     global {
         namespace JSX {
@@ -1538,6 +1540,8 @@ declare module "@scom/scom-designer/designer.tsx" {
         private designerWrapper;
         private pnlScreens;
         private pnlLoading;
+        private pnlRightIcon;
+        private pnlLeftIcon;
         private pathMapping;
         private mouseDown;
         private resizing;
@@ -1562,6 +1566,7 @@ declare module "@scom/scom-designer/designer.tsx" {
             module: string;
             script: string;
         }>;
+        onTogglePreview?: (value: boolean) => void;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
@@ -1619,6 +1624,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleControlMouseUp;
         private updateDesignPosition;
         private handlePreviewChanged;
+        private togglePanels;
         private handleBreakpoint;
         private onToggleClick;
         private initEvents;
@@ -1721,6 +1727,7 @@ declare module "@scom/scom-designer" {
             module: string;
             script: string;
         }>;
+        onTogglePreview?: (value: boolean) => void;
         onImportFile?: onImportCallback;
     }
     global {
@@ -1758,6 +1765,7 @@ declare module "@scom/scom-designer" {
             script: string;
         }>;
         onImportFile?: onImportCallback;
+        onTogglePreview?: (value: boolean) => void;
         tag: any;
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         set previewUrl(url: string);
@@ -1783,6 +1791,8 @@ declare module "@scom/scom-designer" {
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         disposeEditor(): void;
+        saveViewState(): import("packages/code-editor/src/editor.api").editor.ICodeEditorViewState;
+        restoreViewState(state: any): void;
         private renderUI;
         private renderContent;
         private loadContent;
