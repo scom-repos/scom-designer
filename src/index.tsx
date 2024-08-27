@@ -34,6 +34,7 @@ interface ScomDesignerElement extends ControlElement {
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
+  onTogglePreview?: (value: boolean) => void;
   onImportFile?: onImportCallback;
 }
 
@@ -82,6 +83,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
   onImportFile?: onImportCallback;
+  onTogglePreview?: (value: boolean) => void;
   tag: any = {}
 
   addEventHandler(
@@ -264,6 +266,16 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
+  saveViewState() {
+    return this.codeEditor ? this.codeEditor.saveViewState() : null;
+  }
+ 
+  restoreViewState(state: any) {
+    if (this.codeEditor) {
+      this.codeEditor.restoreViewState(state);
+    }
+  }
+
   private async renderUI() {
     this.activeTab = 'codeTab';
     this.updateDesigner = !!(this.url || this.file?.path);
@@ -287,6 +299,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.height = '100%';
       this.formDesigner.stack = {grow: '1'};
       this.formDesigner.onPreview = this.handleDesignerPreview;
+      if (typeof this.onTogglePreview === 'function') this.formDesigner.onTogglePreview = this.onTogglePreview.bind(this);
       this.formDesigner.studio = this;
     }
     if (this.formDesigner) {
@@ -331,7 +344,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async importCallback(fileName: string, isPackage?: boolean) {
     let result = this.getFile(fileName);
     if (result) return result;
-    if (this.onImportFile) {
+    if (typeof this.onImportFile === 'function') {
       result = await this.onImportFile(fileName, isPackage);
       if (result) {
         if (fileName === '@ijstech/compiler') {
@@ -482,7 +495,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private async handleDesignerPreview(): Promise<{ module: string, script: string }> {
     this.updateDesignerCode(this.fileName, true)
-    if (this.onPreview)
+    if (typeof this.onPreview === 'function')
       return this.onPreview()
     else {
       let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
@@ -539,6 +552,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onSave = this.getAttribute('onSave', true) || this.onSave
     this.onChange = this.getAttribute('onChange', true) || this.onChange
     this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile
+    this.onTogglePreview = this.getAttribute('onTogglePreview', true) || this.onTogglePreview
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
     this.addLib()

@@ -124,6 +124,11 @@ export default class DesignerProperties extends Module {
     return !!(this.component?.control as any)?.showConfigurator;
   }
 
+  show(isPreview: boolean) {
+    this.hStackInfo.visible = !isPreview;
+    this.propTabs.visible = !isPreview;
+  }
+
   clear() {
     this.component = null;
     this.renderUI();
@@ -362,7 +367,8 @@ export default class DesignerProperties extends Module {
     return (
       <i-vstack
         width={360}
-        height="100%"
+        height="auto"
+        maxHeight={'100%'}
         minWidth={350}
         maxWidth="100%"
         margin={{ left: "auto", right: "auto" }}
