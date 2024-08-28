@@ -29,7 +29,7 @@ import {
   DesignerPickerBlocks
 } from './components/index';
 import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio } from './interface'
-import { customLabelTabStyled, customScrollbar, customTransition, labelActiveStyled } from './index.css'
+import { customLabelTabStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from './index.css'
 import {
   blockComponents
 } from './data'
@@ -1302,7 +1302,7 @@ export class ScomDesignerForm extends Module {
       this.designerProperties.show(value);
       this.designerProperties.height = value ? 'auto' : '100%';
     }
-    if (this.pnlRightIcon) this.pnlRightIcon.visible = !value;
+    // if (this.pnlRightIcon) this.pnlRightIcon.visible = !value;
     if (this.pnlLeftIcon) this.pnlLeftIcon.visible = !value;
   }
   private handleBreakpoint(value: number) {
@@ -1384,12 +1384,12 @@ export class ScomDesignerForm extends Module {
             <i-panel
               id="pnlLeftIcon"
               position='absolute'
-              top={'2.5rem'} right={'-1rem'}
+              top={'2rem'} right={'-1rem'}
               width={'2rem'} height={'2rem'}
               border={{radius: '50%'}}
               background={{ color: Theme.background.main }}
               cursor='pointer'
-              boxShadow={Theme.shadows[1]}
+              class={toggleClass}
               onClick={this.onToggleClick.bind(this)}
             >
               <i-icon
@@ -1608,12 +1608,12 @@ export class ScomDesignerForm extends Module {
             <i-panel
               id="pnlRightIcon"
               position='absolute'
-              top={'2.5rem'} left={'-1rem'}
+              top={'2rem'} left={'-1rem'}
               width={'2rem'} height={'2rem'}
               border={{radius: '50%'}}
               background={{ color: Theme.background.main }}
               cursor='pointer'
-              boxShadow={Theme.shadows[1]}
+              class={toggleClass}
               onClick={this.onToggleClick.bind(this)}
             >
               <i-icon
