@@ -7,6 +7,7 @@ import {
   ControlElement,
   customElements,
   getCustomElements,
+  HStack,
   IconName,
   IDataSchema,
   IdUtils,
@@ -65,6 +66,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private pnlMain: VStack;
   private codeTab: Button;
   private designTab: Button;
+  private pnlHeader: HStack;
 
   private _data: IDesigner = {
     url: '',
@@ -299,7 +301,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.height = '100%';
       this.formDesigner.stack = {grow: '1'};
       this.formDesigner.onPreview = this.handleDesignerPreview;
-      if (typeof this.onTogglePreview === 'function') this.formDesigner.onTogglePreview = this.onTogglePreview.bind(this);
+      this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
       this.formDesigner.studio = this;
     }
     if (this.formDesigner) {
@@ -312,6 +314,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.loadContent();
     }
     this.updateButtons();
+  }
+
+  private handleTogglePanels(value: boolean) {
+    this.pnlHeader.visible = !value;
+    if (typeof this.onTogglePreview === 'function')
+      this.onTogglePreview(value);
   }
 
   private async loadContent() {
@@ -721,6 +729,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         <i-hstack
           verticalAlignment='center'
           stack={{ shrink: '0' }}
+          id="pnlHeader"
         >
           <i-button
             id="codeTab"

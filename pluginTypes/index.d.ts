@@ -15,6 +15,7 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const blockStyle: string;
     export const customTransition: string;
     export const customScrollbar: string;
+    export const toggleClass: string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" {
@@ -1753,6 +1754,7 @@ declare module "@scom/scom-designer" {
         private pnlMain;
         private codeTab;
         private designTab;
+        private pnlHeader;
         private _data;
         private updateDesigner;
         private _components;
@@ -1795,6 +1797,7 @@ declare module "@scom/scom-designer" {
         restoreViewState(state: any): void;
         private renderUI;
         private renderContent;
+        private handleTogglePanels;
         private loadContent;
         private resetTab;
         private updateButtons;

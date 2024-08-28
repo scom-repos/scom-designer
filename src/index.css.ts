@@ -162,3 +162,7 @@ export const customScrollbar = Styles.style({
     }
   }
 })
+
+export const toggleClass = Styles.style({
+  filter: 'contrast(0.5)',
+})
