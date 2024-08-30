@@ -6200,29 +6200,34 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         async handlePreviewChanged(type, value) {
             const isPreviewMode = value == '1';
-            if (typeof this.onTogglePreview === 'function')
-                this.onTogglePreview(isPreviewMode);
-            this.togglePanels(isPreviewMode);
             if (isPreviewMode) {
-                this.pnlFormDesigner.visible = false;
-                this.pnlPreview.visible = true;
-                this.pnlLoading.visible = true;
                 if (this.isPreviewing)
                     return;
+                this.pnlLoading.visible = true;
                 this.isPreviewing = true;
                 if (typeof this.onPreview === 'function') {
                     let result = await this.onPreview();
-                    if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
-                        this.ifrPreview.url = this._previewUrl;
-                    if (result) {
-                        await this.ifrPreview.reload();
-                        this.ifrPreview.postMessage(JSON.stringify(result));
+                    if (result?.module) {
+                        if (typeof this.onTogglePreview === 'function')
+                            this.onTogglePreview(true);
+                        this.togglePanels(true);
+                        this.pnlFormDesigner.visible = false;
+                        this.pnlPreview.visible = true;
+                        if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
+                            this.ifrPreview.url = this._previewUrl;
+                        if (result) {
+                            await this.ifrPreview.reload();
+                            this.ifrPreview.postMessage(JSON.stringify(result));
+                        }
                     }
                 }
                 this.isPreviewing = false;
                 this.pnlLoading.visible = false;
             }
             else {
+                if (typeof this.onTogglePreview === 'function')
+                    this.onTogglePreview(false);
+                this.togglePanels(false);
                 this.pnlFormDesigner.visible = true;
                 this.pnlPreview.visible = false;
                 this.pnlLoading.visible = false;
@@ -6766,9 +6771,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return null;
         }
         async handleDesignerPreview() {
-            this.updateDesignerCode(this.fileName, true);
+            if (this.updateDesigner)
+                this.updateDesignerCode(this.fileName, true);
             if (typeof this.onPreview === 'function')
-                return this.onPreview();
+                return await this.onPreview();
             else {
                 let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
                 if (value) {

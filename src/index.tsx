@@ -502,9 +502,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async handleDesignerPreview(): Promise<{ module: string, script: string }> {
-    this.updateDesignerCode(this.fileName, true)
+    if (this.updateDesigner) this.updateDesignerCode(this.fileName, true)
     if (typeof this.onPreview === 'function')
-      return this.onPreview()
+      return await this.onPreview()
     else {
       let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
       if (value) {
