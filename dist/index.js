@@ -6613,13 +6613,16 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (!this.compiler)
                 this.compiler = new compiler_1.Compiler();
             const content = await components_33.application.getContent(`${components_33.application.rootDir}libs/@ijstech/components/index.d.ts`);
-            this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
+            await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
             components_33.CodeEditor.addLib('@ijstech/components', content);
         }
         async importCallback(fileName, isPackage) {
-            let result = this.getFile(fileName);
-            if (result)
-                return result;
+            if (this.imported[fileName]) {
+                return this.imported[fileName];
+            }
+            // let result = this.getFile(fileName);
+            // if (result) return result;
+            let result = null;
             if (typeof this.onImportFile === 'function') {
                 result = await this.onImportFile(fileName, isPackage);
                 if (result) {
@@ -6631,7 +6634,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
           `;
                     }
                     const importedName = isPackage ? fileName : result.fileName;
-                    this.imported[importedName] = result.content || '';
+                    const isDependency = isPackage && result?.fileName === 'index.d.ts';
+                    if (isDependency)
+                        this.imported[importedName] = result.content || '';
                     if (isPackage) {
                         if (result.fileName.endsWith('index.d.ts')) {
                             components_33.CodeEditor.addLib(fileName, result.content);
@@ -6639,11 +6644,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                         else {
                             components_33.CodeEditor.addLib(result.fileName, result.content);
                         }
-                        this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
+                        await this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
                     }
                     else {
                         components_33.CodeEditor.addFile(importedName, result.content);
-                        this.compiler.addFile(importedName, result.content);
+                        await this.compiler.addFile(importedName, result.content);
                     }
                 }
             }

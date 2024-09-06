@@ -345,13 +345,17 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async addLib() {
     if (!this.compiler) this.compiler = new Compiler()
     const content = await application.getContent(`${application.rootDir}libs/@ijstech/components/index.d.ts`);
-    this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
+    await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
     CodeEditor.addLib('@ijstech/components', content);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
-    let result = this.getFile(fileName);
-    if (result) return result;
+    if (this.imported[fileName]) {
+      return this.imported[fileName];
+    }
+    // let result = this.getFile(fileName);
+    // if (result) return result;
+    let result: any = null;
     if (typeof this.onImportFile === 'function') {
       result = await this.onImportFile(fileName, isPackage);
       if (result) {
@@ -363,17 +367,18 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           `;
         }
         const importedName = isPackage ? fileName : result.fileName;
-        this.imported[importedName] = result.content || '';
+        const isDependency = isPackage && result?.fileName === 'index.d.ts';
+        if (isDependency) this.imported[importedName] = result.content || '';
         if (isPackage) {
           if (result.fileName.endsWith('index.d.ts')) {
             CodeEditor.addLib(fileName, result.content);
           } else {
             CodeEditor.addLib(result.fileName, result.content);
           }
-          this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
+          await this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
         } else {
           CodeEditor.addFile(importedName, result.content);
-          this.compiler.addFile(importedName, result.content);
+          await this.compiler.addFile(importedName, result.content);
         }
       }
     }
