@@ -1071,6 +1071,37 @@ declare module "@scom/scom-designer/tools/widgetSetting.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/tools/templateAreas.tsx" />
+declare module "@scom/scom-designer/tools/templateAreas.tsx" {
+    import { Module, ControlElement, Container } from '@ijstech/components';
+    interface DesignerTemplateAreasElement extends ControlElement {
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-template-areas']: DesignerTemplateAreasElement;
+            }
+        }
+    }
+    export default class DesignerTemplateAreas extends Module {
+        private pnlGroup;
+        private _data;
+        private groupsMap;
+        constructor(parent?: Container, options?: any);
+        static create(options?: DesignerTemplateAreasElement, parent?: Container): Promise<DesignerTemplateAreas>;
+        getData(): string[][];
+        setData(value: string[][]): void;
+        private onAddGroup;
+        private onAddItem;
+        private onDeleteGroup;
+        private onDeleteItem;
+        private renderGroups;
+        private renderGroup;
+        private renderItem;
+        private onUpdate;
+        render(): any;
+    }
+}
 /// <amd-module name="@scom/scom-designer/tools/group.tsx" />
 declare module "@scom/scom-designer/tools/group.tsx" {
     import { Module, ControlElement, Container, IDataSchema, IUISchema } from '@ijstech/components';

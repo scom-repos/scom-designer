@@ -13,6 +13,7 @@ import DesignerToolHeader from './header';
 import { customFormStyle } from './index.css';
 import { IMediaQuery, onUpdateCallback } from '../interface';
 import { isSameValue } from '../helpers/utils';
+import DesignerTemplateAreas from './templateAreas';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -139,7 +140,19 @@ export default class DesignerToolGroup extends Module {
               }
             }
           },
-          customControls: this._data.customControls,
+          customControls: {
+            "#/properties/templateAreas": {
+              render: () => {
+                return new DesignerTemplateAreas();
+              },
+              getData: (control: DesignerTemplateAreas) => {
+                return control.getData();
+              },
+              setData: (control: DesignerTemplateAreas, value: string[][]) => {
+                control.setData(value);
+              }
+            }
+          },
           dateTimeFormat: {
             date: 'YYYY-MM-DD',
             time: 'HH:mm:ss',
