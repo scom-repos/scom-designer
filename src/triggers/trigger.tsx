@@ -155,7 +155,7 @@ export default class DesignerTrigger extends Module {
             verticalAlignment="center"
             padding={{ top: 8, bottom: 8, left: 8, right: 8 }}
             border={{ radius: 4 }}
-            background={{ color: '#26324b' }}
+            background={{ color: Theme.background.main }}
             cursor="pointer"
           >
             <i-vstack gap={4}>

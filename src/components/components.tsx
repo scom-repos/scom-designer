@@ -508,6 +508,7 @@ export default class DesignerComponents extends Module {
       showBackdrop: false,
       minWidth: '11.25rem',
       height: 'auto',
+      zIndex: 1001,
       popupPlacement: 'bottomRight',
     });
     const itemActions = new VStack(undefined, { gap: 8, border: { radius: 8 } });
@@ -516,7 +517,8 @@ export default class DesignerComponents extends Module {
         caption: 'Add Component',
         icon: 'plus-circle',
         visible: false,
-        onClick: () => {
+        onClick: (target: Control, event: MouseEvent) => {
+          event.stopPropagation();
           this.mdActions.visible = false;
           if (this.onShowComponentPicker) this.onShowComponentPicker({...this.currentComponent});
         }
@@ -525,7 +527,8 @@ export default class DesignerComponents extends Module {
         caption: 'Add Item',
         icon: 'plus-circle',
         visible: false,
-        onClick: () => {
+        onClick: (target: Control, event: MouseEvent) => {
+          event.stopPropagation();
           this.mdActions.visible = false;
           if (this.onAdd) this.onAdd(this.currentComponent);
         }
@@ -534,13 +537,19 @@ export default class DesignerComponents extends Module {
         caption: 'Duplicate',
         icon: 'copy',
         visible: true,
-        onClick: () => this.handleDuplicate()
+        onClick: (target: Control, event: MouseEvent) => {
+          event.stopPropagation();
+          this.handleDuplicate();
+        }
       },
       {
         caption: 'Delete',
         icon: 'trash',
         visible: true,
-        onClick: () => this.handleDelete()
+        onClick: (target: Control, event: MouseEvent) => {
+          event.stopPropagation();
+          this.handleDelete();
+        }
       }
     ]
     for (let button of buttonList) {
@@ -638,7 +647,7 @@ export default class DesignerComponents extends Module {
           verticalAlignment="center"
           horizontalAlignment="space-between"
           padding={{ top: 4, bottom: 4, left: 8 }}
-          background={{ color: '#26324b' }}
+          background={{ color: Theme.background.main }}
         >
           <i-label caption="Structure" font={{ bold: true, size: '0.75rem' }} />
           <i-hstack visible={false} verticalAlignment="center" margin={{ left: 'auto' }}>

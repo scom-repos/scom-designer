@@ -18,9 +18,7 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const toggleClass: string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
-declare module "@scom/scom-designer/components/index.css.ts" {
-    export const codeTabsStyle: string;
-}
+declare module "@scom/scom-designer/components/index.css.ts" { }
 /// <amd-module name="@scom/scom-designer/assets.ts" />
 declare module "@scom/scom-designer/assets.ts" {
     function fullPath(path: string): string;
@@ -1800,8 +1798,8 @@ declare module "@scom/scom-designer" {
         onImportFile?: onImportCallback;
         onTogglePreview?: (value: boolean) => void;
         tag: any;
-        addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         set previewUrl(url: string);
+        addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         locateMethod(designer: ScomDesignerForm, funcName: string): void;
         removeComponent(designer: ScomDesignerForm): void;
         renameComponent(designer: ScomDesignerForm, oldId: string, newId: string): boolean;

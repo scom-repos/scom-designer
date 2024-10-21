@@ -381,7 +381,7 @@ export default class DesignerProperties extends Module {
           gap={'1rem'} width="100%"
           verticalAlignment="center" horizontalAlignment="center"
           padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}
-          background={{ color: '#26324b' }}
+          background={{ color: Theme.background.main }}
           stack={{shrink: '0'}}
         >
           <designer-selector
@@ -420,7 +420,7 @@ export default class DesignerProperties extends Module {
           width="100%"
           verticalAlignment="center"
           padding={{ top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }}
-          background={{ color: '#26324b' }}
+          background={{ color: Theme.background.main }}
           stack={{shrink: '0'}}
           visible={false}
         />

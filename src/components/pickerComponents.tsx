@@ -109,7 +109,7 @@ export default class DesignerPickerComponents extends Module {
         height="100%"
         margin={{ left: "auto", right: "auto" }}
         position="relative"
-        background={{ color: '#26324b' }}
+        background={{ color: Theme.background.main }}
       >
         <i-hstack gap={8} verticalAlignment="center" cursor="pointer" padding={{ left: 8, right: 8, bottom: 8, top: 8 }} onClick={this.onCollapse}>
           <i-icon id="iconArrow" name="angle-down" width={14} height={14} />

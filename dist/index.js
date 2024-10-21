@@ -81,7 +81,7 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
         opacity: 0.8,
         $nest: {
             '&:hover': {
-                background: '#26324b',
+                background: Theme.background.main,
                 opacity: 1
             }
         }
@@ -133,7 +133,7 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
                 width: '25%'
             },
             '.tabs-nav-wrap i-tab:not(.disabled).active': {
-                background: '#26324b'
+                background: Theme.colors.secondary.main
             },
             '.tabs-nav-wrap i-tab.disabled': {
                 opacity: 0.5,
@@ -145,14 +145,6 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
             },
         }
     });
-    // export const codeTabsStyle = Styles.style({
-    //   flexDirection: 'column',
-    //   $nest: {
-    //       "> .tabs-nav-wrap": {
-    //           background: "#181818",
-    //       },
-    //   },
-    // });
     exports.blockStyle = components_1.Styles.style({
         display: 'block',
         width: '100%',
@@ -176,7 +168,6 @@ define("@scom/scom-designer/index.css.ts", ["require", "exports", "@ijstech/comp
 define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.codeTabsStyle = void 0;
     components_2.Styles.cssRule(".i-resizer", {
         position: "absolute",
         width: "6px",
@@ -245,13 +236,6 @@ define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@i
                         backgroundColor: "rgba(90, 93, 94, 0.31)",
                     },
                 },
-            },
-        },
-    });
-    exports.codeTabsStyle = components_2.Styles.style({
-        $nest: {
-            "> .tabs-nav-wrap": {
-                background: "#181818",
             },
         },
     });
@@ -1407,6 +1391,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 showBackdrop: false,
                 minWidth: '11.25rem',
                 height: 'auto',
+                zIndex: 1001,
                 popupPlacement: 'bottomRight',
             });
             const itemActions = new components_6.VStack(undefined, { gap: 8, border: { radius: 8 } });
@@ -1415,7 +1400,8 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                     caption: 'Add Component',
                     icon: 'plus-circle',
                     visible: false,
-                    onClick: () => {
+                    onClick: (target, event) => {
+                        event.stopPropagation();
                         this.mdActions.visible = false;
                         if (this.onShowComponentPicker)
                             this.onShowComponentPicker({ ...this.currentComponent });
@@ -1425,7 +1411,8 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                     caption: 'Add Item',
                     icon: 'plus-circle',
                     visible: false,
-                    onClick: () => {
+                    onClick: (target, event) => {
+                        event.stopPropagation();
                         this.mdActions.visible = false;
                         if (this.onAdd)
                             this.onAdd(this.currentComponent);
@@ -1435,13 +1422,19 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                     caption: 'Duplicate',
                     icon: 'copy',
                     visible: true,
-                    onClick: () => this.handleDuplicate()
+                    onClick: (target, event) => {
+                        event.stopPropagation();
+                        this.handleDuplicate();
+                    }
                 },
                 {
                     caption: 'Delete',
                     icon: 'trash',
                     visible: true,
-                    onClick: () => this.handleDelete()
+                    onClick: (target, event) => {
+                        event.stopPropagation();
+                        this.handleDelete();
+                    }
                 }
             ];
             for (let button of buttonList) {
@@ -1511,7 +1504,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
         }
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: Theme.layout.container.maxWidth, margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main } },
-                this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: '#26324b' } },
+                this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: Theme.background.main } },
                     this.$render("i-label", { caption: "Structure", font: { bold: true, size: '0.75rem' } }),
                     this.$render("i-hstack", { visible: false, verticalAlignment: "center", margin: { left: 'auto' } },
                         this.$render("i-icon", { name: "history", class: index_css_1.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
@@ -1948,7 +1941,7 @@ define("@scom/scom-designer/tools/header.tsx", ["require", "exports", "@ijstech/
             this.renderUI();
         }
         render() {
-            return (this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, background: { color: '#26324b' }, onClick: this._onCollapse },
+            return (this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, background: { color: Theme.background.main }, onClick: this._onCollapse },
                 this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
                 this.$render("i-label", { id: "lbName", font: { size: '0.75rem', bold: true } }),
                 this.$render("i-icon", { id: "iconTooltip", name: "exclamation-circle", width: 14, height: 14, opacity: 0.8 }),
@@ -4620,11 +4613,11 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         render() {
             return (this.$render("i-vstack", { width: 360, height: "auto", maxHeight: '100%', minWidth: 350, maxWidth: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main }, border: { top: { width: 1, style: 'solid', color: Theme.divider } }, gap: 1 },
-                this.$render("i-hstack", { gap: '1rem', width: "100%", verticalAlignment: "center", horizontalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' } },
+                this.$render("i-hstack", { gap: '1rem', width: "100%", verticalAlignment: "center", horizontalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: Theme.background.main }, stack: { shrink: '0' } },
                     this.$render("designer-selector", { id: "breakpointSelector", title: 'BREAKPOINT', items: config_7.breakpoints, direction: 'vertical', stack: { grow: '1', shrink: '1' }, onChanged: this.onBreakpointClick }),
                     this.$render("designer-selector", { id: "previewSelector", title: 'PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
                         , items: config_7.previews, direction: 'vertical', stack: { grow: '1', shrink: '1' }, onChanged: this.onPreviewClick.bind(this) })),
-                this.$render("i-hstack", { id: "hStackInfo", width: "100%", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: '#26324b' }, stack: { shrink: '0' }, visible: false }),
+                this.$render("i-hstack", { id: "hStackInfo", width: "100%", verticalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: Theme.background.main }, stack: { shrink: '0' }, visible: false }),
                 this.$render("i-tabs", { id: "propTabs", mode: "horizontal", activeTabIndex: 0, display: 'flex', class: index_css_18.customTabStyled, stack: { grow: '1' }, overflow: 'hidden' },
                     this.$render("i-tab", { icon: { name: 'sliders-h', width: '1.5rem', height: '1.5rem' } },
                         this.$render("i-vstack", { gap: 1, width: "100%" },
@@ -4837,7 +4830,7 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
         render() {
             return (this.$render("i-vstack", { width: "100%", height: "100%", maxWidth: Theme.layout.container.maxWidth, margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main } },
                 this.$render("i-vstack", { id: "wrapperScreens", height: "100%" },
-                    this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: '#26324b' } },
+                    this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: Theme.background.main } },
                         this.$render("i-hstack", { gap: 8, verticalAlignment: "center", wrap: "wrap" },
                             this.$render("i-label", { id: "lbScreens", caption: "Components", font: { bold: true, size: '0.75rem' } }),
                             this.$render("i-label", { caption: "Last Updated", font: { bold: true, size: '0.75rem' }, opacity: 0.8 })),
@@ -4853,7 +4846,7 @@ define("@scom/scom-designer/components/screens.tsx", ["require", "exports", "@ij
                                 }, onClick: () => this.onAddScreen('Blank') }))),
                     this.$render("i-vstack", { id: "vStackScreens", gap: 2, overflow: "auto", maxHeight: "calc(100% - 32px)" })),
                 this.$render("i-vstack", { id: "wrapperDeletedScreens", visible: false },
-                    this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: '#26324b' } },
+                    this.$render("i-hstack", { gap: 8, verticalAlignment: "center", horizontalAlignment: "space-between", padding: { top: 4, bottom: 4, left: 8 }, background: { color: Theme.background.main } },
                         this.$render("i-label", { id: "lbDeletedScreens", caption: "Deleted Screens (0)", font: { bold: true, size: '0.75rem' } }),
                         this.$render("i-icon", { name: "history", margin: { left: 'auto' }, class: index_css_19.hoverFullOpacity, opacity: 0.8, cursor: "pointer", width: 28, height: 24, padding: { top: 4, bottom: 4, left: 6, right: 6 }, border: {
                                 left: { style: 'solid', color: Theme.divider, width: 1 },
@@ -4909,7 +4902,7 @@ define("@scom/scom-designer/components/pickerBlocks.tsx", ["require", "exports",
             this.renderUI();
         }
         render() {
-            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: '#26324b' } },
+            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main } },
                 this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, onClick: this.onCollapse },
                     this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
                     this.$render("i-label", { caption: "Your Blocks", font: { size: '0.75rem', bold: true } }),
@@ -4973,7 +4966,7 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             this.renderUI();
         }
         render() {
-            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: '#26324b' } },
+            return (this.$render("i-vstack", { width: "100%", height: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main } },
                 this.$render("i-hstack", { gap: 8, verticalAlignment: "center", cursor: "pointer", padding: { left: 8, right: 8, bottom: 8, top: 8 }, onClick: this.onCollapse },
                     this.$render("i-icon", { id: "iconArrow", name: "angle-down", width: 14, height: 14 }),
                     this.$render("i-label", { id: "lbName", font: { size: '0.75rem', bold: true } }),
@@ -6452,7 +6445,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                             ] },
                             this.$render("i-vstack", { horizontalAlignment: "center", verticalAlignment: "center", position: "absolute", top: "calc(50% - 0.75rem)", left: "calc(50% - 0.75rem)" },
                                 this.$render("i-icon", { class: "i-loading-spinner_icon", name: "spinner", width: 24, height: 24, fill: Theme.colors.primary.main }))),
-                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: { x: 'visible', y: 'auto' }, class: index_css_22.customScrollbar, mediaQueries: [
+                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: Theme.background.main }, overflow: { x: 'visible', y: 'auto' }, class: index_css_22.customScrollbar, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
                                     properties: {
@@ -6460,7 +6453,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                     }
                                 }
                             ] }),
-                        this.$render("i-panel", { id: "pnlPreview", width: 'auto', minHeight: '100%', background: { color: '#26324b' }, overflow: 'hidden', visible: false, mediaQueries: [
+                        this.$render("i-panel", { id: "pnlPreview", width: 'auto', minHeight: '100%', background: { color: Theme.background.main }, overflow: 'hidden', visible: false, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
                                     properties: {
@@ -6488,7 +6481,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
+    const Theme = components_34.Styles.Theme.ThemeVars;
     let ScomDesigner = class ScomDesigner extends components_34.Module {
+        set previewUrl(url) {
+            if (this.formDesigner)
+                this.formDesigner.previewUrl = url;
+        }
         addEventHandler(designer, eventName, funcName) {
             let control = designer.selectedControl?.control;
             let fileName = this.fileName;
@@ -6517,10 +6515,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     editor.setCursor(result.lineNumber, result.columnNumber);
             }
             this.resetTab();
-        }
-        set previewUrl(url) {
-            if (this.formDesigner)
-                this.formDesigner.previewUrl = url;
         }
         locateMethod(designer, funcName) {
             let fileName = this.fileName;
@@ -6709,8 +6703,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.updateButtons();
         }
         updateButtons() {
-            this.codeTab.background = { color: this.activeTab === 'codeTab' ? '#1d1d1d' : '#252525' };
-            this.designTab.background = { color: this.activeTab === 'designTab' ? '#1d1d1d' : '#252525' };
+            this.codeTab.background = { color: this.activeTab === 'codeTab' ? Theme.colors.secondary.main : Theme.action.activeBackground };
+            this.designTab.background = { color: this.activeTab === 'designTab' ? Theme.colors.secondary.main : Theme.action.activeBackground };
         }
         async addLib() {
             if (!this.compiler)
@@ -6928,6 +6922,24 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.addLib();
             this.setData({ url, file });
             this.classList.add(index_css_23.blockStyle);
+            this.setTag({
+                dark: {
+                    backgroundColor: '#26324b',
+                    fontColor: '#fff',
+                    wrapperBgColor: '#202020',
+                    actionBgColor: '#252525',
+                    actionFontColor: '#fff',
+                    secondaryColor: '#1d1d1d'
+                },
+                light: {
+                    backgroundColor: '#fff',
+                    fontColor: '#000',
+                    wrapperBgColor: '#202020',
+                    actionBgColor: '#252525',
+                    actionFontColor: '#fff',
+                    secondaryColor: '#1d1d1d'
+                }
+            });
         }
         // Configuration
         updateTag(type, value) {
@@ -6953,9 +6965,13 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             value ? this.style.setProperty(name, value) : this.style.removeProperty(name);
         }
         updateTheme() {
-            const themeVar = document.body.style.getPropertyValue('--theme') ?? 'dark';
+            const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
             this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
             this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
+            this.updateStyle('--colors-secondary-main', this.tag[themeVar]?.secondaryColor);
+            this.updateStyle('--background-default', this.tag[themeVar]?.wrapperBgColor);
+            this.updateStyle('--action-active_background', this.tag[themeVar]?.actionBgColor);
+            this.updateStyle('--action-active', this.tag[themeVar]?.actionFontColor);
         }
         getTag() {
             return this.tag;
@@ -7075,10 +7091,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             };
         }
         render() {
-            return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: '#202020' } },
+            return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: Theme.background.default } },
                 this.$render("i-hstack", { verticalAlignment: 'center', stack: { shrink: '0' }, id: "pnlHeader" },
-                    this.$render("i-button", { id: "codeTab", caption: 'Code', padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: '#252525' }, stack: { shrink: '0' }, border: { width: '1px', style: 'solid', color: '#252525' }, minHeight: '2.25rem', onClick: this.handleTabChanged }),
-                    this.$render("i-button", { id: "designTab", caption: 'Design', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: '#252525' }, border: { width: '1px', style: 'solid', color: '#252525' }, minHeight: '2.25rem', font: { color: '#fff' }, onClick: this.handleTabChanged })),
+                    this.$render("i-button", { id: "codeTab", caption: 'Code', padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, stack: { shrink: '0' }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground }, font: { color: Theme.action.active }, minHeight: '2.25rem', onClick: this.handleTabChanged }),
+                    this.$render("i-button", { id: "designTab", caption: 'Design', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground }, minHeight: '2.25rem', font: { color: Theme.action.active }, onClick: this.handleTabChanged })),
                 this.$render("i-vstack", { id: "pnlMain", maxHeight: '100%', overflow: 'hidden', stack: { 'grow': '1' } })));
         }
     };

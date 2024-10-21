@@ -65,7 +65,7 @@ export const customLabelTabStyled = Styles.style({
   opacity: 0.8,
   $nest: {
     '&:hover': {
-      background: '#26324b',
+      background: Theme.background.main,
       opacity: 1
     }
   }
@@ -121,7 +121,7 @@ export const customTabStyled = Styles.style({
       width: '25%'
     },
     '.tabs-nav-wrap i-tab:not(.disabled).active': {
-      background: '#26324b'
+      background: Theme.colors.secondary.main
     },
     '.tabs-nav-wrap i-tab.disabled': {
       opacity: 0.5,
@@ -133,16 +133,6 @@ export const customTabStyled = Styles.style({
     },
   }
 })
-
-
-// export const codeTabsStyle = Styles.style({
-//   flexDirection: 'column',
-//   $nest: {
-//       "> .tabs-nav-wrap": {
-//           background: "#181818",
-//       },
-//   },
-// });
 
 export const blockStyle = Styles.style({
   display: 'block',

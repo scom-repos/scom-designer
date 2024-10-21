@@ -267,7 +267,7 @@ export default class DesignerScreens extends Module {
             verticalAlignment="center"
             horizontalAlignment="space-between"
             padding={{ top: 4, bottom: 4, left: 8 }}
-            background={{ color: '#26324b' }}
+            background={{ color: Theme.background.main }}
           >
             <i-hstack gap={8} verticalAlignment="center" wrap="wrap">
               <i-label id="lbScreens" caption="Components" font={{ bold: true, size: '0.75rem' }} />
@@ -315,7 +315,7 @@ export default class DesignerScreens extends Module {
             verticalAlignment="center"
             horizontalAlignment="space-between"
             padding={{ top: 4, bottom: 4, left: 8 }}
-            background={{ color: '#26324b' }}
+            background={{ color: Theme.background.main }}
           >
             <i-label id="lbDeletedScreens" caption="Deleted Screens (0)" font={{ bold: true, size: '0.75rem' }} />
             <i-icon

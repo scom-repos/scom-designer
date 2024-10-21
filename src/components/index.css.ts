@@ -75,11 +75,4 @@ Styles.cssRule("body > .item-list", {
   },
 });
 
-export const codeTabsStyle = Styles.style({
-  $nest: {
-    "> .tabs-nav-wrap": {
-      background: "#181818",
-    },
-  },
-});
 
