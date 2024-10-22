@@ -1572,7 +1572,7 @@ export class ScomDesignerForm extends Module {
             <i-panel
               id="pnlFormDesigner"
               width={'auto'} minHeight={'100%'}
-              background={{ color: '#26324b' }}
+              background={{ color: Theme.background.main }}
               overflow={{x: 'visible', y: 'auto'}}
               class={customScrollbar}
               mediaQueries={[
@@ -1587,7 +1587,7 @@ export class ScomDesignerForm extends Module {
             <i-panel
               id="pnlPreview"
               width={'auto'} minHeight={'100%'}
-              background={{ color: '#26324b' }}
+              background={{ color: Theme.background.main }}
               overflow={'hidden'}
               visible={false}
               mediaQueries={[

@@ -14,12 +14,14 @@ import {
   IUISchema,
   Module,
   VStack,
+  Styles
 } from '@ijstech/components';
 import { blockStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import { Compiler, Parser } from '@ijstech/compiler'
 import { extractFileName, getFileContent } from './helpers/utils'
+const Theme = Styles.Theme.ThemeVars;
 
 type onSaveCallback = (target: CodeEditor, event: any) => void;
 type onChangeCallback = (target: ScomDesigner, event: Event) => void;
@@ -88,6 +90,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   onTogglePreview?: (value: boolean) => void;
   tag: any = {}
 
+  set previewUrl(url: string) {
+    if (this.formDesigner)
+      this.formDesigner.previewUrl = url;
+  }
+
   addEventHandler(
     designer: ScomDesignerForm,
     eventName: string,
@@ -124,10 +131,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         editor.setCursor(result.lineNumber, result.columnNumber)
     }
     this.resetTab();
-  }
-  set previewUrl(url: string) {
-    if (this.formDesigner)
-      this.formDesigner.previewUrl = url;
   }
   locateMethod(designer: ScomDesignerForm, funcName: string): void {
     let fileName = this.fileName
@@ -338,8 +341,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private updateButtons() {
-    this.codeTab.background = {color: this.activeTab === 'codeTab' ? '#1d1d1d' : '#252525'};
-    this.designTab.background = {color: this.activeTab === 'designTab' ? '#1d1d1d' : '#252525'}
+    this.codeTab.background = {color: this.activeTab === 'codeTab' ? Theme.colors.secondary.main : Theme.action.activeBackground};
+    this.designTab.background = {color: this.activeTab === 'designTab' ? Theme.colors.secondary.main : Theme.action.activeBackground}
   }
 
   private async addLib() {
@@ -570,7 +573,25 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const file = this.getAttribute('file', true)
     this.addLib()
     this.setData({ url, file });
-    this.classList.add(blockStyle)
+    this.classList.add(blockStyle);
+    this.setTag({
+      dark: {
+        backgroundColor: '#26324b',
+        fontColor: '#fff',
+        wrapperBgColor: '#202020',
+        actionBgColor: '#252525',
+        actionFontColor: '#fff',
+        secondaryColor: '#1d1d1d'
+      },
+      light: {
+        backgroundColor: '#fff',
+        fontColor: '#000',
+        wrapperBgColor: '#202020',
+        actionBgColor: '#252525',
+        actionFontColor: '#fff',
+        secondaryColor: '#1d1d1d'
+      }
+    })
   }
 
   // Configuration
@@ -597,9 +618,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private updateTheme() {
-    const themeVar = document.body.style.getPropertyValue('--theme') ?? 'dark';
+    const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
     this.updateStyle('--text-primary', this.tag[themeVar]?.fontColor);
     this.updateStyle('--background-main', this.tag[themeVar]?.backgroundColor);
+    this.updateStyle('--colors-secondary-main', this.tag[themeVar]?.secondaryColor);
+    this.updateStyle('--background-default', this.tag[themeVar]?.wrapperBgColor);
+    this.updateStyle('--action-active_background', this.tag[themeVar]?.actionBgColor);
+    this.updateStyle('--action-active', this.tag[themeVar]?.actionFontColor);
   }
 
   private getTag() {
@@ -729,7 +754,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         width={'100%'} height={'100%'}
         overflow={'hidden'}
         position='relative'
-        background={{ color: '#202020' }}
+        background={{ color: Theme.background.default }}
       >
         <i-hstack
           verticalAlignment='center'
@@ -740,9 +765,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             id="codeTab"
             caption='Code'
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
-            background={{color: '#252525'}}
+            background={{color: Theme.action.activeBackground}}
             stack={{ shrink: '0' }}
-            border={{width: '1px', style: 'solid', color: '#252525'}}
+            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground}}
+            font={{color: Theme.action.active}}
             minHeight={'2.25rem'}
             onClick={this.handleTabChanged}
           ></i-button>
@@ -751,65 +777,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             caption='Design'
             stack={{ shrink: '0' }}
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
-            background={{color: '#252525'}}
-            border={{width: '1px', style: 'solid', color: '#252525'}}
+            background={{color: Theme.action.activeBackground}}
+            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground}}
             minHeight={'2.25rem'}
-            font={{color: '#fff'}}
+            font={{color: Theme.action.active}}
             onClick={this.handleTabChanged}
           ></i-button>
         </i-hstack>
         <i-vstack id="pnlMain" maxHeight={'100%'} overflow={'hidden'} stack={{ 'grow': '1' }}></i-vstack>
-        {/* <i-tabs
-          id="designTabs"
-          class={codeTabsStyle}
-          stack={{ 'grow': '1' }}
-          maxHeight={`100%`}
-          display='flex'
-          draggable={false}
-          closable={false}
-          onChanged={this.handleTabChanged}
-        >
-          <i-tab
-            id="codeTab"
-            caption='Code'
-          >
-            <i-code-editor
-              id="codeEditor"
-              width={'100%'} height={'100%'}
-              onChange={this.handleCodeEditorChange}
-              onKeyDown={this.handleCodeEditorSave}
-            />
-          </i-tab>
-          <i-tab
-            id="designTab"
-            caption='Design'
-          >
-            <i-scom-designer--form
-              id="formDesigner"
-              width={'100%'} height={'100%'}
-              onPreview={this.handleDesignerPreview}
-            />
-          </i-tab>
-        </i-tabs> */}
-        {/* <i-panel
-          id='pnlMessage'
-          resizer={true}
-          dock='bottom'
-          height={100}
-          maxHeight={'70%'}
-          visible={false}
-          background={{ color: '#202020' }}
-          padding={{ top: 5, bottom: 5 }}
-          border={{
-            top: {
-              width: '1px',
-              style: 'solid',
-              color: 'rgba(255, 255, 255, 0.08)',
-            },
-          }}
-        >
-          <i-code-editor dock='fill'></i-code-editor>
-        </i-panel> */}
       </i-vstack>
     )
   }

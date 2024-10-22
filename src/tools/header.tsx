@@ -145,7 +145,7 @@ export default class DesignerToolHeader extends Module {
 
   render() {
     return (
-      <i-hstack gap={8} verticalAlignment="center" cursor="pointer" padding={{ left: 8, right: 8, bottom: 8, top: 8 }} background={{ color: '#26324b' }} onClick={this._onCollapse}>
+      <i-hstack gap={8} verticalAlignment="center" cursor="pointer" padding={{ left: 8, right: 8, bottom: 8, top: 8 }} background={{ color: Theme.background.main }} onClick={this._onCollapse}>
         <i-icon id="iconArrow" name="angle-down" width={14} height={14} />
         <i-label id="lbName" font={{ size: '0.75rem', bold: true }} />
         <i-icon id="iconTooltip" name="exclamation-circle" width={14} height={14} opacity={0.8} />
