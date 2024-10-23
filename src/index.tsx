@@ -581,7 +581,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         wrapperBgColor: '#202020',
         actionBgColor: '#252525',
         actionFontColor: '#fff',
-        secondaryColor: '#1d1d1d'
+        secondaryColor: '#1d1d1d',
+        inputBgColor: '#222222',
+        inputFontColor: '#fff',
+        paperBgColor: '#000'
       },
       light: {
         backgroundColor: '#fff',
@@ -625,6 +628,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.updateStyle('--background-default', this.tag[themeVar]?.wrapperBgColor);
     this.updateStyle('--action-active_background', this.tag[themeVar]?.actionBgColor);
     this.updateStyle('--action-active', this.tag[themeVar]?.actionFontColor);
+    this.updateStyle('--input-background', this.tag[themeVar]?.inputBgColor);
+    this.updateStyle('--input-font_color', this.tag[themeVar]?.inputFontColor);
+    this.updateStyle('--background-paper', this.tag[themeVar]?.paperBgColor);
   }
 
   private getTag() {
