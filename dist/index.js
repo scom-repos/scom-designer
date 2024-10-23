@@ -4612,7 +4612,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             this.onBreakpointClick('breakpoint', 0);
         }
         render() {
-            return (this.$render("i-vstack", { width: 360, height: "auto", maxHeight: '100%', minWidth: 350, maxWidth: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.main }, border: { top: { width: 1, style: 'solid', color: Theme.divider } }, gap: 1 },
+            return (this.$render("i-vstack", { width: 360, height: "auto", maxHeight: '100%', minWidth: 350, maxWidth: "100%", margin: { left: "auto", right: "auto" }, position: "relative", background: { color: Theme.background.paper }, border: { top: { width: 1, style: 'solid', color: Theme.divider } }, gap: 1 },
                 this.$render("i-hstack", { gap: '1rem', width: "100%", verticalAlignment: "center", horizontalAlignment: "center", padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, background: { color: Theme.background.main }, stack: { shrink: '0' } },
                     this.$render("designer-selector", { id: "breakpointSelector", title: 'BREAKPOINT', items: config_7.breakpoints, direction: 'vertical', stack: { grow: '1', shrink: '1' }, onChanged: this.onBreakpointClick }),
                     this.$render("designer-selector", { id: "previewSelector", title: 'PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
@@ -5194,7 +5194,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             this.ifrPreview.url = url;
         }
         get previewUrl() {
-            return this._previewUrl ?? 'https://decom.dev/debug.html';
+            return this._previewUrl || 'https://decom.dev/debug.html';
         }
         get pickerComponentsFiltered() {
             let components;
@@ -6310,7 +6310,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.pnlFormDesigner.visible = false;
                         this.pnlPreview.visible = true;
                         if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
-                            this.ifrPreview.url = this._previewUrl;
+                            this.ifrPreview.url = this.previewUrl;
                         if (result) {
                             await this.ifrPreview.reload();
                             this.ifrPreview.postMessage(JSON.stringify(result));
@@ -6929,7 +6929,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     wrapperBgColor: '#202020',
                     actionBgColor: '#252525',
                     actionFontColor: '#fff',
-                    secondaryColor: '#1d1d1d'
+                    secondaryColor: '#1d1d1d',
+                    inputBgColor: '#222222',
+                    inputFontColor: '#fff',
+                    paperBgColor: '#000'
                 },
                 light: {
                     backgroundColor: '#fff',
@@ -6972,6 +6975,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.updateStyle('--background-default', this.tag[themeVar]?.wrapperBgColor);
             this.updateStyle('--action-active_background', this.tag[themeVar]?.actionBgColor);
             this.updateStyle('--action-active', this.tag[themeVar]?.actionFontColor);
+            this.updateStyle('--input-background', this.tag[themeVar]?.inputBgColor);
+            this.updateStyle('--input-font_color', this.tag[themeVar]?.inputFontColor);
+            this.updateStyle('--background-paper', this.tag[themeVar]?.paperBgColor);
         }
         getTag() {
             return this.tag;

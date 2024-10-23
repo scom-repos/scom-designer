@@ -162,7 +162,7 @@ export class ScomDesignerForm extends Module {
     this.ifrPreview.url = url;
   }
   get previewUrl() {
-    return this._previewUrl ?? 'https://decom.dev/debug.html';
+    return this._previewUrl || 'https://decom.dev/debug.html';
   }
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
@@ -1280,7 +1280,7 @@ export class ScomDesignerForm extends Module {
           this.pnlFormDesigner.visible = false;
           this.pnlPreview.visible = true;
           if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
-            this.ifrPreview.url = this._previewUrl;
+            this.ifrPreview.url = this.previewUrl;
           if (result) {
             await this.ifrPreview.reload();
             this.ifrPreview.postMessage(JSON.stringify(result));

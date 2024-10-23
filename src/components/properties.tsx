@@ -373,7 +373,7 @@ export default class DesignerProperties extends Module {
         maxWidth="100%"
         margin={{ left: "auto", right: "auto" }}
         position="relative"
-        background={{ color: Theme.background.main }}
+        background={{ color: Theme.background.paper }}
         border={{ top: { width: 1, style: 'solid', color: Theme.divider } }}
         gap={1}
       >
