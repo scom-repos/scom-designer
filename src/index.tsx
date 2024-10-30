@@ -19,7 +19,7 @@ import { blockStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import { Compiler, Parser } from '@ijstech/compiler'
-import { ScomCodeEditor } from '@scom/scom-code-editor';
+import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
 const Theme = Styles.Theme.ThemeVars;
 
@@ -234,7 +234,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     await this.setData(value);
   }
 
-  getErrors(): any {
+  getErrors(): Monaco.editor.IMarker[] {
     return this.codeEditor?.getErrors();
   }
 

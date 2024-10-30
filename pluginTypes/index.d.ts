@@ -1737,7 +1737,7 @@ declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
     import { IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
-    import { ScomCodeEditor } from '@scom/scom-code-editor';
+    import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
     type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
     type onChangeCallback = (target: ScomDesigner, event: Event) => void;
     type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{
@@ -1818,7 +1818,7 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
-        getErrors(): any;
+        getErrors(): Monaco.editor.IMarker[];
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         disposeEditor(): void;
