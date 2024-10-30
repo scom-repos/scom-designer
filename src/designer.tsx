@@ -1334,7 +1334,7 @@ export class ScomDesignerForm extends Module {
         childPanel && (childPanel.left = '-1rem');
       } else {
         parentEl.width = 0;
-        childPanel && (childPanel.left = '-1.5rem');
+        childPanel && (childPanel.left = '-1.15rem');
       }
       if (icon) {
         icon.name = icon.name === 'angle-left' ? 'angle-right' : 'angle-left';

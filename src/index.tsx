@@ -1,7 +1,6 @@
 import {
   application,
   Button,
-  CodeEditor,
   Container,
   Control,
   ControlElement,
@@ -20,10 +19,11 @@ import { blockStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import { Compiler, Parser } from '@ijstech/compiler'
+import { ScomCodeEditor } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
 const Theme = Styles.Theme.ThemeVars;
 
-type onSaveCallback = (target: CodeEditor, event: any) => void;
+type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
 type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 
@@ -63,7 +63,7 @@ interface IDesigner {
 @customElements('i-scom-designer')
 export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private formDesigner: ScomDesignerForm
-  private codeEditor: CodeEditor
+  private codeEditor: ScomCodeEditor
   private compiler: Compiler
   private pnlMain: VStack;
   private codeTab: Button;
@@ -174,7 +174,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return true
   }
   async registerWidget(designer: ScomDesignerForm, name: string, type: string) {
-    CodeEditor.addLib(name, type)
+    ScomCodeEditor.addLib(name, type)
     await this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
   }
 
@@ -289,12 +289,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private async renderContent(init = false) {
     if (this.activeTab === 'codeTab' && !this.codeEditor) {
-      this.codeEditor = await CodeEditor.create({
+      this.codeEditor = await ScomCodeEditor.create({
         width: '100%',
         height: '100%',
         display: 'block',
         stack: {grow: '1'}
-      }) as CodeEditor;
+      }) as ScomCodeEditor;
       this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
       this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
       this.codeEditor.parent = this.pnlMain;
@@ -349,7 +349,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (!this.compiler) this.compiler = new Compiler()
     const content = await application.getContent(`${application.rootDir}libs/@ijstech/components/index.d.ts`);
     await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
-    CodeEditor.addLib('@ijstech/components', content);
+    ScomCodeEditor.addLib('@ijstech/components', content);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
@@ -374,13 +374,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         if (isDependency) this.imported[importedName] = result.content || '';
         if (isPackage) {
           if (result.fileName.endsWith('index.d.ts')) {
-            CodeEditor.addLib(fileName, result.content);
+            ScomCodeEditor.addLib(fileName, result.content);
           } else {
-            CodeEditor.addLib(result.fileName, result.content);
+            ScomCodeEditor.addLib(result.fileName, result.content);
           }
           await this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
         } else {
-          CodeEditor.addFile(importedName, result.content);
+          ScomCodeEditor.addFile(importedName, result.content);
           await this.compiler.addFile(importedName, result.content);
         }
       }
@@ -443,13 +443,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     })
   }
 
-  private handleCodeEditorChange(target: CodeEditor, event: Event) {
+  private handleCodeEditorChange(target: ScomCodeEditor, event: Event) {
     this.updateDesigner = true;
     this.imported = {};
     if (typeof this.onChange === 'function') this.onChange(this, event)
   }
 
-  private handleCodeEditorSave(target: CodeEditor, event: KeyboardEvent) {
+  private handleCodeEditorSave(target: ScomCodeEditor, event: KeyboardEvent) {
     if (event.code === 'KeyS' && event.ctrlKey) {
       event.stopPropagation();
       event.preventDefault();

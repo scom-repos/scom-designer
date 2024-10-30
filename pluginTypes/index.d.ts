@@ -1,4 +1,4 @@
-/// <reference path="@ijstech/components/index.d.ts" />
+/// <reference path="@scom/scom-code-editor/index.d.ts" />
 /// <amd-module name="@scom/scom-designer/index.css.ts" />
 declare module "@scom/scom-designer/index.css.ts" {
     export const hoverFullOpacity: string;
@@ -1735,10 +1735,11 @@ declare module "@scom/scom-designer/interface.ts" {
 }
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
-    import { CodeEditor, Container, Control, ControlElement, Module } from '@ijstech/components';
+    import { Container, Control, ControlElement, Module } from '@ijstech/components';
     import { IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
-    type onSaveCallback = (target: CodeEditor, event: any) => void;
+    import { ScomCodeEditor } from '@scom/scom-code-editor';
+    type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
     type onChangeCallback = (target: ScomDesigner, event: Event) => void;
     type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{
         fileName: string;
@@ -1818,11 +1819,11 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
-        getErrors(): import("packages/code-editor/src/editor.api").editor.IMarker[];
+        getErrors(): import("@scom/scom-code-editor/editor.api.ts").editor.IMarker[];
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         disposeEditor(): void;
-        saveViewState(): import("packages/code-editor/src/editor.api").editor.ICodeEditorViewState;
+        saveViewState(): import("@scom/scom-code-editor/editor.api.ts").editor.ICodeEditorViewState;
         restoreViewState(state: any): void;
         private renderUI;
         private renderContent;

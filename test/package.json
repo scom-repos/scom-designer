@@ -21,6 +21,7 @@
         "@scom/scom-scatter-chart": "^0.1.10",
         "@scom/scom-mixed-chart": "^0.1.10",
         "@scom/scom-area-chart": "^0.1.10",
+        "@scom/scom-code-editor": "https://github.com/scom-repos/scom-code-editor",
         "@scom/scom-designer": "file:./ref"
     },
     "scripts": {
