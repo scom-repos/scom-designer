@@ -6366,7 +6366,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 }
                 else {
                     parentEl.width = 0;
-                    childPanel && (childPanel.left = '-1.5rem');
+                    childPanel && (childPanel.left = '-1.15rem');
                 }
                 if (icon) {
                     icon.name = icon.name === 'angle-left' ? 'angle-right' : 'angle-left';
@@ -6477,7 +6477,7 @@ define("@scom/scom-designer/interface.ts", ["require", "exports"], function (req
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_34, index_css_23, compiler_1, utils_13) {
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_34, index_css_23, compiler_1, scom_code_editor_1, utils_13) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
@@ -6545,7 +6545,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return true;
         }
         async registerWidget(designer, name, type) {
-            components_34.CodeEditor.addLib(name, type);
+            scom_code_editor_1.ScomCodeEditor.addLib(name, type);
             await this.compiler.addPackage(name, { dts: { 'index.d.ts': type } });
         }
         constructor(parent, options) {
@@ -6654,7 +6654,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async renderContent(init = false) {
             if (this.activeTab === 'codeTab' && !this.codeEditor) {
-                this.codeEditor = await components_34.CodeEditor.create({
+                this.codeEditor = await scom_code_editor_1.ScomCodeEditor.create({
                     width: '100%',
                     height: '100%',
                     display: 'block',
@@ -6711,7 +6711,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.compiler = new compiler_1.Compiler();
             const content = await components_34.application.getContent(`${components_34.application.rootDir}libs/@ijstech/components/index.d.ts`);
             await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
-            components_34.CodeEditor.addLib('@ijstech/components', content);
+            scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/components', content);
         }
         async importCallback(fileName, isPackage) {
             if (this.imported[fileName]) {
@@ -6736,15 +6736,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                         this.imported[importedName] = result.content || '';
                     if (isPackage) {
                         if (result.fileName.endsWith('index.d.ts')) {
-                            components_34.CodeEditor.addLib(fileName, result.content);
+                            scom_code_editor_1.ScomCodeEditor.addLib(fileName, result.content);
                         }
                         else {
-                            components_34.CodeEditor.addLib(result.fileName, result.content);
+                            scom_code_editor_1.ScomCodeEditor.addLib(result.fileName, result.content);
                         }
                         await this.compiler.addPackage(fileName, { dts: { 'index.d.ts': result.content } });
                     }
                     else {
-                        components_34.CodeEditor.addFile(importedName, result.content);
+                        scom_code_editor_1.ScomCodeEditor.addFile(importedName, result.content);
                         await this.compiler.addFile(importedName, result.content);
                     }
                 }
