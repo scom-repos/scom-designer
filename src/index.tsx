@@ -234,7 +234,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     await this.setData(value);
   }
 
-  getErrors() {
+  getErrors(): any {
     return this.codeEditor?.getErrors();
   }
 
@@ -271,7 +271,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
-  saveViewState() {
+  saveViewState(): any {
     return this.codeEditor ? this.codeEditor.saveViewState() : null;
   }
  

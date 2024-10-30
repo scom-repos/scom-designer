@@ -1,4 +1,3 @@
-/// <reference path="@scom/scom-code-editor/index.d.ts" />
 /// <amd-module name="@scom/scom-designer/index.css.ts" />
 declare module "@scom/scom-designer/index.css.ts" {
     export const hoverFullOpacity: string;
@@ -1537,7 +1536,7 @@ declare module "@scom/scom-designer/data.ts" {
 /// <amd-module name="@scom/scom-designer/designer.tsx" />
 declare module "@scom/scom-designer/designer.tsx" {
     import { Container, ControlElement, Module } from '@ijstech/components';
-    import { IComponent, IComponentPicker, IControl, IStudio } from "@scom/scom-designer/interface.ts";
+    import { IComponent, IComponentPicker, IControl, IStudio, IBlock } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     interface ScomDesignerFormElement extends ControlElement {
         onPreview?: () => Promise<{
@@ -1604,7 +1603,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         get previewUrl(): string;
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
-        get pickerBlocksFiltered(): import("@scom/scom-designer/interface.ts").IBlock[];
+        get pickerBlocksFiltered(): IBlock[];
         private isCustomWidget;
         private createControl;
         private revertImageUrl;
@@ -1819,11 +1818,11 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
-        getErrors(): import("@scom/scom-code-editor/editor.api.ts").editor.IMarker[];
+        getErrors(): any;
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
         disposeEditor(): void;
-        saveViewState(): import("@scom/scom-code-editor/editor.api.ts").editor.ICodeEditorViewState;
+        saveViewState(): any;
         restoreViewState(state: any): void;
         private renderUI;
         private renderContent;

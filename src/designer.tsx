@@ -28,7 +28,7 @@ import {
   DesignerPickerComponents,
   DesignerPickerBlocks
 } from './components/index';
-import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio } from './interface'
+import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock } from './interface'
 import { customLabelTabStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from './index.css'
 import {
   blockComponents
@@ -225,7 +225,7 @@ export class ScomDesignerForm extends Module {
     return result;
   }
 
-  get pickerBlocksFiltered() {
+  get pickerBlocksFiltered(): IBlock[] {
     if (this.inputSearch.value) {
       return blockComponents.filter((v) =>
         v.caption.toLowerCase().includes(this.inputSearch.value.toLowerCase())
