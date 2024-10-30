@@ -1,6 +1,6 @@
 {
     "name": "@scom/scom-designer",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "main": "dist/index.js",
     "plugin": "dist",
     "pluginTypes": "pluginTypes/index.d.ts",
@@ -15,7 +15,7 @@
     },
     "keywords": [],
     "dependencies": {
-        "@scom/scom-code-editor": "https://github.com/scom-repos/scom-code-editor"
+        "@scom/scom-code-editor": "^0.1.0"
     },
     "devDependencies": {
         "@ijstech/cli": "^0.1.26",
