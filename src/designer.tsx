@@ -1599,7 +1599,7 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             >
-              <i-iframe id="ifrPreview" width={'100%'} height={'100%'}></i-iframe>
+              <i-iframe id="ifrPreview" width={'100%'} height={'100%'} allowFullscreen={true}></i-iframe>
             </i-panel>
           </i-vstack>
           <i-panel

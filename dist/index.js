@@ -887,7 +887,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
     const handleParse = (value, baseUrl) => {
         try {
             const newValue = value
-                .replace(/(['"`])?(?!HH:|mm:)\b([a-z0-9A-Z_]+)(['"`])?:/g, '"$2": ')
+                .replace(/(['"`])?(?!HH:|mm:|https?:)\b([a-z0-9A-Z_]+)(['"`])?:/g, '"$2": ')
                 .replace(/'/g, '"')
                 .replace(/\<([^\>]*)\>/g, (match, p1) => {
                 const innerText = p1.replace(/"/g, '\'');
@@ -6461,7 +6461,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                                     }
                                 }
                             ] },
-                            this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%' }))),
+                            this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%', allowFullscreen: true }))),
                     this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_22.customTransition },
                         this.$render("i-panel", { id: "pnlRightIcon", position: 'absolute', top: '2rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_22.toggleClass, onClick: this.onToggleClick.bind(this) },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
