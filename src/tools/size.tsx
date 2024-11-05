@@ -239,11 +239,13 @@ export default class DesignerToolSize extends Module {
   private onShowUnits(target: Label, event: MouseEvent, prop: string) {
     this.currentLabel = target;
     this.currentProp = prop;
-    const rect = target.getBoundingClientRect();
-    const { x, y } = rect;
-    const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
-    mdWrapper.style.top = `${y + 24}px`;
-    mdWrapper.style.left = `${x}px`;
+    // const rect = target.getBoundingClientRect();
+    // const { x, y } = rect;
+    // const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
+    // mdWrapper.style.top = `${y + 24}px`;
+    // mdWrapper.style.left = `${x}px`;
+    // mdWrapper.style.position = 'fixed';
+    this.mdUnits.linkTo = target;
     this.mdUnits.visible = true;
   }
 
