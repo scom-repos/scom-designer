@@ -2522,11 +2522,13 @@ define("@scom/scom-designer/tools/size.tsx", ["require", "exports", "@ijstech/co
         onShowUnits(target, event, prop) {
             this.currentLabel = target;
             this.currentProp = prop;
-            const rect = target.getBoundingClientRect();
-            const { x, y } = rect;
-            const mdWrapper = this.mdUnits.querySelector('.modal-wrapper');
-            mdWrapper.style.top = `${y + 24}px`;
-            mdWrapper.style.left = `${x}px`;
+            // const rect = target.getBoundingClientRect();
+            // const { x, y } = rect;
+            // const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
+            // mdWrapper.style.top = `${y + 24}px`;
+            // mdWrapper.style.left = `${x}px`;
+            // mdWrapper.style.position = 'fixed';
+            this.mdUnits.linkTo = target;
             this.mdUnits.visible = true;
         }
         async initModalUnits() {
@@ -2624,7 +2626,7 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
                     this.$render("i-label", { caption: "Static Value:", font: { size: '0.75rem' } }),
                     this.$render("i-hstack", { verticalAlignment: "center", width: 80, border: { radius: 8 }, background: { color: Theme.input.background }, overflow: "hidden" },
                         this.$render("i-input", { id: "inputValue", inputType: "number", placeholder: "auto", background: { color: 'transparent' }, width: "calc(100% - 24px)", height: 24, border: { width: 0 }, padding: { left: 4, right: 2 }, font: { size: '0.675rem' }, class: `${index_css_9.textInputRight} ${index_css_9.bgInputTransparent}`, onBlur: onValueChanged, onKeyUp: (target, event) => event.key === 'Enter' && onValueChanged(target), onClick: () => { this.vStackIndUnits.visible = false; } }),
-                        this.$render("i-label", { id: "lbIndUnit", caption: "px", font: { size: '0.675rem' }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
+                        this.$render("i-label", { id: "lbIndUnit", caption: "px", font: { size: '0.675rem', color: Theme.input.fontColor }, cursor: "pointer", width: 24, height: 24, lineHeight: "24px", opacity: 1, border: {
                                 left: {
                                     width: 1,
                                     style: 'solid',
@@ -2663,19 +2665,21 @@ define("@scom/scom-designer/tools/modal-spacing.tsx", ["require", "exports", "@i
             this.config = config || {};
             this.spacing = value || {};
             this.updateHeader();
-            const rect = target.getBoundingClientRect();
-            const { x, y } = rect;
-            let pageX = x;
-            let pageY = y;
-            if (x + 321 >= innerWidth) {
-                pageX = innerWidth - 321;
-            }
-            if (y + 240 >= innerHeight) {
-                pageY = innerHeight - 240;
-            }
-            const mdWrapper = this.modal.querySelector('.modal-wrapper');
-            mdWrapper.style.top = `${pageY + 24}px`;
-            mdWrapper.style.left = `${pageX}px`;
+            // const rect = target.getBoundingClientRect();
+            // const { x, y } = rect;
+            // let pageX = x;
+            // let pageY = y;
+            // if (x + 321 >= innerWidth) {
+            //   pageX = innerWidth - 321;
+            // }
+            // if (y + 240 >= innerHeight) {
+            //   pageY = innerHeight - 240;
+            // }
+            // const mdWrapper = this.modal.querySelector('.modal-wrapper') as HTMLElement;
+            // mdWrapper.style.top = `${pageY + 24}px`;
+            // mdWrapper.style.left = `${pageX}px`;
+            // mdWrapper.style.position = 'fixed';
+            this.modal.linkTo = target;
             this.modal.visible = true;
         }
         init() {
@@ -2826,11 +2830,13 @@ define("@scom/scom-designer/tools/margins-padding.tsx", ["require", "exports", "
         onShowUnitsModal(target, prop) {
             this.currentLabel = target;
             this.currentProp = prop;
-            const rect = target.getBoundingClientRect();
-            const { x, y } = rect;
-            const mdWrapper = this.mdUnits.querySelector('.modal-wrapper');
-            mdWrapper.style.top = `${y + 24}px`;
-            mdWrapper.style.left = `${x}px`;
+            // const rect = target.getBoundingClientRect();
+            // const { x, y } = rect;
+            // const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
+            // mdWrapper.style.top = `${y + 24}px`;
+            // mdWrapper.style.left = `${x}px`;
+            // mdWrapper.style.position = 'fixed';
+            this.mdUnits.linkTo = target;
             this.mdUnits.visible = true;
         }
         async initModalUnits() {

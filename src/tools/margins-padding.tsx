@@ -196,11 +196,13 @@ export default class DesignerToolMarginsAndPadding extends Module {
   private onShowUnitsModal(target: Label, prop: string) {
     this.currentLabel = target as Label;
     this.currentProp = prop;
-    const rect = target.getBoundingClientRect();
-    const { x, y } = rect;
-    const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
-    mdWrapper.style.top = `${y + 24}px`;
-    mdWrapper.style.left = `${x}px`;
+    // const rect = target.getBoundingClientRect();
+    // const { x, y } = rect;
+    // const mdWrapper = this.mdUnits.querySelector('.modal-wrapper') as HTMLElement;
+    // mdWrapper.style.top = `${y + 24}px`;
+    // mdWrapper.style.left = `${x}px`;
+    // mdWrapper.style.position = 'fixed';
+    this.mdUnits.linkTo = target;
     this.mdUnits.visible = true;
   }
 

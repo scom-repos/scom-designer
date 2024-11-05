@@ -119,7 +119,7 @@ export default class DesignerToolModalSpacing extends Module {
           <i-label
             id="lbIndUnit"
             caption="px"
-            font={{ size: '0.675rem' }}
+            font={{ size: '0.675rem', color: Theme.input.fontColor }}
             cursor="pointer"
             width={24}
             height={24}
@@ -187,21 +187,23 @@ export default class DesignerToolModalSpacing extends Module {
     this.spacing = value || {};
     this.updateHeader();
 
-    const rect = target.getBoundingClientRect();
-    const { x, y } = rect;
-    let pageX = x;
-    let pageY = y;
+    // const rect = target.getBoundingClientRect();
+    // const { x, y } = rect;
+    // let pageX = x;
+    // let pageY = y;
 
-    if (x + 321 >= innerWidth) {
-      pageX = innerWidth - 321;
-    }
-    if (y + 240 >= innerHeight) {
-      pageY = innerHeight - 240;
-    }
+    // if (x + 321 >= innerWidth) {
+    //   pageX = innerWidth - 321;
+    // }
+    // if (y + 240 >= innerHeight) {
+    //   pageY = innerHeight - 240;
+    // }
 
-    const mdWrapper = this.modal.querySelector('.modal-wrapper') as HTMLElement;
-    mdWrapper.style.top = `${pageY + 24}px`;
-    mdWrapper.style.left = `${pageX}px`;
+    // const mdWrapper = this.modal.querySelector('.modal-wrapper') as HTMLElement;
+    // mdWrapper.style.top = `${pageY + 24}px`;
+    // mdWrapper.style.left = `${pageX}px`;
+    // mdWrapper.style.position = 'fixed';
+    this.modal.linkTo = target;
     this.modal.visible = true;
   }
 
