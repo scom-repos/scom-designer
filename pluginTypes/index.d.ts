@@ -18,14 +18,6 @@ declare module "@scom/scom-designer/index.css.ts" {
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
-/// <amd-module name="@scom/scom-designer/assets.ts" />
-declare module "@scom/scom-designer/assets.ts" {
-    function fullPath(path: string): string;
-    const _default: {
-        fullPath: typeof fullPath;
-    };
-    export default _default;
-}
 /// <amd-module name="@scom/scom-designer/helpers/store.ts" />
 declare module "@scom/scom-designer/helpers/store.ts" {
     const setBreakpoint: (breakpoint: number) => void;
@@ -119,7 +111,42 @@ declare module "@scom/scom-designer/helpers/config.ts" {
     const ControlItemMapper: {
         [key: string]: string;
     };
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper };
+    const themesConfig: {
+        dark: {
+            backgroundColor: string;
+            fontColor: string;
+            wrapperBgColor: string;
+            actionBgColor: string;
+            actionFontColor: string;
+            secondaryColor: string;
+            inputBgColor: string;
+            inputFontColor: string;
+            paperBgColor: string;
+            divider: string;
+            selected: string;
+            selectedBackground: string;
+        };
+        light: {
+            backgroundColor: string;
+            fontColor: string;
+            wrapperBgColor: string;
+            actionBgColor: string;
+            actionFontColor: string;
+            secondaryColor: string;
+            divider: string;
+            selected: string;
+            selectedBackground: string;
+        };
+    };
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig };
+}
+/// <amd-module name="@scom/scom-designer/assets.ts" />
+declare module "@scom/scom-designer/assets.ts" {
+    function fullPath(path: string): string;
+    const _default: {
+        fullPath: typeof fullPath;
+    };
+    export default _default;
 }
 /// <amd-module name="@scom/scom-designer/helpers/utils.ts" />
 declare module "@scom/scom-designer/helpers/utils.ts" {

@@ -65,6 +65,7 @@ export default class DesignerPickerComponents extends Module {
         <i-vstack
           gap={'0.5rem'} width="100%" height="100%"
           verticalAlignment="center" horizontalAlignment="center"
+          cursor='pointer'
           onClick={(target: Control, event: MouseEvent) => this.onItemSelected(target, event, item)}
         >
           {icon ? <i-icon name={icon} width={'1.5rem'} height={'1.5rem'} /> : (image ? <i-image url={image} width={'1.5rem'} height={'1.5rem'} /> : [])}
@@ -116,7 +117,14 @@ export default class DesignerPickerComponents extends Module {
           <i-label id="lbName" font={{ size: '0.75rem', bold: true }} />
           <i-icon id="iconTooltip" name="question-circle" width={14} height={14} opacity={0.8} />
         </i-hstack>
-        <i-hstack id="hStackItems" gap={1} width="100%" verticalAlignment="center" wrap="wrap" />
+        <i-hstack
+          id="hStackItems"
+          gap={1}
+          width="100%"
+          verticalAlignment="center"
+          wrap="wrap"
+          background={{color: Theme.divider}}
+        />
       </i-vstack>
     )
   }

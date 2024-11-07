@@ -1,5 +1,4 @@
 import { IconName, Styles } from "@ijstech/components";
-import assets from "../assets";
 import { IMediaQuery } from "../interface";
 import { getBreakpoint } from "./store";
 const Theme = Styles.Theme.ThemeVars;
@@ -192,6 +191,34 @@ const ControlItemMapper: {[key: string]: string} = {
   'i-tree-node': 'i-tree-node'
 }
 
+const themesConfig = {
+  dark: {
+    backgroundColor: '#26324b',
+    fontColor: '#fff',
+    wrapperBgColor: '#202020',
+    actionBgColor: '#252525',
+    actionFontColor: '#fff',
+    secondaryColor: '#1d1d1d',
+    inputBgColor: '#222222',
+    inputFontColor: '#fff',
+    paperBgColor: '#000',
+    divider: '#374151',
+   "selected": "#fff",
+    "selectedBackground": "rgba(133, 163, 224, 0.1)"
+  },
+  light: {
+    backgroundColor: '#f5f5f5',
+    fontColor: '#000000de',
+    wrapperBgColor: '#fff',
+    actionBgColor: 'rgba(255, 255, 255, 1.00)',
+    actionFontColor: 'rgba(136, 153, 168, 1.00)',
+    secondaryColor: 'rgba(245,247,249,1.00)',
+    divider: "#d3dce4",
+    "selected": "rgba(12, 18, 52, 1.00)",
+    "selectedBackground": "rgba(255, 255, 255, 1.00)"
+  }
+}
+
 export {
   BREAKPOINTS,
   breakpoints,
@@ -207,5 +234,6 @@ export {
   CONTAINERS,
   ITEM_PARENTS,
   ITEMS,
-  ControlItemMapper
+  ControlItemMapper,
+  themesConfig
 }
