@@ -13,7 +13,8 @@ import {
   IUISchema,
   Module,
   VStack,
-  Styles
+  Styles,
+  Markdown
 } from '@ijstech/components';
 import { blockStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
@@ -21,6 +22,7 @@ import { ScomDesignerForm } from './designer'
 import { Compiler, Parser } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
+import { themesConfig } from './helpers/config';
 const Theme = Styles.Theme.ThemeVars;
 
 type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
@@ -289,10 +291,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private async renderContent(init = false) {
     if (this.activeTab === 'codeTab' && !this.codeEditor) {
+      const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
       this.codeEditor = await ScomCodeEditor.create({
         width: '100%',
         height: '100%',
         display: 'block',
+        theme: themeVar,
         stack: {grow: '1'}
       }) as ScomCodeEditor;
       this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
@@ -574,27 +578,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.addLib()
     this.setData({ url, file });
     this.classList.add(blockStyle);
-    this.setTag({
-      dark: {
-        backgroundColor: '#26324b',
-        fontColor: '#fff',
-        wrapperBgColor: '#202020',
-        actionBgColor: '#252525',
-        actionFontColor: '#fff',
-        secondaryColor: '#1d1d1d',
-        inputBgColor: '#222222',
-        inputFontColor: '#fff',
-        paperBgColor: '#000'
-      },
-      light: {
-        backgroundColor: '#fff',
-        fontColor: '#000',
-        wrapperBgColor: '#202020',
-        actionBgColor: '#252525',
-        actionFontColor: '#fff',
-        secondaryColor: '#1d1d1d'
-      }
-    })
+    this.setTag(themesConfig)
   }
 
   // Configuration
@@ -631,6 +615,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.updateStyle('--input-background', this.tag[themeVar]?.inputBgColor);
     this.updateStyle('--input-font_color', this.tag[themeVar]?.inputFontColor);
     this.updateStyle('--background-paper', this.tag[themeVar]?.paperBgColor);
+    this.updateStyle('--divider', this.tag[themeVar]?.divider);
+    this.updateStyle('--action-selected_background', this.tag[themeVar]?.selectedBackground);
+    this.updateStyle('--action-selected', this.tag[themeVar]?.selected);
+    console.log(themeVar), this.codeEditor
+    if (this.codeEditor) {
+      this.codeEditor.theme = themeVar as Markdown['theme'];
+    }
   }
 
   private getTag() {
@@ -773,7 +764,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             background={{color: Theme.action.activeBackground}}
             stack={{ shrink: '0' }}
-            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground}}
+            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
+            boxShadow='none'
             font={{color: Theme.action.active}}
             minHeight={'2.25rem'}
             onClick={this.handleTabChanged}
@@ -784,7 +776,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             stack={{ shrink: '0' }}
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             background={{color: Theme.action.activeBackground}}
-            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground}}
+            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
+            boxShadow='none'
             minHeight={'2.25rem'}
             font={{color: Theme.action.active}}
             onClick={this.handleTabChanged}

@@ -132,7 +132,7 @@ export default class DesignerComponents extends Module {
       <i-panel
         id="pnlSide"
         width={'100%'} height={2}
-        background={{ color: Theme.colors.info.light }}
+        background={{ color: Theme.action.selectedBackground }}
         visible={false}
         position='fixed'
       ></i-panel>

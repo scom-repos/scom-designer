@@ -1,5 +1,7 @@
 import { Styles } from "@ijstech/components";
 
+const Theme = Styles.Theme.ThemeVars;
+
 Styles.cssRule(".i-resizer", {
   position: "absolute",
   width: "6px",
@@ -59,16 +61,16 @@ Styles.cssRule(".i-resizer", {
 Styles.cssRule("body > .item-list", {
   fontFamily: Styles.Theme.ThemeVars.typography.fontFamily,
   fontSize: Styles.Theme.ThemeVars.typography.fontSize,
-  color: "#ccc",
-  backgroundColor: "#2a2a2a",
-  border: "1px solid rgba(255, 255, 255, 0.12)",
+  color: Theme.text.primary,
+  backgroundColor: Theme.background.modal,
+  border: `1px solid ${Theme.divider}`,
 
   $nest: {
     ul: {
       $nest: {
         "& > li.matched, & > li:hover": {
-          color: "#fff",
-          backgroundColor: "rgba(90, 93, 94, 0.31)",
+          color: Theme.action.hover,
+          backgroundColor: Theme.action.hoverBackground,
         },
       },
     },

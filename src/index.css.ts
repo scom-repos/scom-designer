@@ -23,11 +23,11 @@ export const rowItemHoverStyled = Styles.style({
 })
 
 export const rowItemActiveStyled = Styles.style({
-  background: Theme.colors.info.dark,
+  background: Theme.action.selectedBackground,
   opacity: 1,
   $nest: {
     '&:hover': {
-      background: Theme.colors.info.dark,
+      background: Theme.action.selectedBackground,
       cursor: 'default',
       $nest: {
         'i-label': {
@@ -39,7 +39,7 @@ export const rowItemActiveStyled = Styles.style({
 })
 
 export const rowDragOverActiveStyled = Styles.style({
-  background: Theme.colors.info.light,
+  background: Theme.action.activeBackground,
   opacity: 1
 })
 
@@ -52,7 +52,7 @@ export const iconButtonStyled = Styles.style({
 export const blockItemHoverStyled = Styles.style({
   $nest: {
     '&:hover': {
-      background: Theme.colors.info.dark
+      background: Theme.action.hoverBackground
     }
   }
 })
@@ -95,10 +95,10 @@ export const customIconTabStyled = Styles.style({
 })
 
 export const customIconTabActiveStyled = Styles.style({
-  background: Theme.colors.info.dark,
+  background: Theme.action.selectedBackground,
   $nest: {
     '&:hover': {
-      background: Theme.colors.info.dark,
+      background: Theme.action.selectedBackground,
       cursor: 'default'
     }
   }
@@ -117,11 +117,12 @@ export const customTabStyled = Styles.style({
       margin: 'auto'
     },
     '.tabs-nav-wrap i-tab': {
-      background: Theme.background.main,
+      background: Theme.colors.secondary.main,
+      border: `1px solid ${Theme.divider}`,
       width: '25%'
     },
     '.tabs-nav-wrap i-tab:not(.disabled).active': {
-      background: Theme.colors.secondary.main
+      background: Theme.colors.primary.main
     },
     '.tabs-nav-wrap i-tab.disabled': {
       opacity: 0.5,
@@ -131,6 +132,9 @@ export const customTabStyled = Styles.style({
       maxHeight: 'calc(100% - 40px)',
       overflow: 'auto'
     },
+    "> .tabs-nav-wrap .tabs-nav": {
+      borderBottom: `1px solid ${Theme.divider}`
+    }
   }
 })
 
