@@ -128,11 +128,19 @@ const getDefaultMediaQuery = (breakpoint: number) => {
   return clonedBreakpointsMap[breakpoint] || {};
 }
 
+const findMediaQueryCallback = (v: any, mediaQuery: any) => {
+  return v && v.minWidth === mediaQuery.minWidth || (v.maxWidth && v.maxWidth === mediaQuery.maxWidth);
+}
+
 const getMediaQuery = (mediaQueries: any) => {
   const breakpoint = getBreakpoint();
   const mediaQuery = getDefaultMediaQuery(breakpoint);
-  const findedItem = (mediaQueries || []).find((v) => v && v.minWidth === mediaQuery.minWidth);
-  return findedItem || mediaQuery;
+  if (Array.isArray(mediaQueries)) {
+    const findedItem = (mediaQueries || []).find((v) => findMediaQueryCallback(v, mediaQuery));
+    return findedItem || mediaQuery;
+  } else {
+    return mediaQuery;
+  }
 }
 
 const getMediaQueryProps = (mediaQueries: any) => {
@@ -203,8 +211,8 @@ const themesConfig = {
     inputFontColor: '#fff',
     paperBgColor: '#000',
     divider: '#374151',
-   "selected": "#fff",
-    "selectedBackground": "rgba(133, 163, 224, 0.1)"
+    "selected": "rgb(101 161 180)",
+    "selectedBackground": "rgb(63 137 161/.12)"
   },
   light: {
     backgroundColor: '#f5f5f5',
@@ -214,8 +222,8 @@ const themesConfig = {
     actionFontColor: 'rgba(136, 153, 168, 1.00)',
     secondaryColor: 'rgba(245,247,249,1.00)',
     divider: "#d3dce4",
-    "selected": "rgba(12, 18, 52, 1.00)",
-    "selectedBackground": "rgba(255, 255, 255, 1.00)"
+    "selected": "rgb(101 161 180)",
+    "selectedBackground": "rgb(63 137 161/.12)"
   }
 }
 
@@ -235,5 +243,6 @@ export {
   ITEM_PARENTS,
   ITEMS,
   ControlItemMapper,
-  themesConfig
+  themesConfig,
+  findMediaQueryCallback
 }

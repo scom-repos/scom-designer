@@ -36,7 +36,7 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from './tools/index'
 import { Parser } from "@ijstech/compiler";
 import { isSameValue, parseProps } from './helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS } from './helpers/config'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback } from './helpers/config'
 import { getBreakpoint } from './helpers/store'
 
 const Theme = Styles.Theme.ThemeVars
@@ -489,7 +489,7 @@ export class ScomDesignerForm extends Module {
         let mediaQueries = control?.control._getDesignPropValue('mediaQueries') as any[];
         if (!mediaQueries) mediaQueries = [];
         const defaultBreakpoint = getDefaultMediaQuery(getBreakpoint());
-        const findedBreakpoint = mediaQueries.find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
+        const findedBreakpoint = mediaQueries.find((v) => findMediaQueryCallback(v, defaultBreakpoint));
         if (findedBreakpoint) {
           findedBreakpoint['properties']['visible'] = visible;
         } else {
@@ -991,7 +991,7 @@ export class ScomDesignerForm extends Module {
     const oldVal: any = control._getDesignPropValue(prop);
     if (prop === 'mediaQueries') {
       const mediaQueries: any = control._getDesignPropValue('mediaQueries') || [];
-      const findedIndex = mediaQueries.findIndex((v: any) => v && v.minWidth === value.minWidth);
+      const findedIndex = mediaQueries.findIndex((v: any) => findMediaQueryCallback(v, value));
       if (findedIndex !== -1) {
         mediaQueries[findedIndex] = value;
       } else {

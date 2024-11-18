@@ -618,7 +618,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.updateStyle('--divider', this.tag[themeVar]?.divider);
     this.updateStyle('--action-selected_background', this.tag[themeVar]?.selectedBackground);
     this.updateStyle('--action-selected', this.tag[themeVar]?.selected);
-    console.log(themeVar), this.codeEditor
     if (this.codeEditor) {
       this.codeEditor.theme = themeVar as Markdown['theme'];
     }
