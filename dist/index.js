@@ -264,7 +264,7 @@ define("@scom/scom-designer/helpers/store.ts", ["require", "exports"], function 
 define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech/components", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_3, store_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.themesConfig = exports.ControlItemMapper = exports.ITEMS = exports.ITEM_PARENTS = exports.CONTAINERS = exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
+    exports.findMediaQueryCallback = exports.themesConfig = exports.ControlItemMapper = exports.ITEMS = exports.ITEM_PARENTS = exports.CONTAINERS = exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
     const Theme = components_3.Styles.Theme.ThemeVars;
     const iconProps = { width: '1.5rem', height: '1.5rem', padding: { top: 6, left: 6, right: 6, bottom: 6 } };
     const breakpoints = [
@@ -378,11 +378,20 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         return clonedBreakpointsMap[breakpoint] || {};
     };
     exports.getDefaultMediaQuery = getDefaultMediaQuery;
+    const findMediaQueryCallback = (v, mediaQuery) => {
+        return v && v.minWidth === mediaQuery.minWidth || (v.maxWidth && v.maxWidth === mediaQuery.maxWidth);
+    };
+    exports.findMediaQueryCallback = findMediaQueryCallback;
     const getMediaQuery = (mediaQueries) => {
         const breakpoint = (0, store_1.getBreakpoint)();
         const mediaQuery = getDefaultMediaQuery(breakpoint);
-        const findedItem = (mediaQueries || []).find((v) => v && v.minWidth === mediaQuery.minWidth);
-        return findedItem || mediaQuery;
+        if (Array.isArray(mediaQueries)) {
+            const findedItem = (mediaQueries || []).find((v) => findMediaQueryCallback(v, mediaQuery));
+            return findedItem || mediaQuery;
+        }
+        else {
+            return mediaQuery;
+        }
     };
     exports.getMediaQuery = getMediaQuery;
     const getMediaQueryProps = (mediaQueries) => {
@@ -453,8 +462,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
             inputFontColor: '#fff',
             paperBgColor: '#000',
             divider: '#374151',
-            "selected": "#fff",
-            "selectedBackground": "rgba(133, 163, 224, 0.1)"
+            "selected": "rgb(101 161 180)",
+            "selectedBackground": "rgb(63 137 161/.12)"
         },
         light: {
             backgroundColor: '#f5f5f5',
@@ -464,8 +473,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
             actionFontColor: 'rgba(136, 153, 168, 1.00)',
             secondaryColor: 'rgba(245,247,249,1.00)',
             divider: "#d3dce4",
-            "selected": "rgba(12, 18, 52, 1.00)",
-            "selectedBackground": "rgba(255, 255, 255, 1.00)"
+            "selected": "rgb(101 161 180)",
+            "selectedBackground": "rgb(63 137 161/.12)"
         }
     };
     exports.themesConfig = themesConfig;
@@ -869,6 +878,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
     const parsePropValue = (value, baseUrl) => {
         if (typeof value !== "string")
             return value;
+        value = value.replace(/\s+/g, '');
         if (value.startsWith('{') && value.endsWith('}')) {
             value = value.substring(1, value.length - 1);
             if (value.startsWith('{') && value.endsWith('}')) {
@@ -4590,7 +4600,7 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
             const designerProps = this.component?.control?._getDesignProps() || {};
             const breakpoint = (0, store_6.getBreakpoint)();
             const defaultBreakpoint = (0, config_7.getDefaultMediaQuery)(breakpoint);
-            const findedBreakpoint = (designerProps?.mediaQueries || []).find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
+            const findedBreakpoint = (designerProps?.mediaQueries || []).find((v) => (0, config_7.findMediaQueryCallback)(v, defaultBreakpoint));
             if (!findedBreakpoint)
                 return;
             const breakpointProps = findedBreakpoint?.properties || {};
@@ -5555,7 +5565,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     if (!mediaQueries)
                         mediaQueries = [];
                     const defaultBreakpoint = (0, config_8.getDefaultMediaQuery)((0, store_7.getBreakpoint)());
-                    const findedBreakpoint = mediaQueries.find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
+                    const findedBreakpoint = mediaQueries.find((v) => (0, config_8.findMediaQueryCallback)(v, defaultBreakpoint));
                     if (findedBreakpoint) {
                         findedBreakpoint['properties']['visible'] = visible;
                     }
@@ -6055,7 +6065,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             const oldVal = control._getDesignPropValue(prop);
             if (prop === 'mediaQueries') {
                 const mediaQueries = control._getDesignPropValue('mediaQueries') || [];
-                const findedIndex = mediaQueries.findIndex((v) => v && v.minWidth === value.minWidth);
+                const findedIndex = mediaQueries.findIndex((v) => (0, config_8.findMediaQueryCallback)(v, value));
                 if (findedIndex !== -1) {
                     mediaQueries[findedIndex] = value;
                 }
@@ -7002,7 +7012,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.updateStyle('--divider', this.tag[themeVar]?.divider);
             this.updateStyle('--action-selected_background', this.tag[themeVar]?.selectedBackground);
             this.updateStyle('--action-selected', this.tag[themeVar]?.selected);
-            console.log(themeVar), this.codeEditor;
             if (this.codeEditor) {
                 this.codeEditor.theme = themeVar;
             }

@@ -38,7 +38,7 @@ import {
 import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
-import { breakpoints, getDefaultMediaQuery, getMediaQuery, previews } from '../helpers/config';
+import { breakpoints, findMediaQueryCallback, getDefaultMediaQuery, getMediaQuery, previews } from '../helpers/config';
 import { parseProps } from '../helpers/utils';
 import { DesignerTrigger } from '../triggers/index';
 import { getBreakpoint, setBreakpoint } from '../helpers/store'
@@ -302,7 +302,7 @@ export default class DesignerProperties extends Module {
     const designerProps = this.component?.control?._getDesignProps() || {};
     const breakpoint = getBreakpoint();
     const defaultBreakpoint = getDefaultMediaQuery(breakpoint);
-    const findedBreakpoint = (designerProps?.mediaQueries as any[] || []).find((v) => v && v.minWidth === defaultBreakpoint.minWidth);
+    const findedBreakpoint = (designerProps?.mediaQueries as any[] || []).find((v) =>findMediaQueryCallback(v, defaultBreakpoint));
     if (!findedBreakpoint) return;
     const breakpointProps: any = findedBreakpoint?.properties || {};
     const customProps = this.component?.control?._getCustomProperties()?.props || {};

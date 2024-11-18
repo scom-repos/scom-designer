@@ -85,6 +85,7 @@ declare module "@scom/scom-designer/helpers/config.ts" {
     }[];
     const getMediaQueries: () => IMediaQuery[];
     const getDefaultMediaQuery: (breakpoint: number) => any;
+    const findMediaQueryCallback: (v: any, mediaQuery: any) => boolean;
     const getMediaQuery: (mediaQueries: any) => any;
     const getMediaQueryProps: (mediaQueries: any) => any;
     const getFont: (value: boolean) => {
@@ -138,7 +139,7 @@ declare module "@scom/scom-designer/helpers/config.ts" {
             selectedBackground: string;
         };
     };
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig };
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback };
 }
 /// <amd-module name="@scom/scom-designer/assets.ts" />
 declare module "@scom/scom-designer/assets.ts" {
