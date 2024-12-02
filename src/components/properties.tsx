@@ -42,6 +42,7 @@ import { breakpoints, findMediaQueryCallback, getDefaultMediaQuery, getMediaQuer
 import { parseProps } from '../helpers/utils';
 import { DesignerTrigger } from '../triggers/index';
 import { getBreakpoint, setBreakpoint } from '../helpers/store'
+import { componentsJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -160,8 +161,8 @@ export default class DesignerProperties extends Module {
     }
     const mediaQuery = getMediaQuery(this.designerProps.mediaQueries || []);
     this.customGroup.setData({
-      title: 'Custom Properties',
-      tooltip: 'Set custom properties for component',
+      title: '$custom_properties',
+      tooltip: '$set_custom_properties_for_component',
       uiSchema: null,
       dataSchema: dataSchema,
       props: {...designProps},
@@ -350,6 +351,7 @@ export default class DesignerProperties extends Module {
   }
 
   init() {
+    this.i18n.init({...componentsJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onBreakpointChanged = this.getAttribute('onBreakpointChanged', true) || this.onBreakpointChanged;
@@ -386,17 +388,19 @@ export default class DesignerProperties extends Module {
         >
           <designer-selector
             id="breakpointSelector"
-            title='BREAKPOINT'
+            title='$breakpoint'
             items={breakpoints}
             direction='vertical'
             stack={{grow: '1', shrink: '1'}}
+            font={{transform: 'uppercase'}}
             onChanged={this.onBreakpointClick}
           />
           <designer-selector
             id="previewSelector"
-            title='PREVIEW' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
+            title='$preview' // letterSpacing="0.1rem" font={{ size: '0.675rem' }}
             items={previews}
             direction='vertical'
+            font={{transform: 'uppercase'}}
             stack={{grow: '1', shrink: '1'}}
             onChanged={this.onPreviewClick.bind(this)}
           />
@@ -451,7 +455,7 @@ export default class DesignerProperties extends Module {
                   <i-input
                     id="inputId"
                     inputType="text"
-                    placeholder="Enter ID"
+                    placeholder="$enter_id"
                     background={{ color: 'transparent' }}
                     width="calc(100% - 1.5rem)"
                     height={24}
@@ -509,7 +513,7 @@ export default class DesignerProperties extends Module {
         </i-tabs>
         <i-modal
           id="mdActions"
-          title='Widget Settings'
+          title='$widget_settings'
           closeIcon={{ name: 'times' }}
           width={600}
           maxWidth='100%'

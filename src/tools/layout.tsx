@@ -17,6 +17,7 @@ import { alignContentProps, getAlignProps, isSameValue, justifyProps } from '../
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getFont } from '../helpers/config';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 interface IDesignerLayout {
@@ -219,7 +220,7 @@ export default class DesignerToolLayout extends Module {
 
   private onFlexChanged() {
     this.isBasicFlex = !this.isBasicFlex;
-    this.lbTypeFlex.caption = this.isBasicFlex ? 'Advanced' : 'Basic';
+    this.lbTypeFlex.caption = this.isBasicFlex ? '$advanced' : '$basic';
     this.inputBasicFlex.enabled = this.inputBasicFlex.visible = this.isBasicFlex;
     this.wrapperAdvancedFlex.visible = !this.isBasicFlex;
   }
@@ -291,6 +292,7 @@ export default class DesignerToolLayout extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
@@ -306,8 +308,8 @@ export default class DesignerToolLayout extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Layout"
-          tooltipText="With Flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes."
+          name="$layout"
+          tooltipText="$with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes"
           onCollapse={this.onCollapse}
           hasMediaQuery={true}
           onReset={this.onResetData}
@@ -318,33 +320,33 @@ export default class DesignerToolLayout extends Module {
             id="pnlFlexItems"
             gap={8}
           >
-            <i-label caption="FLEX ITEMS" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$flex_items" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={12}>
               <i-hstack verticalAlignment='center' gap="5px">
                 <designer-selector
                   id="directionSelector"
-                  title="Direction"
+                  title="$direction"
                   stack={{grow: '1', shrink: '1'}}
                   items={[
-                    { value: 'vertical', tooltip: 'Column', type: 'direction', icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
-                    { value: 'horizontal', tooltip: 'Row', type: 'direction', rotate: 180, icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
+                    { value: 'vertical', tooltip: '$column', type: 'direction', icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
+                    { value: 'horizontal', tooltip: '$row', type: 'direction', rotate: 180, icon: { image: { url: assets.fullPath('img/designer/layout/column.svg') } } },
                   ]}
                   onChanged={this.onSelectChanged}
                 />
                 <i-hstack gap={4} verticalAlignment="center" stack={{grow: '1', shrink: '1'}}>
                   <i-switch id="reverseSwitch" onChanged={this.onReverseSwitch} />
-                  <i-label id="lblReverse" caption="Reverse" font={{ size: '0.75rem' }} />
+                  <i-label id="lblReverse" caption="$reverse" font={{ size: '0.75rem' }} />
                 </i-hstack>
               </i-hstack>
               <designer-selector
                 id="alignSelector"
-                title="Align"
+                title="$align"
                 items={getAlignProps('alignItems')}
                 onChanged={this.onSelectChanged}
               />
               <designer-selector
                 id="justifySelector"
-                title="Justify"
+                title="$justify"
                 items={justifyProps}
                 onChanged={this.onSelectChanged}
               />
@@ -356,19 +358,19 @@ export default class DesignerToolLayout extends Module {
             border={{top: {width: '1px', style: 'solid', color: Theme.divider}}}
             padding={{top: '1rem'}}
           >
-            <i-label caption="SELECTED ITEM" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$selected_item" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={12}>
               <designer-selector
                 id="alignSelfSelector"
-                title="Align"
+                title="$align"
                 items={getAlignProps('alignSelf')}
                 onChanged={this.onSelectChanged}
               />
               <i-grid-layout templateColumns={['70px', 'auto']}>
                 <i-vstack gap={8}>
-                  <i-label id="lblFlex" caption="Flex" font={{ size: '0.75rem' }} lineHeight="24px" />
+                  <i-label id="lblFlex" caption="$flex" font={{ size: '0.75rem' }} lineHeight="24px" />
                   <i-hstack gap={2} width="fit-content" verticalAlignment="center" opacity={0.7} cursor="pointer" onClick={this.onFlexChanged}>
-                    <i-label id="lbTypeFlex" caption="Advanced" font={{ size: '0.825rem' }} />
+                    <i-label id="lbTypeFlex" caption="$advanced" font={{ size: '0.825rem' }} />
                     <i-icon name="arrow-right" fill="#fff" width={12} height={12} />
                   </i-hstack>
                 </i-vstack>
@@ -407,7 +409,7 @@ export default class DesignerToolLayout extends Module {
                         onBlur={(target: Input) => this.onAdvFlexChanged(target, 'basis')}
                         onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onAdvFlexChanged(target, 'basis')}
                       />
-                      <i-label caption="Basis" font={{ size: '0.75rem' }} opacity={0.7} />
+                      <i-label caption="$basis" font={{ size: '0.75rem' }} opacity={0.7} />
                     </i-vstack>
                     <i-vstack gap={8} horizontalAlignment="center">
                       <i-input
@@ -426,7 +428,7 @@ export default class DesignerToolLayout extends Module {
                         onBlur={(target: Input) => this.onAdvFlexChanged(target, 'grow')}
                         onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onAdvFlexChanged(target, 'grow')}
                       />
-                      <i-label caption="Grow" font={{ size: '0.75rem' }} opacity={0.7} />
+                      <i-label caption="$grow" font={{ size: '0.75rem' }} opacity={0.7} />
                     </i-vstack>
                     <i-vstack gap={8} horizontalAlignment="center">
                       <i-input
@@ -445,7 +447,7 @@ export default class DesignerToolLayout extends Module {
                         onBlur={(target: Input) => this.onAdvFlexChanged(target, 'shrink')}
                         onKeyUp={(target: Input, event: KeyboardEvent) => event.key === 'Enter' && this.onAdvFlexChanged(target, 'shrink')}
                       />
-                      <i-label caption="Shrink" font={{ size: '0.75rem' }} opacity={0.7} />
+                      <i-label caption="$shrink" font={{ size: '0.75rem' }} opacity={0.7} />
                     </i-vstack>
                   </i-grid-layout>
                 </i-vstack>
@@ -458,7 +460,7 @@ export default class DesignerToolLayout extends Module {
             border={{top: {width: '1px', style: 'solid', color: Theme.divider}}}
             padding={{top: '1rem'}}
           >
-            <i-label caption="CONTENT" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$content" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={12}>
               <designer-selector
                 id="wrapSelector"
@@ -472,7 +474,7 @@ export default class DesignerToolLayout extends Module {
               />
               <designer-selector
                 id="alignContentSelector"
-                title="Align"
+                title="$align"
                 items={alignContentProps}
                 onChanged={this.onSelectChanged}
               />

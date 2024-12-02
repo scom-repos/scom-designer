@@ -13,13 +13,13 @@ const enum BREAKPOINTS {
 const iconProps = {width: '1.5rem', height: '1.5rem', padding: {top: 6, left: 6, right: 6, bottom: 6}}
 const breakpoints = [
   {
-    tooltip: 'Mobile',
+    tooltip: '$mobile',
     type: 'breakpoint',
     icon: {name: 'mobile-alt', ...iconProps},
     value: BREAKPOINTS.MOBILE
   },
   {
-    tooltip: 'Tablet',
+    tooltip: '$tablet',
     type: 'breakpoint',
     icon: {name: 'tablet-alt', ...iconProps},
     value: BREAKPOINTS.TABLET
@@ -31,7 +31,7 @@ const breakpoints = [
   //   value: BREAKPOINTS.LAPTOP
   // },
   {
-    tooltip: 'Desktop',
+    tooltip: '$desktop',
     type: 'breakpoint',
     icon: {name: 'desktop', ...iconProps},
     value: BREAKPOINTS.DESKTOP
@@ -84,13 +84,13 @@ const enum PREVIEWS {
 
 const previews = [
   {
-    tooltip: 'Draft View',
+    tooltip: '$draft_view',
     icon: {name: 'edit', ...iconProps},
     type: 'preview',
     value: PREVIEWS.DRAFT
   },
   {
-    tooltip: 'Web Preview',
+    tooltip: '$web_preview',
     icon: {name: 'globe', ...iconProps},
     type: 'preview',
     value: PREVIEWS.WEB
@@ -151,15 +151,15 @@ const getFont = (value: boolean) => ({ size: '0.75rem', color: value ? Theme.tex
 
 const GroupMetadata = {
   'Layout': {
-    name: 'Layout',
-    tooltipText: 'The layout of your screen'
+    name: '$layout',
+    tooltipText: '$the_layout_of_your_screen'
   },
   'Basic': {
-    name: 'Basic',
-    tooltipText: 'The most simple & essential components to build a screen'
+    name: '$basic',
+    tooltipText: '$the_most_simple__and_essential_components_to_build_a_screen'
   },
   'Fields': {
-    name: 'Fields',
+    name: '$fields',
     tooltipText: 'The content of your screen'
   }
 }

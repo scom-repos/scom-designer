@@ -7,6 +7,7 @@ import {
   VStack
 } from '@ijstech/components'
 import { buttonAutoStyled } from './index.css';
+import { propertiesJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -53,6 +54,7 @@ export default class DesignerToolWidget extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onConfig = this.getAttribute('onConfig', true) || this.onConfig;
@@ -68,7 +70,7 @@ export default class DesignerToolWidget extends Module {
       >
         <designer-tool-header
           id ="designerHeader"
-          name="Widget Settings"
+          name="$widget_settings"
           tooltipText=""
           onCollapse={this.onCollapse}
         />

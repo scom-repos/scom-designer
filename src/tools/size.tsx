@@ -14,6 +14,7 @@ import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
 import { isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerToolHeader from './header';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 const sizes = [
@@ -277,6 +278,7 @@ export default class DesignerToolSize extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.initModalUnits();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
@@ -292,8 +294,8 @@ export default class DesignerToolSize extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Size"
-          tooltipText="Specify minimum, maximum, or specifically set heights and widths for the element."
+          name="$size"
+          tooltipText="$set_the_width_and_height_of_the_element"
           hasMediaQuery={true}
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}

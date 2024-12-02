@@ -14,6 +14,7 @@ import { customFormStyle } from './index.css';
 import { IMediaQuery, onUpdateCallback } from '../interface';
 import { isSameValue } from '../helpers/utils';
 import DesignerTemplateAreas from './templateAreas';
+import { propertiesJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -118,7 +119,7 @@ export default class DesignerToolGroup extends Module {
           columnWidth: '100%',
           columnsPerRow: 1,
           confirmButtonOptions: {
-            caption: 'Confirm',
+            caption: '$confirm',
             backgroundColor: Theme.colors.primary.main,
             fontColor: Theme.colors.primary.contrastText,
             hide: false,
@@ -189,6 +190,7 @@ export default class DesignerToolGroup extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;

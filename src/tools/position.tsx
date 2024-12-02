@@ -15,11 +15,12 @@ import {
 import { buttonAutoStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
-import { isSameValue, parseNumberValue } from '../helpers/utils';
+import { getTranslationKey, isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
 import { getBreakpointInfo, getFont } from '../helpers/config';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolPositionElement extends ControlElement {
@@ -193,10 +194,11 @@ export default class DesignerToolPosition extends Module {
       value: data[position] || ''
     }
     const breakpoint = getBreakpointInfo(getBreakpoint())
+    const key = getTranslationKey(`${position}`);
     const config = {
-      title: `${position}`,
+      title: this.i18n.get(key),
       iconName: breakpoint?.icon,
-      breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
+      breakpointText: this.i18n.get('configure_a_value_for_screen_sizes_or_larger', {breakpoint: breakpoint.name ? this.i18n.get(breakpoint.name) : ''})
     }
     this.mdSpacing.onShowModal(target, spacing, config);
   }
@@ -254,6 +256,7 @@ export default class DesignerToolPosition extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
@@ -270,8 +273,8 @@ export default class DesignerToolPosition extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Position and Display"
-          tooltipText="Define a relative or absolute position from the parent element."
+          name="$position_and_display"
+          tooltipText="$define_a_relative_or_absolute_position_from_the_parent_element"
           hasMediaQuery={true}
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
@@ -281,10 +284,10 @@ export default class DesignerToolPosition extends Module {
           <i-vstack gap={8}>
             <designer-selector
               id="posSelector"
-              title="Position"
+              title="$position"
               items={[
-                { value: 'relative', caption: 'Relative', type: 'position' },
-                { value: 'absolute', caption: 'Absolute', type: 'position' },
+                { value: 'relative', caption: '$relative', type: 'position' },
+                { value: 'absolute', caption: '$absolute', type: 'position' },
               ]}
               onChanged={this.onSelectChanged}
             />
@@ -299,7 +302,7 @@ export default class DesignerToolPosition extends Module {
               </i-vstack>
             </i-panel>
             <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label id="lblZIndex" caption="Z-Index" font={{ size: '0.75rem' }} />
+              <i-label id="lblZIndex" caption="$z_index" font={{ size: '0.75rem' }} />
               <i-input
                 id="zIndexInput"
                 inputType="number"
@@ -319,20 +322,20 @@ export default class DesignerToolPosition extends Module {
             </i-grid-layout>
             <designer-selector
               id="overflowSelector"
-              title="Overflow"
+              title="$overflow"
               items={[
-                { value: 'auto', caption: 'Visible', type: 'overflow' },
-                { value: 'hidden', caption: 'Hidden', type: 'overflow' },
+                { value: 'auto', caption: '$visible', type: 'overflow' },
+                { value: 'hidden', caption: '$hidden', type: 'overflow' },
               ]}
               onChanged={this.onSelectChanged}
             />
             <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label id="lblDisplay" caption="Display" font={{ size: '0.75rem' }} />
+              <i-label id="lblDisplay" caption="$display" font={{ size: '0.75rem' }} />
               <i-combo-box
                 id="displaySelect"
                 items={displayOptions}
                 font={{ size: '0.75rem' }}
-                placeholder="Select display"
+                placeholder="$select_display"
                 width="100%"
                 height={24}
                 border={{
