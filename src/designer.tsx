@@ -38,6 +38,7 @@ import { Parser } from "@ijstech/compiler";
 import { isSameValue, parseProps } from './helpers/utils'
 import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback } from './helpers/config'
 import { getBreakpoint } from './helpers/store'
+import { mainJson } from './languages/index';
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -168,8 +169,8 @@ export class ScomDesignerForm extends Module {
     let components: IComponentPicker[]
     if (this.currentTab === TABS.RECENT) {
       components = [{
-        name: 'Frequently Used',
-        tooltipText: 'Components that you use most frequently',
+        name: '$frequently_used',
+        tooltipText: '$components_that_you_use_most_frequently',
         items: [...this.recentComponents]
       }]
     } else {
@@ -1356,6 +1357,7 @@ export class ScomDesignerForm extends Module {
   }
 
   init() {
+    this.i18n.init({...mainJson});
     super.init()
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
@@ -1468,7 +1470,7 @@ export class ScomDesignerForm extends Module {
                       horizontalAlignment='space-between'
                     >
                       <i-label
-                        caption='Add Components'
+                        caption='$add_components'
                         font={{ size: '0.75rem', bold: true }}
                       />
                       <i-icon
@@ -1487,12 +1489,12 @@ export class ScomDesignerForm extends Module {
                       class={`${borderRadiusLeft} ${borderRadiusRight}`}
                     >
                       <i-label
-                        caption='Recent'
+                        caption='$recent'
                         class={`${customLabelTabStyled} ${borderRadiusLeft}`}
                         onClick={() => this.onTabChanged(TABS.RECENT)}
                       />
                       <i-label
-                        caption='Bits'
+                        caption='$bits'
                         class={`${customLabelTabStyled} ${labelActiveStyled}`}
                         border={{
                           radius: 0,
@@ -1502,14 +1504,14 @@ export class ScomDesignerForm extends Module {
                         onClick={() => this.onTabChanged(TABS.BITS)}
                       />
                       <i-label
-                        caption='Blocks'
+                        caption='$blocks'
                         class={`${customLabelTabStyled} ${borderRadiusRight}`}
                         onClick={() => this.onTabChanged(TABS.BLOCKS)}
                       />
                     </i-grid-layout>
                     <i-input
                       id='inputSearch'
-                      placeholder='Search'
+                      placeholder='$search'
                       width='100%'
                       height={24}
                       border={{

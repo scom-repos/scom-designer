@@ -11,6 +11,7 @@ import {
   Panel
 } from '@ijstech/components'
 import { customSwitchStyle } from './index.css';
+import { toolsHeaderJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -132,6 +133,7 @@ export default class DesignerToolHeader extends Module {
   }
 
   init() {
+    this.i18n.init({...toolsHeaderJson});
     super.init();
     this.name = this.getAttribute('name', true) || '';
     this.tooltipText = this.getAttribute('tooltipText', true);
@@ -163,7 +165,7 @@ export default class DesignerToolHeader extends Module {
               stack={{shrink: '0'}}
               visible={false}
             >
-              <i-label id="lblSwitch" caption='Media Query' font={{size: '0.75rem'}}></i-label>
+              <i-label id="lblSwitch" caption='$media_query' font={{size: '0.75rem'}}></i-label>
               <i-switch
                 id="querySwitch"
                 class={customSwitchStyle}
@@ -179,7 +181,7 @@ export default class DesignerToolHeader extends Module {
                 background={{color: 'transparent'}}
                 cursor='pointer'
                 opacity={0.8}
-                tooltip={{ content: 'Reset values', placement: 'topRight' }}
+                tooltip={{ content: '$reset_values', placement: 'topRight' }}
                 onClick={this._onClear}
               ></i-button>
             </i-panel>

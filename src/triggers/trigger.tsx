@@ -3,14 +3,11 @@ import {
   ControlElement,
   customElements,
   Container,
-  Styles,
   VStack,
-  Input,
   DataGrid,
   DataGridCell
 } from '@ijstech/components'
 import { onEventChangedCallback, onEventDblClickCallback } from '../interface';
-const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerTriggerElement extends ControlElement {
   events?: {[name: string]: any};
@@ -141,7 +138,12 @@ export default class DesignerTrigger extends Module {
         margin={{ left: "auto", right: "auto" }}
         position="relative"
       >
-        <designer-tool-header name="Trigger" tooltipText="Add a trigger for an action." onCollapse={this.onCollapse} hasClear={false} />
+        <designer-tool-header
+          name="$trigger"
+          tooltipText="$add_a_trigger_for_an_action"
+          onCollapse={this.onCollapse}
+          hasClear={false}
+        />
         <i-vstack
           id="vStackContent"
           gap={16}

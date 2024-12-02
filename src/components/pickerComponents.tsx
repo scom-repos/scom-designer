@@ -13,6 +13,7 @@ import {
 import { IComponentItem } from '../interface';
 import { blockItemHoverStyled } from '../index.css';
 const Theme = Styles.Theme.ThemeVars;
+import { mainJson } from '../languages/index';
 
 type onSelectCallback = (target: Control, component: IComponentItem) => void;
 
@@ -94,6 +95,7 @@ export default class DesignerPickerComponents extends Module {
   }
 
   init() {
+    this.i18n.init({...mainJson});
     super.init();
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.name = this.getAttribute('name', true) || '';

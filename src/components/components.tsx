@@ -20,6 +20,7 @@ import { IComponent, IScreen } from '../interface';
 import './index.css';
 import { getMediaQueryProps, CONTAINERS, ITEM_PARENTS } from '../helpers/config';
 import { handleParse } from '../helpers/utils';
+import { componentsJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 type visibleCallback = (component: IComponent, visible: boolean) => void;
@@ -514,7 +515,7 @@ export default class DesignerComponents extends Module {
     const itemActions = new VStack(undefined, { gap: 8, border: { radius: 8 } });
     const buttonList = [
       {
-        caption: 'Add Component',
+        caption: '$add_component',
         icon: 'plus-circle',
         visible: false,
         onClick: (target: Control, event: MouseEvent) => {
@@ -524,7 +525,7 @@ export default class DesignerComponents extends Module {
         }
       },
       {
-        caption: 'Add Item',
+        caption: '$add_item',
         icon: 'plus-circle',
         visible: false,
         onClick: (target: Control, event: MouseEvent) => {
@@ -534,7 +535,7 @@ export default class DesignerComponents extends Module {
         }
       },
       {
-        caption: 'Duplicate',
+        caption: '$duplicate',
         icon: 'copy',
         visible: true,
         onClick: (target: Control, event: MouseEvent) => {
@@ -543,7 +544,7 @@ export default class DesignerComponents extends Module {
         }
       },
       {
-        caption: 'Delete',
+        caption: '$delete',
         icon: 'trash',
         visible: true,
         onClick: (target: Control, event: MouseEvent) => {
@@ -619,6 +620,7 @@ export default class DesignerComponents extends Module {
   }
 
   init() {
+    this.i18n.init({...componentsJson});
     super.init();
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.onVisible = this.getAttribute('onVisible', true) || this.onVisible;
@@ -664,7 +666,7 @@ export default class DesignerComponents extends Module {
                 right: { style: 'solid', color: Theme.divider, width: 1 }
               }}
               tooltip={{
-                content: 'View Deleted Components'
+                content: '$view_deleted_components'
               }}
             />
           </i-hstack>
@@ -681,7 +683,7 @@ export default class DesignerComponents extends Module {
           id="mdAlert"
           title='Confirm'
           status='confirm'
-          content='Are you sure to delete this component?'
+          content='$are_you_sure_to_delete_this_component'
           onConfirm={this.onConfirm.bind(this)}
           onClose={this.onClose.bind(this)}
         />

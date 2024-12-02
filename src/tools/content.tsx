@@ -15,6 +15,7 @@ import DesignerToolHeader from './header';
 import { fontStyles, fontTransforms, isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
 import { getFont } from '../helpers/config';
 import DesignerSelector from './selector';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolContentElement extends ControlElement {
@@ -184,6 +185,7 @@ export default class DesignerToolContent extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
@@ -198,8 +200,8 @@ export default class DesignerToolContent extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Typography"
-          tooltipText="Set font for the element."
+          name="$typography"
+          tooltipText="$set_font_for_the_element"
           hasMediaQuery={true}
           onCollapse={this.onCollapse}
           onReset={this.onResetData}
@@ -218,12 +220,12 @@ export default class DesignerToolContent extends Module {
               </i-hstack>
             </i-grid-layout> */}
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label id="lblSize" caption={'Size'} font={{ size: '0.75rem' }} />
+              <i-label id="lblSize" caption="$size" font={{ size: '0.75rem' }} />
               <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                 <i-input
                   id="inputFontSize"
                   inputType='number'
-                  placeholder="Enter font size..."
+                  placeholder="$enter_font_size"
                   background={{ color: 'transparent' }}
                   width="calc(100% - 1.5rem)"
                   height={'1.5rem'}
@@ -254,12 +256,12 @@ export default class DesignerToolContent extends Module {
               </i-hstack>
             </i-grid-layout>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label id="lblWeight" caption={'Weight'} font={{ size: '0.75rem' }} />
+              <i-label id="lblWeight" caption="$weight" font={{ size: '0.75rem' }} />
               <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                 <i-input
                   id="inputFontWeight"
                   inputType='number'
-                  placeholder="Enter font weight..."
+                  placeholder="$enter_font_weight"
                   background={{ color: 'transparent' }}
                   width="calc(100% - 1.5rem)"
                   height={'1.5rem'}
@@ -273,11 +275,11 @@ export default class DesignerToolContent extends Module {
               </i-hstack>
             </i-grid-layout>
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label id="lblShadow" caption={'Shadow'} font={{ size: '0.75rem' }} />
+              <i-label id="lblShadow" caption="$shadow" font={{ size: '0.75rem' }} />
               <i-hstack verticalAlignment="center" border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                 <i-input
                   id="inputShadow"
-                  placeholder="Enter text shadow..."
+                  placeholder="$enter_text_shadow"
                   background={{ color: 'transparent' }}
                   width="calc(100% - 1.5rem)"
                   height={'1.5rem'}
@@ -292,14 +294,14 @@ export default class DesignerToolContent extends Module {
             </i-grid-layout>
             <designer-selector
               id="styleSelector"
-              title='Style'
+              title='$style'
               display='block'
               items={fontStyles}
               onChanged={this.onStyleChanged}
             />
             <designer-selector
               id="transformSelector"
-              title='Transform'
+              title='$transform'
               display='block'
               items={fontTransforms}
               onChanged={this.onStyleChanged}

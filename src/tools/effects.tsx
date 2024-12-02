@@ -11,6 +11,7 @@ import {
 import { bgInputTransparent, textInputRight } from './index.css';
 import { onChangedCallback } from '../interface';
 import DesignerToolHeader from './header';
+import { propertiesJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -95,6 +96,7 @@ export default class DesignerToolEffects extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.inputEffect.value = this.rangeEffect.value = 100;
@@ -110,14 +112,14 @@ export default class DesignerToolEffects extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Effects"
-          tooltipText="Set elevation and opacity for the element."
+          name="$effects"
+          tooltipText="$set_elevation_and_opacity_for_the_element"
           onCollapse={this.onCollapse}
           onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" gap={8} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-            <i-label caption="Opacity" font={{ size: '0.75rem' }} />
+            <i-label caption="$opacity" font={{ size: '0.75rem' }} />
             <i-hstack gap={16} verticalAlignment="center">
               <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                 <i-input

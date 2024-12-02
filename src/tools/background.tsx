@@ -13,6 +13,7 @@ import DesignerToolHeader from './header';
 import { customColorStyled } from './index.css';
 import { backgroundOptions, isSameValue } from '../helpers/utils';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
+import { propertiesJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -159,6 +160,7 @@ export default class DesignerToolBackground extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
@@ -174,16 +176,16 @@ export default class DesignerToolBackground extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Background"
+          name="$background"
           hasMediaQuery={true}
-          tooltipText="Set a background color or image for the element."
+          tooltipText="$set_a_background_color_or_image_for_the_element"
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
           onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-            <i-label id="lblColor" caption="Color" font={{ size: '0.75rem' }} />
+            <i-label id="lblColor" caption="$color" font={{ size: '0.75rem' }} />
             <i-hstack gap={4} width="100%" verticalAlignment="center">
               <i-color
                 id="bgColor"
@@ -194,7 +196,7 @@ export default class DesignerToolBackground extends Module {
                 id="bgSelect"
                 width="calc(100% - 28px)"
                 items={backgroundOptions}
-                placeholder="Type or select a color..."
+                placeholder="$type_or_select_a_color"
                 onChanged={this.onTypeChanged}
               />
             </i-hstack>

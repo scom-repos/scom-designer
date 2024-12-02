@@ -1,6 +1,7 @@
 import { Control, ControlElement, GridLayout, HStack, Icon, Label, Module, customElements, Image, Styles } from "@ijstech/components";
 import { borderRadiusLeft, borderRadiusRight, customIconLayoutActiveStyled, customIconLayoutStyled } from "./index.css";
 import { customIconTabActiveStyled } from "../index.css";
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 type selectorChanged = (type: string, value: string|number) => void;
@@ -99,8 +100,22 @@ export default class DesignerSelector extends Module {
   set isChanged(value: boolean) {
     this._data.isChanged = value ?? false;
     if (this.lblTitle) {
-      this.lblTitle.font = { size: '0.75rem', color: this._data.isChanged ? Theme.colors.success.main : Theme.text.primary };
+      this.lblTitle.font = {
+        ...(this.font || {}),
+        size: '0.75rem',
+        color: this._data.isChanged ? Theme.colors.success.main : Theme.text.primary
+      };
     }
+  }
+
+  set font(value: any) {
+    const defaultFont = { size: '0.75rem', color: this.isChanged ? Theme.colors.success.main : Theme.text.primary };
+    if (this.lblTitle)
+      this.lblTitle.font = {...defaultFont, ...(value || {})};
+  }
+
+  get font() {
+    return this.lblTitle?.font;
   }
 
   setData(value: ISelector) {
@@ -111,7 +126,6 @@ export default class DesignerSelector extends Module {
 
   private renderUI() {
     this.lblTitle.caption = this.title;
-    this.lblTitle.font = { size: '0.75rem', color: this.isChanged ? Theme.colors.success.main : Theme.text.primary };
     this.gridSelector.templateColumns = this.direction === 'horizontal' ? ['70px', 'auto'] : ['auto'];
     this.pnlList.clearInnerHTML();
     const length = this.items.length;
@@ -184,6 +198,7 @@ export default class DesignerSelector extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     const items = this.getAttribute('items', true, []);
     const title = this.getAttribute('title', true, '');

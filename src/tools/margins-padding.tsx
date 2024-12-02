@@ -14,10 +14,11 @@ import {
 import { bgInputTransparent, buttonAutoStyled, textInputRight, unitStyled } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
-import { isSameValue, parseNumberValue } from '../helpers/utils';
+import { getTranslationKey, isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerToolHeader from './header';
 import { getBreakpointInfo, getFont } from '../helpers/config';
 import { getBreakpoint } from '../helpers/store';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolMarginsAndPaddingElement extends ControlElement {
@@ -244,10 +245,11 @@ export default class DesignerToolMarginsAndPadding extends Module {
       value: data[type]?.[position] ?? ''
     }
     const breakpoint = getBreakpointInfo(getBreakpoint())
+    const key = getTranslationKey(`${type} ${position}`);
     const config = {
-      title: `${type} ${position}`,
+      title: this.i18n.get(key),
       iconName: breakpoint?.icon,
-      breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
+      breakpointText: this.i18n.get('configure_a_value_for_screen_sizes_or_larger', {breakpoint: breakpoint.name ? this.i18n.get(breakpoint.name) : ''})
     }
     this.mdSpacing.onShowModal(target, spacing, config);
   }
@@ -304,6 +306,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.initModalUnits();
@@ -319,19 +322,19 @@ export default class DesignerToolMarginsAndPadding extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Margins And Padding"
+          name="$margins_and_padding"
           hasMediaQuery={true}
-          tooltipText="Margins create extra space around an element, while padding creates extra space within an element."
+          tooltipText="$margins_create_extra_space_around_an_element_while_padding_creates_extra_space_within_an_element"
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
           onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
-            <i-label caption="OVERALL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$overall" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-hstack gap={16} verticalAlignment="center">
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label id="lblMargin" caption="Margin" font={{ size: '0.75rem' }} />
+                <i-label id="lblMargin" caption="$margin" font={{ size: '0.75rem' }} /> 
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="marginInput"
@@ -368,7 +371,7 @@ export default class DesignerToolMarginsAndPadding extends Module {
                 </i-hstack>
               </i-grid-layout>
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label id="lblPadding" caption="Padding" font={{ size: '0.75rem' }} />
+                <i-label id="lblPadding" caption="$padding" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="paddingInput"
@@ -408,16 +411,16 @@ export default class DesignerToolMarginsAndPadding extends Module {
           </i-vstack>
           <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
           <i-vstack id="vStackIndividual" gap={8}>
-            <i-label caption="INDIVIDUAL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$individual" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={8} width="100%" horizontalAlignment="center">
               <i-hstack position="relative" width="100%" horizontalAlignment="center">
-                <i-label caption="Margin" font={{ size: '0.75rem' }} position="absolute" top={0} left={0} />
+                <i-label caption="$margin" font={{ size: '0.75rem' }} position="absolute" top={0} left={0} />
                 <i-button id="marginTop" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'margin', 'top')} />
               </i-hstack>
               <i-hstack width="100%" verticalAlignment="center" horizontalAlignment="space-between">
                 <i-button id="marginLeft" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'margin', 'left')} />
                 <i-panel position="relative" width={200} padding={{ top: 10, bottom: 10, left: 10, right: 10 }} border={{ width: 4, style: 'solid', color: Theme.action.selectedBackground }}>
-                  <i-label caption="Padding" font={{ size: '0.75rem' }} position="absolute" top={10} left={10} />
+                  <i-label caption="$padding" font={{ size: '0.75rem' }} position="absolute" top={10} left={10} />
                   <i-vstack horizontalAlignment="center">
                     <i-button id="paddingTop" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'padding', 'top')} />
                     <i-hstack width="100%" horizontalAlignment="space-between">

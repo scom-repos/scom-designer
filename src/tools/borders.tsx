@@ -14,11 +14,12 @@ import {
 import { bgInputTransparent, buttonAutoStyled, customColorStyled, textInputRight } from './index.css';
 import DesignerToolModalSpacing from './modal-spacing';
 import { IMediaQuery, onChangedCallback, onUpdateCallback } from '../interface';
-import { backgroundOptions, borderStyles, isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
+import { backgroundOptions, borderStyles, getTranslationKey, isNumber, isSameValue, parseNumberValue } from '../helpers/utils';
 import DesignerSelector from './selector';
 import DesignerToolHeader from './header';
 import { getBreakpoint } from '../helpers/store';
 import { getBreakpointInfo, getFont } from '../helpers/config';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerToolBordersElement extends ControlElement {
@@ -204,10 +205,11 @@ export default class DesignerToolBorders extends Module {
       position
     }
     const breakpoint = getBreakpointInfo(getBreakpoint())
+    const key = getTranslationKey(`border ${position} ${type}`);
     const config = {
-      title: `Border ${position} ${type}`,
+      title: this.i18n.get(key),
       iconName: breakpoint?.icon,
-      breakpointText: `Configure a value for ${breakpoint?.name || ''} screen sizes or larger`
+      breakpointText: this.i18n.get('configure_a_value_for_screen_sizes_or_larger', {breakpoint: breakpoint.name ? this.i18n.get(breakpoint.name) : ''})
     }
     this.mdSpacing.onShowModal(target, spacing, config);
   }
@@ -318,6 +320,7 @@ export default class DesignerToolBorders extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.onUpdate = this.getAttribute('onUpdate', true) || this.onUpdate;
@@ -334,19 +337,19 @@ export default class DesignerToolBorders extends Module {
       >
         <designer-tool-header
           id="designerHeader"
-          name="Borders"
+          name="$borders"
           hasMediaQuery={true}
-          tooltipText="Define the border size and styles."
+          tooltipText="$define_the_border_size_and_styles"
           onCollapse={this.onCollapse}
           onToggleMediaQuery={this.onToggleMediaQuery}
           onReset={this.onResetData}
         />
         <i-vstack id="vStackContent" gap={16} padding={{ top: 16, bottom: 16, left: 12, right: 12 }} visible={false}>
           <i-vstack gap={8}>
-            <i-label caption="OVERALL" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$overall" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-hstack gap={16} verticalAlignment="center">
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label id="lblWidth" caption="Width" font={{ size: '0.75rem' }} />
+                <i-label id="lblWidth" caption="$width" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="inputWidth"
@@ -365,7 +368,7 @@ export default class DesignerToolBorders extends Module {
                 </i-hstack>
               </i-grid-layout>
               <i-grid-layout templateColumns={['70px', 'auto']} verticalAlignment="center">
-                <i-label id="lblRadius" caption="Radius" font={{ size: '0.75rem' }} />
+                <i-label id="lblRadius" caption="$radius" font={{ size: '0.75rem' }} />
                 <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
                   <i-input
                     id="inputRadius"
@@ -387,10 +390,10 @@ export default class DesignerToolBorders extends Module {
           </i-vstack>
           <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
           <i-vstack id="pnlIndividual" gap={8}>
-            <i-label caption="INDIVIDUAL EDGES" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$individual_edges" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-vstack gap={8} width="100%" horizontalAlignment="center">
               <i-hstack position="relative" width="100%" horizontalAlignment="center">
-                <i-label caption="Width" font={{ size: '0.75rem' }} position="absolute" top={0} left={0} />
+                <i-label caption="$width" font={{ size: '0.75rem' }} position="absolute" top={0} left={0} />
                 <i-button id="topWidth" caption="auto" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'width', 'top')} />
               </i-hstack>
               <i-hstack width="100%" verticalAlignment="center" horizontalAlignment="space-between">
@@ -398,7 +401,7 @@ export default class DesignerToolBorders extends Module {
                 <i-vstack verticalAlignment="space-between" width={200} height={100} padding={{ top: 4, bottom: 4, left: 4, right: 4 }} border={{ width: 4, style: 'solid', color: Theme.action.selectedBackground }}>
                   <i-hstack width="100%" verticalAlignment="center" horizontalAlignment="space-between">
                     <i-button id="topLeftRadius" caption="0" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'radius', 'topLeft')} />
-                    <i-label caption="Radius" font={{ size: '0.75rem' }} />
+                    <i-label caption="$radius" font={{ size: '0.75rem' }} />
                     <i-button id="topRightRadius" caption="0" class={buttonAutoStyled} onClick={(target: Button) => this.onShowSpacingModal(target, 'radius', 'topRight')} />
                   </i-hstack>
                   <i-hstack width="100%" horizontalAlignment="space-between">
@@ -413,9 +416,9 @@ export default class DesignerToolBorders extends Module {
           </i-vstack>
           <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
           <i-vstack gap={8}>
-            <i-label caption="DECORATION" font={{ size: '0.875rem' }} letterSpacing="0.2em" opacity={0.8} />
+            <i-label caption="$decoration" font={{ size: '0.875rem', transform: 'uppercase' }} letterSpacing="0.2em" opacity={0.8} />
             <i-grid-layout width="100%" templateColumns={['70px', 'auto']} verticalAlignment="center">
-              <i-label id="lblColor" caption="Color" font={{ size: '0.75rem' }} />
+              <i-label id="lblColor" caption="$color" font={{ size: '0.75rem' }} />
               <i-hstack gap={4} width="100%" verticalAlignment="center">
                 <i-color
                   id="bgColor"
@@ -425,13 +428,13 @@ export default class DesignerToolBorders extends Module {
                 <i-combo-box
                   width="calc(100% - 28px)"
                   items={backgroundOptions}
-                  placeholder="Type or select a color..."
+                  placeholder="$type_or_select_a_color"
                 />
               </i-hstack>
             </i-grid-layout>
             <designer-selector
               id="styleSelector"
-              title="Style"
+              title="$style"
               items={borderStyles}
               onChanged={this.handleValueChanged}
             />

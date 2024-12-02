@@ -14,6 +14,7 @@ import {
 } from '@ijstech/components';
 import { bgInputTransparent, textInputRight, unitStyled } from './index.css';
 import { parseNumberValue } from '../helpers/utils';
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 type onChangedCallback = (type: string, position: string, value: string) => void;
@@ -99,7 +100,7 @@ export default class DesignerToolModalSpacing extends Module {
       <i-label id="lbBreakpoint" caption={breakpointText} font={{ size: '0.75rem' }} opacity={0.8} />
       <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
       <i-grid-layout position="relative" templateColumns={['100px', 'auto']} verticalAlignment="center">
-        <i-label caption="Static Value:" font={{ size: '0.75rem' }} />
+        <i-label caption="$static_value" font={{ size: '0.75rem' }} />
         <i-hstack verticalAlignment="center" width={80} border={{ radius: 8 }} background={{ color: Theme.input.background }} overflow="hidden">
           <i-input
             id="inputValue"
@@ -155,11 +156,11 @@ export default class DesignerToolModalSpacing extends Module {
       </i-grid-layout>
       <i-panel width="100%" height={1} background={{ color: Theme.divider }} />
       <i-grid-layout templateColumns={['100px', 'auto']} verticalAlignment="center">
-        <i-label caption="Dynamic Value" font={{ size: '0.75rem' }} />
+        <i-label caption="$dynamic_value" font={{ size: '0.75rem' }} />
         {/* TODO: get options */}
-        <i-combo-box items={[]} placeholder="Select..." onClick={() => { this.vStackIndUnits.visible = false }} />
+        <i-combo-box items={[]} placeholder="$select" onClick={() => { this.vStackIndUnits.visible = false }} />
       </i-grid-layout>
-      <i-label id="lbNote" caption="If configured, will be applied to Mobile or larger breakpoints. If you configure a static style value, it will be used as a fallback if the data evaluates to undefined." font={{ size: '0.675rem' }} opacity={0.8} />
+      <i-label id="lbNote" caption="$if_configured_will_be_applied_to_mobile_or_larger_breakpoints_if_you_configure_a_static_style_value_it_will_be_used_as_a_fallback_if_the_data_evaluates_to_undefined" font={{ size: '0.675rem' }} opacity={0.8} />
     </i-vstack>)
     this.modal.item = item;
     document.body.appendChild(this.modal);
@@ -208,6 +209,7 @@ export default class DesignerToolModalSpacing extends Module {
   }
 
   init() {
+    this.i18n.init({...propertiesJson});
     super.init();
     this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
     this.spacing = this.getAttribute('data', true, {});

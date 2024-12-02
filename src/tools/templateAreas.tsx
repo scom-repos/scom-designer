@@ -8,6 +8,7 @@ import {
   Container,
   Input
 } from '@ijstech/components'
+import { propertiesJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 interface DesignerTemplateAreasElement extends ControlElement {
@@ -92,10 +93,10 @@ export default class DesignerTemplateAreas extends Module {
           padding={{top: 10, bottom: 10}}
           border={{bottom: {width: 1, style: 'solid', color: Theme.divider}}}
         >
-          <i-label caption="Items"></i-label>
+          <i-label caption="$items"></i-label>
           <i-hstack gap="0.5rem" verticalAlignment='center' horizontalAlignment='end'>
             <i-button
-              caption='Add'
+              caption='$add'
               icon={{name: 'plus'}}
               padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
               border={{radius: 0}}
@@ -151,6 +152,11 @@ export default class DesignerTemplateAreas extends Module {
     this._data[groupIndex][itemIndex] = v.value;
   }
 
+  init() {
+    this.i18n.init({...propertiesJson});
+    super.init();
+  }
+
   render() {
     return <i-vstack gap="0.5rem">
         <i-hstack
@@ -162,7 +168,7 @@ export default class DesignerTemplateAreas extends Module {
         >
           <i-label caption=""></i-label>
           <i-button
-            caption='Add'
+            caption='$add'
             icon={{name: 'plus'}}
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             border={{radius: 0}}

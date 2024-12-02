@@ -10,6 +10,7 @@ import {
 } from '@ijstech/components'
 import { IBlock } from '../interface';
 import { blockItemHoverStyled } from '../index.css';
+import { componentsJson } from '../languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 
@@ -53,7 +54,7 @@ export default class DesignerPickerBlocks extends Module {
             { image ? <i-image url={image} width={24} height={24} /> : [] }
             <i-label caption={caption} font={{ size: '0.75rem' }} />
           </i-hstack>
-          <i-icon name="trash" width={16} height={16} cursor="pointer" tooltip={{ content: 'Delete Custom Block' }} onClick={() => this.onDeleteCustomBlock(id)} />
+          <i-icon name="trash" width={16} height={16} cursor="pointer" tooltip={{ content: '$delete_custom_block' }} onClick={() => this.onDeleteCustomBlock(id)} />
         </i-hstack>
       );
       block.classList.add(blockItemHoverStyled);
@@ -70,6 +71,7 @@ export default class DesignerPickerBlocks extends Module {
   }
 
   init() {
+    this.i18n.init({...componentsJson});
     super.init();
     this.items = this.getAttribute('items', true) || [];
     this.renderUI();
@@ -86,8 +88,8 @@ export default class DesignerPickerBlocks extends Module {
       >
         <i-hstack gap={8} verticalAlignment="center" cursor="pointer" padding={{ left: 8, right: 8, bottom: 8, top: 8 }} onClick={this.onCollapse}>
           <i-icon id="iconArrow" name="angle-down" width={14} height={14} />
-          <i-label caption="Your Blocks" font={{ size: '0.75rem', bold: true }} />
-          <i-icon name="question-circle" width={14} height={14} opacity={0.8} tooltip={{ content: 'Your own custom components' }} />
+          <i-label caption="$your_blocks" font={{ size: '0.75rem', bold: true }} />
+          <i-icon name="question-circle" width={14} height={14} opacity={0.8} tooltip={{ content: '$your_own_custom_components' }} />
         </i-hstack>
         <i-vstack id="vStackItems" gap={4} width="100%" />
       </i-vstack>

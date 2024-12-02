@@ -23,6 +23,7 @@ import { Compiler, Parser } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
 import { themesConfig } from './helpers/config';
+import { mainJson } from './languages/index';
 const Theme = Styles.Theme.ThemeVars;
 
 type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
@@ -82,6 +83,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   };
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
+  private _previewUrl: string;
   private imported: Record<string, string> = {};
   private activeTab: string = 'codeTab';
 
@@ -93,6 +95,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   tag: any = {}
 
   set previewUrl(url: string) {
+    this._previewUrl = url;
     if (this.formDesigner)
       this.formDesigner.previewUrl = url;
   }
@@ -208,7 +211,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   get fileName() {
     const name = this._data.file?.path || (this.url ? extractFileName(this.url) : '');
-    return name || 'File name'
+    return name || 'file_name';
   }
 
   get value() {
@@ -307,6 +310,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.width = '100%';
       this.formDesigner.height = '100%';
       this.formDesigner.stack = {grow: '1'};
+      this.formDesigner.previewUrl = this._previewUrl;
       this.formDesigner.onPreview = this.handleDesignerPreview;
       this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
       this.formDesigner.studio = this;
@@ -568,6 +572,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   init() {
+    this.i18n.init({...mainJson});
     super.init()
     this.onSave = this.getAttribute('onSave', true) || this.onSave
     this.onChange = this.getAttribute('onChange', true) || this.onChange
@@ -759,7 +764,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         >
           <i-button
             id="codeTab"
-            caption='Code'
+            caption='$code'
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             background={{color: Theme.action.activeBackground}}
             stack={{ shrink: '0' }}
@@ -771,7 +776,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           ></i-button>
           <i-button
             id="designTab"
-            caption='Design'
+            caption='$design'
             stack={{ shrink: '0' }}
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             background={{color: Theme.action.activeBackground}}

@@ -21,7 +21,7 @@ export const backgroundOptions = [
 export function getAlignProps(type: string) {
   const alignProps: any = [
     {
-      tooltip: 'Flex Start',
+      tooltip: '$flex_start',
       value: 'start',
       type,
       icon: {
@@ -31,7 +31,7 @@ export function getAlignProps(type: string) {
       }
     },
     {
-      tooltip: 'Center',
+      tooltip: '$center',
       value: 'center',
       type,
       icon: {
@@ -41,7 +41,7 @@ export function getAlignProps(type: string) {
       }
     },
     {
-      tooltip: 'Flex End',
+      tooltip: '$flex_end',
       value: 'end',
       type,
       icon: {
@@ -52,7 +52,7 @@ export function getAlignProps(type: string) {
       rotate: 180
     },
     {
-      tooltip: 'Stretch',
+      tooltip: '$stretch',
       value: 'stretch',
       type,
       icon: {
@@ -62,7 +62,7 @@ export function getAlignProps(type: string) {
       }
     },
     {
-      tooltip: 'Baseline',
+      tooltip: '$baseline',
       value: 'baseline',
       type,
       icon: {
@@ -74,7 +74,7 @@ export function getAlignProps(type: string) {
   ]
   if (type === 'alignSelf') {
     alignProps.unshift({
-      tooltip: 'Auto',
+      tooltip: '$auto',
       value: 'auto',
       type: 'alignSelf',
       icon: { name: 'times' }
@@ -85,7 +85,7 @@ export function getAlignProps(type: string) {
 
 export const justifyProps = [
   {
-    tooltip: 'Flex Start',
+    tooltip: '$flex_start',
     value: 'start',
     type: 'justifyContent',
     icon: {
@@ -95,7 +95,7 @@ export const justifyProps = [
     }
   },
   {
-    tooltip: 'Center',
+    tooltip: '$center',
     value: 'center',
     type: 'justifyContent',
     icon: {
@@ -105,7 +105,7 @@ export const justifyProps = [
     },
   },
   {
-    tooltip: 'Flex End',
+    tooltip: '$flex_end',
     value: 'end',
     type: 'justifyContent',
     icon: {
@@ -116,7 +116,7 @@ export const justifyProps = [
     rotate: 180
   },
   {
-    tooltip: 'Space Between',
+    tooltip: '$space_between',
     value: 'space-between',
     type: 'justifyContent',
     icon: {
@@ -126,7 +126,7 @@ export const justifyProps = [
     },
   },
   {
-    tooltip: 'Space Around',
+    tooltip: '$space_around',
     value: 'space-around',
     type: 'justifyContent',
     icon: {
@@ -136,7 +136,7 @@ export const justifyProps = [
     },
   },
   {
-    tooltip: 'Space Evenly',
+    tooltip: '$space_evenly',
     placement: 'left',
     value: 'space-evenly',
     type: 'justifyContent',
@@ -150,7 +150,7 @@ export const justifyProps = [
 
 export const alignContentProps = [
   {
-    tooltip: 'Flex Start',
+    tooltip: '$flex_start',
     value: 'start',
     type: 'alignContent',
     icon: {
@@ -160,7 +160,7 @@ export const alignContentProps = [
     }
   },
   {
-    tooltip: 'Center',
+    tooltip: '$center',
     value: 'center',
     type: 'alignContent',
     icon: {
@@ -170,7 +170,7 @@ export const alignContentProps = [
     },
   },
   {
-    tooltip: 'Flex End',
+    tooltip: '$flex_end',
     value: 'end',
     type: 'alignContent',
     icon: {
@@ -181,7 +181,7 @@ export const alignContentProps = [
     rotate: 180
   },
   {
-    tooltip: 'Space Between',
+    tooltip: '$space_between',
     value: 'space-between',
     type: 'alignContent',
     icon: {
@@ -192,7 +192,7 @@ export const alignContentProps = [
     rotate: 90
   },
   {
-    tooltip: 'Space Around',
+    tooltip: '$space_around',
     value: 'space-around',
     type: 'alignContent',
     icon: {
@@ -203,7 +203,7 @@ export const alignContentProps = [
     rotate: 90
   },
   {
-    tooltip: 'Stretch',
+    tooltip: '$stretch',
     value: 'stretch',
     type: 'alignContent',
     icon: {
@@ -216,7 +216,7 @@ export const alignContentProps = [
 
 export const borderStyles = [
   {
-    tooltip: 'Solid',
+    tooltip: '$solid',
     value: 'solid',
     type: 'style',
     icon: {
@@ -226,7 +226,7 @@ export const borderStyles = [
     }
   },
   {
-    tooltip: 'Dotted',
+    tooltip: '$dotted',
     value: 'dotted',
     type: 'style',
     icon: {
@@ -236,7 +236,7 @@ export const borderStyles = [
     }
   },
   {
-    tooltip: 'Dashed',
+    tooltip: '$dashed',
     value: 'dashed',
     type: 'style',
     icon: {
@@ -249,7 +249,7 @@ export const borderStyles = [
 
 export const fontStyles = [
   {
-    tooltip: 'Normal',
+    tooltip: '$normal',
     value: 'normal',
     type: 'style',
     icon: {
@@ -257,7 +257,7 @@ export const fontStyles = [
     }
   },
   {
-    tooltip: 'Italic',
+    tooltip: '$italic',
     value: 'italic',
     type: 'style',
     icon: {
@@ -276,7 +276,7 @@ export const fontTransforms = [
     }
   },
   {
-    tooltip: 'Capitalize',
+    tooltip: '$capitalize',
     value: 'capitalize',
     type: 'transform',
     icon: {
@@ -286,7 +286,7 @@ export const fontTransforms = [
     }
   },
   {
-    tooltip: 'Lowercase',
+    tooltip: '$lowercase',
     value: 'lowercase',
     type: 'transform',
     icon: {
@@ -296,7 +296,7 @@ export const fontTransforms = [
     }
   },
   {
-    tooltip: 'Uppercase',
+    tooltip: '$uppercase',
     value: 'uppercase',
     type: 'transform',
     icon: {
@@ -317,7 +317,7 @@ export const fontDecorations = [
     }
   },
   {
-    tooltip: 'Underline',
+    tooltip: '$underline',
     value: 'underline',
     type: 'textDecoration',
     icon: {
@@ -325,7 +325,7 @@ export const fontDecorations = [
     }
   },
   {
-    tooltip: 'Line Through',
+    tooltip: '$line_through',
     value: 'line-through',
     type: 'textDecoration',
     icon: {
@@ -333,7 +333,7 @@ export const fontDecorations = [
     }
   },
   {
-    tooltip: 'Overline',
+    tooltip: '$overline',
     value: 'overline',
     type: 'textDecoration',
     icon: {
@@ -519,4 +519,8 @@ export const isSameValue = (defaultVal: any, value: any): boolean => {
 
 export const isNumber = (value: string | number) => {
   return typeof value === 'number' || (value !== '' && !Number.isNaN(Number(value)));
+}
+
+export function getTranslationKey(text: string) {
+  return text.replace(/\s/g, '_').toLowerCase();
 }
