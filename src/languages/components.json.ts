@@ -12,7 +12,8 @@ export default {
     "view_deleted_components": "View Deleted Components",
     "widget_settings": "Widget Settings",
     "your_blocks": "Your Blocks",
-    "your_own_custom_components": "Your own custom components"
+    "your_own_custom_components": "Your own custom components",
+    "structure": "Structure",
   },
   "zh-hant": {
     "add_component": "添加组件",
@@ -27,7 +28,8 @@ export default {
     "view_deleted_components": "查看已删除的组件",
     "widget_settings": "小部件设置",
     "your_blocks": "您的块",
-    "your_own_custom_components": "您自己的自定义组件"
+    "your_own_custom_components": "您自己的自定义组件",
+    "structure": "结构",
   },
   "vi": {
     "add_component": "Thêm thành phần",
@@ -43,5 +45,6 @@ export default {
     "widget_settings": "Cài đặt tiện ích",
     "your_blocks": "Các khối của bạn",
     "your_own_custom_components": "Các thành phần tùy chỉnh của bạn",
+    "structure": "Cấu trúc",
   }
 }

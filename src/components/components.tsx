@@ -651,7 +651,7 @@ export default class DesignerComponents extends Module {
           padding={{ top: 4, bottom: 4, left: 8 }}
           background={{ color: Theme.background.main }}
         >
-          <i-label caption="Structure" font={{ bold: true, size: '0.75rem' }} />
+          <i-label caption="$structure" font={{ bold: true, size: '0.75rem' }} />
           <i-hstack visible={false} verticalAlignment="center" margin={{ left: 'auto' }}>
             <i-icon
               name="history"
@@ -681,7 +681,7 @@ export default class DesignerComponents extends Module {
         />
         <i-alert
           id="mdAlert"
-          title='Confirm'
+          title='$confirm'
           status='confirm'
           content='$are_you_sure_to_delete_this_component'
           onConfirm={this.onConfirm.bind(this)}

@@ -370,13 +370,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (typeof this.onImportFile === 'function') {
       result = await this.onImportFile(fileName, isPackage);
       if (result) {
-        if (fileName === '@ijstech/compiler') {
-          result.content = `
-            declare module '${fileName}' {
-              ${result.content}
-            } \n
-          `;
-        }
+        // if (fileName === '@ijstech/compiler') {
+        //   result.content = `
+        //     declare module '${fileName}' {
+        //       ${result.content}
+        //     } \n
+        //   `;
+        // }
         const importedName = isPackage ? fileName : result.fileName;
         const isDependency = isPackage && result?.fileName === 'index.d.ts';
         if (isDependency) this.imported[importedName] = result.content || '';
@@ -474,45 +474,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       }
     }
     else {
-      return this.getFile(fileName);
+      return await this.getFile(fileName);
     }
   };
 
-  private getFile(fileName: string): { fileName: string, content: string } | null {
-    let fName = '';
-    let fContent = '';
-    for (let f in this.imported) {
-      if (f.endsWith(fileName)) {
-        fName = fileName;
-        fContent = this.imported[f];
-        break;
-      }
-      else if (f.endsWith(fileName + '.ts')) {
-        fName = fileName + '.ts';
-        fContent = this.imported[f];
-        break;
-      }
-      else if (f.endsWith(fileName + '.tsx')) {
-        fName = fileName + '.tsx';
-        fContent = this.imported[f];
-        break;
-      }
-      else if (f.endsWith(fileName + '.d.ts')) {
-        fName = fileName + '.d.ts';
-        fContent = this.imported[f];
-        break;
-      }
-      else if (f.endsWith(fileName + '/index.ts')) {
-        fName = fileName + '/index.ts';
-        fContent = this.imported[f];
-        break;
-      }
-    }
-    if (fName) {
-      return {
-        fileName: fName,
-        content: fContent
-      }
+  private async getFile(fileName: string): Promise<{ fileName: string, content: string } | null> {
+    if (typeof this.onImportFile === 'function') {
+      return await this.onImportFile(fileName, false);
     }
     return null;
   }

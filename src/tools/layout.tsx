@@ -464,7 +464,7 @@ export default class DesignerToolLayout extends Module {
             <i-vstack gap={12}>
               <designer-selector
                 id="wrapSelector"
-                title="Wrap"
+                title="$wrap"
                 items={[
                   { value: 'nowrap', caption: 'None', type: 'wrap', isActive: true },
                   { value: 'wrap', caption: 'Wrap', type: 'wrap' },

@@ -310,7 +310,7 @@ export class ScomDesignerForm extends Module {
     const newProps: any = {};
     for (let prop in props) {
       const defaultValue = customProps[prop]?.default;
-      if (prop === 'mediaQueries') {
+      if (prop === 'mediaQueries' && Array.isArray(props[prop])) {
         props[prop] = (props[prop] || []).filter(v => (v && Object.keys(v.properties).length > 0));
         if (props[prop].length === 0) {
           continue;
