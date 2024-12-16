@@ -387,7 +387,7 @@ export const parseProps = (props: any, baseUrl = '') => {
 
 export const parsePropValue = (value: any, baseUrl?: string) => {
   if (typeof value !== "string") return value;
-  value = value.replace(/\s+([{[])|([}\]])\s+/g, '');
+  value = value.replace(/\s*([{|\[])\s*/g, '$1').replace(/\s*([}|\]])\s*/g, '$1');
   if (value.startsWith('{') && value.endsWith('}')) {
     value = value.substring(1, value.length - 1);
     if (value.startsWith('{') && value.endsWith('}')) {
