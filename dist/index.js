@@ -7259,21 +7259,19 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         async renderUI() {
             this.activeTab = 'codeTab';
             this.updateDesigner = !!(this.url || this.file?.path);
-            this.renderContent(true);
+            await this.renderContent(true);
         }
         async renderContent(init = false) {
             if (this.activeTab === 'codeTab' && !this.codeEditor) {
                 const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
-                this.codeEditor = await scom_code_editor_1.ScomCodeEditor.create({
-                    width: '100%',
-                    height: '100%',
-                    display: 'block',
-                    theme: themeVar,
-                    stack: { grow: '1' }
-                });
+                this.codeEditor = this.createElement('i-scom-code-editor', this.pnlMain);
+                this.codeEditor.width = '100%';
+                this.codeEditor.height = '100%';
+                this.codeEditor.stack = { grow: '1' };
+                this.codeEditor.theme = themeVar;
+                this.codeEditor.id = 'codeEditor';
                 this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
                 this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
-                this.codeEditor.parent = this.pnlMain;
             }
             else if (this.activeTab === 'designTab' && !this.formDesigner) {
                 this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
