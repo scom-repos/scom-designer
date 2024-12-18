@@ -100,6 +100,7 @@ export default class DesignerProperties extends Module {
     this.onBreakpointClick = this.onBreakpointClick.bind(this);
     this.onShowConfig = this.onShowConfig.bind(this);
     this.renderTrigger = this.renderTrigger.bind(this);
+    this.onPreviewClick = this.onPreviewClick.bind(this);
   }
 
   static async create(options?: DesignerPropertiesElement, parent?: Container) {
@@ -339,15 +340,19 @@ export default class DesignerProperties extends Module {
     if (this.onBreakpointChanged) this.onBreakpointChanged(value);
   }
 
-  private onPreviewClick(type: string, value: any) {
+  private onPreviewClick(type: string, value: string) {
     if (this.onPreviewChanged)
-      this.onPreviewChanged(type, value);
+      this.onPreviewChanged(type, `${value}`);
   }
 
   private onShowConfig() {
     if (this.component?.control) {
       (this.component.control as any).showConfigurator(this.mdActions, 'Data', this.onPropChanged);
     }
+  }
+
+  closePreview() {
+    this.previewSelector.activeItem = previews[0].value;
   }
 
   init() {
@@ -402,7 +407,7 @@ export default class DesignerProperties extends Module {
             direction='vertical'
             font={{transform: 'uppercase'}}
             stack={{grow: '1', shrink: '1'}}
-            onChanged={this.onPreviewClick.bind(this)}
+            onChanged={this.onPreviewClick}
           />
           {/* <i-vstack gap={'0.5rem'}>
             <i-hstack gap={4} verticalAlignment="center">
