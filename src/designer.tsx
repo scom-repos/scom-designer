@@ -81,6 +81,7 @@ class ControlResizer {
 interface ScomDesignerFormElement extends ControlElement {
   onPreview?: ()=> Promise<{module: string, script: string}>;
   onTogglePreview?: (value: boolean) => void;
+  onClose?: () => void;
 }
 
 declare global {
@@ -111,6 +112,7 @@ export class ScomDesignerForm extends Module {
   private pnlLoading: VStack
   private pnlRightIcon: Panel
   private pnlLeftIcon: Panel
+  private btnClosePreview: Icon
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -136,6 +138,7 @@ export class ScomDesignerForm extends Module {
   studio: IStudio;
   onPreview?: ()=> Promise<{module: string, script: string}>;
   onTogglePreview?: (value: boolean) => void;
+  onClose?: () => void;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -1266,8 +1269,9 @@ export class ScomDesignerForm extends Module {
     this.designPos = {};
     this.designerProperties.onUpdate();
   }
+
   private async handlePreviewChanged(type: string, value: string) {
-    const isPreviewMode = value == '1';
+    const isPreviewMode = value === '1';
     if (isPreviewMode) {
       if (this.isPreviewing) return;
       this.pnlLoading.visible = true;
@@ -1280,12 +1284,15 @@ export class ScomDesignerForm extends Module {
           this.togglePanels(true);
           this.pnlFormDesigner.visible = false;
           this.pnlPreview.visible = true;
+          this.btnClosePreview.visible = true;
           if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
             this.ifrPreview.url = this.previewUrl;
           if (result) {
             await this.ifrPreview.reload();
             this.ifrPreview.postMessage(JSON.stringify(result));
           }
+        } else {
+          this.designerProperties.closePreview();
         }
       }
       this.isPreviewing = false;
@@ -1298,19 +1305,27 @@ export class ScomDesignerForm extends Module {
       this.pnlFormDesigner.visible = true;
       this.pnlPreview.visible = false;
       this.pnlLoading.visible = false;
+      this.btnClosePreview.visible = false;
       if (this.ifrPreview)
         this.ifrPreview.unload();
     }
   }
+
   private togglePanels(value: boolean) {
     if (this.pnlScreens) this.pnlScreens.width = value ? 0 : '100%';
     if (this.designerProperties) {
       this.designerProperties.show(value);
       this.designerProperties.height = value ? 'auto' : '100%';
     }
-    // if (this.pnlRightIcon) this.pnlRightIcon.visible = !value;
     if (this.pnlLeftIcon) this.pnlLeftIcon.visible = !value;
   }
+
+  private onClosePreview() {
+    this.designerProperties.closePreview();
+    this.handlePreviewChanged('preview', '0');
+    if (typeof this.onClose === 'function') this.onClose();
+  }
+
   private handleBreakpoint(value: number) {
     const { minWidth } = breakpointsMap[value];
     if (minWidth !== undefined) {
@@ -1359,6 +1374,8 @@ export class ScomDesignerForm extends Module {
   init() {
     this.i18n.init({...mainJson});
     super.init()
+    this.onClose = this.getAttribute('onClose', true) || this.onClose;
+    this.onPreview = this.getAttribute('onPreview', true) || this.onPreview;
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
     this.initBlockPicker()
@@ -1631,6 +1648,16 @@ export class ScomDesignerForm extends Module {
                 position='absolute' top={'0.5rem'} left={'0.15rem'}
               ></i-icon>
             </i-panel>
+            <i-icon
+              id="btnClosePreview"
+              name="times"
+              width={16} height={16}
+              visible={false}
+              top={5} right={10}
+              zIndex={999}
+              cursor='pointer'
+              onClick={this.onClosePreview}
+            ></i-icon>
             <designer-properties
               id='designerProperties'
               display='flex'

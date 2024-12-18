@@ -212,7 +212,7 @@ const themesConfig = {
     paperBgColor: '#000',
     divider: '#374151',
     "selected": "rgb(101 161 180)",
-    "selectedBackground": "rgb(63 137 161/.12)"
+    "selectedBackground": "rgb(63 137 161/.5)"
   },
   light: {
     backgroundColor: '#f5f5f5',

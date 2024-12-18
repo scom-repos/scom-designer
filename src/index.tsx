@@ -19,7 +19,7 @@ import {
 import { blockStyle } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
-import { Compiler, Parser } from '@ijstech/compiler'
+import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
 import { themesConfig } from './helpers/config';
@@ -29,6 +29,8 @@ const Theme = Styles.Theme.ThemeVars;
 type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
 type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
+type onClosePreviewCallback = () => void;
+type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -42,6 +44,8 @@ interface ScomDesignerElement extends ControlElement {
   onPreview?: () => Promise<{ module: string, script: string }>;
   onTogglePreview?: (value: boolean) => void;
   onImportFile?: onImportCallback;
+  onClosePreview?: onClosePreviewCallback;
+  onRenderError?: onRenderErrorCallback;
 }
 
 declare global {
@@ -92,6 +96,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   onPreview?: () => Promise<{ module: string, script: string }>;
   onImportFile?: onImportCallback;
   onTogglePreview?: (value: boolean) => void;
+  onClosePreview?: onClosePreviewCallback;
+  onRenderError?: onRenderErrorCallback;
   tag: any = {}
 
   set previewUrl(url: string) {
@@ -293,6 +299,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async renderContent(init = false) {
+    const isTsx = this.file?.path?.endsWith('.tsx');
     if (this.activeTab === 'codeTab' && !this.codeEditor) {
       const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
       this.codeEditor = this.createElement('i-scom-code-editor', this.pnlMain) as ScomCodeEditor;
@@ -311,7 +318,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.previewUrl = this._previewUrl;
       this.formDesigner.onPreview = this.handleDesignerPreview;
       this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
+      this.formDesigner.onClose = () => {
+        typeof this.onClosePreview === 'function' && this.onClosePreview();
+      };
       this.formDesigner.studio = this;
+      this.formDesigner.visible = isTsx;
     }
 
     if (this.formDesigner) {
@@ -324,6 +335,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.loadContent();
     }
     this.updateButtons();
+    this.designTab.enabled = isTsx;
   }
 
   private handleTogglePanels(value: boolean) {
@@ -363,8 +375,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (this.imported[fileName]) {
       return this.imported[fileName];
     }
-    // let result = this.getFile(fileName);
-    // if (result) return result;
     let result: any = null;
     if (typeof this.onImportFile === 'function') {
       result = await this.onImportFile(fileName, isPackage);
@@ -490,21 +500,25 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       return await this.onPreview()
     else {
       let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
+      const fileName = this.fileName || 'index.tsx';
       if (value) {
         let compiler = new Compiler()
         await compiler.addFile(
-          'index.tsx',
+          fileName,
           value,
           this.getImportFile.bind(this)
         );
         let result = await compiler.compile(true)
-        if (result.errors?.length > 0)
-          console.error(result.errors)
-        else
-          return {
-            module: '@scom/debug-module',
-            script: result?.script['index.js']
-          };
+        if (result.errors?.length > 0) {
+          console.error(result.errors);
+          if (typeof this.onRenderError === 'function')
+            this.onRenderError(result.errors)
+          return null;
+        }
+        return {
+          module: '@scom/debug-module',
+          script: result?.script['index.js']
+        };
       }
     }
   }
@@ -538,6 +552,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.setData({ url: mediaUrl })
   }
 
+  clear() {
+    this.imported = {};
+    this.compiler = new Compiler();
+    this.activeTab = 'codeTab';
+  }
+
   init() {
     this.i18n.init({...mainJson});
     super.init()
@@ -545,6 +565,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onChange = this.getAttribute('onChange', true) || this.onChange
     this.onImportFile = this.getAttribute('onImportFile', true) || this.onImportFile
     this.onTogglePreview = this.getAttribute('onTogglePreview', true) || this.onTogglePreview
+    this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview
+    this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
     this.addLib()
