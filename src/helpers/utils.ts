@@ -425,6 +425,9 @@ export const parsePropValue = (value: any, baseUrl?: string) => {
   else if (value.startsWith("'") && value.endsWith("'")) {
     value = value.substring(1, value.length - 1);
   }
+  if (typeof value === 'string' && value?.startsWith('Theme.')) {
+    value = getThemeValue(value);
+  }
   return value;
 };
 
@@ -445,12 +448,7 @@ export const handleParse = (value: string, baseUrl?: string) => {
 
     const parsedData = JSON.parse(newValue, (key, value) => {
       if (typeof value === 'string' && value.startsWith('Theme')) {
-        const parsedValue = value.split('.');
-        let themeValue = Theme;
-        for (let i = 1; i < parsedValue.length; i++) {
-          themeValue = themeValue[parsedValue[i]]
-        }
-        return themeValue;
+        return getThemeValue(value);
       } else if (typeof value === 'string' && value.includes('fullPath')) {
         return getRealImageUrl(baseUrl, value);
       }
@@ -460,6 +458,15 @@ export const handleParse = (value: string, baseUrl?: string) => {
   } catch {
     return value;
   }
+}
+
+const getThemeValue = (value: string) => {
+  const parsedValue = value.split('.');
+  let themeValue = Theme;
+  for (let i = 1; i < parsedValue.length; i++) {
+    themeValue = themeValue[parsedValue[i]]
+  }
+  return themeValue;
 }
 
 const getRealImageUrl = (baseUrl: string, value: string) => {
