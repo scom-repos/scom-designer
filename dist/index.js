@@ -924,6 +924,9 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         else if (value.startsWith("'") && value.endsWith("'")) {
             value = value.substring(1, value.length - 1);
         }
+        if (typeof value === 'string' && value?.startsWith('Theme.')) {
+            value = getThemeValue(value);
+        }
         return value;
     };
     exports.parsePropValue = parsePropValue;
@@ -942,12 +945,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
                 .replace(/,\s+\}$/g, '}');
             const parsedData = JSON.parse(newValue, (key, value) => {
                 if (typeof value === 'string' && value.startsWith('Theme')) {
-                    const parsedValue = value.split('.');
-                    let themeValue = Theme;
-                    for (let i = 1; i < parsedValue.length; i++) {
-                        themeValue = themeValue[parsedValue[i]];
-                    }
-                    return themeValue;
+                    return getThemeValue(value);
                 }
                 else if (typeof value === 'string' && value.includes('fullPath')) {
                     return getRealImageUrl(baseUrl, value);
@@ -961,6 +959,14 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         }
     };
     exports.handleParse = handleParse;
+    const getThemeValue = (value) => {
+        const parsedValue = value.split('.');
+        let themeValue = Theme;
+        for (let i = 1; i < parsedValue.length; i++) {
+            themeValue = themeValue[parsedValue[i]];
+        }
+        return themeValue;
+    };
     const getRealImageUrl = (baseUrl, value) => {
         if (typeof value === 'string') {
             const regex = /^([a-z0-9A-Z]*)\.fullPath\(('|")([^)]+)('|")\)/gi;
@@ -6964,10 +6970,13 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 this.onClose();
         }
         handleBreakpoint(value) {
-            const { minWidth } = config_8.breakpointsMap[value];
+            const { minWidth, maxWidth } = config_8.breakpointsMap[value];
             if (minWidth !== undefined) {
-                this.pnlFormDesigner.width = minWidth;
-                this.pnlPreview.width = minWidth;
+                this.pnlFormDesigner.minWidth = minWidth;
+                this.pnlFormDesigner.maxWidth = maxWidth || '1400px';
+                this.pnlPreview.minWidth = minWidth;
+                this.pnlPreview.maxWidth = maxWidth || '1400px';
+                this.pnlPreview.width = "100%";
             }
             this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
             this.onUpdateDesigner();

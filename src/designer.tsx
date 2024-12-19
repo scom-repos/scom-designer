@@ -1327,10 +1327,13 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleBreakpoint(value: number) {
-    const { minWidth } = breakpointsMap[value];
+    const { minWidth, maxWidth } = breakpointsMap[value];
     if (minWidth !== undefined) {
-      this.pnlFormDesigner.width = minWidth;
-      this.pnlPreview.width = minWidth;
+      this.pnlFormDesigner.minWidth = minWidth;
+      this.pnlFormDesigner.maxWidth = maxWidth || '1400px';
+      this.pnlPreview.minWidth = minWidth;
+      this.pnlPreview.maxWidth = maxWidth || '1400px';
+      this.pnlPreview.width = "100%";
     }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.onUpdateDesigner();
