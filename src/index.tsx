@@ -16,7 +16,7 @@ import {
   Styles,
   Markdown
 } from '@ijstech/components';
-import { blockStyle } from './index.css'
+import { blockStyle, customActivedStyled } from './index.css'
 import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
@@ -90,6 +90,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private _previewUrl: string;
   private imported: Record<string, string> = {};
   private activeTab: string = 'codeTab';
+  private mode: string = '';
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
@@ -301,28 +302,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async renderContent(init = false) {
     const isTsx = this.file?.path?.endsWith('.tsx');
     if (this.activeTab === 'codeTab' && !this.codeEditor) {
-      const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
-      this.codeEditor = this.createElement('i-scom-code-editor', this.pnlMain) as ScomCodeEditor;
-      this.codeEditor.width = '100%';
-      this.codeEditor.height = '100%';
-      this.codeEditor.stack = {grow: '1'};
-      this.codeEditor.theme = themeVar as any;
-      this.codeEditor.id = 'codeEditor';
-      this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
-      this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
+      this.createCodeEditor();
     } else if (this.activeTab === 'designTab' && !this.formDesigner) {
-      this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
-      this.formDesigner.width = '100%';
-      this.formDesigner.height = '100%';
-      this.formDesigner.stack = {grow: '1'};
-      this.formDesigner.previewUrl = this._previewUrl;
-      this.formDesigner.onPreview = this.handleDesignerPreview;
-      this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
-      this.formDesigner.onClose = () => {
-        typeof this.onClosePreview === 'function' && this.onClosePreview();
-      };
-      this.formDesigner.studio = this;
-      this.formDesigner.visible = isTsx;
+      this.createFormDesigner();
     }
 
     if (this.formDesigner) {
@@ -336,6 +318,34 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
     this.updateButtons();
     this.designTab.enabled = isTsx;
+  }
+
+  private createCodeEditor() {
+    const themeVar = document.body.style.getPropertyValue('--theme') || 'dark';
+    this.codeEditor = this.createElement('i-scom-code-editor', this.pnlMain) as ScomCodeEditor;
+    this.codeEditor.width = '100%';
+    this.codeEditor.height = '100%';
+    this.codeEditor.stack = {grow: '1'};
+    this.codeEditor.theme = themeVar as any;
+    this.codeEditor.id = 'codeEditor';
+    this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
+    this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
+  }
+
+  private createFormDesigner() {
+    const isTsx = this.file?.path?.endsWith('.tsx');
+    this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
+    this.formDesigner.width = '100%';
+    this.formDesigner.height = '100%';
+    this.formDesigner.stack = {grow: '1'};
+    this.formDesigner.previewUrl = this._previewUrl;
+    this.formDesigner.onPreview = this.handleDesignerPreview;
+    this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
+    this.formDesigner.onClose = () => {
+      typeof this.onClosePreview === 'function' && this.onClosePreview();
+    };
+    this.formDesigner.studio = this;
+    this.formDesigner.visible = isTsx;
   }
 
   private handleTogglePanels(value: boolean) {
@@ -360,8 +370,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private updateButtons() {
-    this.codeTab.background = {color: this.activeTab === 'codeTab' ? Theme.colors.secondary.main : Theme.action.activeBackground};
-    this.designTab.background = {color: this.activeTab === 'designTab' ? Theme.colors.secondary.main : Theme.action.activeBackground}
+    if (this.activeTab === 'codeTab') {
+      this.codeTab.classList.add(customActivedStyled);
+      this.designTab.classList.remove(customActivedStyled);
+    } else {
+      this.codeTab.classList.remove(customActivedStyled);
+      this.designTab.classList.add(customActivedStyled);
+    }
   }
 
   private async addLib() {
@@ -405,7 +420,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return result;
   }
 
-  private async handleTabChanged(target: Button, event: Event) {
+  private async handleTabChanged(target: Button) {
     this.activeTab = target.id;
     const fileName = this.fileName;
     await this.renderContent();
@@ -556,6 +571,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.imported = {};
     this.compiler = new Compiler();
     this.activeTab = 'codeTab';
+    if (this.formDesigner) this.formDesigner.clear();
+    if (this.mode === 'preview') this.formDesigner.closePreview();
   }
 
   init() {
@@ -596,6 +613,22 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private updateStyle(name: string, value: any) {
     value ? this.style.setProperty(name, value) : this.style.removeProperty(name);
+  }
+
+  async renderMode(mode: string) {
+    this.mode = mode;
+    if (mode === 'preview') {
+      if (this.activeTab !== 'designTab')
+        await this.handleTabChanged(this.designTab);
+      this.formDesigner.preview();
+    } else if (mode === 'designer') {
+      if (this.activeTab !== 'designTab')
+        await this.handleTabChanged(this.designTab);
+      this.formDesigner.design();
+    } else if (mode === 'code') {
+      if (this.activeTab !== 'codeTab')
+        await this.handleTabChanged(this.codeTab);
+    }
   }
 
   private updateTheme() {
@@ -750,6 +783,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           verticalAlignment='center'
           stack={{ shrink: '0' }}
           id="pnlHeader"
+          mediaQueries={[
+            {
+              maxWidth: '767px',
+              properties: {
+                visible: false
+              }
+            }
+          ]}
         >
           <i-button
             id="codeTab"

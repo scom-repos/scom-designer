@@ -160,3 +160,15 @@ export const customScrollbar = Styles.style({
 export const toggleClass = Styles.style({
   filter: 'contrast(0.5)',
 })
+
+export const customActivedStyled = Styles.style({
+  background: `${Theme.colors.secondary.main}!important`
+})
+
+export const customModalStyled = Styles.style({
+  $nest: {
+    '.i-modal_body': {
+      height: '100%'
+    }
+  }
+})

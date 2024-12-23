@@ -15,6 +15,8 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customTransition: string;
     export const customScrollbar: string;
     export const toggleClass: string;
+    export const customActivedStyled: string;
+    export const customModalStyled: string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
@@ -2121,6 +2123,11 @@ declare module "@scom/scom-designer/designer.tsx" {
         private pnlRightIcon;
         private pnlLeftIcon;
         private btnClosePreview;
+        private btnScreens;
+        private mdMobile;
+        private pnlWrap;
+        private pnlDesignHeader;
+        private pnlProperties;
         private pathMapping;
         private mouseDown;
         private resizing;
@@ -2136,6 +2143,7 @@ declare module "@scom/scom-designer/designer.tsx" {
         private isPreviewing;
         baseUrl: string;
         private _previewUrl;
+        private isPreviewMode;
         private handleMouseMoveBound;
         private handleMouseUpBound;
         selectedControl: IControl;
@@ -2169,7 +2177,6 @@ declare module "@scom/scom-designer/designer.tsx" {
         private onTabChanged;
         private onFilterComponent;
         private onShowComponentPicker;
-        private onModalOpen;
         private onSelectComponent;
         private onVisibleComponent;
         private onDeleteComponent;
@@ -2204,11 +2211,17 @@ declare module "@scom/scom-designer/designer.tsx" {
         private handleControlMouseUp;
         private updateDesignPosition;
         private handlePreviewChanged;
+        preview(): Promise<void>;
+        design(): Promise<void>;
         private togglePanels;
-        private onClosePreview;
+        closePreview(): void;
         private handleBreakpoint;
         private onToggleClick;
         private initEvents;
+        private onToggleStructure;
+        private handleClose;
+        private onModalOpen;
+        private onModalClose;
         onHide(): void;
         init(): void;
         render(): any;
@@ -2347,6 +2360,7 @@ declare module "@scom/scom-designer" {
         private _previewUrl;
         private imported;
         private activeTab;
+        private mode;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2386,6 +2400,8 @@ declare module "@scom/scom-designer" {
         restoreViewState(state: any): void;
         private renderUI;
         private renderContent;
+        private createCodeEditor;
+        private createFormDesigner;
         private handleTogglePanels;
         private loadContent;
         private resetTab;
@@ -2410,6 +2426,7 @@ declare module "@scom/scom-designer" {
         private updateTag;
         private setTag;
         private updateStyle;
+        renderMode(mode: string): Promise<void>;
         private updateTheme;
         private getTag;
         getConfigurators(): ({
