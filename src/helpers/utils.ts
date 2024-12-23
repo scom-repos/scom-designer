@@ -435,7 +435,7 @@ export const handleParse = (value: string, baseUrl?: string) => {
   try {
     const newValue =
       value
-        .replace(/(['"`])?(?!HH:|mm:|https?:)\b([a-z0-9A-Z_]+)(['"`])?:/g, '"$2": ')
+        .replace(/(['"`])?(?!HH:|mm:|https?:|\\:)\b([a-z0-9A-Z_]+)(['"`])?:/g, '"$2": ')
         .replace(/'/g, '"')
         .replace(/\<([^\>]*)\>/g, (match, p1) => {
           const innerText: string = p1.replace(/"/g, '\'');
