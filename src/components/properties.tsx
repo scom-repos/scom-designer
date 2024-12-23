@@ -398,6 +398,12 @@ export default class DesignerProperties extends Module {
             direction='vertical'
             stack={{grow: '1', shrink: '1'}}
             font={{transform: 'uppercase'}}
+            mediaQueries={[
+              {
+                maxWidth: '767px',
+                properties: { visible: false }
+              }
+            ]}
             onChanged={this.onBreakpointClick}
           />
           <designer-selector
@@ -407,6 +413,12 @@ export default class DesignerProperties extends Module {
             direction='vertical'
             font={{transform: 'uppercase'}}
             stack={{grow: '1', shrink: '1'}}
+            mediaQueries={[
+              {
+                maxWidth: '767px',
+                properties: { visible: false }
+              }
+            ]}
             onChanged={this.onPreviewClick}
           />
           {/* <i-vstack gap={'0.5rem'}>

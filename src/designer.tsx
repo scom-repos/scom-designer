@@ -19,7 +19,9 @@ import {
   Styles,
   TreeView,
   VStack,
-  TreeNode
+  TreeNode,
+  Button,
+  HStack
 } from '@ijstech/components';
 import {
   DesignerScreens,
@@ -29,7 +31,7 @@ import {
   DesignerPickerBlocks
 } from './components/index';
 import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock } from './interface'
-import { customLabelTabStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from './index.css'
+import { customLabelTabStyled, customModalStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from './index.css'
 import {
   blockComponents
 } from './data'
@@ -113,6 +115,11 @@ export class ScomDesignerForm extends Module {
   private pnlRightIcon: Panel
   private pnlLeftIcon: Panel
   private btnClosePreview: Icon
+  private btnScreens: Button
+  private mdMobile: Modal
+  private pnlWrap: Panel
+  private pnlDesignHeader: HStack
+  private pnlProperties: Panel
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -129,6 +136,7 @@ export class ScomDesignerForm extends Module {
   private isPreviewing: boolean = false;
   baseUrl: string = '';
   private _previewUrl: string = '';
+  private isPreviewMode: boolean = false;
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
   private handleMouseUpBound: (event: MouseEvent) => void;
@@ -253,6 +261,7 @@ export class ScomDesignerForm extends Module {
         delete controlProps[key];
       }
     }
+
     const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
     if (name.includes('scom')) {
       parent?.appendChild(control);
@@ -427,6 +436,7 @@ export class ScomDesignerForm extends Module {
   clear() {
     this.pathMapping = new Map();
     this.libsMap = {};
+    this.handleBreakpoint(0);
   }
 
   private onScreenChanged(screen: IScreen) {}
@@ -469,10 +479,6 @@ export class ScomDesignerForm extends Module {
     this.mdPicker.height = this.designerComponents.height;
     this.currentParent = component;
     this.mdPicker.visible = true;
-  }
-
-  private onModalOpen() {
-    // this.initComponentPicker();
   }
 
   private onSelectComponent(component: IComponent) {
@@ -1271,56 +1277,89 @@ export class ScomDesignerForm extends Module {
   }
 
   private async handlePreviewChanged(type: string, value: string) {
-    const isPreviewMode = value === '1';
-    if (isPreviewMode) {
-      if (this.isPreviewing) return;
-      this.pnlLoading.visible = true;
-      this.isPreviewing = true;
-      if (typeof this.onPreview === 'function') {
-        let result = await this.onPreview();
-        if (result?.module) {
-          if (typeof this.onTogglePreview === 'function')
-            this.onTogglePreview(true);
-          this.togglePanels(true);
-          this.pnlFormDesigner.visible = false;
-          this.pnlPreview.visible = true;
-          this.btnClosePreview.visible = true;
-          if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
-            this.ifrPreview.url = this.previewUrl;
-          if (result) {
-            await this.ifrPreview.reload();
-            this.ifrPreview.postMessage(JSON.stringify(result));
-          }
-        } else {
-          this.designerProperties.closePreview();
-        }
-      }
-      this.isPreviewing = false;
-      this.pnlLoading.visible = false;
+    this.isPreviewMode = value === '1';
+    if (this.isPreviewMode) {
+      await this.preview();
     }
     else {
-      if (typeof this.onTogglePreview === 'function')
-        this.onTogglePreview(false);
-      this.togglePanels(false);
-      this.pnlFormDesigner.visible = true;
-      this.pnlPreview.visible = false;
-      this.pnlLoading.visible = false;
-      this.btnClosePreview.visible = false;
-      if (this.ifrPreview)
-        this.ifrPreview.unload();
+      this.design();
     }
   }
 
+  async preview() {
+    if (this.isPreviewing) return;
+    this.pnlProperties.mediaQueries = [
+      {
+        maxWidth: '767px',
+        properties: {
+          maxWidth: '100%',
+          width: '100%',
+          visible: false
+        }
+      }
+    ]
+    this.pnlLoading.visible = true;
+    this.isPreviewing = true;
+    if (typeof this.onPreview === 'function') {
+      let result = await this.onPreview();
+      if (result?.module) {
+        if (typeof this.onTogglePreview === 'function')
+          this.onTogglePreview(true);
+        this.togglePanels(true);
+        this.pnlFormDesigner.visible = false;
+        this.pnlPreview.visible = true;
+        this.btnClosePreview.visible = true;
+        if (!this.ifrPreview.url || this._previewUrl !== this.ifrPreview.url)
+          this.ifrPreview.url = this.previewUrl;
+        if (result) {
+          await this.ifrPreview.reload();
+          this.ifrPreview.postMessage(JSON.stringify(result));
+        }
+      } else {
+        this.designerProperties.closePreview();
+      }
+    }
+    this.isPreviewing = false;
+    this.pnlLoading.visible = false;
+  }
+
+  async design() {
+    this.pnlProperties.mediaQueries = [
+      {
+        maxWidth: '767px',
+        properties: {
+          maxWidth: '100%',
+          width: '100%'
+        }
+      }
+    ]
+    if (typeof this.onTogglePreview === 'function')
+      this.onTogglePreview(false);
+    this.togglePanels(false);
+    this.pnlFormDesigner.visible = true;
+    this.pnlPreview.visible = false;
+    this.pnlLoading.visible = false;
+    this.btnClosePreview.visible = false;
+    if (this.ifrPreview)
+      this.ifrPreview.unload();
+  }
+
   private togglePanels(value: boolean) {
-    if (this.pnlScreens) this.pnlScreens.width = value ? 0 : '100%';
+    if (this.pnlScreens) {
+      this.pnlScreens.width = value ? 0: '100%';
+    }
     if (this.designerProperties) {
       this.designerProperties.show(value);
       this.designerProperties.height = value ? 'auto' : '100%';
     }
     if (this.pnlLeftIcon) this.pnlLeftIcon.visible = !value;
+    if (this.pnlDesignHeader) {
+      this.pnlDesignHeader.mediaQueries = value ? [] : [{maxWidth: '767px', properties: {visible: true}}];
+      this.pnlDesignHeader.display = value ? 'none' : 'flex';
+    }
   }
 
-  private onClosePreview() {
+  closePreview() {
     this.designerProperties.closePreview();
     this.handlePreviewChanged('preview', '0');
     if (typeof this.onClose === 'function') this.onClose();
@@ -1331,9 +1370,15 @@ export class ScomDesignerForm extends Module {
     if (minWidth !== undefined) {
       this.pnlFormDesigner.minWidth = minWidth;
       this.pnlFormDesigner.maxWidth = maxWidth || '1400px';
-      this.pnlPreview.minWidth = minWidth;
-      this.pnlPreview.maxWidth = maxWidth || '1400px';
-      this.pnlPreview.width = "100%";
+      if (!maxWidth) {
+        this.pnlPreview.minWidth = minWidth;
+        this.pnlPreview.width = "100%";
+        this.pnlPreview.maxWidth = '1400px';
+      } else {
+        this.pnlPreview.width = minWidth;
+        this.pnlPreview.minWidth = minWidth;
+        this.pnlPreview.maxWidth = maxWidth;
+      }
     }
     this.designerWrapper.alignItems = value >= 3 ? 'start' : 'center';
     this.onUpdateDesigner();
@@ -1365,6 +1410,23 @@ export class ScomDesignerForm extends Module {
     this.pnlFormDesigner.addEventListener('mousedown', this.handleControlMouseDown.bind(this));
   }
 
+  private onToggleStructure() {
+    this.mdMobile.visible = true;
+  }
+
+  private handleClose() {
+    this.mdMobile.visible = false;
+  }
+
+  private onModalOpen() {
+    this.pnlWrap.clearInnerHTML();
+    this.pnlWrap.appendChild(this.designerComponents);
+  }
+
+  private onModalClose() {
+    this.pnlScreens.appendChild(this.designerComponents);
+  }
+
   onHide(): void {
     super.onHide();
     this.designerComponents?.onHide();
@@ -1394,7 +1456,49 @@ export class ScomDesignerForm extends Module {
         // margin={{ left: 'auto', right: 'auto' }}
         position='relative'
       >
-        <i-hstack width='100%' height='100%'>
+        <i-hstack
+          id="pnlDesignHeader"
+          verticalAlignment='center'
+          stack={{ shrink: '0' }}
+          width={'100%'}
+          height={48}
+          padding={{ left: 16, right: 16 }}
+          gap={8}
+          boxShadow={Theme.shadows[1]}
+          background={{ color: Theme.background.main }}
+          visible={false}
+          mediaQueries={[
+            {
+              maxWidth: '767px',
+              properties: {
+                visible: true
+              }
+            }
+          ]}
+        >
+          <i-button
+            id="btnScreens"
+            icon={{name: 'ellipsis-h'}}
+            boxShadow='none'
+            padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
+            background={{color: 'transparent'}}
+            onClick={this.onToggleStructure}
+          ></i-button>
+        </i-hstack>
+        <i-stack
+          width='100%' height='100%'
+          direction='horizontal'
+          mediaQueries={[
+            {
+              maxWidth: '767px',
+              properties: {
+                direction: 'vertical',
+                overflow: 'auto',
+                padding: {bottom: '2rem'}
+              }
+            }
+          ]}
+        >
           <i-vstack
             id="pnlScreens"
             width='100%'
@@ -1407,6 +1511,14 @@ export class ScomDesignerForm extends Module {
             overflow={'visible'}
             zIndex={10}
             class={customTransition}
+            mediaQueries={[
+              {
+                maxWidth: '767px',
+                properties: {
+                  visible: false
+                }
+              }
+            ]}
           >
             <i-panel
               id="pnlLeftIcon"
@@ -1457,7 +1569,6 @@ export class ScomDesignerForm extends Module {
               popupPlacement='rightTop'
               zIndex={2000}
               padding={{top: 0, bottom: 0, left: 0, right: 0}}
-              onOpen={this.onModalOpen}
             >
               <i-panel
                 width={'100%'}
@@ -1553,10 +1664,18 @@ export class ScomDesignerForm extends Module {
             id="designerWrapper"
             stack={{grow: '1'}}
             padding={{top: '1rem', bottom: '1rem', left: '1rem', right: '1rem'}}
-            overflow={'hidden'}
+            overflow="hidden"
             zIndex={0}
             alignItems='center'
             position='relative'
+            mediaQueries={[
+              {
+                maxWidth: '767px',
+                properties: {
+                  minHeight: 'calc(100% - 61px)'
+                }
+              }
+            ]}
           >
             <i-vstack
               id="pnlLoading"
@@ -1572,7 +1691,7 @@ export class ScomDesignerForm extends Module {
                 {
                   maxWidth: '767px',
                   properties: {
-                    height: 'calc(100% - 3.125rem)',
+                    height: '100%',
                     top: 0
                   }
                 }
@@ -1631,6 +1750,16 @@ export class ScomDesignerForm extends Module {
             width={'100%'}
             height={'100%'}
             class={customTransition}
+            mediaQueries={[
+              {
+                maxWidth: '767px',
+                properties: {
+                  maxWidth: '100%',
+                  width: '100%',
+                  visible: false
+                }
+              }
+            ]}
           >
             <i-panel
               id="pnlRightIcon"
@@ -1642,6 +1771,14 @@ export class ScomDesignerForm extends Module {
               cursor='pointer'
               class={toggleClass}
               onClick={this.onToggleClick.bind(this)}
+              mediaQueries={[
+                {
+                  maxWidth: '767px',
+                  properties: {
+                    visible: false
+                  }
+                }
+              ]}
             >
               <i-icon
                 name="angle-right"
@@ -1659,7 +1796,7 @@ export class ScomDesignerForm extends Module {
               top={5} right={10}
               zIndex={999}
               cursor='pointer'
-              onClick={this.onClosePreview}
+              onClick={this.closePreview}
             ></i-icon>
             <designer-properties
               id='designerProperties'
@@ -1672,7 +1809,45 @@ export class ScomDesignerForm extends Module {
               onPreviewChanged={this.handlePreviewChanged}
             />
           </i-panel>
-        </i-hstack>
+        </i-stack>
+        <i-modal
+          id="mdMobile"
+          width={'100dvw'}
+          height={'50dvh'}
+          popupPlacement='bottom'
+          zIndex={999}
+          overflow={{y: 'auto'}}
+          padding={{top: 0, right: 0, bottom: 0, left: 0}}
+          border={{top: {width: '1px', style: 'solid', color: Theme.divider}}}
+          showBackdrop={true}
+          visible={false}
+          closeOnBackdropClick={false}
+          class={customModalStyled}
+          onOpen={this.onModalOpen}
+          onClose={this.onModalClose}
+        >
+          <i-vstack
+            width={'100%'} height={'100%'}
+            overflow={'hidden'}
+          >
+            <i-panel id="pnlWrap" stack={{grow: '1'}}></i-panel>
+            <i-hstack
+              verticalAlignment='center'
+              width={'100%'}
+              gap={8}
+              cursor='pointer'
+              padding={{top: 8, bottom: 8, left: 16, right: 16}}
+              margin={{top: 12, bottom: 12}}
+              border={{radius: '1rem', width: 1, style: 'solid', color: Theme.divider}}
+              hover={{opacity: 0.7}}
+              stack={{shrink: '0'}}
+              horizontalAlignment='center'
+              onClick={this.handleClose}
+            >
+              <i-label caption='Close'></i-label>
+            </i-hstack>
+          </i-vstack>
+        </i-modal>
       </i-vstack>
     )
   }
