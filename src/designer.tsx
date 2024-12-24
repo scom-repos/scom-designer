@@ -260,6 +260,9 @@ export class ScomDesignerForm extends Module {
       if (typeof value === 'string' && value.startsWith('this.')) {
         delete controlProps[key];
       }
+      if (key === 'class') {
+        delete controlProps[key];
+      }
     }
 
     const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
@@ -392,6 +395,8 @@ export class ScomDesignerForm extends Module {
     // }
     if (props.events[prop]) {
       valueStr = `{${value}}`;
+    } else if (prop === 'class') {
+      valueStr = typeof value === 'string' && value.includes('-') ? '"' + value + '"' : `{${value}}`;
     } else {
       if (typeof value === 'number') {
         valueStr = "{" + value + "}";
