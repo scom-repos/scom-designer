@@ -425,13 +425,14 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         }
     };
     exports.GroupMetadata = GroupMetadata;
-    const ITEMS = ['i-accordion-item', 'i-tab', 'i-menu-item'];
+    const ITEMS = ['i-accordion-item', 'i-tab', 'i-menu-item', 'i-radio'];
     exports.ITEMS = ITEMS;
     const ITEM_PARENTS = [
         'i-accordion',
         'i-tabs',
         'i-menu',
-        'i-menu-item'
+        'i-menu-item',
+        'i-radio-group'
     ];
     exports.ITEM_PARENTS = ITEM_PARENTS;
     const CONTAINERS = [
@@ -448,7 +449,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         'i-accordion-item',
         'i-hstack',
         'i-vstack',
-        'i-modal'
+        'i-modal',
+        'i-radio'
     ];
     exports.CONTAINERS = CONTAINERS;
     const ControlItemMapper = {
@@ -457,7 +459,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         'i-menu': 'i-menu-item',
         'i-menu-item': 'i-menu-item',
         'i-tree-view': 'i-tree-node',
-        'i-tree-node': 'i-tree-node'
+        'i-tree-node': 'i-tree-node',
+        'i-radio-group': 'i-radio'
     };
     exports.ControlItemMapper = ControlItemMapper;
     const themesConfig = {
@@ -4613,7 +4616,10 @@ define("@scom/scom-designer/tools/group.tsx", ["require", "exports", "@ijstech/c
                         onClick: async () => {
                             const data = await this.form.getFormData();
                             Object.keys(data).forEach(key => {
-                                if (data[key] === undefined)
+                                if (key === 'radioItems' && data[key] === undefined) {
+                                    data[key] = [];
+                                }
+                                else if (data[key] === undefined)
                                     delete data[key];
                             });
                             if (this.isChecked) {
@@ -6012,33 +6018,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             if (value === undefined)
                 return `{undefined}`;
             let props = control.control._getCustomProperties();
-            // let property = props.props[prop];
             let valueStr = value;
-            // if (property) {
-            //   switch (property.type) {
-            //     case "number": {
-            //       valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
-            //       break;
-            //     }
-            //     case "string": {
-            //       valueStr = '"' + value + '"';
-            //       break;
-            //     }
-            //     case "boolean": {
-            //       valueStr = "{" + value + "}";
-            //       break;
-            //     }
-            //     case "object": {
-            //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-            //       break;
-            //     }
-            //     case "array": {
-            //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-            //       break;
-            //     }
-            //   }
-            //   control.props[prop] = valueStr;
-            // }
             if (props.events[prop]) {
                 valueStr = `{${value}}`;
             }
@@ -6265,7 +6245,10 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 (component.name === 'i-menu-item' && parenNodeName === 'I-MENU') ||
                 (component.name === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
                 (component.name === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
-            const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') || (parenNodeName === 'I-REPEATER') || (parenNodeName === 'I-ACCORDION-ITEM');
+            (component.name === 'i-radio-group' && parenNodeName === 'I-RADIO');
+            const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') ||
+                (parenNodeName === 'I-REPEATER') ||
+                (parenNodeName === 'I-ACCORDION-ITEM');
             if (isAddOption) {
                 control = parent.add({ ...config.options, designMode: true, cursor: 'pointer' });
                 const breakpointProps = (0, config_8.getMediaQueryProps)(config.mediaQueries);
@@ -6503,20 +6486,18 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-label':
                     props = {
-                        position: 'relative',
                         caption: 'Label'
                     };
                     break;
                 case 'i-icon':
                     props = {
-                        ...props,
                         width: '24px',
                         height: '24px'
                     };
                     break;
                 case 'i-progress':
                     props = {
-                        ...props,
+                        width: '100%',
                         percent: '{100}',
                         strokeWidth: '{5}',
                         minHeight: '{5}',
@@ -6525,7 +6506,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-pagination':
                     props = {
-                        ...props,
+                        width: '100%',
                         pageSize: '{10}',
                         currentPage: '{1}',
                         totalPages: '{2}',
@@ -6533,21 +6514,18 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     break;
                 case 'i-tree-node':
                     props = {
-                        position: 'relative',
                         caption: 'Tree Node'
                     };
                     break;
                 case 'i-menu-item':
                     props = {
-                        position: 'relative',
                         title: 'Menu Item',
                         textAlign: 'left'
                     };
                     break;
                 case 'i-radio-group':
                     props = {
-                        ...props,
-                        radioItems: '{[{"caption":"Option 1","value":"1"},{"caption":"Option 2","value":"2"},{"caption":"Option 3","value":"3"}]}'
+                        width: '100%',
                     };
                     break;
                 case 'i-datepicker':
@@ -6555,7 +6533,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                 case 'i-combo-box':
                 case 'i-range':
                     props = {
-                        ...props,
+                        width: '100%',
                         height: '32px',
                         background: '{{"color":"transparent"}}',
                     };
@@ -6973,6 +6951,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.ifrPreview.url = this.previewUrl;
                     if (result) {
                         await this.ifrPreview.reload();
+                        console.log('===', result);
                         this.ifrPreview.postMessage(JSON.stringify(result));
                     }
                 }
@@ -7417,7 +7396,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             await this.renderContent(true);
         }
         async renderContent(init = false) {
-            const isTsx = this.file?.path?.endsWith('.tsx');
+            const isTsx = this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
             if (this.activeTab === 'codeTab' && !this.codeEditor) {
                 this.createCodeEditor();
             }
@@ -7448,7 +7427,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
         }
         createFormDesigner() {
-            const isTsx = this.file?.path?.endsWith('.tsx');
+            const isTsx = this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
             this.formDesigner.width = '100%';
             this.formDesigner.height = '100%';

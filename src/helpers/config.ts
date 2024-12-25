@@ -164,13 +164,14 @@ const GroupMetadata = {
   }
 }
 
-const ITEMS = ['i-accordion-item', 'i-tab', 'i-menu-item'];
+const ITEMS = ['i-accordion-item', 'i-tab', 'i-menu-item', 'i-radio'];
 
 const ITEM_PARENTS = [
   'i-accordion',
   'i-tabs',
   'i-menu',
-  'i-menu-item'
+  'i-menu-item',
+  'i-radio-group'
 ];
 
 const CONTAINERS = [
@@ -187,7 +188,8 @@ const CONTAINERS = [
   'i-accordion-item',
   'i-hstack',
   'i-vstack',
-  'i-modal'
+  'i-modal',
+  'i-radio'
 ];
 
 const ControlItemMapper: {[key: string]: string} = {
@@ -196,7 +198,8 @@ const ControlItemMapper: {[key: string]: string} = {
   'i-menu': 'i-menu-item',
   'i-menu-item': 'i-menu-item',
   'i-tree-view': 'i-tree-node',
-  'i-tree-node': 'i-tree-node'
+  'i-tree-node': 'i-tree-node',
+  'i-radio-group': 'i-radio'
 }
 
 const themesConfig = {

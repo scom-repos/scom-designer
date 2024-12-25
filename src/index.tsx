@@ -300,7 +300,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async renderContent(init = false) {
-    const isTsx = this.file?.path?.endsWith('.tsx');
+    const isTsx = this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
     if (this.activeTab === 'codeTab' && !this.codeEditor) {
       this.createCodeEditor();
     } else if (this.activeTab === 'designTab' && !this.formDesigner) {
@@ -333,7 +333,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private createFormDesigner() {
-    const isTsx = this.file?.path?.endsWith('.tsx');
+    const isTsx = this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
     this.formDesigner.width = '100%';
     this.formDesigner.height = '100%';

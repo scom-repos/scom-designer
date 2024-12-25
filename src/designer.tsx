@@ -365,34 +365,10 @@ export class ScomDesignerForm extends Module {
 
   private formatDesignProp(prop: string, value: any, control: IControl) {
     if (value === undefined) return `{undefined}`;
+
     let props = control.control._getCustomProperties();
-    // let property = props.props[prop];
     let valueStr = value;
-    // if (property) {
-    //   switch (property.type) {
-    //     case "number": {
-    //       valueStr = typeof value === 'number' ? "{" + value + "}" : "'" + value + "'";
-    //       break;
-    //     }
-    //     case "string": {
-    //       valueStr = '"' + value + '"';
-    //       break;
-    //     }
-    //     case "boolean": {
-    //       valueStr = "{" + value + "}";
-    //       break;
-    //     }
-    //     case "object": {
-    //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-    //       break;
-    //     }
-    //     case "array": {
-    //       valueStr = typeof value === 'string' ? "'" + value + "'" : `{${JSON.stringify(value)}}`;
-    //       break;
-    //     }
-    //   }
-    //   control.props[prop] = valueStr;
-    // }
+  
     if (props.events[prop]) {
       valueStr = `{${value}}`;
     } else if (prop === 'class') {
@@ -430,6 +406,7 @@ export class ScomDesignerForm extends Module {
         }
       }
     }
+
     return valueStr;
   }
 
@@ -615,7 +592,10 @@ export class ScomDesignerForm extends Module {
       (component.name === 'i-menu-item' && parenNodeName === 'I-MENU') ||
       (component.name === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
       (component.name === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
-    const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') || (parenNodeName === 'I-REPEATER') || (parenNodeName === 'I-ACCORDION-ITEM');
+      (component.name === 'i-radio-group' && parenNodeName === 'I-RADIO');
+    const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') ||
+      (parenNodeName === 'I-REPEATER') ||
+      (parenNodeName === 'I-ACCORDION-ITEM');
 
     if (isAddOption) {
       control = (parent as any).add({...config.options, designMode: true, cursor: 'pointer'});
@@ -638,6 +618,7 @@ export class ScomDesignerForm extends Module {
     }
     return control;
   }
+
   private updateRepeater(path: string) {
     const repeater = this.pathMapping.get(path)?.control as Repeater;
     if (repeater) repeater.update();
@@ -849,20 +830,18 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-label':
         props = {
-          position: 'relative',
           caption: 'Label'
         }
         break;
       case 'i-icon':
         props = {
-          ...props,
           width: '24px',
           height: '24px'
         }
         break;
       case 'i-progress':
         props = {
-          ...props,
+          width: '100%',
           percent: '{100}',
           strokeWidth: '{5}',
           minHeight: '{5}',
@@ -871,7 +850,7 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-pagination':
         props = {
-          ...props,
+          width: '100%',
           pageSize: '{10}',
           currentPage: '{1}',
           totalPages: '{2}',
@@ -879,21 +858,18 @@ export class ScomDesignerForm extends Module {
         break;
       case 'i-tree-node':
         props = {
-          position: 'relative',
           caption: 'Tree Node'
         }
         break;
       case 'i-menu-item':
         props = {
-          position: 'relative',
           title: 'Menu Item',
           textAlign: 'left'
         }
         break;
       case 'i-radio-group':
         props = {
-          ...props,
-          radioItems: '{[{"caption":"Option 1","value":"1"},{"caption":"Option 2","value":"2"},{"caption":"Option 3","value":"3"}]}'
+          width: '100%',
         }
         break;
       case 'i-datepicker':
@@ -901,7 +877,7 @@ export class ScomDesignerForm extends Module {
       case 'i-combo-box':
       case 'i-range':
         props = {
-          ...props,
+          width: '100%',
           height: '32px',
           background: '{{"color":"transparent"}}',
         }
@@ -1318,6 +1294,7 @@ export class ScomDesignerForm extends Module {
           this.ifrPreview.url = this.previewUrl;
         if (result) {
           await this.ifrPreview.reload();
+          console.log('===', result)
           this.ifrPreview.postMessage(JSON.stringify(result));
         }
       } else {

@@ -126,7 +126,10 @@ export default class DesignerToolGroup extends Module {
             onClick: async () => {
               const data = await this.form.getFormData();
               Object.keys(data).forEach(key => {
-                if (data[key] === undefined) delete data[key];
+                if (key === 'radioItems' && data[key] === undefined) {
+                  data[key] = [];
+                }
+                else if (data[key] === undefined) delete data[key];
               })
               if (this.isChecked) {
                 for (let prop in data) {
