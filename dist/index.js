@@ -6951,7 +6951,6 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.ifrPreview.url = this.previewUrl;
                     if (result) {
                         await this.ifrPreview.reload();
-                        console.log('===', result);
                         this.ifrPreview.postMessage(JSON.stringify(result));
                     }
                 }
