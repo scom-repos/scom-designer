@@ -353,6 +353,8 @@ export default class DesignerProperties extends Module {
 
   closePreview() {
     this.previewSelector.activeItem = previews[0].value;
+    this.breakpointSelector.activeItem = breakpoints[0].value;
+    this.onBreakpointClick('breakpoint', 0);
   }
 
   init() {

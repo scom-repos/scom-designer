@@ -891,7 +891,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
     const parsePropValue = (value, baseUrl) => {
         if (typeof value !== "string")
             return value;
-        value = value.replace(/\s*([{|\[])\s*/g, '$1').replace(/\s*([}|\]])\s*/g, '$1');
+        value = value.replace(/\s*([{|\[])\s*/g, '$1').replace(/,?\s*([}|\]])\s*/g, '$1');
         if (value.startsWith('{') && value.endsWith('}')) {
             value = value.substring(1, value.length - 1);
             if (value.startsWith('{') && value.endsWith('}')) {
@@ -5226,6 +5226,8 @@ define("@scom/scom-designer/components/properties.tsx", ["require", "exports", "
         }
         closePreview() {
             this.previewSelector.activeItem = config_7.previews[0].value;
+            this.breakpointSelector.activeItem = config_7.breakpoints[0].value;
+            this.onBreakpointClick('breakpoint', 0);
         }
         init() {
             this.i18n.init({ ...index_18.componentsJson });
