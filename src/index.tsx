@@ -571,8 +571,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.imported = {};
     this.compiler = new Compiler();
     this.activeTab = 'codeTab';
-    if (this.formDesigner) this.formDesigner.clear();
-    if (this.mode === 'preview') this.formDesigner.closePreview();
+    if (this.formDesigner) {
+      this.formDesigner.clear();
+      this.formDesigner.closePreview();
+    }
   }
 
   init() {

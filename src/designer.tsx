@@ -1342,7 +1342,7 @@ export class ScomDesignerForm extends Module {
 
   closePreview() {
     this.designerProperties.closePreview();
-    this.handlePreviewChanged('preview', '0');
+    if (this.isPreviewMode) this.handlePreviewChanged('preview', '0');
     if (typeof this.onClose === 'function') this.onClose();
   }
 
@@ -1811,14 +1811,19 @@ export class ScomDesignerForm extends Module {
             width={'100%'} height={'100%'}
             overflow={'hidden'}
           >
-            <i-panel id="pnlWrap" stack={{grow: '1'}}></i-panel>
+            <i-panel
+              id="pnlWrap"
+              stack={{grow: '1'}}
+              maxHeight={'calc(100% - 60px)'}
+            ></i-panel>
             <i-hstack
               verticalAlignment='center'
               width={'100%'}
               gap={8}
               cursor='pointer'
-              padding={{top: 8, bottom: 8, left: 16, right: 16}}
-              margin={{top: 12, bottom: 12}}
+              padding={{left: 16, right: 16}}
+              margin={{top: 10, bottom: 10}}
+              height={40}
               border={{radius: '1rem', width: 1, style: 'solid', color: Theme.divider}}
               hover={{opacity: 0.7}}
               stack={{shrink: '0'}}

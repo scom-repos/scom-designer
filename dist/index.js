@@ -7000,7 +7000,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
         }
         closePreview() {
             this.designerProperties.closePreview();
-            this.handlePreviewChanged('preview', '0');
+            if (this.isPreviewMode)
+                this.handlePreviewChanged('preview', '0');
             if (typeof this.onClose === 'function')
                 this.onClose();
         }
@@ -7205,8 +7206,8 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                         this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint, onPreviewChanged: this.handlePreviewChanged }))),
                 this.$render("i-modal", { id: "mdMobile", width: '100dvw', height: '50dvh', popupPlacement: 'bottom', zIndex: 999, overflow: { y: 'auto' }, padding: { top: 0, right: 0, bottom: 0, left: 0 }, border: { top: { width: '1px', style: 'solid', color: Theme.divider } }, showBackdrop: true, visible: false, closeOnBackdropClick: false, class: index_css_22.customModalStyled, onOpen: this.onModalOpen, onClose: this.onModalClose },
                     this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden' },
-                        this.$render("i-panel", { id: "pnlWrap", stack: { grow: '1' } }),
-                        this.$render("i-hstack", { verticalAlignment: 'center', width: '100%', gap: 8, cursor: 'pointer', padding: { top: 8, bottom: 8, left: 16, right: 16 }, margin: { top: 12, bottom: 12 }, border: { radius: '1rem', width: 1, style: 'solid', color: Theme.divider }, hover: { opacity: 0.7 }, stack: { shrink: '0' }, horizontalAlignment: 'center', onClick: this.handleClose },
+                        this.$render("i-panel", { id: "pnlWrap", stack: { grow: '1' }, maxHeight: 'calc(100% - 60px)' }),
+                        this.$render("i-hstack", { verticalAlignment: 'center', width: '100%', gap: 8, cursor: 'pointer', padding: { left: 16, right: 16 }, margin: { top: 10, bottom: 10 }, height: 40, border: { radius: '1rem', width: 1, style: 'solid', color: Theme.divider }, hover: { opacity: 0.7 }, stack: { shrink: '0' }, horizontalAlignment: 'center', onClick: this.handleClose },
                             this.$render("i-label", { caption: 'Close' }))))));
         }
     };
@@ -7649,10 +7650,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.imported = {};
             this.compiler = new compiler_1.Compiler();
             this.activeTab = 'codeTab';
-            if (this.formDesigner)
+            if (this.formDesigner) {
                 this.formDesigner.clear();
-            if (this.mode === 'preview')
                 this.formDesigner.closePreview();
+            }
         }
         init() {
             this.i18n.init({ ...index_24.mainJson });
