@@ -2587,6 +2587,9 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
         get isStack() {
             return this.name && stackTypes.includes(this.name);
         }
+        get isRepeater() {
+            return this.name === 'i-repeater';
+        }
         get isChecked() {
             return this.designerHeader.checked;
         }
@@ -2627,14 +2630,16 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
                 this.reverseSwitch.checked = reverse ?? (direction || '').includes('reverse') ?? false;
                 if (wrap)
                     this.wrapSelector.activeItem = wrap;
-                if (alignItems)
-                    this.alignSelector.activeItem = alignItems;
-                if (justifyContent)
-                    this.justifySelector.activeItem = justifyContent;
                 if (alignSelf)
                     this.alignSelfSelector.activeItem = alignSelf;
                 if (alignContent)
                     this.alignContentSelector.activeItem = alignContent;
+            }
+            if (this.isRepeater || this.isStack) {
+                if (alignItems)
+                    this.alignSelector.activeItem = alignItems;
+                if (justifyContent)
+                    this.justifySelector.activeItem = justifyContent;
             }
             const { basis, grow, shrink } = stack || {};
             this.basisInput.value = basis ?? '';
@@ -2678,13 +2683,14 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
             const isStack = this.isStack;
             this.directionSelector.visible = this.name === 'i-stack';
             this.wrapSelector.visible = isStack;
-            this.justifySelector.visible = isStack;
-            this.alignSelector.visible = isStack;
+            this.justifySelector.visible = isStack || this.isRepeater;
+            this.alignSelector.visible = isStack || this.isRepeater;
             this.alignSelfSelector.visible = isStack;
             this.alignContentSelector.visible = isStack;
-            this.pnlFlexItems.visible = isStack;
+            this.pnlFlexItems.visible = isStack || this.isRepeater;
             this.pnlFlexContent.visible = isStack;
             this.pnlSelectedItem.visible = true;
+            this.pnlReverse.visible = !this.isRepeater;
         }
         onCollapse(isShown) {
             this.vStackContent.visible = isShown;
@@ -2778,7 +2784,7 @@ define("@scom/scom-designer/tools/layout.tsx", ["require", "exports", "@ijstech/
                                         { value: 'vertical', tooltip: '$column', type: 'direction', icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
                                         { value: 'horizontal', tooltip: '$row', type: 'direction', rotate: 180, icon: { image: { url: assets_2.default.fullPath('img/designer/layout/column.svg') } } },
                                     ], onChanged: this.onSelectChanged }),
-                                this.$render("i-hstack", { gap: 4, verticalAlignment: "center", stack: { grow: '1', shrink: '1' } },
+                                this.$render("i-hstack", { id: "pnlReverse", gap: 4, verticalAlignment: "center", stack: { grow: '1', shrink: '1' } },
                                     this.$render("i-switch", { id: "reverseSwitch", onChanged: this.onReverseSwitch }),
                                     this.$render("i-label", { id: "lblReverse", caption: "$reverse", font: { size: '0.75rem' } }))),
                             this.$render("designer-selector", { id: "alignSelector", title: "$align", items: (0, utils_2.getAlignProps)('alignItems'), onChanged: this.onSelectChanged }),

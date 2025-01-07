@@ -1096,6 +1096,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         private designerHeader;
         private lblReverse;
         private lblFlex;
+        private pnlReverse;
         private _data;
         private isBasicFlex;
         onChanged: onChangedCallback;
@@ -1104,6 +1105,7 @@ declare module "@scom/scom-designer/tools/layout.tsx" {
         get name(): string;
         set name(value: string);
         get isStack(): boolean;
+        get isRepeater(): boolean;
         private get isChecked();
         private get currentData();
         private hasMediaQuery;
