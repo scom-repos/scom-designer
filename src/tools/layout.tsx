@@ -8,7 +8,8 @@ import {
   VStack,
   GridLayout,
   Input,
-  Switch
+  Switch,
+  HStack
 } from '@ijstech/components'
 import { textInputRight } from './index.css';
 import assets from '../assets';
@@ -79,6 +80,7 @@ export default class DesignerToolLayout extends Module {
   private designerHeader: DesignerToolHeader;
   private lblReverse: Label;
   private lblFlex: Label;
+  private pnlReverse: HStack;
 
   private _data: IDesignerLayout = {};
   private isBasicFlex: boolean = true;
@@ -103,6 +105,10 @@ export default class DesignerToolLayout extends Module {
 
   get isStack() {
     return this.name && stackTypes.includes(this.name);
+  }
+
+  get isRepeater() {
+    return this.name === 'i-repeater';
   }
 
   private get isChecked() {
@@ -157,10 +163,12 @@ export default class DesignerToolLayout extends Module {
       this.directionSelector.activeItem = direction;
       this.reverseSwitch.checked = reverse ?? (direction || '').includes('reverse') ?? false;
       if (wrap) this.wrapSelector.activeItem = wrap
-      if (alignItems) this.alignSelector.activeItem = alignItems
-      if (justifyContent) this.justifySelector.activeItem = justifyContent
       if (alignSelf) this.alignSelfSelector.activeItem = alignSelf
       if (alignContent) this.alignContentSelector.activeItem = alignContent
+    }
+    if (this.isRepeater || this.isStack) {
+      if (alignItems) this.alignSelector.activeItem = alignItems
+      if (justifyContent) this.justifySelector.activeItem = justifyContent
     }
     const { basis, grow, shrink } = stack || {};
     this.basisInput.value = basis ?? '';
@@ -205,13 +213,14 @@ export default class DesignerToolLayout extends Module {
     const isStack = this.isStack;
     this.directionSelector.visible = this.name === 'i-stack';
     this.wrapSelector.visible = isStack;
-    this.justifySelector.visible = isStack;
-    this.alignSelector.visible = isStack;
+    this.justifySelector.visible = isStack || this.isRepeater;
+    this.alignSelector.visible = isStack || this.isRepeater;
     this.alignSelfSelector.visible = isStack;
     this.alignContentSelector.visible = isStack;
-    this.pnlFlexItems.visible = isStack;
+    this.pnlFlexItems.visible = isStack || this.isRepeater;
     this.pnlFlexContent.visible = isStack;
     this.pnlSelectedItem.visible = true;
+    this.pnlReverse.visible = !this.isRepeater;
   }
 
   private onCollapse(isShown: boolean) {
@@ -333,7 +342,7 @@ export default class DesignerToolLayout extends Module {
                   ]}
                   onChanged={this.onSelectChanged}
                 />
-                <i-hstack gap={4} verticalAlignment="center" stack={{grow: '1', shrink: '1'}}>
+                <i-hstack id="pnlReverse" gap={4} verticalAlignment="center" stack={{grow: '1', shrink: '1'}}>
                   <i-switch id="reverseSwitch" onChanged={this.onReverseSwitch} />
                   <i-label id="lblReverse" caption="$reverse" font={{ size: '0.75rem' }} />
                 </i-hstack>
