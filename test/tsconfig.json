@@ -6,8 +6,8 @@
         "jsx": "preserve",      
         "jsxFactory": "this.$render",
         "jsxFragmentFactory": "this.$render",
-        "esModuleInterop": true,        
-        "forceConsistentCasingInFileNames": true,        
+        "esModuleInterop": true,
+                "forceConsistentCasingInFileNames": true,        
         "declaration": false,        
         "baseUrl": ".",
         "paths": {

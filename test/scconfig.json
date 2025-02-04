@@ -14,9 +14,10 @@
   },
   "dependencies": {
     "@scom/dapp": "*",
+    "@scom/ton-core": "*",
+    "@ijstech/compiler": "*",
     "@scom/scom-code-editor": "*",
     "@scom/scom-designer": "*",
-    "@ijstech/compiler": "*",
     "@scom/scom-chart-data-source-setup": "*",
     "@scom/scom-line-chart": "*",
     "@scom/scom-bar-chart": "*",
@@ -25,7 +26,7 @@
     "@scom/scom-mixed-chart": "*",
     "@scom/scom-area-chart": "*"
   },
-  "packages": [    
+  "packages": [
     "@scom/scom-table"
   ],
   "menus": [

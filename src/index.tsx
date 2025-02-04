@@ -17,8 +17,9 @@ import {
   Markdown
 } from '@ijstech/components';
 import { blockStyle, customActivedStyled } from './index.css'
-import { IComponent, IFileHandler, IIPFSData, IStudio } from './interface'
+import { IComponent, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
+import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
@@ -56,11 +57,6 @@ declare global {
   }
 }
 
-interface IFileData {
-  path: string;
-  content: string;
-}
-
 interface IDesigner {
   url?: string;
   file?: IFileData;
@@ -71,10 +67,12 @@ interface IDesigner {
 export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private formDesigner: ScomDesignerForm
   private codeEditor: ScomCodeEditor
+  private deployDeployer: ScomDesignerDeployer
   private compiler: Compiler
   private pnlMain: VStack;
   private codeTab: Button;
   private designTab: Button;
+  private deployTab: Button;
   private pnlHeader: HStack;
 
   private _data: IDesigner = {
@@ -233,6 +231,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this._data.baseUrl = value ?? ''
   }
 
+  private get isContract() {
+    return this.file?.path?.endsWith('.tact') || this.url?.endsWith('.tact');
+  }
+
   private async setData(value: IDesigner) {
     this._data = value;
     await this.renderUI();
@@ -295,6 +297,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private async renderUI() {
     this.activeTab = 'codeTab';
+    this.deployTab.visible = this.isContract;
+    this.designTab.visible = !this.isContract;
     this.updateDesigner = !!(this.url || this.file?.path);
     await this.renderContent(true);
   }
@@ -305,17 +309,27 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.createCodeEditor();
     } else if (this.activeTab === 'designTab' && !this.formDesigner) {
       this.createFormDesigner();
+    } else if (this.activeTab === 'deployTab' && !this.deployDeployer) {
+      this.createDeployer();
     }
 
     if (this.formDesigner) {
       this.formDesigner.visible = this.activeTab === 'designTab';
       this.formDesigner.baseUrl = this.baseUrl;
     }
-    if (this.codeEditor)
+
+    if (this.codeEditor) {
       this.codeEditor.visible = this.activeTab === 'codeTab';
+    }
+
+    if (this.deployDeployer) {
+      this.deployDeployer.visible = this.activeTab === 'deployTab';
+    }
+
     if (init && !!(this.url || this.file?.path)) {
       this.loadContent();
     }
+
     this.updateButtons();
     this.designTab.enabled = isTsx;
   }
@@ -348,6 +362,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.formDesigner.visible = isTsx;
   }
 
+  private createDeployer() {
+    this.deployDeployer = this.createElement('i-scom-designer--deployer', this.pnlMain) as ScomDesignerDeployer;
+    this.deployDeployer.width = '100%';
+    this.deployDeployer.height = '100%';
+    this.deployDeployer.stack = {grow: '1'};
+  }
+
   private handleTogglePanels(value: boolean) {
     this.pnlHeader.visible = !value;
     if (typeof this.onTogglePreview === 'function')
@@ -365,19 +386,28 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private resetTab() {
     this.activeTab = 'codeTab';
     this.formDesigner.visible = false;
+    this.deployDeployer.visible = false;
     this.codeEditor.visible = true;
+    this.deployTab.visible = this.isContract;
+    this.designTab.visible = !this.isContract;
     this.updateButtons();
   }
 
   private updateButtons() {
-    if (this.activeTab === 'codeTab') {
-      this.codeTab.classList.add(customActivedStyled);
-      this.designTab.classList.remove(customActivedStyled);
-    } else {
-      this.codeTab.classList.remove(customActivedStyled);
-      this.designTab.classList.add(customActivedStyled);
-    }
-  }
+    const tabs = {
+      codeTab: this.codeTab,
+      designTab: this.designTab,
+      deployTab: this.deployTab,
+    };
+
+    Object.entries(tabs).forEach(([tabName, tabElement]) => {
+      if (tabName === this.activeTab) {
+        tabElement.classList.add(customActivedStyled);
+      } else {
+        tabElement.classList.remove(customActivedStyled);
+      }
+    });
+  }  
 
   private async addLib() {
     if (!this.compiler) this.compiler = new Compiler()
@@ -437,6 +467,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       }
     } else if (target.id === 'codeTab') {
       this.updateDesignerCode(fileName)
+    } else {
+      this.deployDeployer.setData({
+        path: this.fileName,
+        content: this.value
+      })
     }
   }
 
@@ -815,6 +850,19 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
             boxShadow='none'
             minHeight={'2.25rem'}
+            font={{color: Theme.action.active}}
+            onClick={this.handleTabChanged}
+          ></i-button>
+          <i-button
+            id="deployTab"
+            caption='$deploy'
+            stack={{ shrink: '0' }}
+            padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
+            background={{color: Theme.action.activeBackground}}
+            border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
+            boxShadow='none'
+            minHeight={'2.25rem'}
+            visible={false}
             font={{color: Theme.action.active}}
             onClick={this.handleTabChanged}
           ></i-button>

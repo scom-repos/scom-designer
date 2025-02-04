@@ -15,7 +15,8 @@
     },
     "keywords": [],
     "dependencies": {
-        "@scom/scom-code-editor": "^0.1.0"
+        "@scom/scom-code-editor": "^0.1.0",
+        "@scom/ton-core": "^0.1.1"
     },
     "devDependencies": {
         "@ijstech/cli": "^0.1.26",

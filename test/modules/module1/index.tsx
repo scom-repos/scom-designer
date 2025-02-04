@@ -14,6 +14,52 @@ export default class Module1 extends Module {
     async init() {
         await super.init();
         this.scomDesigner.previewUrl = '/0.1.0-beta/libs/@scom/scom-designer/debug.html';
+        this.scomDesigner.setValue({
+            file: {
+                path: 'hello_word.tact',
+                content: `import "@stdlib/deploy";
+
+message Add {
+amount: Int as uint32;
+}
+
+contract SampleTactContract with Deployable {
+
+owner: Address;
+counter: Int as uint32;
+
+init(owner: Address) {
+self.owner = owner;
+self.counter = 0;
+}
+
+fun add(v: Int) {
+
+// Check sender
+let ctx: Context = context();
+require(ctx.sender == self.owner, "Invalid sender");
+
+// Update counter
+self.counter += v;
+}
+
+receive(msg: Add) {
+self.add(msg.amount);
+}
+
+receive("increment") {
+self.add(1);
+self.reply("incremented".asComment());
+}
+
+get fun counter(): Int {
+return self.counter;
+}
+}
+
+`
+            }
+        })
     }
 
     onShow() {
@@ -65,7 +111,7 @@ export default class Module1 extends Module {
                 <i-scom-designer
                     id="scomDesigner"
                     display='block' width="100%" height="100%"
-                    url="https://storage.decom.app/ipfs/bafybeiekmzv3mmjgmfclcqe2gwpkzpptloolm4merj3cwnvb7d7pdv4v2m/demo.tsx"
+                    // url="https://storage.decom.app/ipfs/bafybeiekmzv3mmjgmfclcqe2gwpkzpptloolm4merj3cwnvb7d7pdv4v2m/demo.tsx"
                     onPreview={this.handlePreview.bind(this)}
                 ></i-scom-designer>
             </i-panel>

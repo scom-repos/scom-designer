@@ -291,6 +291,7 @@ declare module "@scom/scom-designer/languages/main.json.ts" {
             the_layout_of_your_screen: string;
             the_most_simple__and_essential_components_to_build_a_screen: string;
             with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes: string;
+            deploy: string;
         };
         "zh-hant": {
             add_components: string;
@@ -309,6 +310,7 @@ declare module "@scom/scom-designer/languages/main.json.ts" {
             the_layout_of_your_screen: string;
             the_most_simple_and_essential_components_to_build_a_screen: string;
             with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes: string;
+            deploy: string;
         };
         vi: {
             add_components: string;
@@ -327,6 +329,7 @@ declare module "@scom/scom-designer/languages/main.json.ts" {
             the_layout_of_your_screen: string;
             the_most_simple_and_essential_components_to_build_a_screen: string;
             with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes: string;
+            deploy: string;
         };
     };
     export default _default_1;
@@ -2256,7 +2259,6 @@ declare module "@scom/scom-designer/interface.ts" {
     }
     export interface IComponentItem extends Parser.IComponent {
         path: string;
-        name: string;
         image?: string;
         icon?: IconName;
         category?: string;
@@ -2298,11 +2300,80 @@ declare module "@scom/scom-designer/interface.ts" {
         maxWidth?: string;
         properties: any;
     }
+    export interface IFileData {
+        path: string;
+        content: string;
+    }
+}
+/// <amd-module name="@scom/scom-designer/build/storage.ts" />
+declare module "@scom/scom-designer/build/storage.ts" {
+    import { Types } from '@ijstech/compiler';
+    import { IFileData } from "@scom/scom-designer/interface.ts";
+    export class Storage implements Types.IStorage {
+        rootPath: string;
+        private _data;
+        copied: {
+            [packName: string]: boolean;
+        };
+        set data(value: IFileData);
+        get data(): IFileData;
+        constructor(rootPath: string);
+        cidToSri(value: string): Promise<string>;
+        copyAssets(sourceDir: string, targetDir: string): Promise<void>;
+        copyPackage(packName: string, targetDir: string, packages?: string[]): Promise<any>;
+        getSCConfig(): Promise<any>;
+        getPackage(packName: string): Promise<any>;
+        getPackageConfig(): Promise<any>;
+        getPackageTypes(packName: string): Promise<Types.IPackage>;
+        getFiles(dir: string): Promise<{
+            [filePath: string]: string;
+        }>;
+        hashContent(dir: string): Promise<string>;
+        hashDir(dir: string): Promise<Types.ICidInfo>;
+        isDirectory(dir: string): Promise<boolean>;
+        isFile(filePath: string): Promise<boolean>;
+        isFileExists(filePath: string): Promise<boolean>;
+        readDir(dir: string): Promise<string[]>;
+        readFile(fileName: string): Promise<string>;
+        rename(oldPath: string, newPath: string): Promise<void>;
+        writeFile(fileName: string, content: string): Promise<void>;
+    }
+}
+/// <amd-module name="@scom/scom-designer/build/index.ts" />
+declare module "@scom/scom-designer/build/index.ts" {
+    export { Storage } from "@scom/scom-designer/build/storage.ts";
+}
+/// <amd-module name="@scom/scom-designer/deployer.tsx" />
+declare module "@scom/scom-designer/deployer.tsx" {
+    import { Container, ControlElement, Module } from '@ijstech/components';
+    import { IFileData } from "@scom/scom-designer/interface.ts";
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-designer--deployer']: DeployerElement;
+            }
+        }
+    }
+    interface DeployerElement extends ControlElement {
+        path?: string;
+        content?: string;
+    }
+    export class ScomDesignerDeployer extends Module {
+        private _data;
+        private storage;
+        private pnlMessage;
+        constructor(parent?: Container, options?: any);
+        setData(value: IFileData): void;
+        private handleCompile;
+        private handleDeploy;
+        init(): void;
+        render(): any;
+    }
 }
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
-    import { IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
+    import { IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
     import { Types } from '@ijstech/compiler';
     import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
@@ -2339,10 +2410,6 @@ declare module "@scom/scom-designer" {
             }
         }
     }
-    interface IFileData {
-        path: string;
-        content: string;
-    }
     interface IDesigner {
         url?: string;
         file?: IFileData;
@@ -2351,10 +2418,12 @@ declare module "@scom/scom-designer" {
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
         private formDesigner;
         private codeEditor;
+        private deployDeployer;
         private compiler;
         private pnlMain;
         private codeTab;
         private designTab;
+        private deployTab;
         private pnlHeader;
         private _data;
         private updateDesigner;
@@ -2391,6 +2460,7 @@ declare module "@scom/scom-designer" {
         get value(): string;
         get baseUrl(): string;
         set baseUrl(value: string);
+        private get isContract();
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
@@ -2404,6 +2474,7 @@ declare module "@scom/scom-designer" {
         private renderContent;
         private createCodeEditor;
         private createFormDesigner;
+        private createDeployer;
         private handleTogglePanels;
         private loadContent;
         private resetTab;
