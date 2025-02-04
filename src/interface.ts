@@ -27,7 +27,6 @@ export interface IComponentPicker {
 
 export interface IComponentItem extends Parser.IComponent {
   path: string;
-  name: string;
   image?: string;
   icon?: IconName;
   category?: string;
@@ -78,4 +77,9 @@ export interface IMediaQuery {
   minWidth: string;
   maxWidth?: string;
   properties: any;
+}
+
+export interface IFileData {
+  path: string;
+  content: string;
 }
