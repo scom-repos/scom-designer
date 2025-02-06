@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-      "target": "ES2017",
+      "target": "ES2020",
       "moduleResolution": "Node",
       "experimentalDecorators": true,
       "jsx": "preserve",
@@ -16,7 +16,7 @@
         "@scom-designer/*": ["src/*"],
       }
     },
-    "include": ["src/*.tsx", "src/*.ts", "src/helpers/config.ts", "src/helpers/utils.ts"],
+    "include": ["src/*.tsx", "src/*.ts", "src/helpers/config.ts", "src/helpers/utils.ts", "src/build/tonConnectorSender.ts"],
     "exclude": ["node_modules"]
   }
   

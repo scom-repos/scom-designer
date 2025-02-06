@@ -94,7 +94,6 @@ export class Storage implements Types.IStorage {
   }
 
   async writeFile(fileName: string, content: string): Promise<void> {
-    console.log('writeFile', fileName, content);
     this._data.content = content;
   }
 }

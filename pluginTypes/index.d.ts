@@ -270,6 +270,10 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     export const isSameValue: (defaultVal: any, value: any) => boolean;
     export const isNumber: (value: string | number) => boolean;
     export function getTranslationKey(text: string): string;
+    export const sleep: (ms: number) => Promise<unknown>;
+    export const extractContractName: (filePath: string) => string;
+    export const fromJSModule: (jsModuleCode: string) => string;
+    export const parseInputs: (inputFields: any, files: Record<string, string>, key?: string) => Promise<any>;
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
@@ -2304,6 +2308,11 @@ declare module "@scom/scom-designer/interface.ts" {
         path: string;
         content: string;
     }
+    export interface IDeployConfig {
+        endpoint?: string;
+        apiKey?: string;
+        mnemonic?: string;
+    }
 }
 /// <amd-module name="@scom/scom-designer/build/storage.ts" />
 declare module "@scom/scom-designer/build/storage.ts" {
@@ -2339,14 +2348,25 @@ declare module "@scom/scom-designer/build/storage.ts" {
         writeFile(fileName: string, content: string): Promise<void>;
     }
 }
+/// <amd-module name="@scom/scom-designer/build/tonConnectorSender.ts" />
+declare module "@scom/scom-designer/build/tonConnectorSender.ts" {
+    import { Address, Sender, SenderArguments, TonConnector } from "@scom/ton-core";
+    export class TonConnectSender implements Sender {
+        provider: TonConnector.ITonConnect;
+        readonly address?: Address;
+        constructor(provider: TonConnector.ITonConnect);
+        send(args: SenderArguments): Promise<void>;
+    }
+}
 /// <amd-module name="@scom/scom-designer/build/index.ts" />
 declare module "@scom/scom-designer/build/index.ts" {
     export { Storage } from "@scom/scom-designer/build/storage.ts";
+    export { TonConnectSender } from "@scom/scom-designer/build/tonConnectorSender.ts";
 }
 /// <amd-module name="@scom/scom-designer/deployer.tsx" />
 declare module "@scom/scom-designer/deployer.tsx" {
     import { Container, ControlElement, Module } from '@ijstech/components';
-    import { IFileData } from "@scom/scom-designer/interface.ts";
+    import { IDeployConfig, IFileData } from "@scom/scom-designer/interface.ts";
     global {
         namespace JSX {
             interface IntrinsicElements {
@@ -2357,14 +2377,24 @@ declare module "@scom/scom-designer/deployer.tsx" {
     interface DeployerElement extends ControlElement {
         path?: string;
         content?: string;
+        config?: IDeployConfig;
     }
     export class ScomDesignerDeployer extends Module {
         private _data;
+        private _config;
         private storage;
         private pnlMessage;
+        private btnDeploy;
         constructor(parent?: Container, options?: any);
+        setConfig(value: IDeployConfig): void;
         setData(value: IFileData): void;
         private handleCompile;
+        private initDeploy;
+        private getImportFile;
+        private checkWalletConnection;
+        private deploy;
+        private deployUsingMnemonic;
+        private getFileNames;
         private handleDeploy;
         init(): void;
         render(): any;
@@ -2373,7 +2403,7 @@ declare module "@scom/scom-designer/deployer.tsx" {
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
-    import { IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
+    import { IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
     import { Types } from '@ijstech/compiler';
     import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
@@ -2392,6 +2422,7 @@ declare module "@scom/scom-designer" {
             content: string;
         };
         baseUrl?: string;
+        deployConfig?: IDeployConfig;
         onSave?: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2432,6 +2463,7 @@ declare module "@scom/scom-designer" {
         private imported;
         private activeTab;
         private mode;
+        private _deployConfig;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2460,6 +2492,8 @@ declare module "@scom/scom-designer" {
         get value(): string;
         get baseUrl(): string;
         set baseUrl(value: string);
+        get deployConfig(): IDeployConfig;
+        set deployConfig(value: IDeployConfig);
         private get isContract();
         private setData;
         private getData;
