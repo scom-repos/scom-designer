@@ -5,6 +5,7 @@
     "dependencies": [
         "@ijstech/components",
         "@ijstech/compiler",
+        "@scom/ton-core",
         "@scom/scom-code-editor"
     ]
 }

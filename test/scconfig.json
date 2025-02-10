@@ -63,5 +63,9 @@
     "mobile": 414,
     "tablet": 1280,
     "desktop": 1920
+  },
+  "deployConfig": {
+    "endpoint": "https://testnet.toncenter.com/api/v2/jsonRPC",
+    "apiKey": "33849a31652e51343724799d48a852fbafef89e7926c7fdca4ef92b10b2f2f9c"
   }
 }

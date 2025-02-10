@@ -17,7 +17,7 @@ import {
   Markdown
 } from '@ijstech/components';
 import { blockStyle, customActivedStyled } from './index.css'
-import { IComponent, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
+import { IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerForm } from './designer'
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
@@ -40,6 +40,7 @@ interface ScomDesignerElement extends ControlElement {
     content: string;
   }
   baseUrl?: string;
+  deployConfig?: IDeployConfig;
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
@@ -89,6 +90,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private imported: Record<string, string> = {};
   private activeTab: string = 'codeTab';
   private mode: string = '';
+  private _deployConfig: IDeployConfig;
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
@@ -231,6 +233,17 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this._data.baseUrl = value ?? ''
   }
 
+  get deployConfig() {
+    return this._deployConfig;
+  }
+
+  set deployConfig(value: IDeployConfig) {
+    this._deployConfig = value;
+    if (this.deployDeployer) {
+      this.deployDeployer.setConfig(value);
+    }
+  }
+
   private get isContract() {
     return this.file?.path?.endsWith('.tact') || this.url?.endsWith('.tact');
   }
@@ -367,6 +380,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.deployDeployer.width = '100%';
     this.deployDeployer.height = '100%';
     this.deployDeployer.stack = {grow: '1'};
+    if (this._deployConfig) this.deployDeployer.setConfig(this._deployConfig);
   }
 
   private handleTogglePanels(value: boolean) {
@@ -513,6 +527,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private handleCodeEditorChange(target: ScomCodeEditor, event: Event) {
     this.updateDesigner = true;
     this.imported = {};
+
+    if (this.deployDeployer) {
+      this.deployDeployer.setData({
+        path: this.fileName,
+        content: this.value
+      })
+    }
+
     if (typeof this.onChange === 'function') this.onChange(this, event)
   }
 
@@ -621,6 +643,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onTogglePreview = this.getAttribute('onTogglePreview', true) || this.onTogglePreview
     this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview
     this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError
+    const deployConfig = this.getAttribute('deployConfig', true)
+    if (deployConfig) this.deployConfig = deployConfig;
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
     this.addLib()

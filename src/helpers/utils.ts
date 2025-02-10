@@ -1,3 +1,4 @@
+import { Address, Dictionary, DictionaryKeyTypes } from "@scom/ton-core";
 import assets from "../assets";
 import { getBreakpoint } from "./store";
 import { Styles } from "@ijstech/components";
@@ -530,4 +531,105 @@ export const isNumber = (value: string | number) => {
 
 export function getTranslationKey(text: string) {
   return text.replace(/\s/g, '_').toLowerCase();
+}
+
+export const sleep = (ms: number) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export const extractContractName = (filePath: string) => {
+  const fileName = filePath.split('/').pop();
+  return fileName
+    .replace('.ts', '')
+    .replace('sample_', '');
+};
+
+export const fromJSModule = (jsModuleCode: string) => {
+  const startRegex = /define\("tact",\s\["require",\s"exports",\s"@scom\/ton-core"\],\sfunction\s\(require,\sexports,\ston\_core\_1\)\s\{[^}]*\}\);/gm;
+  const endRegex = /;\s*}\);$/m;
+  return jsModuleCode
+    .replace(startRegex, '')
+    .replace(endRegex, ';')
+    .replace(/^import\s+{/, 'const {')
+    .replace(/}\s+from\s.+/, '} = window.TonCore;')
+    .replace(/^\s*export\s+\{[^}]*\};\s*/gm, '')
+    .replace(/exports\.[^;]*;/gm, '')
+    .replace(/ton\_core\_1/gm, 'window.TonCore');
+};
+
+export const parseInputs = async (inputFields: any, files: Record<string, string>, key?: string) => {
+  if (typeof inputFields === 'object' && !Array.isArray(inputFields)) {
+    // Check if both `value` and `type` are present in the current object. If not, then it may be a map or struct.
+    if ('value' in inputFields && 'type' in inputFields) {
+      const value = inputFields['value'] as
+        | string
+        | undefined
+        | number
+        | boolean;
+      if (value === undefined) return;
+      const valueType = inputFields['type'] as string;
+
+      switch (valueType) {
+        case 'int':
+        case 'uint':
+          try {
+            return BigInt(value);
+          } catch (error) {
+            throw new Error(`Parsing failed for ${key}: ${value}`);
+          }
+        case 'cell':
+        case 'slice':
+          // return await generateCell(value as string, files);
+        case 'address':
+          return Address.parse(value as string);
+        case 'string':
+          return String(value);
+        case 'bool':
+          return value;
+        case 'text':
+          return value;
+        case 'empty':
+          return null;
+        default:
+          throw new Error(`Unknown type: ${valueType}`);
+      }
+    } else {
+      const parsedObj = {};
+
+      // If has `$$type` then it is a struct
+      if (
+        typeof parsedObj === 'object' &&
+        Object.prototype.hasOwnProperty.call(inputFields, '$$type')
+      ) {
+        parsedObj['$$type'] = inputFields['$$type'];
+      } else {
+        // If has `value` and value is an array, then it is a map
+        if ('value' in inputFields && Array.isArray(inputFields['value'])) {
+          const listItem = Dictionary.empty();
+          for (const item of inputFields['value'] as unknown[]) {
+            const parsedItem = await parseInputs(
+              item,
+              files,
+            );
+            listItem.set(
+              Object.values(parsedItem[0])[0] as unknown as DictionaryKeyTypes,
+              Object.values(parsedItem[1])[0],
+            );
+          }
+          return listItem;
+        }
+      }
+      for (const key in inputFields) {
+        if (
+          Object.prototype.hasOwnProperty.call(inputFields, key) &&
+          !key.startsWith('$$')
+        ) {
+          parsedObj[key] = await parseInputs(inputFields[key], files, key);
+        }
+      }
+      return parsedObj;
+    }
+  } else {
+    return inputFields;
+  }
 }

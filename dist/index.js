@@ -504,10 +504,10 @@ define("@scom/scom-designer/assets.ts", ["require", "exports", "@ijstech/compone
         fullPath
     };
 });
-define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts", "@ijstech/components"], function (require, exports, assets_1, store_2, components_5) {
+define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton-core", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts", "@ijstech/components"], function (require, exports, ton_core_1, assets_1, store_2, components_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getTranslationKey = exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.handleParse = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
+    exports.parseInputs = exports.fromJSModule = exports.extractContractName = exports.sleep = exports.getTranslationKey = exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.handleParse = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
     const Theme = components_5.Styles.Theme.ThemeVars;
     exports.backgroundOptions = [
         {
@@ -1045,6 +1045,96 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/sco
         return text.replace(/\s/g, '_').toLowerCase();
     }
     exports.getTranslationKey = getTranslationKey;
+    const sleep = (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    };
+    exports.sleep = sleep;
+    const extractContractName = (filePath) => {
+        const fileName = filePath.split('/').pop();
+        return fileName
+            .replace('.ts', '')
+            .replace('sample_', '');
+    };
+    exports.extractContractName = extractContractName;
+    const fromJSModule = (jsModuleCode) => {
+        const startRegex = /define\("tact",\s\["require",\s"exports",\s"@scom\/ton-core"\],\sfunction\s\(require,\sexports,\ston\_core\_1\)\s\{[^}]*\}\);/gm;
+        const endRegex = /;\s*}\);$/m;
+        return jsModuleCode
+            .replace(startRegex, '')
+            .replace(endRegex, ';')
+            .replace(/^import\s+{/, 'const {')
+            .replace(/}\s+from\s.+/, '} = window.TonCore;')
+            .replace(/^\s*export\s+\{[^}]*\};\s*/gm, '')
+            .replace(/exports\.[^;]*;/gm, '')
+            .replace(/ton\_core\_1/gm, 'window.TonCore');
+    };
+    exports.fromJSModule = fromJSModule;
+    const parseInputs = async (inputFields, files, key) => {
+        if (typeof inputFields === 'object' && !Array.isArray(inputFields)) {
+            // Check if both `value` and `type` are present in the current object. If not, then it may be a map or struct.
+            if ('value' in inputFields && 'type' in inputFields) {
+                const value = inputFields['value'];
+                if (value === undefined)
+                    return;
+                const valueType = inputFields['type'];
+                switch (valueType) {
+                    case 'int':
+                    case 'uint':
+                        try {
+                            return BigInt(value);
+                        }
+                        catch (error) {
+                            throw new Error(`Parsing failed for ${key}: ${value}`);
+                        }
+                    case 'cell':
+                    case 'slice':
+                    // return await generateCell(value as string, files);
+                    case 'address':
+                        return ton_core_1.Address.parse(value);
+                    case 'string':
+                        return String(value);
+                    case 'bool':
+                        return value;
+                    case 'text':
+                        return value;
+                    case 'empty':
+                        return null;
+                    default:
+                        throw new Error(`Unknown type: ${valueType}`);
+                }
+            }
+            else {
+                const parsedObj = {};
+                // If has `$$type` then it is a struct
+                if (typeof parsedObj === 'object' &&
+                    Object.prototype.hasOwnProperty.call(inputFields, '$$type')) {
+                    parsedObj['$$type'] = inputFields['$$type'];
+                }
+                else {
+                    // If has `value` and value is an array, then it is a map
+                    if ('value' in inputFields && Array.isArray(inputFields['value'])) {
+                        const listItem = ton_core_1.Dictionary.empty();
+                        for (const item of inputFields['value']) {
+                            const parsedItem = await (0, exports.parseInputs)(item, files);
+                            listItem.set(Object.values(parsedItem[0])[0], Object.values(parsedItem[1])[0]);
+                        }
+                        return listItem;
+                    }
+                }
+                for (const key in inputFields) {
+                    if (Object.prototype.hasOwnProperty.call(inputFields, key) &&
+                        !key.startsWith('$$')) {
+                        parsedObj[key] = await (0, exports.parseInputs)(inputFields[key], files, key);
+                    }
+                }
+                return parsedObj;
+            }
+        }
+        else {
+            return inputFields;
+        }
+    };
+    exports.parseInputs = parseInputs;
 });
 define("@scom/scom-designer/languages/main.json.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -7301,19 +7391,58 @@ define("@scom/scom-designer/build/storage.ts", ["require", "exports"], function 
         async rename(oldPath, newPath) {
         }
         async writeFile(fileName, content) {
-            console.log('writeFile', fileName, content);
             this._data.content = content;
         }
     }
     exports.Storage = Storage;
 });
-define("@scom/scom-designer/build/index.ts", ["require", "exports", "@scom/scom-designer/build/storage.ts"], function (require, exports, storage_1) {
+define("@scom/scom-designer/build/tonConnectorSender.ts", ["require", "exports", "@scom/ton-core"], function (require, exports, ton_core_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Storage = void 0;
-    Object.defineProperty(exports, "Storage", { enumerable: true, get: function () { return storage_1.Storage; } });
+    exports.TonConnectSender = void 0;
+    class TonConnectSender {
+        constructor(provider) {
+            this.provider = provider;
+            if (provider.wallet)
+                this.address = ton_core_2.Address.parse(provider.wallet.account.address);
+            else
+                this.address = undefined;
+        }
+        async send(args) {
+            if (!(args.sendMode === undefined ||
+                args.sendMode === ton_core_2.SendMode.PAY_GAS_SEPARATELY)) {
+                throw new Error('Deployer sender does not support `sendMode` other than `PAY_GAS_SEPARATELY`');
+            }
+            console.log('sed  ', args.body?.toBoc().toString('base64'));
+            await this.provider.sendTransaction({
+                validUntil: Date.now() + 5 * 60 * 1000,
+                messages: [
+                    {
+                        address: args.to.toString(),
+                        amount: args.value.toString(),
+                        payload: args.body?.toBoc().toString('base64'),
+                        stateInit: args.init
+                            ? (0, ton_core_2.beginCell)()
+                                .storeWritable((0, ton_core_2.storeStateInit)(args.init))
+                                .endCell()
+                                .toBoc()
+                                .toString('base64')
+                            : undefined,
+                    },
+                ],
+            });
+        }
+    }
+    exports.TonConnectSender = TonConnectSender;
 });
-define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts"], function (require, exports, components_34, compiler_1, index_24) {
+define("@scom/scom-designer/build/index.ts", ["require", "exports", "@scom/scom-designer/build/storage.ts", "@scom/scom-designer/build/tonConnectorSender.ts"], function (require, exports, storage_1, tonConnectorSender_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.TonConnectSender = exports.Storage = void 0;
+    Object.defineProperty(exports, "Storage", { enumerable: true, get: function () { return storage_1.Storage; } });
+    Object.defineProperty(exports, "TonConnectSender", { enumerable: true, get: function () { return tonConnectorSender_1.TonConnectSender; } });
+});
+define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_34, compiler_1, index_24, ton_core_3, utils_13) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerDeployer = void 0;
@@ -7327,12 +7456,15 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             };
             this.storage = new index_24.Storage('');
         }
+        setConfig(value) {
+            this._config = value;
+        }
         setData(value) {
             this.pnlMessage.clearInnerHTML();
             this._data = value;
+            this.storage.data = this._data;
         }
         async handleCompile() {
-            this.storage.data = this._data;
             const path = this._data.path;
             const options = {
                 projects: [{
@@ -7354,11 +7486,247 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             const result = await (0, compiler_1.bundleTactContract)(this.storage, '', options);
             return result;
         }
+        async initDeploy(result, fileNames, address) {
+            let tsFileName = fileNames.ts;
+            let pkgFileName = fileNames.pkg;
+            const contractName = (0, utils_13.extractContractName)(tsFileName);
+            const contractScript = result.get(tsFileName).toString();
+            const pkgData = JSON.parse(result.get(pkgFileName).toString());
+            const initParams = {};
+            if (pkgData?.init?.args?.length) {
+                for (let i = 0; i < pkgData.init.args.length; i++) {
+                    const arg = pkgData.init.args[i];
+                    if (arg.type === 'address') {
+                        initParams[arg.name] = address;
+                    }
+                }
+                ;
+            }
+            const compiler = new compiler_1.Compiler();
+            await compiler.addFile('tact.ts', contractScript, this.getImportFile.bind(this));
+            const compiledResult = await compiler.compile(true);
+            if (compiledResult.errors?.length > 0) {
+                return null;
+            }
+            const jsOutout = compiledResult.script['index.js'];
+            const jsModule = (0, utils_13.fromJSModule)(jsOutout);
+            const _code = `async function main(initParams) {
+      ${jsModule}
+      const contractInit = await ${contractName}.fromInit(...Object.values(initParams));
+      return contractInit;
+    } return main(initParams)`;
+            try {
+                const contractInit = await new Function('initParams', _code)({
+                    ...initParams,
+                });
+                console.info('contractInit', contractInit);
+                return contractInit;
+            }
+            catch { }
+            return null;
+        }
+        async getImportFile(fileName, isPackage) {
+            if (isPackage) {
+                const content = await components_34.application.getContent(`${components_34.application.rootDir}libs/${fileName}/index.d.ts`);
+                return {
+                    fileName: 'index.d.ts',
+                    content: content
+                };
+            }
+            ;
+        }
+        checkWalletConnection() {
+            return new Promise((resolve, reject) => {
+                const tonConnect = new ton_core_3.TonConnector.TonConnect();
+                if (!tonConnect.connected) {
+                    tonConnect.connect({
+                        jsBridgeKey: 'tonkeeper'
+                    });
+                    tonConnect.onStatusChange((wallet) => {
+                        if (wallet?.account?.address) {
+                            resolve(tonConnect);
+                        }
+                    });
+                }
+                else {
+                    tonConnect.restoreConnection();
+                    resolve(tonConnect);
+                }
+            });
+        }
+        async deploy() {
+            const result = await this.handleCompile();
+            if (result?.size) {
+                const tonConnect = await this.checkWalletConnection();
+                if (!tonConnect?.wallet?.account)
+                    return;
+                const fileNames = this.getFileNames(result);
+                const { apiKey, endpoint } = this._config;
+                const client = new ton_core_3.TonClient({ apiKey, endpoint });
+                const connectedWallet = tonConnect.wallet.account;
+                const addr = ton_core_3.Address.parse(connectedWallet.address);
+                const walletAddress = addr.toString({ bounceable: false });
+                const tonAmount = (0, ton_core_3.toNano)(0.05);
+                if (!await client.isContractDeployed(walletAddress)) {
+                    return {
+                        message: "Wallet is not deployed"
+                    };
+                }
+                const balance = await client.getBalance(walletAddress);
+                if (balance < tonAmount) {
+                    return {
+                        message: "Wallet has no enough funds. Please send some testnet TON."
+                    };
+                }
+                const abiFile = result.get(fileNames.abi).toString();
+                const abi = JSON.parse(abiFile);
+                const contractName = abi.name;
+                const abiTypes = abi.types || [];
+                if (abiTypes.length && contractName) {
+                    let initData = null;
+                    for (const type of abiTypes) {
+                        if (type.name === `${contractName}$Data`) {
+                            initData = type;
+                            break;
+                        }
+                    }
+                    if (initData?.fields?.length) {
+                        const inputs = await (0, utils_13.parseInputs)(initData?.fields, {});
+                        // TODO: add inputs to initData
+                    }
+                }
+                const contractInit = await this.initDeploy(result, fileNames, addr);
+                let stateInit = { code: new ton_core_3.Cell(), data: new ton_core_3.Cell() };
+                if (contractInit) {
+                    stateInit = contractInit.init;
+                    const userContract = client.open(contractInit);
+                    const userContractAddr = userContract.address.toString({ bounceable: false });
+                    if (await client.isContractDeployed(userContractAddr)) {
+                        return {
+                            address: userContractAddr,
+                            message: "Contract is deployed"
+                        };
+                    }
+                    const messageParams = {
+                        $$type: 'Deploy',
+                        queryId: BigInt(0),
+                    };
+                    const sender = new index_24.TonConnectSender(tonConnect);
+                    try {
+                        await userContract.send(sender, {
+                            value: tonAmount,
+                            bounce: false
+                        }, messageParams);
+                    }
+                    catch (error) {
+                        console.error(error);
+                        return {
+                            message: "Contract is not deployed"
+                        };
+                    }
+                    return {
+                        address: userContract.address.toString({ bounceable: false }),
+                        message: "Contract is deployed"
+                    };
+                }
+                return {
+                    message: "Cannot init contract"
+                };
+                // const contractCode = fileNames.boc ? Cell.fromBoc(result.get(fileNames.boc))[0] : new Cell();
+                // stateInit = { code: contractCode, data: new Cell() };
+                // const contractAddr = contractAddress(workchain, stateInit);
+                // const contractAddrStr = contractAddr.toString({ bounceable: false });
+                // if (await client.isContractDeployed(contractAddrStr)) {
+                //   return {
+                //     address: contractAddrStr,
+                //     message: "Contract is deployed"
+                //   }
+                // }
+                // const walletContract = client.open(walletV4R2);
+                // const seqno = await walletContract.getSeqno();
+                // const transfer = walletContract.createTransfer({
+                //   secretKey: keyPair.secretKey,
+                //   seqno: seqno,
+                //   messages: [
+                //     internal({
+                //       to: contractAddrStr,
+                //       value: tonAmount,
+                //       body: contractCode,
+                //       init: stateInit,
+                //       bounce: false
+                //     })
+                //   ]
+                // });
+                // const response = await tonConnect.sendTransaction({
+                //   validUntil: Math.floor(Date.now() / 1000) + 60,
+                //   messages: [{
+                //     address: contractAddrStr,
+                //     amount: tonAmount.toString(),
+                //     payload: transfer.toBoc().toString("base64"),
+                //   }]
+                // });
+                // console.log('response', response);
+                // return {
+                //   address: contractAddrStr,
+                //   message: "Contract is deployed"
+                // }
+            }
+        }
+        async deployUsingMnemonic() {
+            const workchain = 0;
+            const mnemonic = this._config.mnemonic;
+            const keyPair = await ton_core_3.TonCrypto.mnemonicToPrivateKey(mnemonic.split(" "));
+            const walletV4R2 = ton_core_3.WalletContractV4.create({ workchain, publicKey: keyPair.publicKey });
+            const walletAddress = walletV4R2.address.toString({ bounceable: false });
+            const tonAmount = (0, ton_core_3.toNano)(0.05);
+            // Deploy
+        }
+        getFileNames(result) {
+            let bocFileName = '';
+            let pkgFileName = '';
+            let tsFileName = '';
+            let abiFileName = '';
+            for (let [key, _] of result.entries()) {
+                if (key.endsWith('.boc')) {
+                    bocFileName = key;
+                }
+                else if (key.endsWith('.pkg')) {
+                    pkgFileName = key;
+                }
+                else if (key.endsWith('.ts')) {
+                    tsFileName = key;
+                }
+                else if (key.endsWith('.abi')) {
+                    abiFileName = key;
+                }
+            }
+            return {
+                boc: bocFileName,
+                pkg: pkgFileName,
+                ts: tsFileName,
+                abi: abiFileName
+            };
+        }
         async handleDeploy() {
+            this.btnDeploy.rightIcon.visible = true;
+            this.btnDeploy.enabled = false;
             this.pnlMessage.clearInnerHTML();
             this.pnlMessage.appendChild(this.$render("i-label", { caption: 'Deploying...' }));
-            const result = await this.handleCompile();
-            console.log(result);
+            try {
+                const { address, message } = await this.deploy() || {};
+                if (address) {
+                    this.pnlMessage.appendChild(this.$render("i-label", { caption: `Contract deployed on Testnet at address ${address}` }));
+                    this.pnlMessage.appendChild(this.$render("i-label", { caption: `View deployed contract`, link: { href: `https://testnet.tonviewer.com/${address}`, target: '_blank' } }));
+                }
+                else if (message) {
+                    this.pnlMessage.appendChild(this.$render("i-label", { caption: message }));
+                }
+            }
+            catch (error) {
+                console.error(error);
+            }
+            this.btnDeploy.rightIcon.visible = false;
+            this.btnDeploy.enabled = true;
         }
         init() {
             super.init();
@@ -7366,7 +7734,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         render() {
             return this.$render("i-vstack", { width: "100%", height: "100dvh", padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, overflow: "hidden" },
                 this.$render("i-hstack", { padding: { top: '0.5rem', bottom: '0.5rem' } },
-                    this.$render("i-button", { caption: '$deploy', stack: { shrink: '0' }, padding: { top: '0.25rem', bottom: '0.25rem', left: '1rem', right: '1rem' }, boxShadow: 'none', minHeight: '2.25rem', onClick: this.handleDeploy })),
+                    this.$render("i-button", { id: "btnDeploy", caption: '$deploy', stack: { shrink: '0' }, padding: { top: '0.25rem', bottom: '0.25rem', left: '1rem', right: '1rem' }, boxShadow: 'none', minHeight: '2.25rem', rightIcon: { name: "spinner", spin: true, visible: false }, onClick: this.handleDeploy })),
                 this.$render("i-vstack", { id: "pnlMessage", stack: { grow: '1' }, overflow: { y: 'auto' }, padding: { top: '1rem', bottom: '1rem' }, gap: 8, border: { top: { width: '1px', style: 'solid', color: Theme.divider } } }));
         }
     };
@@ -7375,7 +7743,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
     ], ScomDesignerDeployer);
     exports.ScomDesignerDeployer = ScomDesignerDeployer;
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_35, index_css_23, compiler_2, scom_code_editor_1, utils_13, config_9, index_25) {
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_35, index_css_23, compiler_2, scom_code_editor_1, utils_14, config_9, index_25) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
@@ -7484,7 +7852,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._data.file = value;
         }
         get fileName() {
-            const name = this._data.file?.path || (this.url ? (0, utils_13.extractFileName)(this.url) : '');
+            const name = this._data.file?.path || (this.url ? (0, utils_14.extractFileName)(this.url) : '');
             return name || 'file_name';
         }
         get value() {
@@ -7495,6 +7863,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         set baseUrl(value) {
             this._data.baseUrl = value ?? '';
+        }
+        get deployConfig() {
+            return this._deployConfig;
+        }
+        set deployConfig(value) {
+            this._deployConfig = value;
+            if (this.deployDeployer) {
+                this.deployDeployer.setConfig(value);
+            }
         }
         get isContract() {
             return this.file?.path?.endsWith('.tact') || this.url?.endsWith('.tact');
@@ -7615,6 +7992,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.deployDeployer.width = '100%';
             this.deployDeployer.height = '100%';
             this.deployDeployer.stack = { grow: '1' };
+            if (this._deployConfig)
+                this.deployDeployer.setConfig(this._deployConfig);
         }
         handleTogglePanels(value) {
             this.pnlHeader.visible = !value;
@@ -7623,7 +8002,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async loadContent() {
             const { url = '', file } = this._data;
-            const content = url ? await (0, utils_13.getFileContent)(url) : file?.content || '';
+            const content = url ? await (0, utils_14.getFileContent)(url) : file?.content || '';
             const fileName = this.fileName;
             await this.codeEditor.loadContent(content, 'typescript', fileName);
             this.compiler.addFile(fileName, content, this.importCallback);
@@ -7760,6 +8139,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         handleCodeEditorChange(target, event) {
             this.updateDesigner = true;
             this.imported = {};
+            if (this.deployDeployer) {
+                this.deployDeployer.setData({
+                    path: this.fileName,
+                    content: this.value
+                });
+            }
             if (typeof this.onChange === 'function')
                 this.onChange(this, event);
         }
@@ -7851,6 +8236,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.onTogglePreview = this.getAttribute('onTogglePreview', true) || this.onTogglePreview;
             this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview;
             this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError;
+            const deployConfig = this.getAttribute('deployConfig', true);
+            if (deployConfig)
+                this.deployConfig = deployConfig;
             const url = this.getAttribute('url', true);
             const file = this.getAttribute('file', true);
             this.addLib();

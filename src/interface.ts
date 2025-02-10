@@ -83,3 +83,9 @@ export interface IFileData {
   path: string;
   content: string;
 }
+
+export interface IDeployConfig {
+  endpoint?: string;
+  apiKey?: string;
+  mnemonic?: string;
+}

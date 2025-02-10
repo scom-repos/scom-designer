@@ -17,46 +17,26 @@ export default class Module1 extends Module {
         this.scomDesigner.setValue({
             file: {
                 path: 'hello_word.tact',
-                content: `import "@stdlib/deploy";
+                content: `// this trait has to be imported
+import "@stdlib/deploy";
 
-message Add {
-amount: Int as uint32;
+// the Deployable trait adds a default receiver for the "Deploy" message
+contract Counter with Deployable {
+ 
+    val: Int as uint32;
+ 
+    init() {
+        self.val = 0;
+    }
+ 
+    receive("increment") {
+        self.val = self.val + 1;
+    }
+ 
+    get fun value(): Int {
+        return self.val;
+    }
 }
-
-contract SampleTactContract with Deployable {
-
-owner: Address;
-counter: Int as uint32;
-
-init(owner: Address) {
-self.owner = owner;
-self.counter = 0;
-}
-
-fun add(v: Int) {
-
-// Check sender
-let ctx: Context = context();
-require(ctx.sender == self.owner, "Invalid sender");
-
-// Update counter
-self.counter += v;
-}
-
-receive(msg: Add) {
-self.add(msg.amount);
-}
-
-receive("increment") {
-self.add(1);
-self.reply("incremented".asComment());
-}
-
-get fun counter(): Int {
-return self.counter;
-}
-}
-
 `
             }
         })
@@ -110,7 +90,9 @@ return self.counter;
                 <i-button id="export" caption='Get value' onClick={this.onButton.bind(this)}></i-button>
                 <i-scom-designer
                     id="scomDesigner"
-                    display='block' width="100%" height="100%"
+                    display='block'
+                    width="100%" height="100%"
+                    deployConfig={this.options.deployConfig}
                     // url="https://storage.decom.app/ipfs/bafybeiekmzv3mmjgmfclcqe2gwpkzpptloolm4merj3cwnvb7d7pdv4v2m/demo.tsx"
                     onPreview={this.handlePreview.bind(this)}
                 ></i-scom-designer>
