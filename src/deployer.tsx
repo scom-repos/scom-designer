@@ -1,12 +1,14 @@
-import { Container, ControlElement, Module, customElements, Styles, VStack, Button, application } from '@ijstech/components';
+import { Container, ControlElement, Module, customElements, Styles, VStack, Button, application, Panel } from '@ijstech/components';
 import { bundleTactContract, Compiler } from '@ijstech/compiler';
 import { Storage, TonConnectSender } from './build/index';
 import { IDeployConfig, IFileData } from './interface';
-import { TonClient, Cell, TonCrypto, WalletContractV4, toNano, TonConnector, Address } from '@scom/ton-core';
+import { TonClient, TonCrypto, WalletContractV4, toNano, TonConnector, Address, ABIField } from '@scom/ton-core';
 import { extractContractName, fromJSModule, parseInputs } from './helpers/utils';
+import { DeployerParams } from './components/index';
+import { mainJson } from './languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
-
+const TON_AMOUNT = toNano(0.05);
 declare const window: any;
 
 declare global {
@@ -31,9 +33,13 @@ export class ScomDesignerDeployer extends Module {
   };
   private _config: IDeployConfig;
   private storage: Storage = new Storage('');
+  private initFields: ABIField[] = [];
+  private builtResult: Record<string, IFileData> = {};
 
   private pnlMessage: VStack;
   private btnDeploy: Button;
+  private pnlParams: Panel;
+  private formParams: DeployerParams;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options);
@@ -43,10 +49,28 @@ export class ScomDesignerDeployer extends Module {
     this._config = value;
   }
 
-  setData(value: IFileData) {
+  async setData(value: IFileData) {
     this.pnlMessage.clearInnerHTML();
+    this.pnlParams.visible = false;
+    this.pnlParams.clearInnerHTML();
     this._data = value;
     this.storage.data = this._data;
+    await this.build();
+  }
+
+  private renderMessage(message: string, link?: string) {
+    if (link) {
+      this.pnlMessage.appendChild(
+        <i-label
+          caption={message}
+          link={{href: link, target: '_blank'}}
+        ></i-label>
+      )
+    } else {
+      this.pnlMessage.appendChild(
+        <i-label caption={message}></i-label>
+      )
+    }
   }
 
   private async handleCompile() {
@@ -71,22 +95,10 @@ export class ScomDesignerDeployer extends Module {
     return result;
   }
 
-  private async initDeploy(result: any, fileNames: {ts: string, boc: string, pkg: string}, address: string) {
-    let tsFileName = fileNames.ts;
-    let pkgFileName = fileNames.pkg;
+  private async initDeploy(params: Record<string, any>) {
+    const tsFileName = this.builtResult.ts?.path;
     const contractName = extractContractName(tsFileName);
-    const contractScript = result.get(tsFileName).toString();
-    const pkgData = JSON.parse(result.get(pkgFileName).toString());
-    const initParams: any = {};
-
-    if (pkgData?.init?.args?.length) {
-      for (let i = 0; i < pkgData.init.args.length; i++) {
-        const arg = pkgData.init.args[i];
-        if (arg.type === 'address') {
-          initParams[arg.name] = address;
-        }
-      };
-    }
+    const contractScript = this.builtResult.ts?.content || '';
 
     const compiler = new Compiler();
     await compiler.addFile(
@@ -108,7 +120,7 @@ export class ScomDesignerDeployer extends Module {
 
     try {
       const contractInit = await new Function('initParams', _code)({
-        ...(initParams as unknown as object),
+        ...(params as unknown as object),
       });
       console.info('contractInit', contractInit);
       return contractInit;
@@ -145,141 +157,161 @@ export class ScomDesignerDeployer extends Module {
     });
   }
 
-  private async deploy() {
+  private async build() {
+    this.btnDeploy.enabled = false;
     const result = await this.handleCompile();
-    if (result?.size) {
-      const tonConnect = await this.checkWalletConnection();
-      if (!tonConnect?.wallet?.account) return;
-      const fileNames = this.getFileNames(result);
-      const { apiKey, endpoint } = this._config;
-      const client = new TonClient({ apiKey, endpoint });
-      const connectedWallet = tonConnect.wallet.account;
-      const addr = Address.parse(connectedWallet.address);
-      const walletAddress = addr.toString({ bounceable: false });
-      const tonAmount = toNano(0.05);
+    if (!result?.size) return;
 
-      if (!await client.isContractDeployed(walletAddress)) {
-        return {
-          message: "Wallet is not deployed"
-        };
+    const fileNames = this.getFileNames(result);
+
+    for (let key in fileNames) {
+      this.builtResult[key] = {
+        path: fileNames[key],
+        content: result.get(fileNames[key]).toString()
       }
+    }
 
-      const balance = await client.getBalance(walletAddress);
-      if (balance < tonAmount) {
+    const pkgData = this.builtResult.pkg?.content && JSON.parse(this.builtResult.pkg?.content);
+    if (pkgData?.init?.args?.length) {
+      const fields = pkgData.init.args || [];
+      this.initFields = fields;
+      this.pnlParams.visible = true;
+      this.pnlParams.appendChild(
+        <i-scom-designer--deployer-params
+          id="formParams"
+          fields={fields}
+          onChanged={this.handleParamsChanged}
+        />
+      );
+    }
+
+    
+    this.btnDeploy.enabled = true;
+  }
+
+  private async deploy(params: Record<string, any>) {
+    return await this.callDeploy(params);
+  }
+
+  private async callDeploy(params: Record<string, any>) {
+    const tonConnect = await this.checkWalletConnection();
+    if (!tonConnect?.wallet?.account) return;
+    const { apiKey, endpoint } = this._config;
+    const client = new TonClient({ apiKey, endpoint });
+    const connectedWallet = tonConnect.wallet.account;
+    const addr = Address.parse(connectedWallet.address);
+    const walletAddress = addr.toString({ bounceable: false });
+
+    if (!await client.isContractDeployed(walletAddress)) {
+      return {
+        message: "Wallet is not deployed"
+      };
+    }
+
+    const balance = await client.getBalance(walletAddress);
+    if (balance < TON_AMOUNT) {
+      return {
+        message: "Wallet has no enough funds. Please send some testnet TON."
+      };
+    }
+
+    const contractInit = await this.initDeploy(params);
+
+    if (contractInit) {
+      const userContract = client.open(contractInit);
+      const userContractAddr = userContract.address.toString({ bounceable: false });
+
+      if (await client.isContractDeployed(userContractAddr)) {
         return {
-          message: "Wallet has no enough funds. Please send some testnet TON."
-        };
-      }
-
-      const abiFile = result.get(fileNames.abi).toString();
-      const abi = JSON.parse(abiFile);
-      const contractName = abi.name;
-      const abiTypes = abi.types || [];
-      if (abiTypes.length && contractName) {
-        let initData = null;
-        for (const type of abiTypes) {
-          if (type.name === `${contractName}$Data`) {
-            initData = type;
-            break;
-          }
-        }
-        if (initData?.fields?.length) {
-          const inputs = await parseInputs(initData?.fields, {});
-          // TODO: add inputs to initData
-        }
-      }
-
-      const contractInit = await this.initDeploy(result, fileNames, addr);
-      let stateInit = { code: new Cell(), data: new Cell() };
-
-      if (contractInit) {
-        stateInit = contractInit.init
-        const userContract = client.open(contractInit);
-        const userContractAddr = userContract.address.toString({ bounceable: false });
-
-        if (await client.isContractDeployed(userContractAddr)) {
-          return {
-            address: userContractAddr,
-            message: "Contract is deployed"
-          }
-        }
-
-        const messageParams = {
-          $$type: 'Deploy',
-          queryId: BigInt(0),
-        };
-        const sender = new TonConnectSender(tonConnect);
-
-        try {
-          await userContract.send(
-            sender,
-            {
-              value: tonAmount,
-              bounce: false
-            },
-            messageParams,
-          );
-        } catch (error) {
-          console.error(error);
-          return {
-            message: "Contract is not deployed"
-          }
-        }
-
-        return {
-          address: userContract.address.toString({ bounceable: false }),
+          address: userContractAddr,
           message: "Contract is deployed"
         }
       }
 
-      return {
-        message: "Cannot init contract"
+      const messageParams = {
+        $$type: 'Deploy',
+        queryId: BigInt(0),
+      };
+      const sender = new TonConnectSender(tonConnect);
+
+      try {
+        await userContract.send(
+          sender,
+          {
+            value: TON_AMOUNT,
+            bounce: false
+          },
+          messageParams,
+        );
+      } catch (error) {
+        console.error(error);
+        return {
+          message: "Contract is not deployed"
+        }
       }
 
-      // const contractCode = fileNames.boc ? Cell.fromBoc(result.get(fileNames.boc))[0] : new Cell();
-      // stateInit = { code: contractCode, data: new Cell() };
-      // const contractAddr = contractAddress(workchain, stateInit);
-      // const contractAddrStr = contractAddr.toString({ bounceable: false });
-
-      // if (await client.isContractDeployed(contractAddrStr)) {
-      //   return {
-      //     address: contractAddrStr,
-      //     message: "Contract is deployed"
-      //   }
-      // }
-
-      // const walletContract = client.open(walletV4R2);
-      // const seqno = await walletContract.getSeqno();
-      // const transfer = walletContract.createTransfer({
-      //   secretKey: keyPair.secretKey,
-      //   seqno: seqno,
-      //   messages: [
-      //     internal({
-      //       to: contractAddrStr,
-      //       value: tonAmount,
-      //       body: contractCode,
-      //       init: stateInit,
-      //       bounce: false
-      //     })
-      //   ]
-      // });
-
-      // const response = await tonConnect.sendTransaction({
-      //   validUntil: Math.floor(Date.now() / 1000) + 60,
-      //   messages: [{
-      //     address: contractAddrStr,
-      //     amount: tonAmount.toString(),
-      //     payload: transfer.toBoc().toString("base64"),
-      //   }]
-      // });
-
-      // console.log('response', response);
-
-      // return {
-      //   address: contractAddrStr,
-      //   message: "Contract is deployed"
-      // }
+      return {
+        address: userContract.address.toString({ bounceable: false }),
+        message: "Contract is deployed"
+      }
     }
+
+    return {
+      message: "Cannot init contract"
+    }
+
+    // const contractCode = fileNames.boc ? Cell.fromBoc(result.get(fileNames.boc))[0] : new Cell();
+    // stateInit = { code: contractCode, data: new Cell() };
+    // const contractAddr = contractAddress(workchain, stateInit);
+    // const contractAddrStr = contractAddr.toString({ bounceable: false });
+
+    // if (await client.isContractDeployed(contractAddrStr)) {
+    //   return {
+    //     address: contractAddrStr,
+    //     message: "Contract is deployed"
+    //   }
+    // }
+
+    // const walletContract = client.open(walletV4R2);
+    // const seqno = await walletContract.getSeqno();
+    // const transfer = walletContract.createTransfer({
+    //   secretKey: keyPair.secretKey,
+    //   seqno: seqno,
+    //   messages: [
+    //     internal({
+    //       to: contractAddrStr,
+    //       value: tonAmount,
+    //       body: contractCode,
+    //       init: stateInit,
+    //       bounce: false
+    //     })
+    //   ]
+    // });
+
+    // const response = await tonConnect.sendTransaction({
+    //   validUntil: Math.floor(Date.now() / 1000) + 60,
+    //   messages: [{
+    //     address: contractAddrStr,
+    //     amount: tonAmount.toString(),
+    //     payload: transfer.toBoc().toString("base64"),
+    //   }]
+    // });
+
+    // return {
+    //   address: contractAddrStr,
+    //   message: "Contract is deployed"
+    // }
+  }
+
+  private async handleParamsChanged(value: Record<string, any>) {
+    const inputsPromises = [...this.initFields].map(async(field: ABIField) => {
+      field.value = value[field.name];
+      const parsedValue = await parseInputs(field);
+      field.value = parsedValue;
+      return field;
+    });
+    const inputs = await Promise.all(inputsPromises);
+    return inputs;
   }
 
   private async deployUsingMnemonic() {
@@ -288,7 +320,6 @@ export class ScomDesignerDeployer extends Module {
     const keyPair = await TonCrypto.mnemonicToPrivateKey(mnemonic.split(" "));
     const walletV4R2 = WalletContractV4.create({ workchain, publicKey: keyPair.publicKey });
     const walletAddress = walletV4R2.address.toString({ bounceable: false });
-    const tonAmount = toNano(0.05);
 
     // Deploy
   }
@@ -319,29 +350,39 @@ export class ScomDesignerDeployer extends Module {
   }
 
   private async handleDeploy() {
+    this.pnlMessage.clearInnerHTML();
+    const validateResult = this.formParams && await this.formParams.validate();
+
+    let initParams: Record<string, any> = {};
+
+    if (validateResult) {
+      if (!validateResult.valid) {
+        this.renderMessage("Invalid params");
+        return;
+      } else {
+        const data = await this.formParams.getFormData();
+        try {
+          const parsedData = await this.handleParamsChanged(data);
+          for (const item of parsedData) {
+            initParams[item.name] = item.value;
+          }
+        } catch (error) {
+          return;
+        }
+      }
+    }
+
     this.btnDeploy.rightIcon.visible = true;
     this.btnDeploy.enabled = false;
-    this.pnlMessage.clearInnerHTML();
-    this.pnlMessage.appendChild(
-      <i-label caption='Deploying...'></i-label>
-    )
-    try {
+    this.renderMessage('Deploying contract...');
 
-      const { address, message } = await this.deploy() || {};
+    try {
+      const { address, message } = await this.deploy(initParams) || {};
       if (address) {
-        this.pnlMessage.appendChild(
-          <i-label caption={`Contract deployed on Testnet at address ${address}`}></i-label>
-        )
-        this.pnlMessage.appendChild(
-          <i-label
-            caption={`View deployed contract`}
-            link={{href: `https://testnet.tonviewer.com/${address}`, target: '_blank'}}
-          ></i-label>
-        )
+        this.renderMessage(`Contract deployed on Testnet at address ${address}`);
+        this.renderMessage(`View deployed contract`, 'https://testnet.tonviewer.com/' + address);
       } else if (message) {
-        this.pnlMessage.appendChild(
-          <i-label caption={message}></i-label>
-        )
+        this.renderMessage(message);
       }
     } catch(error) {
       console.error(error);
@@ -351,7 +392,9 @@ export class ScomDesignerDeployer extends Module {
   }
 
   init(): void {
+    this.i18n.init({...mainJson});
     super.init();
+    this.handleParamsChanged = this.handleParamsChanged.bind(this);
   }
 
   render() {
@@ -359,8 +402,17 @@ export class ScomDesignerDeployer extends Module {
       width="100%"
       height="100dvh"
       padding={{left: '1rem', right: '1rem', top: '1rem', bottom: '1rem'}}
+      gap="0.5rem"
       overflow="hidden"
     >
+      <i-panel
+        id="pnlParams"
+        visible={false}
+        width={'100%'}
+        padding={{left: '0.5rem', right: '0.5rem', top: '0.5rem', bottom: '0.5rem'}}
+        border={{radius: 8}}
+        background={{color: Theme.background.main}}
+      ></i-panel>
       <i-hstack
         padding={{top: '0.5rem', bottom: '0.5rem'}}
       >
