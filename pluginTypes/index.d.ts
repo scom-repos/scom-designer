@@ -275,6 +275,7 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     export const extractContractName: (filePath: string) => string;
     export const fromJSModule: (jsModuleCode: string) => string;
     export const parseInputs: (inputFields: any, key?: string) => Promise<any>;
+    export const basicTypes: string[];
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
@@ -2079,7 +2080,7 @@ declare module "@scom/scom-designer/components/pickerComponents.tsx" {
 /// <amd-module name="@scom/scom-designer/components/params.tsx" />
 declare module "@scom/scom-designer/components/params.tsx" {
     import { Container, ControlElement, Module } from "@ijstech/components";
-    import { ABIField } from "@scom/ton-core";
+    import { ABIField, ABIType } from "@scom/ton-core";
     global {
         namespace JSX {
             interface IntrinsicElements {
@@ -2087,25 +2088,27 @@ declare module "@scom/scom-designer/components/params.tsx" {
             }
         }
     }
-    type onChangedCallback = (value: Record<string, any>) => void;
     interface DeployerParamsElement extends ControlElement {
         fields?: ABIField[];
-        buttonCaption?: string;
-        onChanged?: onChangedCallback;
+        name?: string;
+        onGetType?: (type: string) => ABIField;
     }
+    type onGetTypeCallback = (type: string) => ABIType;
     export default class DeployerParams extends Module {
         private formParams;
+        private lblName;
         private _data;
         private _schema;
-        onChanged: onChangedCallback;
+        onGetType?: onGetTypeCallback;
         get fields(): ABIField[];
         set fields(value: ABIField[]);
-        get buttonCaption(): string;
-        set buttonCaption(value: string);
+        get name(): string;
+        set name(value: string);
         constructor(parent?: Container, options?: any);
         validate(): Promise<import("@ijstech/form/types/index.ts").ValidationResult>;
         getFormData(): Promise<any>;
         private renderForm;
+        private renderSchema;
         private getType;
         init(): void;
         render(): void;
@@ -2422,6 +2425,7 @@ declare module "@scom/scom-designer/deployer.tsx" {
         private storage;
         private initFields;
         private builtResult;
+        private contract;
         private pnlMessage;
         private btnDeploy;
         private pnlParams;
@@ -2437,7 +2441,8 @@ declare module "@scom/scom-designer/deployer.tsx" {
         private build;
         private deploy;
         private callDeploy;
-        private handleParamsChanged;
+        private parseParams;
+        private getType;
         private deployUsingMnemonic;
         private getFileNames;
         private handleDeploy;

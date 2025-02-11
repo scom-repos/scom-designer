@@ -507,7 +507,7 @@ define("@scom/scom-designer/assets.ts", ["require", "exports", "@ijstech/compone
 define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton-core", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts", "@ijstech/components"], function (require, exports, ton_core_1, assets_1, store_2, components_5) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.parseInputs = exports.fromJSModule = exports.extractContractName = exports.sleep = exports.getTranslationKey = exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.handleParse = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
+    exports.basicTypes = exports.parseInputs = exports.fromJSModule = exports.extractContractName = exports.sleep = exports.getTranslationKey = exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.handleParse = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
     const Theme = components_5.Styles.Theme.ThemeVars;
     exports.backgroundOptions = [
         {
@@ -1088,7 +1088,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
                         }
                     case 'cell':
                     case 'slice':
-                    // return await generateCell(value as string, files);
+                        return await generateCell(value);
                     case 'address':
                         return ton_core_1.Address.parse(value);
                     case 'string':
@@ -1135,6 +1135,10 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
         }
     };
     exports.parseInputs = parseInputs;
+    exports.basicTypes = ['uint', 'int', 'cell', 'slice', 'address', 'string', 'bool', 'text', 'empty'];
+    const generateCell = async (value) => {
+        return value;
+    };
 });
 define("@scom/scom-designer/languages/main.json.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -5723,10 +5727,9 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
     ], DesignerPickerComponents);
     exports.default = DesignerPickerComponents;
 });
-define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijstech/components"], function (require, exports, components_32) {
+define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_32, utils_12) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const Theme = components_32.Styles.Theme.ThemeVars;
     let DeployerParams = class DeployerParams extends components_32.Module {
         get fields() {
             return this._data.fields || [];
@@ -5735,17 +5738,19 @@ define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijs
             this._data.fields = value || [];
             this.renderForm();
         }
-        get buttonCaption() {
-            return this._data.buttonCaption;
+        get name() {
+            return this._data.name || 'Params';
         }
-        set buttonCaption(value) {
-            this._data.buttonCaption = value;
+        set name(value) {
+            this._data.name = value || 'Params';
+            if (this.lblName)
+                this.lblName.caption = value;
         }
         constructor(parent, options) {
             super(parent, options);
             this._data = {
                 fields: [],
-                buttonCaption: ''
+                name: 'Params'
             };
         }
         async validate() {
@@ -5761,11 +5766,7 @@ define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijs
                 properties: {}
             };
             this.fields.forEach((field, index) => {
-                schema.properties[field.name] = {
-                    type: this.getType(field.type?.type),
-                    title: field.name,
-                    required: true
-                };
+                this.renderSchema(schema, field);
             });
             this._schema = schema;
             this.formParams.jsonSchema = schema;
@@ -5773,9 +5774,6 @@ define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijs
                 columnWidth: '100%',
                 columnsPerRow: 1,
                 confirmButtonOptions: {
-                    caption: this.buttonCaption || '$send',
-                    backgroundColor: Theme.colors.primary.main,
-                    fontColor: Theme.colors.primary.contrastText,
                     hide: true
                 },
                 dateTimeFormat: {
@@ -5786,8 +5784,31 @@ define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijs
             };
             this.formParams.renderForm();
         }
+        renderSchema(schema, field) {
+            const type = field.type?.type;
+            if (utils_12.basicTypes.includes(type)) {
+                schema.properties[field.name] = {
+                    type: this.getType(field.type?.type),
+                    title: field.name,
+                    required: field.type?.optional === false
+                };
+                return schema;
+            }
+            schema.properties[field.name] = {
+                type: 'object',
+                properties: {},
+                required: field.type?.optional === false
+            };
+            const itemData = this.onGetType(type);
+            const childFields = itemData?.fields || [];
+            if (childFields.length) {
+                for (const childField of childFields) {
+                    schema.properties[field.name] = this.renderSchema(schema.properties[field.name], childField);
+                }
+            }
+            return schema;
+        }
         getType(type) {
-            console.log(type);
             let result = 'string';
             switch (type) {
                 case 'uint':
@@ -5797,22 +5818,22 @@ define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijs
                 case 'bool':
                     result = 'boolean';
                     break;
+                case 'slice':
+                    result = 'string';
             }
             return result;
         }
         init() {
             super.init();
-            this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+            this.onGetType = this.getAttribute('onGetType', true) || this.onGetType;
             const fields = this.getAttribute('fields', true);
-            const buttonCaption = this.getAttribute('buttonCaption', true);
-            if (buttonCaption)
-                this.buttonCaption = buttonCaption;
             if (fields)
                 this.fields = fields;
+            this.name = this.getAttribute('name', true);
         }
         render() {
             return this.$render("i-vstack", { gap: '0.5rem' },
-                this.$render("i-label", { caption: "Params", font: { bold: true } }),
+                this.$render("i-label", { id: "lblName", caption: "Params", font: { bold: true } }),
                 this.$render("i-form", { id: "formParams" }));
         }
     };
@@ -5961,7 +5982,7 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
         ]
     };
 });
-define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_34, index_21, index_css_22, data_1, index_22, utils_12, config_8, store_7, index_23) {
+define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_34, index_21, index_css_22, data_1, index_22, utils_13, config_8, store_7, index_23) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerForm = void 0;
@@ -6157,7 +6178,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
             return result;
         }
         getOptions(props) {
-            let options = (0, utils_12.parseProps)(props, this.baseUrl) || {};
+            let options = (0, utils_13.parseProps)(props, this.baseUrl) || {};
             let newOptions = {};
             try {
                 newOptions = (({ mediaQueries, ...o }) => o)(JSON.parse(JSON.stringify(options)));
@@ -6186,7 +6207,7 @@ define("@scom/scom-designer/designer.tsx", ["require", "exports", "@ijstech/comp
                     }
                 }
                 this.removeEmptyValue(props[prop]);
-                if ((0, utils_12.isSameValue)(defaultValue, props[prop]) || props[prop] === undefined) {
+                if ((0, utils_13.isSameValue)(defaultValue, props[prop]) || props[prop] === undefined) {
                     continue;
                 }
                 if (typeof props[prop] === 'object' && Object.keys(props[prop]).length === 0) {
@@ -7541,7 +7562,7 @@ define("@scom/scom-designer/build/index.ts", ["require", "exports", "@scom/scom-
     Object.defineProperty(exports, "Storage", { enumerable: true, get: function () { return storage_1.Storage; } });
     Object.defineProperty(exports, "TonConnectSender", { enumerable: true, get: function () { return tonConnectorSender_1.TonConnectSender; } });
 });
-define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_35, compiler_1, index_24, ton_core_3, utils_13, index_25) {
+define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_35, compiler_1, index_24, ton_core_3, utils_14, index_25) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerDeployer = void 0;
@@ -7557,6 +7578,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             this.storage = new index_24.Storage('');
             this.initFields = [];
             this.builtResult = {};
+            this.contract = null;
         }
         setConfig(value) {
             this._config = value;
@@ -7601,7 +7623,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         }
         async initDeploy(params) {
             const tsFileName = this.builtResult.ts?.path;
-            const contractName = (0, utils_13.extractContractName)(tsFileName);
+            const contractName = (0, utils_14.extractContractName)(tsFileName);
             const contractScript = this.builtResult.ts?.content || '';
             const compiler = new compiler_1.Compiler();
             await compiler.addFile('tact.ts', contractScript, this.getImportFile.bind(this));
@@ -7610,7 +7632,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                 return null;
             }
             const jsOutout = compiledResult.script['index.js'];
-            const jsModule = (0, utils_13.fromJSModule)(jsOutout);
+            const jsModule = (0, utils_14.fromJSModule)(jsOutout);
             const _code = `async function main(initParams) {
       ${jsModule}
       const contractInit = await ${contractName}.fromInit(...Object.values(initParams));
@@ -7672,7 +7694,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                 const fields = pkgData.init.args || [];
                 this.initFields = fields;
                 this.pnlParams.visible = true;
-                this.pnlParams.appendChild(this.$render("i-scom-designer--deployer-params", { id: "formParams", fields: fields, onChanged: this.handleParamsChanged }));
+                this.pnlParams.appendChild(this.$render("i-scom-designer--deployer-params", { id: "formParams", fields: fields, name: 'Init Params' }));
             }
             this.btnDeploy.enabled = true;
         }
@@ -7702,6 +7724,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             const contractInit = await this.initDeploy(params);
             if (contractInit) {
                 const userContract = client.open(contractInit);
+                this.contract = userContract;
                 const userContractAddr = userContract.address.toString({ bounceable: false });
                 if (await client.isContractDeployed(userContractAddr)) {
                     return {
@@ -7709,10 +7732,11 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                         message: "Contract is deployed"
                     };
                 }
-                const messageParams = {
+                const deployType = contractInit?.abi?.receivers?.find(item => item?.message?.type === 'Deploy');
+                const messageParams = deployType ? {
                     $$type: 'Deploy',
                     queryId: BigInt(0),
-                };
+                } : 'Deploy';
                 const sender = new index_24.TonConnectSender(tonConnect);
                 try {
                     await userContract.send(sender, {
@@ -7772,15 +7796,35 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             //   message: "Contract is deployed"
             // }
         }
-        async handleParamsChanged(value) {
+        async parseParams(value) {
             const inputsPromises = [...this.initFields].map(async (field) => {
                 field.value = value[field.name];
-                const parsedValue = await (0, utils_13.parseInputs)(field);
-                field.value = parsedValue;
+                const fieldType = field.type?.type;
+                if (utils_14.basicTypes.includes(fieldType)) {
+                    const parsedValue = await (0, utils_14.parseInputs)(field);
+                    field.value = parsedValue;
+                }
+                else {
+                    const itemData = this.getType(fieldType);
+                    const childFields = itemData?.fields || [];
+                    if (!field.value)
+                        field.value = {};
+                    if (childFields.length) {
+                        for (const childField of childFields) {
+                            childField.value = value[field.name]?.[childField.name];
+                            const val = await (0, utils_14.parseInputs)(childField);
+                            field.value[childField.name] = val;
+                        }
+                    }
+                }
                 return field;
             });
-            const inputs = await Promise.all(inputsPromises);
-            return inputs;
+            return await Promise.all(inputsPromises);
+        }
+        getType(type) {
+            const types = this.contract?.abi?.types || [];
+            const field = types.find((item) => item.name === type);
+            return field;
         }
         async deployUsingMnemonic() {
             const workchain = 0;
@@ -7828,7 +7872,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                 else {
                     const data = await this.formParams.getFormData();
                     try {
-                        const parsedData = await this.handleParamsChanged(data);
+                        const parsedData = await this.parseParams(data);
                         for (const item of parsedData) {
                             initParams[item.name] = item.value;
                         }
@@ -7860,7 +7904,6 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         init() {
             this.i18n.init({ ...index_25.mainJson });
             super.init();
-            this.handleParamsChanged = this.handleParamsChanged.bind(this);
         }
         render() {
             return this.$render("i-vstack", { width: "100%", height: "100dvh", padding: { left: '1rem', right: '1rem', top: '1rem', bottom: '1rem' }, gap: "0.5rem", overflow: "hidden" },
@@ -7875,7 +7918,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
     ], ScomDesignerDeployer);
     exports.ScomDesignerDeployer = ScomDesignerDeployer;
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_36, index_css_23, compiler_2, scom_code_editor_1, utils_14, config_9, index_26) {
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_36, index_css_23, compiler_2, scom_code_editor_1, utils_15, config_9, index_26) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
@@ -7984,7 +8027,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._data.file = value;
         }
         get fileName() {
-            const name = this._data.file?.path || (this.url ? (0, utils_14.extractFileName)(this.url) : '');
+            const name = this._data.file?.path || (this.url ? (0, utils_15.extractFileName)(this.url) : '');
             return name || 'file_name';
         }
         get value() {
@@ -8134,7 +8177,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async loadContent() {
             const { url = '', file } = this._data;
-            const content = url ? await (0, utils_14.getFileContent)(url) : file?.content || '';
+            const content = url ? await (0, utils_15.getFileContent)(url) : file?.content || '';
             const fileName = this.fileName;
             await this.codeEditor.loadContent(content, 'typescript', fileName);
             this.compiler.addFile(fileName, content, this.importCallback);

@@ -2,8 +2,8 @@ import { Container, ControlElement, Module, customElements, Styles, VStack, Butt
 import { bundleTactContract, Compiler } from '@ijstech/compiler';
 import { Storage, TonConnectSender } from './build/index';
 import { IDeployConfig, IFileData } from './interface';
-import { TonClient, TonCrypto, WalletContractV4, toNano, TonConnector, Address, ABIField } from '@scom/ton-core';
-import { extractContractName, fromJSModule, parseInputs } from './helpers/utils';
+import { TonClient, TonCrypto, WalletContractV4, toNano, TonConnector, Address, ABIField, ABIType, Contract } from '@scom/ton-core';
+import { basicTypes, extractContractName, fromJSModule, parseInputs } from './helpers/utils';
 import { DeployerParams } from './components/index';
 import { mainJson } from './languages/index';
 
@@ -35,6 +35,7 @@ export class ScomDesignerDeployer extends Module {
   private storage: Storage = new Storage('');
   private initFields: ABIField[] = [];
   private builtResult: Record<string, IFileData> = {};
+  private contract: Contract|null = null;
 
   private pnlMessage: VStack;
   private btnDeploy: Button;
@@ -180,7 +181,7 @@ export class ScomDesignerDeployer extends Module {
         <i-scom-designer--deployer-params
           id="formParams"
           fields={fields}
-          onChanged={this.handleParamsChanged}
+          name='Init Params'
         />
       );
     }
@@ -219,6 +220,7 @@ export class ScomDesignerDeployer extends Module {
 
     if (contractInit) {
       const userContract = client.open(contractInit);
+      this.contract = userContract;
       const userContractAddr = userContract.address.toString({ bounceable: false });
 
       if (await client.isContractDeployed(userContractAddr)) {
@@ -228,10 +230,11 @@ export class ScomDesignerDeployer extends Module {
         }
       }
 
-      const messageParams = {
+      const deployType = contractInit?.abi?.receivers?.find(item => item?.message?.type === 'Deploy');
+      const messageParams = deployType ? {
         $$type: 'Deploy',
         queryId: BigInt(0),
-      };
+      } : 'Deploy';
       const sender = new TonConnectSender(tonConnect);
 
       try {
@@ -303,15 +306,36 @@ export class ScomDesignerDeployer extends Module {
     // }
   }
 
-  private async handleParamsChanged(value: Record<string, any>) {
+  private async parseParams(value: Record<string, any>) {
     const inputsPromises = [...this.initFields].map(async(field: ABIField) => {
       field.value = value[field.name];
-      const parsedValue = await parseInputs(field);
-      field.value = parsedValue;
+      const fieldType = field.type?.type;
+
+      if (basicTypes.includes(fieldType)) {
+        const parsedValue = await parseInputs(field);
+        field.value = parsedValue;
+      } else {
+        const itemData = this.getType(fieldType);
+        const childFields = itemData?.fields || [];
+        if (!field.value) field.value = {};
+        if (childFields.length) {
+          for (const childField of childFields) {
+            childField.value = value[field.name]?.[childField.name];
+            const val = await parseInputs(childField);
+            field.value[childField.name] = val;
+          }
+        }
+      }
+      
       return field;
     });
-    const inputs = await Promise.all(inputsPromises);
-    return inputs;
+    return await Promise.all(inputsPromises);
+  }
+
+  private getType(type: string) {
+    const types = this.contract?.abi?.types || [];
+    const field = types.find((item: ABIType) => item.name === type);
+    return field;
   }
 
   private async deployUsingMnemonic() {
@@ -362,7 +386,7 @@ export class ScomDesignerDeployer extends Module {
       } else {
         const data = await this.formParams.getFormData();
         try {
-          const parsedData = await this.handleParamsChanged(data);
+          const parsedData = await this.parseParams(data);
           for (const item of parsedData) {
             initParams[item.name] = item.value;
           }
@@ -394,7 +418,6 @@ export class ScomDesignerDeployer extends Module {
   init(): void {
     this.i18n.init({...mainJson});
     super.init();
-    this.handleParamsChanged = this.handleParamsChanged.bind(this);
   }
 
   render() {

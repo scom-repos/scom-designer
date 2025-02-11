@@ -1,7 +1,6 @@
-import { Container, ControlElement, Form, Module, customElements, Styles, IDataSchema } from "@ijstech/components";
-import { ABIField } from "@scom/ton-core";
-
-const Theme = Styles.Theme.ThemeVars;
+import { Container, ControlElement, Form, Module, customElements, IDataSchema, Label } from "@ijstech/components";
+import { basicTypes } from "../helpers/utils";
+import { ABIField, ABIType } from "@scom/ton-core";
 
 declare global {
   namespace JSX {
@@ -11,30 +10,31 @@ declare global {
   }
 }
 
-type onChangedCallback = (value: Record<string, any>) => void;
-
 interface DeployerParamsElement extends ControlElement {
   fields?: ABIField[];
-  buttonCaption?: string;
-  onChanged?: onChangedCallback;
+  name?: string;
+  onGetType?: (type: string) => ABIField;
 }
 
 interface IDeployerParams {
   fields: ABIField[];
-  buttonCaption: string;
+  name?: string;
 }
+
+type onGetTypeCallback = (type: string) => ABIType;
 
 @customElements('i-scom-designer--deployer-params')
 export default class DeployerParams extends Module {
   private formParams: Form;
+  private lblName: Label;
 
   private _data: IDeployerParams = {
     fields: [],
-    buttonCaption: ''
+    name: 'Params'
   };
   private _schema: IDataSchema;
 
-  onChanged: onChangedCallback;
+  onGetType?: onGetTypeCallback;
 
   get fields() {
     return this._data.fields || [];
@@ -45,12 +45,13 @@ export default class DeployerParams extends Module {
     this.renderForm();
   }
 
-  get buttonCaption() {
-    return this._data.buttonCaption;
+  get name() {
+    return this._data.name || 'Params';
   }
 
-  set buttonCaption(value: string) {
-    this._data.buttonCaption = value;
+  set name(value: string) {
+    this._data.name = value || 'Params';
+    if (this.lblName) this.lblName.caption = value;
   }
 
   constructor(parent?: Container, options?: any) {
@@ -71,12 +72,9 @@ export default class DeployerParams extends Module {
       type: 'object',
       properties: {}
     };
+
     this.fields.forEach((field: ABIField, index: number) => {
-      schema.properties[field.name] = {
-        type: this.getType(field.type?.type),
-        title: field.name,
-        required: true
-      }
+      this.renderSchema(schema, field);
     });
 
     this._schema = schema;
@@ -85,9 +83,6 @@ export default class DeployerParams extends Module {
       columnWidth: '100%',
       columnsPerRow: 1,
       confirmButtonOptions: {
-        caption: this.buttonCaption || '$send',
-        backgroundColor: Theme.colors.primary.main,
-        fontColor: Theme.colors.primary.contrastText,
         hide: true
       },
       dateTimeFormat: {
@@ -99,8 +94,34 @@ export default class DeployerParams extends Module {
     this.formParams.renderForm();
   }
 
+  private renderSchema(schema: any, field: ABIField) {
+    const type = field.type?.type;
+    if (basicTypes.includes(type)) {
+      schema.properties[field.name] = {
+        type: this.getType(field.type?.type),
+        title: field.name,
+        required: field.type?.optional === false
+      }
+      return schema;
+    }
+
+    schema.properties[field.name] = {
+      type: 'object',
+      properties: {},
+      required: field.type?.optional === false
+    }
+    const itemData = this.onGetType(type);
+    const childFields = itemData?.fields || [];
+  
+    if (childFields.length) {
+      for (const childField of childFields) {
+        schema.properties[field.name] = this.renderSchema(schema.properties[field.name], childField);
+      }
+    }
+    return schema;
+  }
+
   private getType(type: string) {
-    console.log(type);
     let result = 'string';
     switch (type) {
       case 'uint':
@@ -110,22 +131,23 @@ export default class DeployerParams extends Module {
       case 'bool':
         result = 'boolean';
         break;
+      case 'slice':
+        result = 'string';
     }
     return result;
   }
 
   init(): void {
     super.init();
-    this.onChanged = this.getAttribute('onChanged', true) || this.onChanged;
+    this.onGetType = this.getAttribute('onGetType', true) || this.onGetType;
     const fields = this.getAttribute('fields', true);
-    const buttonCaption = this.getAttribute('buttonCaption', true);
-    if (buttonCaption) this.buttonCaption = buttonCaption;
     if (fields) this.fields = fields;
+    this.name = this.getAttribute('name', true);
   }
 
   render(): void {
     return <i-vstack gap={'0.5rem'}>
-      <i-label caption="Params" font={{ bold: true }}></i-label>
+      <i-label id="lblName" caption="Params" font={{ bold: true }}></i-label>
       <i-form id="formParams"></i-form>
     </i-vstack>
   }
