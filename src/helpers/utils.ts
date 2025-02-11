@@ -579,7 +579,7 @@ export const parseInputs = async (inputFields: any, key?: string) => {
           }
         case 'cell':
         case 'slice':
-          // return await generateCell(value as string, files);
+          return await generateCell(value as string);
         case 'address':
           return Address.parse(value as string);
         case 'string':
@@ -632,3 +632,9 @@ export const parseInputs = async (inputFields: any, key?: string) => {
     return inputFields;
   }
 }
+
+export const basicTypes = ['uint', 'int', 'cell', 'slice', 'address', 'string', 'bool', 'text', 'empty'];
+
+const generateCell = async (value: string) => {
+  return value;
+};
