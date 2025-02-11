@@ -557,7 +557,7 @@ export const fromJSModule = (jsModuleCode: string) => {
     .replace(/ton\_core\_1/gm, 'window.TonCore');
 };
 
-export const parseInputs = async (inputFields: any, files: Record<string, string>, key?: string) => {
+export const parseInputs = async (inputFields: any, key?: string) => {
   if (typeof inputFields === 'object' && !Array.isArray(inputFields)) {
     // Check if both `value` and `type` are present in the current object. If not, then it may be a map or struct.
     if ('value' in inputFields && 'type' in inputFields) {
@@ -567,7 +567,7 @@ export const parseInputs = async (inputFields: any, files: Record<string, string
         | number
         | boolean;
       if (value === undefined) return;
-      const valueType = inputFields['type'] as string;
+      const valueType = inputFields['type']?.type as string;
 
       switch (valueType) {
         case 'int':
@@ -608,8 +608,7 @@ export const parseInputs = async (inputFields: any, files: Record<string, string
           const listItem = Dictionary.empty();
           for (const item of inputFields['value'] as unknown[]) {
             const parsedItem = await parseInputs(
-              item,
-              files,
+              item
             );
             listItem.set(
               Object.values(parsedItem[0])[0] as unknown as DictionaryKeyTypes,
@@ -624,7 +623,7 @@ export const parseInputs = async (inputFields: any, files: Record<string, string
           Object.prototype.hasOwnProperty.call(inputFields, key) &&
           !key.startsWith('$$')
         ) {
-          parsedObj[key] = await parseInputs(inputFields[key], files, key);
+          parsedObj[key] = await parseInputs(inputFields[key], key);
         }
       }
       return parsedObj;

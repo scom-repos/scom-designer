@@ -1,3 +1,4 @@
+/// <reference path="@ijstech/components/index.d.ts" />
 /// <amd-module name="@scom/scom-designer/index.css.ts" />
 declare module "@scom/scom-designer/index.css.ts" {
     export const hoverFullOpacity: string;
@@ -273,7 +274,7 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     export const sleep: (ms: number) => Promise<unknown>;
     export const extractContractName: (filePath: string) => string;
     export const fromJSModule: (jsModuleCode: string) => string;
-    export const parseInputs: (inputFields: any, files: Record<string, string>, key?: string) => Promise<any>;
+    export const parseInputs: (inputFields: any, key?: string) => Promise<any>;
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
@@ -2075,6 +2076,41 @@ declare module "@scom/scom-designer/components/pickerComponents.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/components/params.tsx" />
+declare module "@scom/scom-designer/components/params.tsx" {
+    import { Container, ControlElement, Module } from "@ijstech/components";
+    import { ABIField } from "@scom/ton-core";
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['i-scom-designer--deployer-params']: DeployerParamsElement;
+            }
+        }
+    }
+    type onChangedCallback = (value: Record<string, any>) => void;
+    interface DeployerParamsElement extends ControlElement {
+        fields?: ABIField[];
+        buttonCaption?: string;
+        onChanged?: onChangedCallback;
+    }
+    export default class DeployerParams extends Module {
+        private formParams;
+        private _data;
+        private _schema;
+        onChanged: onChangedCallback;
+        get fields(): ABIField[];
+        set fields(value: ABIField[]);
+        get buttonCaption(): string;
+        set buttonCaption(value: string);
+        constructor(parent?: Container, options?: any);
+        validate(): Promise<import("@ijstech/form/types/index.ts").ValidationResult>;
+        getFormData(): Promise<any>;
+        private renderForm;
+        private getType;
+        init(): void;
+        render(): void;
+    }
+}
 /// <amd-module name="@scom/scom-designer/components/index.ts" />
 declare module "@scom/scom-designer/components/index.ts" {
     import DesignerComponents from "@scom/scom-designer/components/components.tsx";
@@ -2082,7 +2118,8 @@ declare module "@scom/scom-designer/components/index.ts" {
     import DesignerScreens from "@scom/scom-designer/components/screens.tsx";
     import DesignerPickerBlocks from "@scom/scom-designer/components/pickerBlocks.tsx";
     import DesignerPickerComponents from "@scom/scom-designer/components/pickerComponents.tsx";
-    export { DesignerComponents, DesignerProperties, DesignerScreens, DesignerPickerBlocks, DesignerPickerComponents };
+    import DeployerParams from "@scom/scom-designer/components/params.tsx";
+    export { DesignerComponents, DesignerProperties, DesignerScreens, DesignerPickerBlocks, DesignerPickerComponents, DeployerParams };
 }
 /// <amd-module name="@scom/scom-designer/data.ts" />
 declare module "@scom/scom-designer/data.ts" {
@@ -2383,16 +2420,24 @@ declare module "@scom/scom-designer/deployer.tsx" {
         private _data;
         private _config;
         private storage;
+        private initFields;
+        private builtResult;
         private pnlMessage;
         private btnDeploy;
+        private pnlParams;
+        private formParams;
         constructor(parent?: Container, options?: any);
         setConfig(value: IDeployConfig): void;
-        setData(value: IFileData): void;
+        setData(value: IFileData): Promise<void>;
+        private renderMessage;
         private handleCompile;
         private initDeploy;
         private getImportFile;
         private checkWalletConnection;
+        private build;
         private deploy;
+        private callDeploy;
+        private handleParamsChanged;
         private deployUsingMnemonic;
         private getFileNames;
         private handleDeploy;
