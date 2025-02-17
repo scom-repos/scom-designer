@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@scom/dapp": "*",
+    "@ijstech/ton-core": "*",
     "@scom/ton-core": "*",
     "@ijstech/compiler": "*",
     "@scom/scom-code-editor": "*",

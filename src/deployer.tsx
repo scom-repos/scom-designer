@@ -1,7 +1,7 @@
 import { Container, ControlElement, Module, customElements, Styles, VStack, Button, application, Panel } from '@ijstech/components';
 import { bundleTactContract, Compiler } from '@ijstech/compiler';
 import { Storage, TonConnectSender } from './build/index';
-import { IDeployConfig, IFileData } from './interface';
+import { ICustomField, IDeployConfig, IFileData } from './interface';
 import { TonClient, TonCrypto, WalletContractV4, toNano, TonConnector, Address, ABIField, ABIType, Contract } from '@scom/ton-core';
 import { basicTypes, extractContractName, fromJSModule, parseInputs } from './helpers/utils';
 import { DeployerParams } from './components/index';
@@ -9,7 +9,6 @@ import { mainJson } from './languages/index';
 
 const Theme = Styles.Theme.ThemeVars;
 const TON_AMOUNT = toNano(0.05);
-declare const window: any;
 
 declare global {
   namespace JSX {
@@ -200,8 +199,7 @@ export class ScomDesignerDeployer extends Module {
     const { apiKey, endpoint } = this._config;
     const client = new TonClient({ apiKey, endpoint });
     const connectedWallet = tonConnect.wallet.account;
-    const addr = Address.parse(connectedWallet.address);
-    const walletAddress = addr.toString({ bounceable: false });
+    const walletAddress = Address.parse(connectedWallet.address);
 
     if (!await client.isContractDeployed(walletAddress)) {
       return {
@@ -220,7 +218,7 @@ export class ScomDesignerDeployer extends Module {
 
     if (contractInit) {
       const userContract = client.open(contractInit);
-      this.contract = userContract;
+      this.contract = userContract as Contract;
       const userContractAddr = userContract.address.toString({ bounceable: false });
 
       if (await client.isContractDeployed(userContractAddr)) {
@@ -307,20 +305,21 @@ export class ScomDesignerDeployer extends Module {
   }
 
   private async parseParams(value: Record<string, any>) {
-    const inputsPromises = [...this.initFields].map(async(field: ABIField) => {
+    const inputsPromises = [...this.initFields].map(async(initField: ABIField) => {
+      const field: ICustomField = initField;
       field.value = value[field.name];
-      const fieldType = field.type?.type;
+      const fieldType = field.type?.kind === 'simple' ? field.type?.type : '';
 
       if (basicTypes.includes(fieldType)) {
         const parsedValue = await parseInputs(field);
         field.value = parsedValue;
-      } else {
+      } else if (fieldType) {
         const itemData = this.getType(fieldType);
         const childFields = itemData?.fields || [];
         if (!field.value) field.value = {};
         if (childFields.length) {
           for (const childField of childFields) {
-            childField.value = value[field.name]?.[childField.name];
+            (childField as ICustomField).value = value[field.name]?.[childField.name];
             const val = await parseInputs(childField);
             field.value[childField.name] = val;
           }
