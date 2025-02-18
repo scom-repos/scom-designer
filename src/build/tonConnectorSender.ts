@@ -23,8 +23,6 @@ export class TonConnectSender implements Sender {
       );
     }
 
-    console.log('sed  ', args.body?.toBoc().toString('base64'));
-
     await this.provider.sendTransaction({
       validUntil: Date.now() + 5 * 60 * 1000,
       messages: [

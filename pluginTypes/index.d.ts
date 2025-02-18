@@ -2281,6 +2281,7 @@ declare module "@scom/scom-designer/interface.ts" {
     import { Parser } from "@ijstech/compiler";
     import { Control, IconName } from "@ijstech/components";
     import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
+    import { ABIField } from "@scom/ton-core";
     export interface IStudio {
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
         locateMethod(designer: ScomDesignerForm, funcName: string): void;
@@ -2352,6 +2353,9 @@ declare module "@scom/scom-designer/interface.ts" {
         endpoint?: string;
         apiKey?: string;
         mnemonic?: string;
+    }
+    export interface ICustomField extends ABIField {
+        value?: any;
     }
 }
 /// <amd-module name="@scom/scom-designer/build/storage.ts" />

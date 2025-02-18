@@ -5785,21 +5785,22 @@ define("@scom/scom-designer/components/params.tsx", ["require", "exports", "@ijs
             this.formParams.renderForm();
         }
         renderSchema(schema, field) {
-            const type = field.type?.type;
-            if (utils_12.basicTypes.includes(type)) {
+            const fieldType = field.type?.kind === 'simple' ? field.type?.type : '';
+            const isRequired = field.type?.kind === 'simple' ? field.type?.optional === false : false;
+            if (utils_12.basicTypes.includes(fieldType)) {
                 schema.properties[field.name] = {
-                    type: this.getType(field.type?.type),
+                    type: this.getType(fieldType),
                     title: field.name,
-                    required: field.type?.optional === false
+                    required: isRequired
                 };
                 return schema;
             }
             schema.properties[field.name] = {
                 type: 'object',
                 properties: {},
-                required: field.type?.optional === false
+                required: isRequired
             };
-            const itemData = this.onGetType(type);
+            const itemData = this.onGetType(fieldType);
             const childFields = itemData?.fields || [];
             if (childFields.length) {
                 for (const childField of childFields) {
@@ -7533,7 +7534,6 @@ define("@scom/scom-designer/build/tonConnectorSender.ts", ["require", "exports",
                 args.sendMode === ton_core_2.SendMode.PAY_GAS_SEPARATELY)) {
                 throw new Error('Deployer sender does not support `sendMode` other than `PAY_GAS_SEPARATELY`');
             }
-            console.log('sed  ', args.body?.toBoc().toString('base64'));
             await this.provider.sendTransaction({
                 validUntil: Date.now() + 5 * 60 * 1000,
                 messages: [
@@ -7708,8 +7708,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             const { apiKey, endpoint } = this._config;
             const client = new ton_core_3.TonClient({ apiKey, endpoint });
             const connectedWallet = tonConnect.wallet.account;
-            const addr = ton_core_3.Address.parse(connectedWallet.address);
-            const walletAddress = addr.toString({ bounceable: false });
+            const walletAddress = ton_core_3.Address.parse(connectedWallet.address);
             if (!await client.isContractDeployed(walletAddress)) {
                 return {
                     message: "Wallet is not deployed"
@@ -7797,14 +7796,15 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             // }
         }
         async parseParams(value) {
-            const inputsPromises = [...this.initFields].map(async (field) => {
+            const inputsPromises = [...this.initFields].map(async (initField) => {
+                const field = initField;
                 field.value = value[field.name];
-                const fieldType = field.type?.type;
+                const fieldType = field.type?.kind === 'simple' ? field.type?.type : '';
                 if (utils_14.basicTypes.includes(fieldType)) {
                     const parsedValue = await (0, utils_14.parseInputs)(field);
                     field.value = parsedValue;
                 }
-                else {
+                else if (fieldType) {
                     const itemData = this.getType(fieldType);
                     const childFields = itemData?.fields || [];
                     if (!field.value)
@@ -8179,7 +8179,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const { url = '', file } = this._data;
             const content = url ? await (0, utils_15.getFileContent)(url) : file?.content || '';
             const fileName = this.fileName;
-            await this.codeEditor.loadContent(content, 'typescript', fileName);
+            await this.codeEditor.loadContent(content, (0, scom_code_editor_1.getLanguageType)(fileName), fileName);
             this.compiler.addFile(fileName, content, this.importCallback);
         }
         resetTab() {
@@ -8212,6 +8212,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const content = await components_36.application.getContent(`${components_36.application.rootDir}libs/@ijstech/components/index.d.ts`);
             await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
             scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/components', content);
+            // const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
+            // await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
+            // ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
         }
         async importCallback(fileName, isPackage) {
             if (this.imported[fileName]) {
@@ -8221,13 +8224,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (typeof this.onImportFile === 'function') {
                 result = await this.onImportFile(fileName, isPackage);
                 if (result) {
-                    // if (fileName === '@ijstech/compiler') {
-                    //   result.content = `
-                    //     declare module '${fileName}' {
-                    //       ${result.content}
-                    //     } \n
-                    //   `;
-                    // }
                     const importedName = isPackage ? fileName : result.fileName;
                     const isDependency = isPackage && result?.fileName === 'index.d.ts';
                     if (isDependency)

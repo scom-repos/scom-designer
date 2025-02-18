@@ -1,6 +1,7 @@
 import { Container, ControlElement, Form, Module, customElements, IDataSchema, Label } from "@ijstech/components";
 import { basicTypes } from "../helpers/utils";
 import { ABIField, ABIType } from "@scom/ton-core";
+import { ICustomField } from "../interface";
 
 declare global {
   namespace JSX {
@@ -94,13 +95,14 @@ export default class DeployerParams extends Module {
     this.formParams.renderForm();
   }
 
-  private renderSchema(schema: any, field: ABIField) {
-    const type = field.type?.type;
-    if (basicTypes.includes(type)) {
+  private renderSchema(schema: any, field: ICustomField) {
+    const fieldType = field.type?.kind === 'simple' ? field.type?.type : '';
+    const isRequired = field.type?.kind === 'simple' ? field.type?.optional === false : false;
+    if (basicTypes.includes(fieldType)) {
       schema.properties[field.name] = {
-        type: this.getType(field.type?.type),
+        type: this.getType(fieldType),
         title: field.name,
-        required: field.type?.optional === false
+        required: isRequired
       }
       return schema;
     }
@@ -108,9 +110,9 @@ export default class DeployerParams extends Module {
     schema.properties[field.name] = {
       type: 'object',
       properties: {},
-      required: field.type?.optional === false
+      required: isRequired
     }
-    const itemData = this.onGetType(type);
+    const itemData = this.onGetType(fieldType);
     const childFields = itemData?.fields || [];
   
     if (childFields.length) {

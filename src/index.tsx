@@ -21,10 +21,11 @@ import { IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio 
 import { ScomDesignerForm } from './designer'
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
-import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
+import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
 import { themesConfig } from './helpers/config';
 import { mainJson } from './languages/index';
+
 const Theme = Styles.Theme.ThemeVars;
 
 type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
@@ -393,7 +394,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const { url = '', file } = this._data
     const content = url ? await getFileContent(url) : file?.content || '';
     const fileName = this.fileName;
-    await this.codeEditor.loadContent(content, 'typescript', fileName);
+    await this.codeEditor.loadContent(content, getLanguageType(fileName), fileName);
     this.compiler.addFile(fileName, content, this.importCallback);
   }
 
@@ -428,6 +429,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const content = await application.getContent(`${application.rootDir}libs/@ijstech/components/index.d.ts`);
     await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
     ScomCodeEditor.addLib('@ijstech/components', content);
+
+    // const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
+    // await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
+    // ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
@@ -437,14 +442,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     let result: any = null;
     if (typeof this.onImportFile === 'function') {
       result = await this.onImportFile(fileName, isPackage);
+
       if (result) {
-        // if (fileName === '@ijstech/compiler') {
-        //   result.content = `
-        //     declare module '${fileName}' {
-        //       ${result.content}
-        //     } \n
-        //   `;
-        // }
         const importedName = isPackage ? fileName : result.fileName;
         const isDependency = isPackage && result?.fileName === 'index.d.ts';
         if (isDependency) this.imported[importedName] = result.content || '';

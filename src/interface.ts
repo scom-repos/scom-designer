@@ -1,6 +1,7 @@
 import { Parser } from "@ijstech/compiler";
 import { Control, IconName } from "@ijstech/components";
 import { ScomDesignerForm } from "./designer";
+import { ABIField } from "@scom/ton-core";
 
 export interface IStudio {
   addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
@@ -88,4 +89,8 @@ export interface IDeployConfig {
   endpoint?: string;
   apiKey?: string;
   mnemonic?: string;
+}
+
+export interface ICustomField extends ABIField {
+  value?: any;
 }
