@@ -8082,8 +8082,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (this.codeEditor) {
                 this.codeEditor.onChange = null;
                 this.codeEditor.onKeyDown = null;
-                if (typeof this.codeEditor?.dispose === 'function') {
-                    this.codeEditor.dispose();
+                if (typeof this.codeEditor?.disposeEditor === 'function') {
+                    this.codeEditor.disposeEditor();
                     this.codeEditor.remove();
                 }
             }
@@ -8212,9 +8212,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const content = await components_36.application.getContent(`${components_36.application.rootDir}libs/@ijstech/components/index.d.ts`);
             await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
             scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/components', content);
-            // const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
-            // await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
-            // ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
+            const tonCore = await components_36.application.getContent(`${components_36.application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
+            await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
+            scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
         }
         async importCallback(fileName, isPackage) {
             if (this.imported[fileName]) {

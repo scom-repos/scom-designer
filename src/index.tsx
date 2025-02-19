@@ -286,8 +286,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (this.codeEditor) {
       this.codeEditor.onChange = null;
       this.codeEditor.onKeyDown = null;
-      if (typeof this.codeEditor?.dispose === 'function') {
-        this.codeEditor.dispose();
+      if (typeof this.codeEditor?.disposeEditor === 'function') {
+        this.codeEditor.disposeEditor();
         this.codeEditor.remove();
       }
     }
@@ -430,9 +430,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
     ScomCodeEditor.addLib('@ijstech/components', content);
 
-    // const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
-    // await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
-    // ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
+    const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
+    await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
+    ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
