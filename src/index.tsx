@@ -341,7 +341,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
 
     if (init && !!(this.url || this.file?.path)) {
-      this.loadContent();
+      await this.loadContent();
     }
 
     this.updateButtons();
@@ -433,6 +433,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
     await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
     ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
+
+    const scomTonCore = await application.getContent(`${application.rootDir}libs/@scom/ton-core/index.d.ts`);
+    await this.compiler.addPackage('@scom/ton-core', { dts: { 'index.d.ts': scomTonCore } });
+    ScomCodeEditor.addLib('@scom/ton-core', scomTonCore);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
@@ -466,7 +470,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async handleTabChanged(target: Button) {
     this.activeTab = target.id;
     const fileName = this.fileName;
+
     await this.renderContent();
+
+    target.enabled = false;
+    target.rightIcon.visible = true;
+
     if (target.id === 'designTab') {
       if (this.updateDesigner) {
         this.updateDesigner = false
@@ -486,6 +495,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         content: this.value
       })
     }
+
+    target.rightIcon.visible = false;
+    target.enabled = true;
   }
 
   private updateRoot(root: Parser.IComponent) {
@@ -861,6 +873,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
             boxShadow='none'
             font={{color: Theme.action.active}}
+            rightIcon={{name: 'spinner', spin: true, visible: false}}
             minHeight={'2.25rem'}
             onClick={this.handleTabChanged}
           ></i-button>
@@ -870,6 +883,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             stack={{ shrink: '0' }}
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             background={{color: Theme.action.activeBackground}}
+            rightIcon={{name: 'spinner', spin: true, visible: false}}
             border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
             boxShadow='none'
             minHeight={'2.25rem'}
@@ -882,6 +896,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             stack={{ shrink: '0' }}
             padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
             background={{color: Theme.action.activeBackground}}
+            rightIcon={{name: 'spinner', spin: true, visible: false}}
             border={{width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0}}
             boxShadow='none'
             minHeight={'2.25rem'}

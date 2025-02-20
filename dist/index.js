@@ -7618,8 +7618,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                         }
                     }]
             };
-            const result = await (0, compiler_1.bundleTactContract)(this.storage, '', options);
-            return result;
+            return await (0, compiler_1.bundleTactContract)(this.storage, '', options);
         }
         async initDeploy(params) {
             const tsFileName = this.builtResult.ts?.path;
@@ -7680,13 +7679,13 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         async build() {
             this.btnDeploy.enabled = false;
             const result = await this.handleCompile();
-            if (!result?.size)
+            if (!result)
                 return;
             const fileNames = this.getFileNames(result);
             for (let key in fileNames) {
                 this.builtResult[key] = {
                     path: fileNames[key],
-                    content: result.get(fileNames[key]).toString()
+                    content: result[fileNames[key]]
                 };
             }
             const pkgData = this.builtResult.pkg?.content && JSON.parse(this.builtResult.pkg?.content);
@@ -7839,7 +7838,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             let pkgFileName = '';
             let tsFileName = '';
             let abiFileName = '';
-            for (let [key, _] of result.entries()) {
+            for (const key in result) {
                 if (key.endsWith('.boc')) {
                     bocFileName = key;
                 }
@@ -8131,7 +8130,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.deployDeployer.visible = this.activeTab === 'deployTab';
             }
             if (init && !!(this.url || this.file?.path)) {
-                this.loadContent();
+                await this.loadContent();
             }
             this.updateButtons();
             this.designTab.enabled = isTsx;
@@ -8215,6 +8214,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const tonCore = await components_36.application.getContent(`${components_36.application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
             await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
             scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
+            const scomTonCore = await components_36.application.getContent(`${components_36.application.rootDir}libs/@scom/ton-core/index.d.ts`);
+            await this.compiler.addPackage('@scom/ton-core', { dts: { 'index.d.ts': scomTonCore } });
+            scom_code_editor_1.ScomCodeEditor.addLib('@scom/ton-core', scomTonCore);
         }
         async importCallback(fileName, isPackage) {
             if (this.imported[fileName]) {
@@ -8249,6 +8251,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.activeTab = target.id;
             const fileName = this.fileName;
             await this.renderContent();
+            target.enabled = false;
+            target.rightIcon.visible = true;
             if (target.id === 'designTab') {
                 if (this.updateDesigner) {
                     this.updateDesigner = false;
@@ -8271,6 +8275,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     content: this.value
                 });
             }
+            target.rightIcon.visible = false;
+            target.enabled = true;
         }
         updateRoot(root) {
             if (!root) {
@@ -8602,9 +8608,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                             }
                         }
                     ] },
-                    this.$render("i-button", { id: "codeTab", caption: '$code', padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, stack: { shrink: '0' }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0 }, boxShadow: 'none', font: { color: Theme.action.active }, minHeight: '2.25rem', onClick: this.handleTabChanged }),
-                    this.$render("i-button", { id: "designTab", caption: '$design', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0 }, boxShadow: 'none', minHeight: '2.25rem', font: { color: Theme.action.active }, onClick: this.handleTabChanged }),
-                    this.$render("i-button", { id: "deployTab", caption: '$deploy', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0 }, boxShadow: 'none', minHeight: '2.25rem', visible: false, font: { color: Theme.action.active }, onClick: this.handleTabChanged })),
+                    this.$render("i-button", { id: "codeTab", caption: '$code', padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, stack: { shrink: '0' }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0 }, boxShadow: 'none', font: { color: Theme.action.active }, rightIcon: { name: 'spinner', spin: true, visible: false }, minHeight: '2.25rem', onClick: this.handleTabChanged }),
+                    this.$render("i-button", { id: "designTab", caption: '$design', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, rightIcon: { name: 'spinner', spin: true, visible: false }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0 }, boxShadow: 'none', minHeight: '2.25rem', font: { color: Theme.action.active }, onClick: this.handleTabChanged }),
+                    this.$render("i-button", { id: "deployTab", caption: '$deploy', stack: { shrink: '0' }, padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, background: { color: Theme.action.activeBackground }, rightIcon: { name: 'spinner', spin: true, visible: false }, border: { width: '1px', style: 'solid', color: Theme.action.activeBackground, radius: 0 }, boxShadow: 'none', minHeight: '2.25rem', visible: false, font: { color: Theme.action.active }, onClick: this.handleTabChanged })),
                 this.$render("i-vstack", { id: "pnlMain", maxHeight: '100%', overflow: 'hidden', stack: { 'grow': '1' } })));
         }
     };
