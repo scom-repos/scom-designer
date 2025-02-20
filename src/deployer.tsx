@@ -91,8 +91,7 @@ export class ScomDesignerDeployer extends Module {
         }
       }
     }]}
-    const result = await bundleTactContract(this.storage, '', options);
-    return result;
+    return await bundleTactContract(this.storage, '', options);
   }
 
   private async initDeploy(params: Record<string, any>) {
@@ -160,14 +159,14 @@ export class ScomDesignerDeployer extends Module {
   private async build() {
     this.btnDeploy.enabled = false;
     const result = await this.handleCompile();
-    if (!result?.size) return;
+    if (!result) return;
 
     const fileNames = this.getFileNames(result);
 
     for (let key in fileNames) {
       this.builtResult[key] = {
         path: fileNames[key],
-        content: result.get(fileNames[key]).toString()
+        content: result[fileNames[key]]
       }
     }
 
@@ -347,13 +346,13 @@ export class ScomDesignerDeployer extends Module {
     // Deploy
   }
 
-  private getFileNames(result: any) {
+  private getFileNames(result: Record<string, string>) {
     let bocFileName = '';
     let pkgFileName = '';
     let tsFileName = '';
     let abiFileName = '';
 
-    for (let [key, _] of result.entries()) {
+    for (const key in result) {
       if (key.endsWith('.boc')) {
         bocFileName = key;
       } else if (key.endsWith('.pkg')) {
