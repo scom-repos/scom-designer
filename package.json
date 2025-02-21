@@ -1,6 +1,6 @@
 {
     "name": "@scom/scom-designer",
-    "version": "0.1.20",
+    "version": "0.1.21",
     "main": "dist/index.js",
     "plugin": "dist",
     "pluginTypes": "pluginTypes/index.d.ts",
@@ -15,12 +15,12 @@
     },
     "keywords": [],
     "dependencies": {
-        "@scom/scom-code-editor": "^0.1.0",
         "@ijstech/components": "^0.1.38",
+        "@scom/scom-code-editor": "^0.1.0",
         "@scom/ton-core": "^0.1.1"
     },
     "devDependencies": {
         "@ijstech/cli": "^0.1.26",
-        "@ijstech/compiler": "^0.1.18"
+        "@ijstech/compiler": "^0.1.100"
     }
 }
