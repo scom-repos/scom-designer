@@ -16,6 +16,7 @@
     "@scom/dapp": "*",
     "@ijstech/ton-core": "*",
     "@scom/ton-core": "*",
+    "@ijstech/tact": "*",
     "@ijstech/compiler": "*",
     "@scom/scom-code-editor": "*",
     "@scom/scom-designer": "*",

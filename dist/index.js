@@ -1057,16 +1057,20 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
     };
     exports.extractContractName = extractContractName;
     const fromJSModule = (jsModuleCode) => {
-        const startRegex = /define\("tact",\s\["require",\s"exports",\s"@scom\/ton-core"\],\sfunction\s\(require,\sexports,\ston\_core\_1\)\s\{[^}]*\}\);/gm;
+        const startRegex = /define\("tact",\s\["require",\s"exports",\s"@ton\/core"\],\sfunction\s\(require,\sexports,\score\_1\)\s\{[^}]*\}\);/gm;
         const endRegex = /;\s*}\);$/m;
-        return jsModuleCode
+        const result = jsModuleCode
             .replace(startRegex, '')
             .replace(endRegex, ';')
             .replace(/^import\s+{/, 'const {')
             .replace(/}\s+from\s.+/, '} = window.TonCore;')
             .replace(/^\s*export\s+\{[^}]*\};\s*/gm, '')
-            .replace(/exports\.[^;]*;/gm, '')
-            .replace(/ton\_core\_1/gm, 'window.TonCore');
+            .replace(/exports\.[\w$]+(\s*=\s*exports\.[\w$]+|\s*=\s*void 0)*;/gm, '')
+            .replace(/exports\.([\w$]+)\s*=\s*\{/gm, 'const $1 = {')
+            .replace(/exports\.([\w$]+)\s*=\s*\1;/gm, '')
+            .replace(/exports\./g, '')
+            .replace(/core\_1/gm, 'window.TonCore');
+        return result;
     };
     exports.fromJSModule = fromJSModule;
     const parseInputs = async (inputFields, key) => {
@@ -7632,6 +7636,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             }
             const jsOutout = compiledResult.script['index.js'];
             const jsModule = (0, utils_14.fromJSModule)(jsOutout);
+            console.log(jsModule);
             const _code = `async function main(initParams) {
       ${jsModule}
       const contractInit = await ${contractName}.fromInit(...Object.values(initParams));
@@ -7644,11 +7649,16 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                 console.info('contractInit', contractInit);
                 return contractInit;
             }
-            catch { }
+            catch (error) {
+                console.error('init deploy error', error);
+            }
             return null;
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {
+                if (fileName === '@ton/core') {
+                    fileName = '@ijstech/ton-core';
+                }
                 const content = await components_35.application.getContent(`${components_35.application.rootDir}libs/${fileName}/index.d.ts`);
                 return {
                     fileName: 'index.d.ts',
@@ -7756,43 +7766,6 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             return {
                 message: "Cannot init contract"
             };
-            // const contractCode = fileNames.boc ? Cell.fromBoc(result.get(fileNames.boc))[0] : new Cell();
-            // stateInit = { code: contractCode, data: new Cell() };
-            // const contractAddr = contractAddress(workchain, stateInit);
-            // const contractAddrStr = contractAddr.toString({ bounceable: false });
-            // if (await client.isContractDeployed(contractAddrStr)) {
-            //   return {
-            //     address: contractAddrStr,
-            //     message: "Contract is deployed"
-            //   }
-            // }
-            // const walletContract = client.open(walletV4R2);
-            // const seqno = await walletContract.getSeqno();
-            // const transfer = walletContract.createTransfer({
-            //   secretKey: keyPair.secretKey,
-            //   seqno: seqno,
-            //   messages: [
-            //     internal({
-            //       to: contractAddrStr,
-            //       value: tonAmount,
-            //       body: contractCode,
-            //       init: stateInit,
-            //       bounce: false
-            //     })
-            //   ]
-            // });
-            // const response = await tonConnect.sendTransaction({
-            //   validUntil: Math.floor(Date.now() / 1000) + 60,
-            //   messages: [{
-            //     address: contractAddrStr,
-            //     amount: tonAmount.toString(),
-            //     payload: transfer.toBoc().toString("base64"),
-            //   }]
-            // });
-            // return {
-            //   address: contractAddrStr,
-            //   message: "Contract is deployed"
-            // }
         }
         async parseParams(value) {
             const inputsPromises = [...this.initFields].map(async (initField) => {
@@ -7824,14 +7797,6 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             const types = this.contract?.abi?.types || [];
             const field = types.find((item) => item.name === type);
             return field;
-        }
-        async deployUsingMnemonic() {
-            const workchain = 0;
-            const mnemonic = this._config.mnemonic;
-            const keyPair = await ton_core_3.TonCrypto.mnemonicToPrivateKey(mnemonic.split(" "));
-            const walletV4R2 = ton_core_3.WalletContractV4.create({ workchain, publicKey: keyPair.publicKey });
-            const walletAddress = walletV4R2.address.toString({ bounceable: false });
-            // Deploy
         }
         getFileNames(result) {
             let bocFileName = '';

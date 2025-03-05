@@ -545,16 +545,21 @@ export const extractContractName = (filePath: string) => {
 };
 
 export const fromJSModule = (jsModuleCode: string) => {
-  const startRegex = /define\("tact",\s\["require",\s"exports",\s"@scom\/ton-core"\],\sfunction\s\(require,\sexports,\ston\_core\_1\)\s\{[^}]*\}\);/gm;
+  const startRegex = /define\("tact",\s\["require",\s"exports",\s"@ton\/core"\],\sfunction\s\(require,\sexports,\score\_1\)\s\{[^}]*\}\);/gm;
   const endRegex = /;\s*}\);$/m;
-  return jsModuleCode
+  const result = jsModuleCode
     .replace(startRegex, '')
     .replace(endRegex, ';')
     .replace(/^import\s+{/, 'const {')
     .replace(/}\s+from\s.+/, '} = window.TonCore;')
     .replace(/^\s*export\s+\{[^}]*\};\s*/gm, '')
-    .replace(/exports\.[^;]*;/gm, '')
-    .replace(/ton\_core\_1/gm, 'window.TonCore');
+    .replace(/exports\.[\w$]+(\s*=\s*exports\.[\w$]+|\s*=\s*void 0)*;/gm, '')
+    .replace(/exports\.([\w$]+)\s*=\s*\{/gm, 'const $1 = {')
+    .replace(/exports\.([\w$]+)\s*=\s*\1;/gm, '')
+    .replace(/exports\./g, '')
+    .replace(/core\_1/gm, 'window.TonCore');
+  
+  return result;
 };
 
 export const parseInputs = async (inputFields: any, key?: string) => {
