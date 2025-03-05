@@ -2,7 +2,7 @@ import { Container, ControlElement, Module, customElements, Styles, VStack, Butt
 import { bundleTactContract, Compiler } from '@ijstech/compiler';
 import { Storage, TonConnectSender } from './build/index';
 import { ICustomField, IDeployConfig, IFileData } from './interface';
-import { TonClient, TonCrypto, WalletContractV4, toNano, TonConnector, Address, ABIField, ABIType, Contract } from '@scom/ton-core';
+import { TonClient, toNano, TonConnector, Address, ABIField, ABIType, Contract } from '@scom/ton-core';
 import { basicTypes, extractContractName, fromJSModule, parseInputs } from './helpers/utils';
 import { DeployerParams } from './components/index';
 import { mainJson } from './languages/index';
@@ -111,6 +111,7 @@ export class ScomDesignerDeployer extends Module {
     }
     const jsOutout = compiledResult.script['index.js'];
     const jsModule = fromJSModule(jsOutout);
+
     const _code = `async function main(initParams) {
       ${jsModule}
       const contractInit = await ${contractName}.fromInit(...Object.values(initParams));
@@ -123,12 +124,17 @@ export class ScomDesignerDeployer extends Module {
       });
       console.info('contractInit', contractInit);
       return contractInit;
-    } catch {}
+    } catch(error) {
+      console.error('init deploy error', error);
+    }
     return null;
   }
 
   private async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
     if (isPackage){
+      if (fileName === '@ton/core') {
+        fileName = '@ijstech/ton-core';
+      }
       const content = await application.getContent(`${application.rootDir}libs/${fileName}/index.d.ts`);
       return {
         fileName: 'index.d.ts',
@@ -259,48 +265,6 @@ export class ScomDesignerDeployer extends Module {
     return {
       message: "Cannot init contract"
     }
-
-    // const contractCode = fileNames.boc ? Cell.fromBoc(result.get(fileNames.boc))[0] : new Cell();
-    // stateInit = { code: contractCode, data: new Cell() };
-    // const contractAddr = contractAddress(workchain, stateInit);
-    // const contractAddrStr = contractAddr.toString({ bounceable: false });
-
-    // if (await client.isContractDeployed(contractAddrStr)) {
-    //   return {
-    //     address: contractAddrStr,
-    //     message: "Contract is deployed"
-    //   }
-    // }
-
-    // const walletContract = client.open(walletV4R2);
-    // const seqno = await walletContract.getSeqno();
-    // const transfer = walletContract.createTransfer({
-    //   secretKey: keyPair.secretKey,
-    //   seqno: seqno,
-    //   messages: [
-    //     internal({
-    //       to: contractAddrStr,
-    //       value: tonAmount,
-    //       body: contractCode,
-    //       init: stateInit,
-    //       bounce: false
-    //     })
-    //   ]
-    // });
-
-    // const response = await tonConnect.sendTransaction({
-    //   validUntil: Math.floor(Date.now() / 1000) + 60,
-    //   messages: [{
-    //     address: contractAddrStr,
-    //     amount: tonAmount.toString(),
-    //     payload: transfer.toBoc().toString("base64"),
-    //   }]
-    // });
-
-    // return {
-    //   address: contractAddrStr,
-    //   message: "Contract is deployed"
-    // }
   }
 
   private async parseParams(value: Record<string, any>) {
@@ -334,16 +298,6 @@ export class ScomDesignerDeployer extends Module {
     const types = this.contract?.abi?.types || [];
     const field = types.find((item: ABIType) => item.name === type);
     return field;
-  }
-
-  private async deployUsingMnemonic() {
-    const workchain = 0;
-    const mnemonic = this._config.mnemonic;
-    const keyPair = await TonCrypto.mnemonicToPrivateKey(mnemonic.split(" "));
-    const walletV4R2 = WalletContractV4.create({ workchain, publicKey: keyPair.publicKey });
-    const walletAddress = walletV4R2.address.toString({ bounceable: false });
-
-    // Deploy
   }
 
   private getFileNames(result: Record<string, string>) {

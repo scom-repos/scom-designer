@@ -2447,7 +2447,6 @@ declare module "@scom/scom-designer/deployer.tsx" {
         private callDeploy;
         private parseParams;
         private getType;
-        private deployUsingMnemonic;
         private getFileNames;
         private handleDeploy;
         init(): void;
