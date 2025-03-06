@@ -1,6 +1,6 @@
 {
     "name": "@scom/scom-designer",
-    "version": "0.1.21",
+    "version": "0.1.22",
     "main": "dist/index.js",
     "plugin": "dist",
     "pluginTypes": "pluginTypes/index.d.ts",
@@ -17,7 +17,7 @@
     "dependencies": {
         "@ijstech/components": "^0.1.38",
         "@scom/ton-client": "^0.1.1",
-        "@scom/scom-ton-connect": "file:./repos/scom-ton-connect",
+        "@scom/scom-ton-connect": "^0.1.0",
         "@ijstech/tact": "^0.1.0",
         "@scom/ton-core": "^0.1.5"
     },
