@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@scom/dapp": "*",
-    "@ijstech/ton-core": "*",
     "@scom/ton-core": "*",
     "@ijstech/tact": "*",
     "@ijstech/compiler": "*",
@@ -29,7 +28,6 @@
     "@scom/scom-area-chart": "*"
   },
   "packages": [
-    "@scom/scom-table"
   ],
   "menus": [
   ],

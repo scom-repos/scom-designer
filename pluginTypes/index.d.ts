@@ -2394,11 +2394,11 @@ declare module "@scom/scom-designer/build/storage.ts" {
 }
 /// <amd-module name="@scom/scom-designer/build/tonConnectorSender.ts" />
 declare module "@scom/scom-designer/build/tonConnectorSender.ts" {
-    import { Address, Sender, SenderArguments, TonConnector } from "@scom/ton-core";
+    import { Address, Sender, SenderArguments } from "@scom/ton-core";
     export class TonConnectSender implements Sender {
-        provider: TonConnector.ITonConnect;
+        provider: any;
         readonly address?: Address;
-        constructor(provider: TonConnector.ITonConnect);
+        constructor(provider: any);
         send(args: SenderArguments): Promise<void>;
     }
 }

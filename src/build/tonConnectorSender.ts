@@ -1,10 +1,11 @@
-import { Address, beginCell, Sender, SenderArguments, SendMode, storeStateInit, TonConnector } from "@scom/ton-core";
+import { Address, beginCell, Sender, SenderArguments, SendMode, storeStateInit } from "@scom/ton-core";
+
 
 export class TonConnectSender implements Sender {
-  public provider: TonConnector.ITonConnect;
+  public provider: any; // TonConnector.ITonConnect
   readonly address?: Address;
 
-  constructor(provider: TonConnector.ITonConnect) {
+  constructor(provider: any) {
     this.provider = provider;
     if (provider.wallet)
       this.address = Address.parse(provider.wallet.account.address);

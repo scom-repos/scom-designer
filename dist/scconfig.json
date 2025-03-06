@@ -4,8 +4,12 @@
     "version": "0.1.21",
     "dependencies": [
         "@ijstech/components",
-        "@scom/ton-core",
         "@ijstech/compiler",
+        "@scom/scom-buffer",
+        "@scom/ton-crypto",
+        "@scom/ton-core",
+        "@scom/ton-client",
+        "@scom/scom-ton-connect",
         "@scom/scom-code-editor"
     ]
 }
