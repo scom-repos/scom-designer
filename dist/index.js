@@ -1057,7 +1057,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
     };
     exports.extractContractName = extractContractName;
     const fromJSModule = (jsModuleCode) => {
-        const startRegex = /define\("tact",\s\["require",\s"exports",\s"@ton\/core"\],\sfunction\s\(require,\sexports,\score\_1\)\s\{[^}]*\}\);/gm;
+        const startRegex = /define\("tact",\s\["require",\s"exports",\s"@ijstech\/ton-core"\],\sfunction\s\(require,\sexports,\ston\_core\_1\)\s\{[^}]*\}\);/gm;
         const endRegex = /;\s*}\);$/m;
         const result = jsModuleCode
             .replace(startRegex, '')
@@ -1069,7 +1069,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
             .replace(/exports\.([\w$]+)\s*=\s*\{/gm, 'const $1 = {')
             .replace(/exports\.([\w$]+)\s*=\s*\1;/gm, '')
             .replace(/exports\./g, '')
-            .replace(/core\_1/gm, 'window.TonCore');
+            .replace(/ton\_core\_1/gm, 'window.TonCore');
         return result;
     };
     exports.fromJSModule = fromJSModule;
@@ -7566,7 +7566,7 @@ define("@scom/scom-designer/build/index.ts", ["require", "exports", "@scom/scom-
     Object.defineProperty(exports, "Storage", { enumerable: true, get: function () { return storage_1.Storage; } });
     Object.defineProperty(exports, "TonConnectSender", { enumerable: true, get: function () { return tonConnectorSender_1.TonConnectSender; } });
 });
-define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_35, compiler_1, index_24, ton_core_3, utils_14, index_25) {
+define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/ton-client", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_35, compiler_1, index_24, ton_core_3, ton_client_1, utils_14, index_25) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerDeployer = void 0;
@@ -7636,7 +7636,6 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             }
             const jsOutout = compiledResult.script['index.js'];
             const jsModule = (0, utils_14.fromJSModule)(jsOutout);
-            console.log(jsModule);
             const _code = `async function main(initParams) {
       ${jsModule}
       const contractInit = await ${contractName}.fromInit(...Object.values(initParams));
@@ -7656,9 +7655,6 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {
-                if (fileName === '@ton/core') {
-                    fileName = '@ijstech/ton-core';
-                }
                 const content = await components_35.application.getContent(`${components_35.application.rootDir}libs/${fileName}/index.d.ts`);
                 return {
                     fileName: 'index.d.ts',
@@ -7669,25 +7665,25 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         }
         checkWalletConnection() {
             return new Promise((resolve, reject) => {
-                const tonConnect = new ton_core_3.TonConnector.TonConnect();
-                if (!tonConnect.connected) {
-                    tonConnect.connect({
-                        jsBridgeKey: 'tonkeeper'
-                    });
-                    tonConnect.onStatusChange((wallet) => {
-                        if (wallet?.account?.address) {
-                            resolve(tonConnect);
-                        }
-                    });
-                }
-                else {
-                    tonConnect.restoreConnection();
-                    resolve(tonConnect);
-                }
+                // const tonConnect = new TonConnector.TonConnect();
+                // if (!tonConnect.connected) {
+                //   tonConnect.connect({
+                //     jsBridgeKey: 'tonkeeper'
+                //   });
+                //   tonConnect.onStatusChange((wallet: any) => {
+                //     if (wallet?.account?.address) {
+                //       resolve(tonConnect);
+                //     }
+                //   })
+                // } else {
+                //   tonConnect.restoreConnection();
+                //   resolve(tonConnect);
+                // }
             });
         }
         async build() {
             this.btnDeploy.enabled = false;
+            this.btnDeploy.rightIcon.visible = false;
             const result = await this.handleCompile();
             if (!result)
                 return;
@@ -7715,7 +7711,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
             if (!tonConnect?.wallet?.account)
                 return;
             const { apiKey, endpoint } = this._config;
-            const client = new ton_core_3.TonClient({ apiKey, endpoint });
+            const client = new ton_client_1.TonClient({ apiKey, endpoint });
             const connectedWallet = tonConnect.wallet.account;
             const walletAddress = ton_core_3.Address.parse(connectedWallet.address);
             if (!await client.isContractDeployed(walletAddress)) {
@@ -8176,12 +8172,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const content = await components_36.application.getContent(`${components_36.application.rootDir}libs/@ijstech/components/index.d.ts`);
             await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
             scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/components', content);
-            const tonCore = await components_36.application.getContent(`${components_36.application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
-            await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
-            scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
-            const scomTonCore = await components_36.application.getContent(`${components_36.application.rootDir}libs/@scom/ton-core/index.d.ts`);
-            await this.compiler.addPackage('@scom/ton-core', { dts: { 'index.d.ts': scomTonCore } });
-            scom_code_editor_1.ScomCodeEditor.addLib('@scom/ton-core', scomTonCore);
+            // const tonCore = await application.getContent(`${application.rootDir}libs/@ijstech/ton-core/index.d.ts`);
+            // await this.compiler.addPackage('@ijstech/ton-core', { dts: { 'index.d.ts': tonCore } });
+            // ScomCodeEditor.addLib('@ijstech/ton-core', tonCore);
+            // const scomTonCore = await application.getContent(`${application.rootDir}libs/@scom/ton-core/index.d.ts`);
+            // await this.compiler.addPackage('@scom/ton-core', { dts: { 'index.d.ts': scomTonCore } });
+            // ScomCodeEditor.addLib('@scom/ton-core', scomTonCore);
         }
         async importCallback(fileName, isPackage) {
             if (this.imported[fileName]) {

@@ -2,7 +2,10 @@ import { Container, ControlElement, Module, customElements, Styles, VStack, Butt
 import { bundleTactContract, Compiler } from '@ijstech/compiler';
 import { Storage, TonConnectSender } from './build/index';
 import { ICustomField, IDeployConfig, IFileData } from './interface';
-import { TonClient, toNano, TonConnector, Address, ABIField, ABIType, Contract } from '@scom/ton-core';
+import { toNano, Address, ABIField, ABIType, Contract } from '@scom/ton-core';
+import { TonClient } from '@scom/ton-client';
+import { initTonConnectUI  } from '@scom/scom-ton-connect';
+
 import { basicTypes, extractContractName, fromJSModule, parseInputs } from './helpers/utils';
 import { DeployerParams } from './components/index';
 import { mainJson } from './languages/index';
@@ -132,9 +135,6 @@ export class ScomDesignerDeployer extends Module {
 
   private async getImportFile(fileName?: string, isPackage?: boolean): Promise<{fileName: string, content: string}>{
     if (isPackage){
-      if (fileName === '@ton/core') {
-        fileName = '@ijstech/ton-core';
-      }
       const content = await application.getContent(`${application.rootDir}libs/${fileName}/index.d.ts`);
       return {
         fileName: 'index.d.ts',
@@ -143,27 +143,29 @@ export class ScomDesignerDeployer extends Module {
     };
   }
 
-  private checkWalletConnection(): Promise<TonConnector.ITonConnect> {
+  private checkWalletConnection(): Promise<any> {
     return new Promise((resolve, reject) => {
-      const tonConnect = new TonConnector.TonConnect();
-      if (!tonConnect.connected) {
-        tonConnect.connect({
-          jsBridgeKey: 'tonkeeper'
-        });
-        tonConnect.onStatusChange((wallet: any) => {
-          if (wallet?.account?.address) {
-            resolve(tonConnect);
-          }
-        })
-      } else {
-        tonConnect.restoreConnection();
-        resolve(tonConnect);
-      }
+      // TODO
+      // const tonConnect = new TonConnector.TonConnect();
+      // if (!tonConnect.connected) {
+      //   tonConnect.connect({
+      //     jsBridgeKey: 'tonkeeper'
+      //   });
+      //   tonConnect.onStatusChange((wallet: any) => {
+      //     if (wallet?.account?.address) {
+      //       resolve(tonConnect);
+      //     }
+      //   })
+      // } else {
+      //   tonConnect.restoreConnection();
+      //   resolve(tonConnect);
+      // }
     });
   }
 
   private async build() {
     this.btnDeploy.enabled = false;
+    this.btnDeploy.rightIcon.visible = false;
     const result = await this.handleCompile();
     if (!result) return;
 

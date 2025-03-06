@@ -17,10 +17,13 @@
     "dependencies": {
         "@scom/scom-code-editor": "^0.1.0",
         "@ijstech/components": "^0.1.38",
-        "@scom/ton-core": "^0.1.1"
+        "@scom/ton-client": "^0.1.1",
+        "@scom/scom-ton-connect": "file:./repos/scom-ton-connect",
+        "@ijstech/tact": "^0.1.0",
+        "@scom/ton-core": "^0.1.5"
     },
     "devDependencies": {
         "@ijstech/cli": "^0.1.26",
-        "@ijstech/compiler": "^0.1.18"
+        "@ijstech/compiler": "^0.1.102"
     }
 }
