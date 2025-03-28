@@ -18,13 +18,13 @@ import {
 } from '@ijstech/components';
 import { blockStyle, customActivedStyled } from './index.css'
 import { IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
-import { ScomDesignerForm } from './designer'
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
 import { themesConfig } from './helpers/config';
 import { mainJson } from './languages/index';
+import { parseMD, renderMd, ScomDesignerForm, pageWidgets, template } from './designer/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -92,6 +92,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private activeTab: string = 'codeTab';
   private mode: string = '';
   private _deployConfig: IDeployConfig;
+  private tempTsxPath: string = 'demo.tsx';
+  private tempTsxContent: string = '';
+  private isWidgetsLoaded: boolean = false;
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
@@ -114,7 +117,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     funcName: string
   ): void {
     let control = designer.selectedControl?.control
-    let fileName = this.fileName
+    let fileName = this.isTsx ? this.fileName : this.tempTsxPath;
     let editor = this.codeEditor
     let code = this.updateDesignerCode(fileName, true)
     this.compiler.updateFile(fileName, code)
@@ -137,11 +140,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       params
     )
     this.codeEditor.focus()
-    if (result && result.code) {
+    if (result?.code) {
       this.compiler.updateFile(fileName, result.code)
-      editor.value = result.code
-      if (result.lineNumber)
-        editor.setCursor(result.lineNumber, result.columnNumber)
+      if (this.isTsx) {
+        editor.value = result.code
+        if (result.lineNumber)
+          editor.setCursor(result.lineNumber, result.columnNumber)
+        }
     }
     this.resetTab();
   }
@@ -159,7 +164,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     newId: string
   ): boolean {
     let control = designer.selectedControl?.control
-    let fileName = this.fileName
+    let fileName = this.isTsx ? this.fileName : this.tempTsxPath;
     let code = this.updateDesignerCode(fileName, true)
     this.compiler.updateFile(fileName, code)
     let propInfo = control._getCustomProperties()
@@ -170,7 +175,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       newId
     )
     this.compiler.updateFile(fileName, result)
-    this.codeEditor.value = result
+    if (this.isTsx) this.codeEditor.value = result
     return true
   }
   renameEventHandler(
@@ -178,12 +183,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     funcName: string,
     newFuncName: string
   ): boolean {
-    let fileName = this.fileName
+    let fileName = this.isTsx ? this.fileName : this.tempTsxPath;
     let code = this.updateDesignerCode(fileName, true)
     this.compiler.updateFile(fileName, code)
     let result = this.compiler.renameMethod(fileName, funcName, newFuncName)
     this.compiler.updateFile(fileName, result)
-    this.codeEditor.value = result
+    if (this.isTsx) this.codeEditor.value = result
     return true
   }
   async registerWidget(designer: ScomDesignerForm, name: string, type: string) {
@@ -195,6 +200,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     super(parent, options);
     this.importCallback = this.importCallback.bind(this);
     this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
+    this.getImportFile = this.getImportFile.bind(this);
   }
 
   static async create(options?: ScomDesignerElement, parent?: Container) {
@@ -243,6 +249,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (this.deployDeployer) {
       this.deployDeployer.setConfig(value);
     }
+  }
+
+  get isValid() {
+    return this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx') || this.file?.path?.endsWith('.md') || this.url?.endsWith('.md');
+  }
+
+  get isTsx() {
+    return this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
   }
 
   private get isContract() {
@@ -318,7 +332,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async renderContent(init = false) {
-    const isTsx = this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
     if (this.activeTab === 'codeTab' && !this.codeEditor) {
       this.createCodeEditor();
     } else if (this.activeTab === 'designTab' && !this.formDesigner) {
@@ -345,7 +358,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
 
     this.updateButtons();
-    this.designTab.enabled = isTsx;
+    this.designTab.enabled = this.isValid;
   }
 
   private createCodeEditor() {
@@ -361,7 +374,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private createFormDesigner() {
-    const isTsx = this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
     this.formDesigner.width = '100%';
     this.formDesigner.height = '100%';
@@ -373,7 +385,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       typeof this.onClosePreview === 'function' && this.onClosePreview();
     };
     this.formDesigner.studio = this;
-    this.formDesigner.visible = isTsx;
+    this.formDesigner.visible = this.isValid;
   }
 
   private createDeployer() {
@@ -395,7 +407,34 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const content = url ? await getFileContent(url) : file?.content || '';
     const fileName = this.fileName;
     await this.codeEditor.loadContent(content, getLanguageType(fileName), fileName);
-    this.compiler.addFile(fileName, content, this.importCallback);
+    if (this.isTsx) {
+      this.compiler.addFile(fileName, content, this.importCallback);
+    }
+  }
+
+  private async addPageWidgets(compiler: Compiler) {
+    const promises = [];
+    for (let packageName of pageWidgets) {
+      promises.push(
+        application.getContent(`${application.rootDir}libs/${packageName}/index.d.ts`).then(async (content) => {
+          compiler.addPackage(packageName, { dts: { 'index.d.ts': content } });
+          ScomCodeEditor.addLib(packageName, content);
+        })
+      );
+    }
+
+    await Promise.all(promises);
+  }
+
+  private async loadPageWidgets() {
+    if (this.isWidgetsLoaded) return;
+    const promises = [];
+    for (let packageName of pageWidgets) {
+      promises.push(
+        application.loadPackage(packageName)
+      );
+    }
+    await Promise.all(promises);
   }
 
   private resetTab() {
@@ -429,10 +468,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const content = await application.getContent(`${application.rootDir}libs/@ijstech/components/index.d.ts`);
     await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
     ScomCodeEditor.addLib('@ijstech/components', content);
-
-    // const scomTonCore = await application.getContent(`${application.rootDir}libs/@scom/ton-core/index.d.ts`);
-    // await this.compiler.addPackage('@scom/ton-core', { dts: { 'index.d.ts': scomTonCore } });
-    // ScomCodeEditor.addLib('@scom/ton-core', scomTonCore);
   }
 
   private async importCallback(fileName: string, isPackage?: boolean) {
@@ -476,15 +511,21 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (this.updateDesigner) {
         this.updateDesigner = false
         try {
-          await this.compiler.addFile(fileName, this.codeEditor.value, this.importCallback);
-          const ui = this.compiler.parseUI(fileName)
-          this.formDesigner.renderUI(this.updateRoot(ui))
+          if (this.isTsx)
+            await this.parseTsx(fileName);
+          else
+            await this.parseMd(this.codeEditor.value);
         } catch (error) {
           this.updateDesigner = true
         }
       }
     } else if (target.id === 'codeTab') {
-      this.updateDesignerCode(fileName)
+      this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
+      if (!this.isTsx) {
+        const root = this.formDesigner.rootComponent;
+        const md = renderMd(root as IComponent, '');
+        this.codeEditor.value = md;
+      }
     } else {
       this.deployDeployer.setData({
         path: this.fileName,
@@ -494,6 +535,38 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
     target.rightIcon.visible = false;
     target.enabled = true;
+  }
+
+  private async parseMd(content: string) {
+    const ui = parseMD(content);
+    const updated = {
+      name: 'i-panel',
+      props: {
+        width: '{100%}',
+        minHeight: '{100%}'
+      },
+      items: [...ui],
+      path: IdUtils.generateUUID()
+    }
+
+    await this.loadPageWidgets();
+    this.formDesigner.renderUI(updated);
+
+    await this.compiler.addFile(this.tempTsxPath, template, this.getImportFile);
+    const root = this.formDesigner.rootComponent;
+    let code = this.compiler.renderUI(
+      this.tempTsxPath,
+      'render',
+      root
+    )
+    this.tempTsxContent = code;
+    this.compiler.updateFile(this.tempTsxPath, code);
+  }
+
+  private async parseTsx(fileName: string) {
+    await this.compiler.addFile(fileName, this.codeEditor.value, this.importCallback);
+    const ui = this.compiler.parseUI(fileName)
+    this.formDesigner.renderUI(this.updateRoot(ui))
   }
 
   private updateRoot(root: Parser.IComponent) {
@@ -573,21 +646,37 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return null;
   }
 
-  private async handleDesignerPreview(): Promise<{ module: string, script: string }> {
-    if (this.updateDesigner) this.updateDesignerCode(this.fileName, true)
+  private async handleDesignerPreview(): Promise<{ module: string, script: string, packages?: any }> {
+    if (this.updateDesigner && this.isTsx) this.updateDesignerCode(this.fileName, true)
     if (typeof this.onPreview === 'function')
       return await this.onPreview()
     else {
-      let value = `///<amd-module name='@scom/debug-module'/> \n` + this.value;
-      const fileName = this.fileName || 'index.tsx';
+      const previewedValue = this.tempTsxContent || this.value;
+      const value = `///<amd-module name='@scom/debug-module'/> \n` + previewedValue;
+      const fileName = this.tempTsxPath || this.fileName || 'index.tsx';
       if (value) {
         let compiler = new Compiler()
         await compiler.addFile(
           fileName,
           value,
-          this.getImportFile.bind(this)
+          this.getImportFile
         );
         let result = await compiler.compile(true)
+        // TODO: debug
+        const packages = [
+          {
+            fileName: '@scom/page-text',
+            script: {
+              'index.js': await application.getContent(`${application.rootDir}libs/@scom/page-text/index.js`)
+            }
+          },
+          {
+            fileName: '@scom/page-block',
+            script: {
+              'index.js': await application.getContent(`${application.rootDir}libs/@scom/page-block/index.js`)
+            }
+          }
+        ];
         if (result.errors?.length > 0) {
           console.error(result.errors);
           if (typeof this.onRenderError === 'function')
@@ -596,7 +685,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         }
         return {
           module: '@scom/debug-module',
-          script: result?.script['index.js']
+          script: result?.script['index.js'],
+          packages
         };
       }
     }
@@ -605,13 +695,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private updateDesignerCode(fileName: string, modified?: boolean): string {
     if (modified || this.formDesigner?.modified) {
       const root = this.formDesigner.rootComponent;
-      let code = this.compiler.renderUI(
+      const code = this.compiler.renderUI(
         fileName,
         'render',
         root
       )
       this.compiler.updateFile(fileName, code)
-      this.codeEditor.value = code
+      if (this.isTsx) this.codeEditor.value = code
       this.formDesigner.modified = false
       return code
     }
@@ -639,6 +729,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.clear();
       this.formDesigner.closePreview();
     }
+    this.isWidgetsLoaded = false;
   }
 
   init() {
@@ -906,3 +997,4 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     )
   }
 }
+

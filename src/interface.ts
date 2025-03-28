@@ -1,6 +1,6 @@
 import { Parser } from "@ijstech/compiler";
 import { Control, IconName } from "@ijstech/components";
-import { ScomDesignerForm } from "./designer";
+import { ScomDesignerForm } from "./designer/index";
 import { ABIField } from "@scom/ton-core";
 
 export interface IStudio {
@@ -34,6 +34,8 @@ export interface IComponentItem extends Parser.IComponent {
   parent?: string;
   repeater?: string;
   isShown?: boolean;
+  tag?: any;
+  hasItems?: boolean;
 }
 
 export interface IComponent extends IComponentItem {

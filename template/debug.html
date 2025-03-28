@@ -3,6 +3,7 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="/0.1.0-beta/libs/@ijstech/components/index.js"></script>
+  <script src="/0.1.0-beta/bundle.js"></script>
 </head>
 <html>
 
@@ -11,14 +12,58 @@
     async function init() {
       window.addEventListener('message', async function (e) {
         if (e.type == 'message' && typeof(e.data) == 'string'){
-            let data = JSON.parse(e.data);
-            if (data.module && data.script){
-              await application.initModule(data.module, data.script);
-              let module = await application.newModule(data.module);
-              document.body.append(module);
+          let data = {};
+          try {
+            data = JSON.parse(e.data);
+          } catch(err) {}
+
+          console.log('debug: ', data)
+
+          if (data.sampleData) {
+            application.dev = {data: data.sampleData};
+          }
+
+          if (data.module && data.script) {
+            const packages = data.packages || [];
+            const addedPromises = [];
+            for (const item of packages) {
+              if (item?.script?.['index.js']) {
+                addedPromises.push(application.loadScript(item.fileName, item?.script?.['index.js'], true));
+              }
             }
+            await Promise.all(addedPromises);
+            const modules = data.modules || [];
+            for (const item of modules) {
+              if (item?.script?.['index.js']) {
+                await application.loadScript(item.fileName, item?.script?.['index.js'], true);
+              }
+            }
+            await application.initModule(data.module, data.script);
+            try {
+              const module = await application.newModule(data.module, data.options);
+              document.body.append(module);
+              const images = module.querySelectorAll('img');
+              for (let i = 0; i < images.length; i++) {
+                images[i].onerror = function () {
+                  window.parent.postMessage({command: 'fetchResource', data: this.src}, '*');
+                }
+              }
+            } catch(err) {
+              console.error(err)
+            }
+          }
+        } else if (e.type === 'message' && e.data.command === 'updateResource') {
+          const { src, value } = e.data.data;
+
+          const images = document.querySelectorAll('img');
+          for (let i = 0; i < images.length; i++) {
+            if (images[i].src === src) {
+              images[i].src = value;
+              break;
+            }
+          }
         }
-      });
+      }, false);
     };
     init();
   </script>
