@@ -19,6 +19,13 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customActivedStyled: string;
     export const customModalStyled: string;
 }
+/// <amd-module name="@scom/scom-designer/designer/utils.ts" />
+declare module "@scom/scom-designer/designer/utils.ts" {
+    import { IComponent } from "@scom/scom-designer/interface.ts";
+    export const parseMD: (html: string) => any[];
+    export const renderMd: (root: IComponent, result: string) => string;
+    export const pageWidgets: string[];
+}
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
 /// <amd-module name="@scom/scom-designer/helpers/store.ts" />
@@ -2132,8 +2139,8 @@ declare module "@scom/scom-designer/data.ts" {
     export const blockComponents: IBlock[];
     export const screen: IScreen;
 }
-/// <amd-module name="@scom/scom-designer/designer.tsx" />
-declare module "@scom/scom-designer/designer.tsx" {
+/// <amd-module name="@scom/scom-designer/designer/designer.tsx" />
+declare module "@scom/scom-designer/designer/designer.tsx" {
     import { Container, ControlElement, Module } from '@ijstech/components';
     import { IComponent, IComponentPicker, IControl, IStudio, IBlock } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
@@ -2276,11 +2283,21 @@ declare module "@scom/scom-designer/designer.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/designer/template.ts" />
+declare module "@scom/scom-designer/designer/template.ts" {
+    export const template = "\nimport { Module, customModule, Styles } from '@ijstech/components';\nimport ScomPageBlock from '@scom/page-block';\nimport ScomPageText from '@scom/page-text';\nimport ScomPageTextList from '@scom/page-text-list';\nimport ScomPageForm from '@scom/page-form';\nimport ScomPageButton from '@scom/page-button';\nimport ScomPageBlog from '@scom/page-blog';\nimport ScomPageBreadcrumb from '@scom/page-breadcrumb';\nimport ScomImage from '@scom/scom-image';\nimport ScomImageGallery from '@scom/scom-image-gallery';\n\n@customModule\nexport default class Main extends Module {\n  init() {\n    super.init();\n  }\n\n  render() {\n    return <i-panel width={'100%'} minHeight={'100%'}>\n   </i-panel>\n  }\n}";
+}
+/// <amd-module name="@scom/scom-designer/designer/index.ts" />
+declare module "@scom/scom-designer/designer/index.ts" {
+    export * from "@scom/scom-designer/designer/utils.ts";
+    export { ScomDesignerForm } from "@scom/scom-designer/designer/designer.tsx";
+    export { template } from "@scom/scom-designer/designer/template.ts";
+}
 /// <amd-module name="@scom/scom-designer/interface.ts" />
 declare module "@scom/scom-designer/interface.ts" {
     import { Parser } from "@ijstech/compiler";
     import { Control, IconName } from "@ijstech/components";
-    import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
+    import { ScomDesignerForm } from "@scom/scom-designer/designer/index.ts";
     import { ABIField } from "@scom/ton-core";
     export interface IStudio {
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
@@ -2310,6 +2327,8 @@ declare module "@scom/scom-designer/interface.ts" {
         parent?: string;
         repeater?: string;
         isShown?: boolean;
+        tag?: any;
+        hasItems?: boolean;
     }
     export interface IComponent extends IComponentItem {
         items?: IComponent[];
@@ -2457,9 +2476,9 @@ declare module "@scom/scom-designer/deployer.tsx" {
 declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
     import { IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
-    import { ScomDesignerForm } from "@scom/scom-designer/designer.tsx";
     import { Types } from '@ijstech/compiler';
     import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
+    import { ScomDesignerForm } from "@scom/scom-designer/designer/index.ts";
     type onSaveCallback = (target: ScomCodeEditor, event: any) => void;
     type onChangeCallback = (target: ScomDesigner, event: Event) => void;
     type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{
@@ -2517,6 +2536,9 @@ declare module "@scom/scom-designer" {
         private activeTab;
         private mode;
         private _deployConfig;
+        private tempTsxPath;
+        private tempTsxContent;
+        private isWidgetsLoaded;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2547,6 +2569,8 @@ declare module "@scom/scom-designer" {
         set baseUrl(value: string);
         get deployConfig(): IDeployConfig;
         set deployConfig(value: IDeployConfig);
+        get isValid(): boolean;
+        get isTsx(): boolean;
         private get isContract();
         private setData;
         private getData;
@@ -2564,11 +2588,15 @@ declare module "@scom/scom-designer" {
         private createDeployer;
         private handleTogglePanels;
         private loadContent;
+        private addPageWidgets;
+        private loadPageWidgets;
         private resetTab;
         private updateButtons;
         private addLib;
         private importCallback;
         private handleTabChanged;
+        private parseMd;
+        private parseTsx;
         private updateRoot;
         private updatePath;
         private handleCodeEditorChange;

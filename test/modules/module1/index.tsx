@@ -14,30 +14,12 @@ export default class Module1 extends Module {
     async init() {
         await super.init();
         this.scomDesigner.previewUrl = '/0.1.0-beta/libs/@scom/scom-designer/debug.html';
+        const fileName = 'data/demo.md';
+        const fileContent = await fetch(`./${fileName}`).then(res => res.text());
         this.scomDesigner.setValue({
             file: {
-                path: 'hello_word.tact',
-                content: `// this trait has to be imported
-import "@stdlib/deploy";
-
-// the Deployable trait adds a default receiver for the "Deploy" message
-contract Counter with Deployable {
- 
-    val: Int as uint32;
- 
-    init() {
-        self.val = 0;
-    }
- 
-    receive("increment") {
-        self.val = self.val + 1;
-    }
- 
-    get fun value(): Int {
-        return self.val;
-    }
-}
-`
+                path: fileName,
+                content: fileContent
             }
         })
     }
@@ -94,7 +76,7 @@ contract Counter with Deployable {
                     width="100%" height="100%"
                     deployConfig={this.options.deployConfig}
                     // url="https://storage.decom.app/ipfs/bafybeiekmzv3mmjgmfclcqe2gwpkzpptloolm4merj3cwnvb7d7pdv4v2m/demo.tsx"
-                    onPreview={this.handlePreview.bind(this)}
+                    // onPreview={this.handlePreview.bind(this)}
                 ></i-scom-designer>
             </i-panel>
         )

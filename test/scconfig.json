@@ -18,16 +18,20 @@
     "@ijstech/tact": "*",
     "@ijstech/compiler": "*",
     "@scom/scom-code-editor": "*",
-    "@scom/scom-designer": "*",
-    "@scom/scom-chart-data-source-setup": "*",
-    "@scom/scom-line-chart": "*",
-    "@scom/scom-bar-chart": "*",
-    "@scom/scom-pie-chart": "*",
-    "@scom/scom-scatter-chart": "*",
-    "@scom/scom-mixed-chart": "*",
-    "@scom/scom-area-chart": "*"
+    "@scom/scom-designer": "*"
   },
   "packages": [
+    "@scom/scom-image",
+    "@scom/scom-image-gallery",
+    "@scom/scom-banner",
+    "@scom/page-button",
+    "@scom/page-text",
+    "@scom/page-text-list",
+    "@scom/page-block",
+    "@scom/page-form",
+    "@scom/page-breadcrumb",
+    "@scom/scom-markdown-editor",
+    "@scom/page-blog"
   ],
   "menus": [
   ],

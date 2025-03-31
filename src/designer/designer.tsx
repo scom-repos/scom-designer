@@ -21,7 +21,8 @@ import {
   VStack,
   TreeNode,
   Button,
-  HStack
+  HStack,
+  application
 } from '@ijstech/components';
 import {
   DesignerScreens,
@@ -29,18 +30,18 @@ import {
   DesignerProperties,
   DesignerPickerComponents,
   DesignerPickerBlocks
-} from './components/index';
-import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock } from './interface'
-import { customLabelTabStyled, customModalStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from './index.css'
+} from '../components/index';
+import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock } from '../interface'
+import { customLabelTabStyled, customModalStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from '../index.css'
 import {
   blockComponents
-} from './data'
-import { borderRadiusLeft, borderRadiusRight } from './tools/index'
+} from '../data'
+import { borderRadiusLeft, borderRadiusRight } from '../tools/index'
 import { Parser } from "@ijstech/compiler";
-import { isSameValue, parseProps } from './helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback } from './helpers/config'
-import { getBreakpoint } from './helpers/store'
-import { mainJson } from './languages/index';
+import { isSameValue, parseProps } from '../helpers/utils'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback } from '../helpers/config'
+import { getBreakpoint } from '../helpers/store'
+import { mainJson } from '../languages/index';
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -265,6 +266,15 @@ export class ScomDesignerForm extends Module {
       }
     }
 
+    if (name.includes('i-page') && options.tag) {
+      const tag = options.tag;
+      options.tag = {
+        light: tag,
+        dark: tag,
+        ...options.tag
+      }
+    }
+
     const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
     if (name.includes('scom')) {
       parent?.appendChild(control);
@@ -287,6 +297,7 @@ export class ScomDesignerForm extends Module {
       customTag.fontColor = value?.color || '';
       if ((control as any)?.setTag) (control as any).setTag(customTag);
     }
+
     return control;
   }
 
@@ -580,6 +591,8 @@ export class ScomDesignerForm extends Module {
 
   private async renderControl(parent: Control, component: IControl) {
     const config = this.getOptions(component.props);
+    const tag: any = component.tag ? this.getOptions(component.tag) : {};
+    if (config.options) config.options.tag = tag?.options;
     let control = null;
 
     if (parent.id === 'pnlFormDesigner') {
@@ -595,7 +608,8 @@ export class ScomDesignerForm extends Module {
       (component.name === 'i-radio-group' && parenNodeName === 'I-RADIO');
     const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') ||
       (parenNodeName === 'I-REPEATER') ||
-      (parenNodeName === 'I-ACCORDION-ITEM');
+      (parenNodeName === 'I-ACCORDION-ITEM') ||
+      (parenNodeName === 'I-PAGE-BLOCK');
 
     if (isAddOption) {
       control = (parent as any).add({...config.options, designMode: true, cursor: 'pointer'});
@@ -603,7 +617,7 @@ export class ScomDesignerForm extends Module {
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
     } else if (isAddControl) {
       const childControl = await this.createControl(undefined, component.name, config);
-      control = (parent as any).add(childControl);
+      control = childControl && (parent as any).add(childControl);
     } else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
       control = (parent as TreeView).add(null, config.options?.caption || '');
       control.designMode = true;

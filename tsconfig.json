@@ -17,7 +17,7 @@
         "@scom/scom-ton-connect": ["repos/scom-ton-connect"]
       }
     },
-    "include": ["src/*.tsx", "src/*.ts", "src/helpers/config.ts", "src/helpers/utils.ts", "src/build/tonConnectorSender.ts"],
+    "include": ["src/*.tsx", "src/*.ts", "src/helpers/config.ts", "src/helpers/utils.ts", "src/build/tonConnectorSender.ts", "src/designer/designer.tsx"],
     "exclude": ["node_modules"]
   }
   
