@@ -1107,7 +1107,7 @@ export class ScomDesignerForm extends Module {
     }
   }
 
-  renderUI(root: IComponent) {
+  async renderUI(root: IComponent) {
     this.selectedControl = null;
     this._rootComponent = root;
     this.designerComponents.screen = {
@@ -1115,17 +1115,17 @@ export class ScomDesignerForm extends Module {
       id: '',
       elements: [this._rootComponent]
     }
-    this.onUpdateDesigner(false);
+    await this.onUpdateDesigner(false);
     this.designerProperties.clear();
   }
 
-  private onUpdateDesigner(refresh = true) {
+  private async onUpdateDesigner(refresh = true) {
     if (refresh) {
       this.updateDesignProps(this._rootComponent);
     }
     this.pnlFormDesigner.clearInnerHTML();
     this.pathMapping = new Map();
-    this.renderComponent(undefined, {
+    await this.renderComponent(undefined, {
       ...this._rootComponent,
       control: null
     });

@@ -2259,7 +2259,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private updateImageProp;
         private onControlEventChanged;
         private onControlEventDblClick;
-        renderUI(root: IComponent): void;
+        renderUI(root: IComponent): Promise<void>;
         private onUpdateDesigner;
         private handleControlMouseMove;
         private updatePosition;
@@ -2607,6 +2607,7 @@ declare module "@scom/scom-designer" {
         }>;
         private getFile;
         private handleDesignerPreview;
+        private getPageWidgets;
         private updateDesignerCode;
         openFile(file: IIPFSData, parentCid: string, parent: Control, config: any): Promise<void>;
         clear(): void;

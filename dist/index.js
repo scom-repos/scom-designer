@@ -7201,7 +7201,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.studio.locateMethod(this, funcName);
             }
         }
-        renderUI(root) {
+        async renderUI(root) {
             this.selectedControl = null;
             this._rootComponent = root;
             this.designerComponents.screen = {
@@ -7209,16 +7209,16 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 id: '',
                 elements: [this._rootComponent]
             };
-            this.onUpdateDesigner(false);
+            await this.onUpdateDesigner(false);
             this.designerProperties.clear();
         }
-        onUpdateDesigner(refresh = true) {
+        async onUpdateDesigner(refresh = true) {
             if (refresh) {
                 this.updateDesignProps(this._rootComponent);
             }
             this.pnlFormDesigner.clearInnerHTML();
             this.pathMapping = new Map();
-            this.renderComponent(undefined, {
+            await this.renderComponent(undefined, {
                 ...this._rootComponent,
                 control: null
             });
@@ -8543,7 +8543,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 path: components_37.IdUtils.generateUUID()
             };
             await this.loadPageWidgets();
-            this.formDesigner.renderUI(updated);
+            await this.formDesigner.renderUI(updated);
             await this.compiler.addFile(this.tempTsxPath, index_27.template, this.getImportFile);
             const root = this.formDesigner.rootComponent;
             let code = this.compiler.renderUI(this.tempTsxPath, 'render', root);
@@ -8642,21 +8642,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     let compiler = new compiler_2.Compiler();
                     await compiler.addFile(fileName, value, this.getImportFile);
                     let result = await compiler.compile(true);
-                    // TODO: debug
-                    const packages = [
-                        {
-                            fileName: '@scom/page-text',
-                            script: {
-                                'index.js': await components_37.application.getContent(`${components_37.application.rootDir}libs/@scom/page-text/index.js`)
-                            }
-                        },
-                        {
-                            fileName: '@scom/page-block',
-                            script: {
-                                'index.js': await components_37.application.getContent(`${components_37.application.rootDir}libs/@scom/page-block/index.js`)
-                            }
-                        }
-                    ];
+                    const packages = this.tempTsxPath ? await this.getPageWidgets() : [];
                     if (result.errors?.length > 0) {
                         console.error(result.errors);
                         if (typeof this.onRenderError === 'function')
@@ -8670,6 +8656,27 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     };
                 }
             }
+        }
+        async getPageWidgets() {
+            const promises = [];
+            const mapper = {};
+            for (let packageName of index_27.pageWidgets) {
+                promises.push(components_37.application.getContent(`${components_37.application.rootDir}libs/${packageName}/index.js`)
+                    .then(content => {
+                    mapper[packageName] = content;
+                }));
+            }
+            await Promise.all(promises);
+            const result = [];
+            for (const packageName in mapper) {
+                result.push({
+                    fileName: packageName,
+                    script: {
+                        'index.js': mapper[packageName]
+                    }
+                });
+            }
+            return result;
         }
         updateDesignerCode(fileName, modified) {
             if (modified || this.formDesigner?.modified) {
