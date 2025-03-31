@@ -550,7 +550,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
 
     await this.loadPageWidgets();
-    this.formDesigner.renderUI(updated);
+    await this.formDesigner.renderUI(updated);
 
     await this.compiler.addFile(this.tempTsxPath, template, this.getImportFile);
     const root = this.formDesigner.rootComponent;
@@ -662,21 +662,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
           this.getImportFile
         );
         let result = await compiler.compile(true)
-        // TODO: debug
-        const packages = [
-          {
-            fileName: '@scom/page-text',
-            script: {
-              'index.js': await application.getContent(`${application.rootDir}libs/@scom/page-text/index.js`)
-            }
-          },
-          {
-            fileName: '@scom/page-block',
-            script: {
-              'index.js': await application.getContent(`${application.rootDir}libs/@scom/page-block/index.js`)
-            }
-          }
-        ];
+
+        const packages = this.tempTsxPath ? await this.getPageWidgets() : [];
+
         if (result.errors?.length > 0) {
           console.error(result.errors);
           if (typeof this.onRenderError === 'function')
@@ -690,6 +678,33 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         };
       }
     }
+  }
+
+  private async getPageWidgets() {
+    const promises = [];
+    const mapper: Record<string, string> = {};
+    for (let packageName of pageWidgets) {
+      promises.push(
+        application.getContent(`${application.rootDir}libs/${packageName}/index.js`)
+          .then(content => {
+            mapper[packageName] = content;
+          })
+      );
+    }
+    
+    await Promise.all(promises);
+    const result = [];
+
+    for (const packageName in mapper) {
+      result.push({
+        fileName: packageName,
+        script: {
+          'index.js': mapper[packageName]
+        }
+      });
+    }
+
+    return result;
   }
 
   private updateDesignerCode(fileName: string, modified?: boolean): string {
