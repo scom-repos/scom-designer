@@ -38,8 +38,8 @@ import {
 } from '../data'
 import { borderRadiusLeft, borderRadiusRight } from '../tools/index'
 import { Parser } from "@ijstech/compiler";
-import { isSameValue, parseProps } from '../helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback } from '../helpers/config'
+import { isSameValue, mergeObjects, parseProps } from '../helpers/utils'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback, pageWidgets } from '../helpers/config'
 import { getBreakpoint } from '../helpers/store'
 import { mainJson } from '../languages/index';
 
@@ -247,8 +247,14 @@ export class ScomDesignerForm extends Module {
     return blockComponents
   }
 
-  private isCustomWidget() {
+  private get isCustomWidget() {
     return !!(this.selectedControl?.control as any)?.showConfigurator;
+  }
+
+  private get isPageWidget() {
+    const controlName = this.selectedControl?.name || '';
+    const name = controlName.replace(/^i-/, '@scom/');
+    return name && pageWidgets.includes(name);
   }
 
   private async createControl(parent: Control|undefined, name: string, config: {mediaQueries: any, options: any}) {
@@ -571,7 +577,8 @@ export class ScomDesignerForm extends Module {
     component.control = control;
     component.parent = parent?.path;
     component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
-    control.tag = new ControlResizer(control);
+    if (!control.tag) control.tag = {};
+    control.tag.resizer = new ControlResizer(control);
     this.bindControlEvents(component as IControl);
     this.pathMapping.set(component.path, component);
     if (component?.items?.length) {
@@ -668,11 +675,12 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleSelectControl(target: IControl) {
-    if (this.selectedControl) this.selectedControl.control.tag.hideResizers();
+    if (this.selectedControl) this.selectedControl.control.tag.resizer.hideResizers();
     this.selectedControl = target;
-    this.selectedControl.control.tag.showResizers();
+    this.selectedControl.control.tag.resizer.showResizers();
     const name = this.selectedControl.name;
     const control = this.selectedControl?.control as any;
+
     if (control?.register && !this.libsMap[name]) {
       this.libsMap[name] = true;
       const packageName = '@scom/' + name.replace(/^i-/, '');
@@ -683,7 +691,15 @@ export class ScomDesignerForm extends Module {
         control.setData(defaultData, defaultData);
       }
       this.studio.registerWidget(this, packageName, types);
+    } else if (this.isPageWidget) {
+      const tag = control._getDesignPropValue('tag');
+      if (tag) {
+        for (const key in tag) {
+          control._setDesignPropValue(key, tag[key]);
+        }
+      }
     }
+
     this.showDesignProperties();
   }
 
@@ -1015,6 +1031,13 @@ export class ScomDesignerForm extends Module {
           customTag.fontColor = value?.color || '';
         }
         if ((control as any)?.setTag) (control as any).setTag(customTag);
+      } else if (this.isPageWidget && prop !== 'data') {
+        const {resizer, ...customTag} = control.tag || {};
+        const tag: any = customTag || {};
+        mergeObjects(tag, {[prop]: value});
+        const configurator = (control as any)?.getConfigurators()?.find(c => c.target === 'Builders');
+        if (configurator?.setTag) configurator.setTag(tag);
+        control._setDesignPropValue('tag', tag);
       }
     }
 
@@ -1116,7 +1139,7 @@ export class ScomDesignerForm extends Module {
       elements: [this._rootComponent]
     }
     await this.onUpdateDesigner(false);
-    this.designerProperties.clear();
+    this.designerProperties?.clear()
   }
 
   private async onUpdateDesigner(refresh = true) {

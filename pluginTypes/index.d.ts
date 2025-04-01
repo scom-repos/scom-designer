@@ -24,7 +24,6 @@ declare module "@scom/scom-designer/designer/utils.ts" {
     import { IComponent } from "@scom/scom-designer/interface.ts";
     export const parseMD: (html: string) => any[];
     export const renderMd: (root: IComponent, result: string) => string;
-    export const pageWidgets: string[];
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
@@ -149,7 +148,8 @@ declare module "@scom/scom-designer/helpers/config.ts" {
             selectedBackground: string;
         };
     };
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback };
+    const pageWidgets: string[];
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback, pageWidgets };
 }
 /// <amd-module name="@scom/scom-designer/assets.ts" />
 declare module "@scom/scom-designer/assets.ts" {
@@ -283,6 +283,7 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     export const fromJSModule: (jsModuleCode: string) => string;
     export const parseInputs: (inputFields: any, key?: string) => Promise<any>;
     export const basicTypes: string[];
+    export const mergeObjects: (target: any, source: any) => void;
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
@@ -451,6 +452,7 @@ declare module "@scom/scom-designer/languages/properties.json.ts" {
             width: string;
             wrap: string;
             z_index: string;
+            data: string;
         };
         "zh-hant": {
             absolute: string;
@@ -553,6 +555,7 @@ declare module "@scom/scom-designer/languages/properties.json.ts" {
             width: string;
             wrap: string;
             z_index: string;
+            data: string;
         };
         vi: {
             absolute: string;
@@ -655,6 +658,7 @@ declare module "@scom/scom-designer/languages/properties.json.ts" {
             width: string;
             wrap: string;
             z_index: string;
+            data: string;
         };
     };
     export default _default_2;
@@ -899,6 +903,7 @@ declare module "@scom/scom-designer/tools/index.css.ts" {
     export const buttonAutoStyled: string;
     export const customFormStyle: string;
     export const customSwitchStyle: string;
+    export const customModalStyle: string;
 }
 /// <amd-module name="@scom/scom-designer/tools/stylesheet.tsx" />
 declare module "@scom/scom-designer/tools/stylesheet.tsx" {
@@ -1721,6 +1726,47 @@ declare module "@scom/scom-designer/tools/group.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/tools/data.tsx" />
+declare module "@scom/scom-designer/tools/data.tsx" {
+    import { Module, ControlElement } from '@ijstech/components';
+    interface IDesignerData {
+        title?: string;
+        props?: any;
+        dataSchema?: any;
+    }
+    type onChangedCallback = (data: any, mediaQuery?: any) => void;
+    interface DesignerToolDataElement extends ControlElement {
+        title?: string;
+        props?: any;
+        dataSchema?: any;
+        onChanged?: onChangedCallback;
+    }
+    global {
+        namespace JSX {
+            interface IntrinsicElements {
+                ['designer-tool-data']: DesignerToolDataElement;
+            }
+        }
+    }
+    export default class DesignerToolData extends Module {
+        private designerHeader;
+        private btnSubmit;
+        private codeEditor;
+        private mdData;
+        private _data;
+        onChanged: onChangedCallback;
+        get data(): any;
+        get dataSchema(): any;
+        get dataString(): string;
+        setData(value: IDesignerData): void;
+        private renderUI;
+        private showDatModal;
+        private closeDataModal;
+        private handleSubmit;
+        init(): void;
+        render(): void;
+    }
+}
 /// <amd-module name="@scom/scom-designer/tools/index.ts" />
 declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolStylesheet from "@scom/scom-designer/tools/stylesheet.tsx";
@@ -1736,8 +1782,9 @@ declare module "@scom/scom-designer/tools/index.ts" {
     import DesignerToolGroup from "@scom/scom-designer/tools/group.tsx";
     import DesignerToolHeader from "@scom/scom-designer/tools/header.tsx";
     import DesignerSelector from "@scom/scom-designer/tools/selector.tsx";
+    import DesignerToolData from "@scom/scom-designer/tools/data.tsx";
     export * from "@scom/scom-designer/tools/index.css.ts";
-    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector, DesignerToolContent, DesignerToolGroup, DesignerToolWidget, DESIGNER_BACKGROUND_PROPS, DESIGNER_BORDER_PROPS, DESIGNER_POSITION_PROPS, DESIGNER_SIZE_PROPS, DESIGNER_SPACING_PROPS, DESIGNER_LAYOUT_PROPS, DESIGNER_EFFECT_PROPS, DESIGNER_CONTENT_PROPS };
+    export { DesignerToolStylesheet, DesignerToolLayout, DesignerToolBackground, DesignerToolSize, DesignerToolMarginsAndPadding, DesignerToolPosition, DesignerToolBorders, DesignerToolEffects, DesignerToolHeader, DesignerSelector, DesignerToolContent, DesignerToolGroup, DesignerToolWidget, DesignerToolData, DESIGNER_BACKGROUND_PROPS, DESIGNER_BORDER_PROPS, DESIGNER_POSITION_PROPS, DESIGNER_SIZE_PROPS, DESIGNER_SPACING_PROPS, DESIGNER_LAYOUT_PROPS, DESIGNER_EFFECT_PROPS, DESIGNER_CONTENT_PROPS };
 }
 /// <amd-module name="@scom/scom-designer/settings/basic.tsx" />
 declare module "@scom/scom-designer/settings/basic.tsx" {
@@ -1936,6 +1983,7 @@ declare module "@scom/scom-designer/components/properties.tsx" {
         private breakpointSelector;
         private previewSelector;
         private designerTrigger;
+        private designerData;
         private inputId;
         private designerWidget;
         private mdActions;
@@ -2219,7 +2267,8 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         get pickerComponentsFiltered(): IComponentPicker[];
         private getComponents;
         get pickerBlocksFiltered(): IBlock[];
-        private isCustomWidget;
+        private get isCustomWidget();
+        private get isPageWidget();
         private createControl;
         private revertImageUrl;
         private getOptions;

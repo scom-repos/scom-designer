@@ -14,7 +14,7 @@ export default class Module1 extends Module {
     async init() {
         await super.init();
         this.scomDesigner.previewUrl = '/0.1.0-beta/libs/@scom/scom-designer/debug.html';
-        const fileName = 'data/demo.md';
+        const fileName = 'data/data.md';
         const fileContent = await fetch(`./${fileName}`).then(res => res.text());
         this.scomDesigner.setValue({
             file: {

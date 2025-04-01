@@ -1,5 +1,6 @@
 import { IconName, IdUtils } from "@ijstech/components";
 import { IComponent } from "../interface";
+import { toJSON, toYAML } from "@scom/scom-yaml";
 
 export const parseMD = (html: string) => {
   const blocks = html.split(/```/).filter(b => b.trim() !== "");
@@ -64,13 +65,13 @@ const checkMatches = (content: string) => {
   const nameRegex = /[^{}]+/;
   const nameMatch = nameRegex.exec(content);
   let name = nameMatch?.[0] || '';
-  
+
   if (name === '@scom/page-form') {
     content = content.replace(name, '');
     let parsed = null;
     try {
       parsed = JSON.parse(content);
-    } catch (e) {}
+    } catch (e) { }
 
     const { data, ...tag } = parsed || {};
     return {
@@ -124,13 +125,13 @@ const checkMatches = (content: string) => {
 
 const getProps = (name: string, data: Record<string, any>, content: string) => {
   let props: Record<string, any> = {};
-  const { data: dataVal, ...tag } = data;
+  let { data: dataVal, ...tag } = data;
+  tag = tag || {};
+
   try {
     if (dataVal) {
       if (name === 'scom-image') {
         props.url = dataVal?.url || '';
-      } else if (name === 'scom-image-gallery') {
-        props = {...(dataVal || {})}
       } else {
         props.data = dataVal;
       }
@@ -138,23 +139,31 @@ const getProps = (name: string, data: Record<string, any>, content: string) => {
 
     content = content.trim();
     if (content) {
-      if (name === 'page-button') {
-        const contentRegex = /\[(.*?)\]\((.*?)\)/g;
-        const match = contentRegex.exec(content);
-        if (match) {
-          if (!props.data) props.data = {};
-          props.data.linkButtons = [
-            {
-              caption: match[1] || '',
-              url: match[2] || ''
-            }
-          ]
-        }
-      } else {
+      // if (name === 'page-button') {
+      //   const contentRegex = /\[(.*?)\]\((.*?)\)/g;
+      //   const match = contentRegex.exec(content);
+      //   if (match) {
+      //     if (!props.data) props.data = {};
+      //     props.data.linkButtons = [
+      //       {
+      //         caption: match[1] || '',
+      //         url: match[2] || ''
+      //       }
+      //     ]
+      //   }
+      // }
+      if (name === 'page-text') {
         props.value = content;
+      } else {
+        const yamlProps = toJSON(content);
+        if (name === 'scom-image-gallery') {
+          props = { ...(props || {}), ...yamlProps };
+        } else {
+          props.data = yamlProps;
+        }
       }
     }
-  } catch(err) {
+  } catch (err) {
     console.error('parsed error: ', err);
   }
 
@@ -162,35 +171,46 @@ const getProps = (name: string, data: Record<string, any>, content: string) => {
 }
 
 export const renderMd = (root: IComponent, result: string) => {
-  if (root.name.startsWith('i-page')) {
-    const module = root.name.replace('i-', '@scom/');
-    let {tag, data, value} = root.props;
+  if (!root) return '';
+  const rootName = root?.name || '';
+  if (rootName.startsWith('i-page')) {
+    const module = rootName.replace('i-', '@scom/');
+    let { tag, data, value } = root?.props || {};
     result += `\n\`\`\`${module}{`;
+
+    let content = '';
     if (data) {
-      if (data.startsWith('{')) {
+      if (typeof data === 'string' && data.startsWith('{')) {
         data = data.replace(/^{|}$/g, '');
       }
-      result += `\n  "data": ${data}`;
+
+      const json = JSON.parse(data);
+      content = toYAML(json);
     }
     if (typeof tag === 'string' && tag.startsWith('{{')) {
       tag = tag.replace(/^{{/, '{').replace(/}}$/, '}');
     }
     const parsedTag = typeof tag === 'string' ? JSON.parse(tag) : tag;
+
     const {
       light: lightTag,
       dark: darkTag,
       ...part
     } = parsedTag || {};
-    if (part) {
-      let partString = JSON.stringify(part, null, 2);
+    const newTag: Record<string, any> = {
+      ...(part || {})
+    };
+
+    if (Object.keys(newTag).length > 0) {
+      let partString = JSON.stringify(newTag, null, 2);
       partString = partString.replace(/^{|}$/g, '');
-      if (data && partString) result += ',';
       result += `${partString}`;
     }
+
     if (value) {
-      value = value.replace(/^'|'$/g, "").replace(/^"|"$/g, "");
+      content = value.replace(/^'|'$/g, "").replace(/^"|"$/g, "");
     }
-    result += `}\n${value || ''}\n\`\`\`\n`;
+    result += `}\n${content || ''}\n\`\`\`\n`;
   }
 
   if (root.items) {
@@ -201,15 +221,3 @@ export const renderMd = (root: IComponent, result: string) => {
 
   return result.trim();
 }
-
-export const pageWidgets = [
-  '@scom/scom-image',
-  '@scom/scom-image-gallery',
-  '@scom/page-button',
-  '@scom/page-text',
-  '@scom/page-text-list',
-  '@scom/page-block',
-  '@scom/page-form',
-  '@scom/page-breadcrumb',
-  '@scom/page-blog'
-];

@@ -100,6 +100,7 @@ export default {
     "width": "Width",
     "wrap": "Wrap",
     "z_index": "Z-Index",
+    "data": "Data"
   },
   "zh-hant": {
     "absolute": "絕對",
@@ -201,7 +202,8 @@ export default {
     "weight": "重量",
     "width": "寬度",
     "wrap": "換行",
-    "z_index": "Z-索引"
+    "z_index": "Z-索引",
+    "data": "數據"
   },
   "vi": {
     "absolute": "Tuyệt đối",
@@ -304,5 +306,6 @@ export default {
     "width": "Chiều rộng",
     "wrap": "Đóng gói",
     "z_index": "Chỉ số Z",
+    "data": "Dữ liệu"
   }
 }

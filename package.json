@@ -20,7 +20,8 @@
         "@scom/scom-ton-connect": "^0.1.0",
         "@ijstech/tact": "^0.1.0",
         "@scom/ton-core": "^0.1.5",
-        "@scom/scom-code-editor": "^0.1.6"
+        "@scom/scom-code-editor": "^0.1.6",
+        "@scom/scom-yaml": "^0.1.0"
     },
     "devDependencies": {
         "@ijstech/cli": "^0.1.26",

@@ -33,12 +33,13 @@ import {
   DESIGNER_LAYOUT_PROPS,
   DESIGNER_CONTENT_PROPS,
   DESIGNER_EFFECT_PROPS,
-  DesignerToolWidget
+  DesignerToolWidget,
+  DesignerToolData
 } from '../tools/index';
 import '../settings/index';
 import '../triggers/index';
 import '../setting-data/index';
-import { breakpoints, findMediaQueryCallback, getDefaultMediaQuery, getMediaQuery, previews } from '../helpers/config';
+import { breakpoints, findMediaQueryCallback, getDefaultMediaQuery, getMediaQuery, pageWidgets, previews } from '../helpers/config';
 import { parseProps } from '../helpers/utils';
 import { DesignerTrigger } from '../triggers/index';
 import { getBreakpoint, setBreakpoint } from '../helpers/store'
@@ -79,6 +80,7 @@ export default class DesignerProperties extends Module {
   private breakpointSelector: DesignerSelector;
   private previewSelector: DesignerSelector;
   private designerTrigger: DesignerTrigger;
+  private designerData: DesignerToolData;
   private inputId: Input;
   private designerWidget: DesignerToolWidget;
   private mdActions: Modal;
@@ -152,8 +154,13 @@ export default class DesignerProperties extends Module {
 
   private renderCustomGroup() {
     const designProps: any = parseProps(this.designerProps);
+    const controlName = (this.component?.name || '').replace(/^i-/, '@scom/');
+    const isPageWidget = controlName && pageWidgets.includes(controlName);
     const dataSchema: any = this.component?.control._getCustomProperties()?.dataSchema;
-    this.customGroup.visible = !!dataSchema && Object.keys(dataSchema).length > 0;
+    const hasSchema = !!dataSchema && Object.keys(dataSchema).length > 0;
+    this.customGroup.visible = hasSchema && !isPageWidget;
+    this.designerData.visible = hasSchema && isPageWidget;
+
     const properties = dataSchema?.properties;
     let defaultValue = {};
     if (properties) {
@@ -161,15 +168,26 @@ export default class DesignerProperties extends Module {
       defaultValue = this.getDefaultValues(keys);
     }
     const mediaQuery = getMediaQuery(this.designerProps.mediaQueries || []);
-    this.customGroup.setData({
-      title: '$custom_properties',
-      tooltip: '$set_custom_properties_for_component',
-      uiSchema: null,
-      dataSchema: dataSchema,
-      props: {...designProps},
-      mediaQuery,
-      default: defaultValue
-    })
+
+    if (this.customGroup.visible) {
+      this.customGroup.setData({
+        title: '$custom_properties',
+        tooltip: '$set_custom_properties_for_component',
+        uiSchema: null,
+        dataSchema: dataSchema,
+        props: {...designProps},
+        mediaQuery,
+        default: defaultValue
+      })
+    }
+
+    if (this.designerData.visible) {
+      this.designerData.setData({
+        title: this.i18n.get('$data'),
+        props: {...designProps},
+        dataSchema: dataSchema
+      })
+    }
   }
 
   private updateInfo() {
@@ -495,6 +513,7 @@ export default class DesignerProperties extends Module {
                 visible={false}
               />
               <designer-tool-group id="customGroup" display='block' onChanged={this.onGroupChanged} visible={false} onUpdate={this.onUpdateUI} />
+              <designer-tool-data id="designerData" display="block" onChanged={this.onPropChanged} />
               <designer-tool-background id="designerBackground" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-borders id="designerBorders" display="block" onChanged={this.onPropChanged} onUpdate={this.onUpdateUI} />
               <designer-tool-effects id="designerEffects" display="block" onChanged={this.onPropChanged} />
