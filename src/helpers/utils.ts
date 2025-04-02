@@ -643,3 +643,15 @@ export const basicTypes = ['uint', 'int', 'cell', 'slice', 'address', 'string', 
 const generateCell = async (value: string) => {
   return value;
 };
+
+export const mergeObjects = (target: any, source: any) => {
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      if (typeof source[key] === 'object' && target[key]) {
+        mergeObjects(target[key], source[key]);
+      } else {
+        target[key] = source[key];
+      }
+    }
+  }
+};

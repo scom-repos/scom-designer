@@ -56,7 +56,7 @@ declare global {
   }
 }
 
-const stackTypes = ['i-stack', 'i-hstack', 'i-vstack'];
+const stackTypes = ['i-stack', 'i-hstack', 'i-vstack', 'i-page-block'];
 
 @customElements('designer-tool-layout')
 export default class DesignerToolLayout extends Module {

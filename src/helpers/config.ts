@@ -230,6 +230,18 @@ const themesConfig = {
   }
 }
 
+const pageWidgets = [
+  '@scom/scom-image',
+  '@scom/scom-image-gallery',
+  '@scom/page-button',
+  '@scom/page-text',
+  '@scom/page-text-list',
+  '@scom/page-block',
+  '@scom/page-form',
+  '@scom/page-breadcrumb',
+  '@scom/page-blog'
+];
+
 export {
   BREAKPOINTS,
   breakpoints,
@@ -247,5 +259,6 @@ export {
   ITEMS,
   ControlItemMapper,
   themesConfig,
-  findMediaQueryCallback
+  findMediaQueryCallback,
+  pageWidgets
 }

@@ -11,6 +11,7 @@ import DesignerToolWidget from './widgetSetting';
 import DesignerToolGroup from './group';
 import DesignerToolHeader from "./header";
 import DesignerSelector from './selector';
+import DesignerToolData from './data';
 
 export * from "./index.css";
 
@@ -28,6 +29,7 @@ export {
   DesignerToolContent,
   DesignerToolGroup,
   DesignerToolWidget,
+  DesignerToolData,
   DESIGNER_BACKGROUND_PROPS,
   DESIGNER_BORDER_PROPS,
   DESIGNER_POSITION_PROPS,

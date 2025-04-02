@@ -5,11 +5,12 @@
     "dependencies": [
         "@ijstech/components",
         "@ijstech/compiler",
+        "@scom/scom-yaml",
         "@scom/scom-buffer",
         "@scom/ton-crypto",
         "@scom/ton-core",
+        "@scom/scom-code-editor",
         "@scom/ton-client",
-        "@scom/scom-ton-connect",
-        "@scom/scom-code-editor"
+        "@scom/scom-ton-connect"
     ]
 }

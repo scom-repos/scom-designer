@@ -22,9 +22,9 @@ import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
 import { extractFileName, getFileContent } from './helpers/utils'
-import { themesConfig } from './helpers/config';
+import { pageWidgets, themesConfig } from './helpers/config';
 import { mainJson } from './languages/index';
-import { parseMD, renderMd, ScomDesignerForm, pageWidgets, template } from './designer/index';
+import { parseMD, renderMd, ScomDesignerForm, template } from './designer/index';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -551,8 +551,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
     await this.loadPageWidgets();
     await this.formDesigner.renderUI(updated);
-
     await this.compiler.addFile(this.tempTsxPath, template, this.getImportFile);
+
     const root = this.formDesigner.rootComponent;
     let code = this.compiler.renderUI(
       this.tempTsxPath,
@@ -654,6 +654,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       const previewedValue = this.tempTsxContent || this.value;
       const value = `///<amd-module name='@scom/debug-module'/> \n` + previewedValue;
       const fileName = this.tempTsxPath || this.fileName || 'index.tsx';
+
       if (value) {
         let compiler = new Compiler()
         await compiler.addFile(
