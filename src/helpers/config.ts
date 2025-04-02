@@ -239,7 +239,8 @@ const pageWidgets = [
   '@scom/page-block',
   '@scom/page-form',
   '@scom/page-breadcrumb',
-  '@scom/page-blog'
+  '@scom/page-blog',
+  '@scom/page-blog-list'
 ];
 
 export {
