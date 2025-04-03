@@ -20,7 +20,7 @@
         "@scom/scom-dapp-container": "latest",
         "@scom/scom-banner": "latest",
         "@scom/page-button": "latest",
-        "@scom/page-blog": "latest",
+        "@scom/page-blog-list": "https://github.com/scom-repos/page-blog-list.git",
         "@scom/page-text": "latest",
         "@scom/page-text-list": "latest",
         "@scom/page-block": "latest",

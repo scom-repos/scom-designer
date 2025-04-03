@@ -709,7 +709,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         '@scom/page-block',
         '@scom/page-form',
         '@scom/page-breadcrumb',
-        '@scom/page-blog'
+        '@scom/page-blog',
+        '@scom/page-blog-list'
     ];
     exports.pageWidgets = pageWidgets;
 });
@@ -7822,7 +7823,7 @@ import ScomPageText from '@scom/page-text';
 import ScomPageTextList from '@scom/page-text-list';
 import ScomPageForm from '@scom/page-form';
 import ScomPageButton from '@scom/page-button';
-import ScomPageBlog from '@scom/page-blog';
+import ScomPageBlogList from '@scom/page-blog-list';
 import ScomPageBreadcrumb from '@scom/page-breadcrumb';
 import ScomImage from '@scom/scom-image';
 import ScomImageGallery from '@scom/scom-image-gallery';

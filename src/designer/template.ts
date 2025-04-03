@@ -5,7 +5,7 @@ import ScomPageText from '@scom/page-text';
 import ScomPageTextList from '@scom/page-text-list';
 import ScomPageForm from '@scom/page-form';
 import ScomPageButton from '@scom/page-button';
-import ScomPageBlog from '@scom/page-blog';
+import ScomPageBlogList from '@scom/page-blog-list';
 import ScomPageBreadcrumb from '@scom/page-breadcrumb';
 import ScomImage from '@scom/scom-image';
 import ScomImageGallery from '@scom/scom-image-gallery';
