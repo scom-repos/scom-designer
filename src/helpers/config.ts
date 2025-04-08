@@ -231,6 +231,7 @@ const themesConfig = {
 }
 
 const pageWidgets = [
+  '@scom/scom-yaml',
   '@scom/scom-image',
   '@scom/scom-image-gallery',
   '@scom/page-button',

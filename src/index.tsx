@@ -232,6 +232,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return this.codeEditor?.value || ''
   }
 
+  get previewedValue() {
+    return this.tempTsxContent || this.value;
+  }
+
+  get previewedFileName() {
+    return this.tempTsxPath || this.fileName || 'index.tsx';
+  }
+
   get baseUrl() {
     return this._data.baseUrl ?? ''
   }
@@ -538,7 +546,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async parseMd(content: string) {
-    const ui = parseMD(content);
+    const ui = parseMD(content, this.baseUrl);
     const updated = {
       name: 'i-panel',
       props: {
