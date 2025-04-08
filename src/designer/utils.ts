@@ -1,8 +1,8 @@
-import { IconName, IdUtils } from "@ijstech/components";
+import { IconName, IdUtils, application } from "@ijstech/components";
 import { IComponent } from "../interface";
 import { toJSON, toYAML } from "@scom/scom-yaml";
 
-export const parseMD = (html: string) => {
+export const parseMD = (html: string, baseUrl: string) => {
   const blocks = html.split(/```/).filter(b => b.trim() !== "");
   let result: IComponent = {
     path: '',
@@ -15,7 +15,7 @@ export const parseMD = (html: string) => {
 
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
-    const match = checkMatches(block);
+    const match = checkMatches(block, baseUrl);
     if (!match) continue;
     const { name } = match;
     if (match.name === 'i-page-block') {
@@ -60,28 +60,28 @@ export const parseMD = (html: string) => {
   return list;
 }
 
-const checkMatches = (content: string) => {
+const checkMatches = (content: string, baseUrl: string) => {
   const codeRegex = /([^{}]+)\{((?:[^{}]+|{(?:[^{}]+|{[^{}]*})*})*)\}(?:([\s\S]*))?/gm;
   const nameRegex = /[^{}]+/;
   const nameMatch = nameRegex.exec(content);
   let name = nameMatch?.[0] || '';
 
-  if (name === '@scom/page-form') {
-    content = content.replace(name, '');
-    let parsed = null;
-    try {
-      parsed = JSON.parse(content);
-    } catch (e) { }
+  // if (name === '@scom/page-form') {
+  //   content = content.replace(name, '');
+  //   let parsed = null;
+  //   try {
+  //     parsed = JSON.parse(content);
+  //   } catch (e) { }
 
-    const { data, ...tag } = parsed || {};
-    return {
-      path: IdUtils.generateUUID(),
-      name: 'i-page-form',
-      props: data,
-      tag,
-      icon: 'stop' as IconName
-    };
-  }
+  //   const { data, ...tag } = parsed || {};
+  //   return {
+  //     path: IdUtils.generateUUID(),
+  //     name: 'i-page-form',
+  //     props: data,
+  //     tag,
+  //     icon: 'stop' as IconName
+  //   };
+  // }
 
   const match = codeRegex.exec(content);
   let data = '';
@@ -112,7 +112,7 @@ const checkMatches = (content: string) => {
     }
   }
 
-  const { props: newProps, tag } = getProps(name, props, textContent);
+  const { props: newProps, tag } = getProps(name, props, textContent, baseUrl);
 
   return {
     path: IdUtils.generateUUID(),
@@ -123,10 +123,14 @@ const checkMatches = (content: string) => {
   };
 }
 
-const getProps = (name: string, data: Record<string, any>, content: string) => {
+const getProps = (name: string, data: Record<string, any>, content: string, baseUrl: string) => {
   let props: Record<string, any> = {};
   let { data: dataVal, ...tag } = data;
   tag = tag || {};
+  if (baseUrl) {
+    if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+    if (baseUrl.endsWith('src')) baseUrl = baseUrl.slice(0, -4);
+  }
 
   try {
     if (dataVal) {
@@ -153,12 +157,28 @@ const getProps = (name: string, data: Record<string, any>, content: string) => {
       //   }
       // }
       if (name === 'page-text') {
+        const imageRegex = /<img src="([^"]+)"/g;
+        if (imageRegex.test(content)) {
+          content = content.replace(imageRegex, (match, p1) => {
+            if (p1.startsWith('/')) p1 = p1.slice(1);
+            return `<img src="${baseUrl}/${p1}"`;
+          });
+        }
         props.value = content;
       } else {
         const yamlProps = toJSON(content);
-        if (name === 'scom-image-gallery') {
+        if (name === 'scom-image-gallery' || name === 'page-form') {
           props = { ...(props || {}), ...yamlProps };
-        } else {
+        }
+        else if (name === 'scom-image') {
+          let url = yamlProps?.url;
+          if (url && baseUrl) {
+            if (url.startsWith('/')) url = url.slice(1);
+            if (!url.startsWith('http')) url = baseUrl + '/' + url;
+          }
+          props = { ...(props || {}), ...yamlProps, url };
+        }
+        else {
           props.data = yamlProps;
         }
       }
@@ -184,7 +204,7 @@ export const renderMd = (root: IComponent, result: string) => {
         data = data.replace(/^{|}$/g, '');
       }
 
-      const json = JSON.parse(data);
+      const json = typeof data === 'string' ? JSON.parse(data) : data;
       content = toYAML(json);
     }
     if (typeof tag === 'string' && tag.startsWith('{{')) {

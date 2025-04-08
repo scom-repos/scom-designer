@@ -183,7 +183,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.renderMd = exports.parseMD = void 0;
-    const parseMD = (html) => {
+    const parseMD = (html, baseUrl) => {
         const blocks = html.split(/```/).filter(b => b.trim() !== "");
         let result = {
             path: '',
@@ -194,7 +194,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         let list = [];
         for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
-            const match = checkMatches(block);
+            const match = checkMatches(block, baseUrl);
             if (!match)
                 continue;
             const { name } = match;
@@ -241,27 +241,26 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         return list;
     };
     exports.parseMD = parseMD;
-    const checkMatches = (content) => {
+    const checkMatches = (content, baseUrl) => {
         const codeRegex = /([^{}]+)\{((?:[^{}]+|{(?:[^{}]+|{[^{}]*})*})*)\}(?:([\s\S]*))?/gm;
         const nameRegex = /[^{}]+/;
         const nameMatch = nameRegex.exec(content);
         let name = nameMatch?.[0] || '';
-        if (name === '@scom/page-form') {
-            content = content.replace(name, '');
-            let parsed = null;
-            try {
-                parsed = JSON.parse(content);
-            }
-            catch (e) { }
-            const { data, ...tag } = parsed || {};
-            return {
-                path: components_2.IdUtils.generateUUID(),
-                name: 'i-page-form',
-                props: data,
-                tag,
-                icon: 'stop'
-            };
-        }
+        // if (name === '@scom/page-form') {
+        //   content = content.replace(name, '');
+        //   let parsed = null;
+        //   try {
+        //     parsed = JSON.parse(content);
+        //   } catch (e) { }
+        //   const { data, ...tag } = parsed || {};
+        //   return {
+        //     path: IdUtils.generateUUID(),
+        //     name: 'i-page-form',
+        //     props: data,
+        //     tag,
+        //     icon: 'stop' as IconName
+        //   };
+        // }
         const match = codeRegex.exec(content);
         let data = '';
         let textContent = '';
@@ -289,7 +288,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                 console.error('parse error: ', e, data);
             }
         }
-        const { props: newProps, tag } = getProps(name, props, textContent);
+        const { props: newProps, tag } = getProps(name, props, textContent, baseUrl);
         return {
             path: components_2.IdUtils.generateUUID(),
             name: name ? `i-${name}` : 'i-panel',
@@ -298,10 +297,16 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             icon: 'stop'
         };
     };
-    const getProps = (name, data, content) => {
+    const getProps = (name, data, content, baseUrl) => {
         let props = {};
         let { data: dataVal, ...tag } = data;
         tag = tag || {};
+        if (baseUrl) {
+            if (baseUrl.endsWith('/'))
+                baseUrl = baseUrl.slice(0, -1);
+            if (baseUrl.endsWith('src'))
+                baseUrl = baseUrl.slice(0, -4);
+        }
         try {
             if (dataVal) {
                 if (name === 'scom-image') {
@@ -327,12 +332,30 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                 //   }
                 // }
                 if (name === 'page-text') {
+                    const imageRegex = /<img src="([^"]+)"/g;
+                    if (imageRegex.test(content)) {
+                        content = content.replace(imageRegex, (match, p1) => {
+                            if (p1.startsWith('/'))
+                                p1 = p1.slice(1);
+                            return `<img src="${baseUrl}/${p1}"`;
+                        });
+                    }
                     props.value = content;
                 }
                 else {
                     const yamlProps = (0, scom_yaml_1.toJSON)(content);
-                    if (name === 'scom-image-gallery') {
+                    if (name === 'scom-image-gallery' || name === 'page-form') {
                         props = { ...(props || {}), ...yamlProps };
+                    }
+                    else if (name === 'scom-image') {
+                        let url = yamlProps?.url;
+                        if (url && baseUrl) {
+                            if (url.startsWith('/'))
+                                url = url.slice(1);
+                            if (!url.startsWith('http'))
+                                url = baseUrl + '/' + url;
+                        }
+                        props = { ...(props || {}), ...yamlProps, url };
                     }
                     else {
                         props.data = yamlProps;
@@ -358,7 +381,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                 if (typeof data === 'string' && data.startsWith('{')) {
                     data = data.replace(/^{|}$/g, '');
                 }
-                const json = JSON.parse(data);
+                const json = typeof data === 'string' ? JSON.parse(data) : data;
                 content = (0, scom_yaml_1.toYAML)(json);
             }
             if (typeof tag === 'string' && tag.startsWith('{{')) {
@@ -701,6 +724,7 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
     };
     exports.themesConfig = themesConfig;
     const pageWidgets = [
+        '@scom/scom-yaml',
         '@scom/scom-image',
         '@scom/scom-image-gallery',
         '@scom/page-button',
@@ -7823,6 +7847,7 @@ import ScomPageText from '@scom/page-text';
 import ScomPageTextList from '@scom/page-text-list';
 import ScomPageForm from '@scom/page-form';
 import ScomPageButton from '@scom/page-button';
+import ScomPageBlog from '@scom/page-blog';
 import ScomPageBlogList from '@scom/page-blog-list';
 import ScomPageBreadcrumb from '@scom/page-breadcrumb';
 import ScomImage from '@scom/scom-image';
@@ -8411,6 +8436,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         get value() {
             return this.codeEditor?.value || '';
         }
+        get previewedValue() {
+            return this.tempTsxContent || this.value;
+        }
+        get previewedFileName() {
+            return this.tempTsxPath || this.fileName || 'index.tsx';
+        }
         get baseUrl() {
             return this._data.baseUrl ?? '';
         }
@@ -8683,7 +8714,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             target.enabled = true;
         }
         async parseMd(content) {
-            const ui = (0, index_28.parseMD)(content);
+            const ui = (0, index_28.parseMD)(content, this.baseUrl);
             const updated = {
                 name: 'i-panel',
                 props: {
