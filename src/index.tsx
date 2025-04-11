@@ -41,6 +41,7 @@ interface ScomDesignerElement extends ControlElement {
     content: string;
   }
   baseUrl?: string;
+  dataUrl?: string;
   deployConfig?: IDeployConfig;
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
@@ -63,6 +64,7 @@ interface IDesigner {
   url?: string;
   file?: IFileData;
   baseUrl?: string;
+  dataUrl?: string;
 }
 
 @customElements('i-scom-designer')
@@ -83,7 +85,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       path: '',
       content: ''
     },
-    baseUrl: ''
+    baseUrl: '',
+    dataUrl: ''
   };
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
@@ -246,6 +249,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   set baseUrl(value: string) {
     this._data.baseUrl = value ?? ''
+  }
+
+  get dataUrl() {
+    return this._data.dataUrl ?? ''
+  }
+
+  set dataUrl(value: string) {
+    this._data.dataUrl = value ?? ''
   }
 
   get deployConfig() {
@@ -420,20 +431,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
-  private async addPageWidgets(compiler: Compiler) {
-    const promises = [];
-    for (let packageName of pageWidgets) {
-      promises.push(
-        application.getContent(`${application.rootDir}libs/${packageName}/index.d.ts`).then(async (content) => {
-          compiler.addPackage(packageName, { dts: { 'index.d.ts': content } });
-          ScomCodeEditor.addLib(packageName, content);
-        })
-      );
-    }
-
-    await Promise.all(promises);
-  }
-
   private async loadPageWidgets() {
     if (this.isWidgetsLoaded) return;
     const promises = [];
@@ -546,7 +543,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async parseMd(content: string) {
-    const ui = parseMD(content, this.baseUrl);
+    const ui = parseMD(content, this.dataUrl);
     const updated = {
       name: 'i-panel',
       props: {
@@ -769,8 +766,9 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (deployConfig) this.deployConfig = deployConfig;
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
+    const dataUrl = this.getAttribute('dataUrl', true)
     this.addLib()
-    this.setData({ url, file });
+    this.setData({ url, file, dataUrl });
     this.classList.add(blockStyle);
     this.setTag(themesConfig)
   }

@@ -2543,6 +2543,7 @@ declare module "@scom/scom-designer" {
             content: string;
         };
         baseUrl?: string;
+        dataUrl?: string;
         deployConfig?: IDeployConfig;
         onSave?: onSaveCallback;
         onChange?: onChangeCallback;
@@ -2566,6 +2567,7 @@ declare module "@scom/scom-designer" {
         url?: string;
         file?: IFileData;
         baseUrl?: string;
+        dataUrl?: string;
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
         private formDesigner;
@@ -2618,6 +2620,8 @@ declare module "@scom/scom-designer" {
         get previewedFileName(): string;
         get baseUrl(): string;
         set baseUrl(value: string);
+        get dataUrl(): string;
+        set dataUrl(value: string);
         get deployConfig(): IDeployConfig;
         set deployConfig(value: IDeployConfig);
         get isValid(): boolean;
@@ -2639,7 +2643,6 @@ declare module "@scom/scom-designer" {
         private createDeployer;
         private handleTogglePanels;
         private loadContent;
-        private addPageWidgets;
         private loadPageWidgets;
         private resetTab;
         private updateButtons;

@@ -8397,7 +8397,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     path: '',
                     content: ''
                 },
-                baseUrl: ''
+                baseUrl: '',
+                dataUrl: ''
             };
             this.updateDesigner = true;
             this._components = (0, components_38.getCustomElements)();
@@ -8447,6 +8448,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         set baseUrl(value) {
             this._data.baseUrl = value ?? '';
+        }
+        get dataUrl() {
+            return this._data.dataUrl ?? '';
+        }
+        set dataUrl(value) {
+            this._data.dataUrl = value ?? '';
         }
         get deployConfig() {
             return this._deployConfig;
@@ -8597,16 +8604,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.compiler.addFile(fileName, content, this.importCallback);
             }
         }
-        async addPageWidgets(compiler) {
-            const promises = [];
-            for (let packageName of config_9.pageWidgets) {
-                promises.push(components_38.application.getContent(`${components_38.application.rootDir}libs/${packageName}/index.d.ts`).then(async (content) => {
-                    compiler.addPackage(packageName, { dts: { 'index.d.ts': content } });
-                    scom_code_editor_1.ScomCodeEditor.addLib(packageName, content);
-                }));
-            }
-            await Promise.all(promises);
-        }
         async loadPageWidgets() {
             if (this.isWidgetsLoaded)
                 return;
@@ -8714,7 +8711,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             target.enabled = true;
         }
         async parseMd(content) {
-            const ui = (0, index_28.parseMD)(content, this.baseUrl);
+            const ui = (0, index_28.parseMD)(content, this.dataUrl);
             const updated = {
                 name: 'i-panel',
                 props: {
@@ -8903,8 +8900,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.deployConfig = deployConfig;
             const url = this.getAttribute('url', true);
             const file = this.getAttribute('file', true);
+            const dataUrl = this.getAttribute('dataUrl', true);
             this.addLib();
-            this.setData({ url, file });
+            this.setData({ url, file, dataUrl });
             this.classList.add(index_css_24.blockStyle);
             this.setTag(config_9.themesConfig);
         }
