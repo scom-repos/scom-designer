@@ -2639,6 +2639,7 @@ declare module "@scom/scom-designer" {
         private renderUI;
         private renderContent;
         private createCodeEditor;
+        executeInsert(textBefore: string, textAfter: string): void;
         private createFormDesigner;
         private createDeployer;
         private handleTogglePanels;

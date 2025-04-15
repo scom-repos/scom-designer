@@ -8568,6 +8568,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
             this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
         }
+        executeInsert(textBefore, textAfter) {
+            this.codeEditor.executeEditor('insert', { textBefore, textAfter });
+        }
         createFormDesigner() {
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
             this.formDesigner.width = '100%';

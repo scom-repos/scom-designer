@@ -392,6 +392,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
   }
 
+  executeInsert(textBefore: string, textAfter: string) {
+    this.codeEditor.executeEditor('insert', { textBefore, textAfter });
+  }
+
   private createFormDesigner() {
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
     this.formDesigner.width = '100%';
