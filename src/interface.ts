@@ -96,3 +96,5 @@ export interface IDeployConfig {
 export interface ICustomField extends ABIField {
   value?: any;
 }
+
+export type ActionType = 'hover' | 'click';

@@ -17,7 +17,7 @@ import {
   Markdown
 } from '@ijstech/components';
 import { blockStyle, customActivedStyled } from './index.css'
-import { IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
+import { ActionType, IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
@@ -33,6 +33,7 @@ type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 type onClosePreviewCallback = () => void;
 type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
+type onSelectedWidgetCallback = (md: string) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -43,6 +44,7 @@ interface ScomDesignerElement extends ControlElement {
   baseUrl?: string;
   dataUrl?: string;
   deployConfig?: IDeployConfig;
+  selectedType?: ActionType;
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
@@ -50,6 +52,7 @@ interface ScomDesignerElement extends ControlElement {
   onImportFile?: onImportCallback;
   onClosePreview?: onClosePreviewCallback;
   onRenderError?: onRenderErrorCallback;
+  onSelectedWidget?: onSelectedWidgetCallback;
 }
 
 declare global {
@@ -65,6 +68,7 @@ interface IDesigner {
   file?: IFileData;
   baseUrl?: string;
   dataUrl?: string;
+  selectedType?: ActionType;
 }
 
 @customElements('i-scom-designer')
@@ -86,7 +90,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       content: ''
     },
     baseUrl: '',
-    dataUrl: ''
+    dataUrl: '',
+    selectedType: 'click'
   };
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
@@ -106,6 +111,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   onTogglePreview?: (value: boolean) => void;
   onClosePreview?: onClosePreviewCallback;
   onRenderError?: onRenderErrorCallback;
+  onSelectedWidget?: onSelectedWidgetCallback;
   tag: any = {}
 
   set previewUrl(url: string) {
@@ -270,6 +276,17 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
+  get selectedType() {
+    return this._data.selectedType;
+  }
+
+  set selectedType(value: ActionType) {
+    this._data.selectedType = value;
+    if (this.formDesigner) {
+      this.formDesigner.selectedType = this.selectedType;
+    }
+  }
+
   get isValid() {
     return this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx') || this.file?.path?.endsWith('.md') || this.url?.endsWith('.md');
   }
@@ -362,6 +379,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (this.formDesigner) {
       this.formDesigner.visible = this.activeTab === 'designTab';
       this.formDesigner.baseUrl = this.baseUrl;
+      this.formDesigner.selectedType = this.selectedType;
     }
 
     if (this.codeEditor) {
@@ -398,6 +416,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private createFormDesigner() {
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
+    this.formDesigner.selectedType = this.selectedType;
     this.formDesigner.width = '100%';
     this.formDesigner.height = '100%';
     this.formDesigner.stack = {grow: '1'};
@@ -531,9 +550,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     } else if (target.id === 'codeTab') {
       this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
       if (!this.isTsx) {
-        const root = this.formDesigner.rootComponent;
-        const md = renderMd(root as IComponent, '');
-        this.codeEditor.value = md;
+        const md = this.getUpdatedMd();
+        this.codeEditor.value = md.replace(/\n{SELECT_START}/g, '').replace(/\n{SELECT_END}/g, '');
       }
     } else {
       this.deployDeployer.setData({
@@ -544,6 +562,23 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
     target.rightIcon.visible = false;
     target.enabled = true;
+  }
+
+  private getUpdatedMd() {
+    const root = this.formDesigner.rootComponent;
+    const selectedPos = this.formDesigner.getSelectedPosition();
+    const md = renderMd(root as IComponent, '', selectedPos);
+    if (selectedPos !== undefined) {
+      if (typeof this.onSelectedWidget === 'function')
+        this.onSelectedWidget(md);
+    }
+    return md;
+  }
+
+  updateMd() {
+    if (this.activeTab === 'codeTab') return;
+    const md = this.getUpdatedMd();
+    return md;
   }
 
   private async parseMd(content: string) {
@@ -766,13 +801,15 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onTogglePreview = this.getAttribute('onTogglePreview', true) || this.onTogglePreview
     this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview
     this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError
+    this.onSelectedWidget = this.getAttribute('onSelectedWidget', true) || this.onSelectedWidget
     const deployConfig = this.getAttribute('deployConfig', true)
     if (deployConfig) this.deployConfig = deployConfig;
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
     const dataUrl = this.getAttribute('dataUrl', true)
+    const selectedType = this.getAttribute('selectedType', true)
     this.addLib()
-    this.setData({ url, file, dataUrl });
+    this.setData({ url, file, dataUrl, selectedType });
     this.classList.add(blockStyle);
     this.setTag(themesConfig)
   }

@@ -66,23 +66,6 @@ const checkMatches = (content: string, baseUrl: string) => {
   const nameMatch = nameRegex.exec(content);
   let name = nameMatch?.[0] || '';
 
-  // if (name === '@scom/page-form') {
-  //   content = content.replace(name, '');
-  //   let parsed = null;
-  //   try {
-  //     parsed = JSON.parse(content);
-  //   } catch (e) { }
-
-  //   const { data, ...tag } = parsed || {};
-  //   return {
-  //     path: IdUtils.generateUUID(),
-  //     name: 'i-page-form',
-  //     props: data,
-  //     tag,
-  //     icon: 'stop' as IconName
-  //   };
-  // }
-
   const match = codeRegex.exec(content);
   let data = '';
   let textContent = '';
@@ -190,12 +173,22 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
   return { props, tag };
 }
 
-export const renderMd = (root: IComponent, result: string) => {
+let pos = 0;
+
+export const renderMd = (root: IComponent, result: string, selectedPos: number) => {
   if (!root) return '';
   const rootName = root?.name || '';
-  if (rootName.startsWith('i-page')) {
+
+  if (rootName.startsWith('i-page') || rootName.startsWith('i-scom')) {
+    ++pos;
     const module = rootName.replace('i-', '@scom/');
     let { tag, data, value } = root?.props || {};
+    const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
+
+    if (isSelected) {
+      result += `\n{SELECT_START}\n`;
+    }
+
     result += `\n\`\`\`${module}{`;
 
     let content = '';
@@ -231,11 +224,17 @@ export const renderMd = (root: IComponent, result: string) => {
       content = value.replace(/^'|'$/g, "").replace(/^"|"$/g, "");
     }
     result += `}\n${content || ''}\n\`\`\`\n`;
+
+    if (isSelected) {
+      result += `\n{SELECT_END}\n`;
+    }
+  } else if (root.name == 'i-panel') {
+    pos = 0;
   }
 
   if (root.items) {
-    root.items.forEach(item => {
-      result = renderMd(item, result);
+    root.items.forEach((item, index) => {
+      result = renderMd(item, result, selectedPos);
     });
   }
 

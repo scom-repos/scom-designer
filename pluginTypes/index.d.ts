@@ -23,7 +23,7 @@ declare module "@scom/scom-designer/index.css.ts" {
 declare module "@scom/scom-designer/designer/utils.ts" {
     import { IComponent } from "@scom/scom-designer/interface.ts";
     export const parseMD: (html: string, baseUrl: string) => any[];
-    export const renderMd: (root: IComponent, result: string) => string;
+    export const renderMd: (root: IComponent, result: string, selectedPos: number) => string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
@@ -2187,10 +2187,15 @@ declare module "@scom/scom-designer/data.ts" {
     export const blockComponents: IBlock[];
     export const screen: IScreen;
 }
+/// <amd-module name="@scom/scom-designer/designer/index.css.ts" />
+declare module "@scom/scom-designer/designer/index.css.ts" {
+    export const hoverStyle: string;
+    export const selectedStyle: string;
+}
 /// <amd-module name="@scom/scom-designer/designer/designer.tsx" />
 declare module "@scom/scom-designer/designer/designer.tsx" {
     import { Container, ControlElement, Module } from '@ijstech/components';
-    import { IComponent, IComponentPicker, IControl, IStudio, IBlock } from "@scom/scom-designer/interface.ts";
+    import { IComponent, IComponentPicker, IControl, IStudio, IBlock, ActionType } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     interface ScomDesignerFormElement extends ControlElement {
         onPreview?: () => Promise<{
@@ -2224,10 +2229,8 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private designerWrapper;
         private pnlScreens;
         private pnlLoading;
-        private pnlRightIcon;
         private pnlLeftIcon;
         private btnClosePreview;
-        private btnScreens;
         private mdMobile;
         private pnlWrap;
         private pnlDesignHeader;
@@ -2247,6 +2250,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private isPreviewing;
         baseUrl: string;
         private _previewUrl;
+        private _selectedType;
         private isPreviewMode;
         private handleMouseMoveBound;
         private handleMouseUpBound;
@@ -2262,9 +2266,12 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
+        get selectedType(): ActionType;
+        set selectedType(value: ActionType);
         set previewUrl(url: string);
         get previewUrl(): string;
         get pickerComponentsFiltered(): IComponentPicker[];
+        getSelectedPosition(): number;
         private getComponents;
         get pickerBlocksFiltered(): IBlock[];
         private get isCustomWidget();
@@ -2425,6 +2432,7 @@ declare module "@scom/scom-designer/interface.ts" {
     export interface ICustomField extends ABIField {
         value?: any;
     }
+    export type ActionType = 'hover' | 'click';
 }
 /// <amd-module name="@scom/scom-designer/build/storage.ts" />
 declare module "@scom/scom-designer/build/storage.ts" {
@@ -2524,7 +2532,7 @@ declare module "@scom/scom-designer/deployer.tsx" {
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
-    import { IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
+    import { ActionType, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
     import { Types } from '@ijstech/compiler';
     import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
     import { ScomDesignerForm } from "@scom/scom-designer/designer/index.ts";
@@ -2536,6 +2544,7 @@ declare module "@scom/scom-designer" {
     } | null>;
     type onClosePreviewCallback = () => void;
     type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
+    type onSelectedWidgetCallback = (md: string) => void;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
@@ -2545,6 +2554,7 @@ declare module "@scom/scom-designer" {
         baseUrl?: string;
         dataUrl?: string;
         deployConfig?: IDeployConfig;
+        selectedType?: ActionType;
         onSave?: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2555,6 +2565,7 @@ declare module "@scom/scom-designer" {
         onImportFile?: onImportCallback;
         onClosePreview?: onClosePreviewCallback;
         onRenderError?: onRenderErrorCallback;
+        onSelectedWidget?: onSelectedWidgetCallback;
     }
     global {
         namespace JSX {
@@ -2568,6 +2579,7 @@ declare module "@scom/scom-designer" {
         file?: IFileData;
         baseUrl?: string;
         dataUrl?: string;
+        selectedType?: ActionType;
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
         private formDesigner;
@@ -2600,6 +2612,7 @@ declare module "@scom/scom-designer" {
         onTogglePreview?: (value: boolean) => void;
         onClosePreview?: onClosePreviewCallback;
         onRenderError?: onRenderErrorCallback;
+        onSelectedWidget?: onSelectedWidgetCallback;
         tag: any;
         set previewUrl(url: string);
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
@@ -2624,6 +2637,8 @@ declare module "@scom/scom-designer" {
         set dataUrl(value: string);
         get deployConfig(): IDeployConfig;
         set deployConfig(value: IDeployConfig);
+        get selectedType(): ActionType;
+        set selectedType(value: ActionType);
         get isValid(): boolean;
         get isTsx(): boolean;
         private get isContract();
@@ -2650,6 +2665,8 @@ declare module "@scom/scom-designer" {
         private addLib;
         private importCallback;
         private handleTabChanged;
+        private getUpdatedMd;
+        updateMd(): string;
         private parseMd;
         private parseTsx;
         private updateRoot;
