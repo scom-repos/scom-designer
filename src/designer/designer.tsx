@@ -20,9 +20,7 @@ import {
   TreeView,
   VStack,
   TreeNode,
-  Button,
-  HStack,
-  application
+  HStack
 } from '@ijstech/components';
 import {
   DesignerScreens,
@@ -31,7 +29,7 @@ import {
   DesignerPickerComponents,
   DesignerPickerBlocks
 } from '../components/index';
-import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock } from '../interface'
+import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock, ActionType } from '../interface'
 import { customLabelTabStyled, customModalStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from '../index.css'
 import {
   blockComponents
@@ -42,6 +40,7 @@ import { isSameValue, mergeObjects, parseProps } from '../helpers/utils'
 import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback, pageWidgets } from '../helpers/config'
 import { getBreakpoint } from '../helpers/store'
 import { mainJson } from '../languages/index';
+import { selectedStyle, hoverStyle } from './index.css'
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -53,31 +52,55 @@ enum TABS {
 
 class ControlResizer {
   private _control: Control;
+  private _type: ActionType = 'click';
   private resizers: HTMLElement[] = [];
-  constructor(control: Control) {
+
+  constructor(control: Control, type: ActionType) {
     this._control = control;
+    this._type = type ?? 'click';
   }
+
+  get type() {
+    return this._type ?? 'click';
+  }
+
+  set type(value: ActionType) {
+    this._type = value ?? 'click';
+  }
+
   addResizer(className: string) {
     let resizer = document.createElement("div");
     this._control.appendChild(resizer);
     this.resizers.push(resizer);
     resizer.className = "i-resizer " + className;
   }
+
   hideResizers() {
-    this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
-    this.resizers = [];
-  }
-  showResizers() {
-    if (this.resizers.length == 0) {
-      this.addResizer("tl");
-      this.addResizer("tm");
-      this.addResizer("tr");
-      this.addResizer("ml");
-      this.addResizer("mr");
-      this.addResizer("bl");
-      this.addResizer("bm");
-      this.addResizer("br");
+    if (this.type === 'click') {
+      this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
+      this.resizers = [];
+    } else {
+      const parentEl = this._control.closest('#pnlFormDesigner') as Control;
+      const selectedEl = parentEl?.querySelector(`.${selectedStyle}`) as Control;
+      if (selectedEl) selectedEl.classList.remove(selectedStyle);
     }
+  }
+
+  showResizers() {
+    if (this.type === 'click') {
+      if (this.resizers.length == 0) {
+        this.addResizer("tl");
+        this.addResizer("tm");
+        this.addResizer("tr");
+        this.addResizer("ml");
+        this.addResizer("mr");
+        this.addResizer("bl");
+        this.addResizer("bm");
+        this.addResizer("br");
+      }
+    } else {
+      this._control.classList.add(selectedStyle);
+    } 
   }
 }
 
@@ -113,10 +136,8 @@ export class ScomDesignerForm extends Module {
   private designerWrapper: VStack
   private pnlScreens: Panel
   private pnlLoading: VStack
-  private pnlRightIcon: Panel
   private pnlLeftIcon: Panel
   private btnClosePreview: Icon
-  private btnScreens: Button
   private mdMobile: Modal
   private pnlWrap: Panel
   private pnlDesignHeader: HStack
@@ -137,6 +158,7 @@ export class ScomDesignerForm extends Module {
   private isPreviewing: boolean = false;
   baseUrl: string = '';
   private _previewUrl: string = '';
+  private _selectedType: ActionType = 'click';
   private isPreviewMode: boolean = false;
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
@@ -170,6 +192,15 @@ export class ScomDesignerForm extends Module {
   }
 
   setData() {}
+  
+  get selectedType() {
+    return this._selectedType ?? 'click';
+  }
+
+  set selectedType(value: ActionType) {
+    this._selectedType = value ?? 'click';
+  }
+
   set previewUrl(url: string){
     this._previewUrl = url || 'https://decom.dev/debug.html';
     this.ifrPreview.url = url;
@@ -177,6 +208,7 @@ export class ScomDesignerForm extends Module {
   get previewUrl() {
     return this._previewUrl || 'https://decom.dev/debug.html';
   }
+
   get pickerComponentsFiltered() {
     let components: IComponentPicker[]
     if (this.currentTab === TABS.RECENT) {
@@ -204,6 +236,12 @@ export class ScomDesignerForm extends Module {
         .filter((component) => component.items.length > 0)
     }
     return components
+  }
+
+  getSelectedPosition() {
+    const path = this.selectedControl?.path;
+    const keys = Array.from(this.pathMapping.keys());
+    return keys.findIndex(x => x === path);
   }
 
   private getComponents() {
@@ -578,7 +616,7 @@ export class ScomDesignerForm extends Module {
     component.parent = parent?.path;
     component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
     if (!control.tag) control.tag = {};
-    control.tag.resizer = new ControlResizer(control);
+    control.tag.resizer = new ControlResizer(control, this.selectedType);
     this.bindControlEvents(component as IControl);
     this.pathMapping.set(component.path, component);
     if (component?.items?.length) {
@@ -592,6 +630,18 @@ export class ScomDesignerForm extends Module {
     }
     if (component.repeater) {
       this.updateRepeater(component.repeater);
+    }
+    control.onmouseenter = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const hoveredControl = this.pnlFormDesigner.querySelector(`.${hoverStyle}`) as Control;
+      if (hoveredControl) hoveredControl.classList.remove(hoverStyle);
+      control.classList.add(hoverStyle);
+    }
+    control.onmouseleave = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      control.classList.remove(hoverStyle);
     }
     return component;
   }
@@ -677,6 +727,7 @@ export class ScomDesignerForm extends Module {
   private handleSelectControl(target: IControl) {
     if (this.selectedControl) this.selectedControl.control.tag.resizer.hideResizers();
     this.selectedControl = target;
+    this.selectedControl.control.tag.resizer.type = this.selectedType;
     this.selectedControl.control.tag.resizer.showResizers();
     const name = this.selectedControl.name;
     const control = this.selectedControl?.control as any;

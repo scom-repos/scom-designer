@@ -246,21 +246,6 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         const nameRegex = /[^{}]+/;
         const nameMatch = nameRegex.exec(content);
         let name = nameMatch?.[0] || '';
-        // if (name === '@scom/page-form') {
-        //   content = content.replace(name, '');
-        //   let parsed = null;
-        //   try {
-        //     parsed = JSON.parse(content);
-        //   } catch (e) { }
-        //   const { data, ...tag } = parsed || {};
-        //   return {
-        //     path: IdUtils.generateUUID(),
-        //     name: 'i-page-form',
-        //     props: data,
-        //     tag,
-        //     icon: 'stop' as IconName
-        //   };
-        // }
         const match = codeRegex.exec(content);
         let data = '';
         let textContent = '';
@@ -368,13 +353,19 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         }
         return { props, tag };
     };
-    const renderMd = (root, result) => {
+    let pos = 0;
+    const renderMd = (root, result, selectedPos) => {
         if (!root)
             return '';
         const rootName = root?.name || '';
-        if (rootName.startsWith('i-page')) {
+        if (rootName.startsWith('i-page') || rootName.startsWith('i-scom')) {
+            ++pos;
             const module = rootName.replace('i-', '@scom/');
             let { tag, data, value } = root?.props || {};
+            const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
+            if (isSelected) {
+                result += `\n{SELECT_START}\n`;
+            }
             result += `\n\`\`\`${module}{`;
             let content = '';
             if (data) {
@@ -401,10 +392,16 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                 content = value.replace(/^'|'$/g, "").replace(/^"|"$/g, "");
             }
             result += `}\n${content || ''}\n\`\`\`\n`;
+            if (isSelected) {
+                result += `\n{SELECT_END}\n`;
+            }
+        }
+        else if (root.name == 'i-panel') {
+            pos = 0;
         }
         if (root.items) {
-            root.items.forEach(item => {
-                result = (0, exports.renderMd)(item, result);
+            root.items.forEach((item, index) => {
+                result = (0, exports.renderMd)(item, result, selectedPos);
             });
         }
         return result.trim();
@@ -6346,11 +6343,36 @@ define("@scom/scom-designer/data.ts", ["require", "exports", "@scom/scom-designe
         ]
     };
 });
-define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_36, index_22, index_css_23, data_2, index_23, utils_13, config_8, store_7, index_24) {
+define("@scom/scom-designer/designer/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_36) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.selectedStyle = exports.hoverStyle = void 0;
+    const Theme = components_36.Styles.Theme.ThemeVars;
+    exports.hoverStyle = components_36.Styles.style({
+        $nest: {
+            "&:before": {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                borderRadius: 'inherit',
+                pointerEvents: 'none',
+                backgroundColor: Theme.colors.info.light,
+                border: `1px dashed ${Theme.colors.info.dark}`
+            }
+        }
+    });
+    exports.selectedStyle = components_36.Styles.style({
+        border: `1px dashed ${Theme.colors.info.dark}`
+    });
+});
+define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.css.ts"], function (require, exports, components_37, index_22, index_css_23, data_2, index_23, utils_13, config_8, store_7, index_24, index_css_24) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerForm = void 0;
-    const Theme = components_36.Styles.Theme.ThemeVars;
+    const Theme = components_37.Styles.Theme.ThemeVars;
     var TABS;
     (function (TABS) {
         TABS[TABS["RECENT"] = 0] = "RECENT";
@@ -6358,9 +6380,17 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
         TABS[TABS["BLOCKS"] = 2] = "BLOCKS";
     })(TABS || (TABS = {}));
     class ControlResizer {
-        constructor(control) {
+        constructor(control, type) {
+            this._type = 'click';
             this.resizers = [];
             this._control = control;
+            this._type = type ?? 'click';
+        }
+        get type() {
+            return this._type ?? 'click';
+        }
+        set type(value) {
+            this._type = value ?? 'click';
         }
         addResizer(className) {
             let resizer = document.createElement("div");
@@ -6369,23 +6399,36 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             resizer.className = "i-resizer " + className;
         }
         hideResizers() {
-            this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
-            this.resizers = [];
+            if (this.type === 'click') {
+                this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
+                this.resizers = [];
+            }
+            else {
+                const parentEl = this._control.closest('#pnlFormDesigner');
+                const selectedEl = parentEl?.querySelector(`.${index_css_24.selectedStyle}`);
+                if (selectedEl)
+                    selectedEl.classList.remove(index_css_24.selectedStyle);
+            }
         }
         showResizers() {
-            if (this.resizers.length == 0) {
-                this.addResizer("tl");
-                this.addResizer("tm");
-                this.addResizer("tr");
-                this.addResizer("ml");
-                this.addResizer("mr");
-                this.addResizer("bl");
-                this.addResizer("bm");
-                this.addResizer("br");
+            if (this.type === 'click') {
+                if (this.resizers.length == 0) {
+                    this.addResizer("tl");
+                    this.addResizer("tm");
+                    this.addResizer("tr");
+                    this.addResizer("ml");
+                    this.addResizer("mr");
+                    this.addResizer("bl");
+                    this.addResizer("bm");
+                    this.addResizer("br");
+                }
+            }
+            else {
+                this._control.classList.add(index_css_24.selectedStyle);
             }
         }
     }
-    let ScomDesignerForm = class ScomDesignerForm extends components_36.Module {
+    let ScomDesignerForm = class ScomDesignerForm extends components_37.Module {
         constructor(parent, options) {
             super(parent, options);
             this.currentTab = TABS.BITS;
@@ -6396,10 +6439,11 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.recentComponents = [];
             this.designPos = {};
             this.libsMap = {};
-            this._customElements = (0, components_36.getCustomElements)();
+            this._customElements = (0, components_37.getCustomElements)();
             this.isPreviewing = false;
             this.baseUrl = '';
             this._previewUrl = '';
+            this._selectedType = 'click';
             this.isPreviewMode = false;
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
@@ -6418,6 +6462,12 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             return self;
         }
         setData() { }
+        get selectedType() {
+            return this._selectedType ?? 'click';
+        }
+        set selectedType(value) {
+            this._selectedType = value ?? 'click';
+        }
         set previewUrl(url) {
             this._previewUrl = url || 'https://decom.dev/debug.html';
             this.ifrPreview.url = url;
@@ -6452,12 +6502,17 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
             return components;
         }
+        getSelectedPosition() {
+            const path = this.selectedControl?.path;
+            const keys = Array.from(this.pathMapping.keys());
+            return keys.findIndex(x => x === path);
+        }
         getComponents() {
             let result = {};
             for (let group in config_8.GroupMetadata) {
                 result[group] = { ...config_8.GroupMetadata[group], items: [] };
             }
-            let components = (0, components_36.getCustomElements)();
+            let components = (0, components_37.getCustomElements)();
             const hasItem = (tagName) => tagName && config_8.ITEMS.includes(tagName);
             components = Object.entries(components)
                 .filter(([name, component]) => component.icon && component.className && !hasItem(component.tagName))
@@ -6787,7 +6842,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             delete newProps['id'];
             let newComponent = {
                 name: component.name,
-                path: components_36.IdUtils.generateUUID(),
+                path: components_37.IdUtils.generateUUID(),
                 parent: component.parent,
                 props: { ...newProps },
                 icon: component.icon,
@@ -6816,7 +6871,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
             if (!control.tag)
                 control.tag = {};
-            control.tag.resizer = new ControlResizer(control);
+            control.tag.resizer = new ControlResizer(control, this.selectedType);
             this.bindControlEvents(component);
             this.pathMapping.set(component.path, component);
             if (component?.items?.length) {
@@ -6831,6 +6886,19 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             if (component.repeater) {
                 this.updateRepeater(component.repeater);
             }
+            control.onmouseenter = (event) => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const hoveredControl = this.pnlFormDesigner.querySelector(`.${index_css_24.hoverStyle}`);
+                if (hoveredControl)
+                    hoveredControl.classList.remove(index_css_24.hoverStyle);
+                control.classList.add(index_css_24.hoverStyle);
+            };
+            control.onmouseleave = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                control.classList.remove(index_css_24.hoverStyle);
+            };
             return component;
         }
         async renderControl(parent, component) {
@@ -6916,6 +6984,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             if (this.selectedControl)
                 this.selectedControl.control.tag.resizer.hideResizers();
             this.selectedControl = target;
+            this.selectedControl.control.tag.resizer.type = this.selectedType;
             this.selectedControl.control.tag.resizer.showResizers();
             const name = this.selectedControl.name;
             const control = this.selectedControl?.control;
@@ -6957,7 +7026,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 let com = {
                     name: this.selectedComponent.name,
                     icon: this.selectedComponent.icon,
-                    path: components_36.IdUtils.generateUUID(),
+                    path: components_37.IdUtils.generateUUID(),
                     items: [],
                     props,
                     control: null
@@ -7333,7 +7402,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                         options.name = value.name;
                     }
                     control._setDesignPropValue(prop, options);
-                    control[prop] = new components_36.Icon(control, { ...options, display: 'flex', designMode: true, cursor: 'pointer' });
+                    control[prop] = new components_37.Icon(control, { ...options, display: 'flex', designMode: true, cursor: 'pointer' });
                 }
                 else {
                     control[prop] = undefined;
@@ -7342,7 +7411,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
         }
         updateLinkProp(prop, value, control) {
             if (value?.href) {
-                const linkEl = new components_36.Link(control, { ...value, designMode: true, cursor: 'pointer' });
+                const linkEl = new components_37.Link(control, { ...value, designMode: true, cursor: 'pointer' });
                 control[prop] = linkEl;
             }
             else {
@@ -7353,7 +7422,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             if (value.url) {
                 const width = value.width || '1rem';
                 const height = value.height || '1rem';
-                const imageEl = new components_36.Image(control, { display: 'flex', ...value, width, height, designMode: true, cursor: 'pointer' });
+                const imageEl = new components_37.Image(control, { display: 'flex', ...value, width, height, designMode: true, cursor: 'pointer' });
                 control._setDesignPropValue('name', '');
                 control[prop] = imageEl;
             }
@@ -7831,7 +7900,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
         }
     };
     ScomDesignerForm = __decorate([
-        (0, components_36.customElements)('i-scom-designer--form')
+        (0, components_37.customElements)('i-scom-designer--form')
     ], ScomDesignerForm);
     exports.ScomDesignerForm = ScomDesignerForm;
 });
@@ -8000,13 +8069,13 @@ define("@scom/scom-designer/build/index.ts", ["require", "exports", "@scom/scom-
     Object.defineProperty(exports, "Storage", { enumerable: true, get: function () { return storage_1.Storage; } });
     Object.defineProperty(exports, "TonConnectSender", { enumerable: true, get: function () { return tonConnectorSender_1.TonConnectSender; } });
 });
-define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/ton-client", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_37, compiler_1, index_25, ton_core_3, ton_client_1, utils_15, index_26) {
+define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/ton-client", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_38, compiler_1, index_25, ton_core_3, ton_client_1, utils_15, index_26) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerDeployer = void 0;
-    const Theme = components_37.Styles.Theme.ThemeVars;
+    const Theme = components_38.Styles.Theme.ThemeVars;
     const TON_AMOUNT = (0, ton_core_3.toNano)(0.05);
-    let ScomDesignerDeployer = class ScomDesignerDeployer extends components_37.Module {
+    let ScomDesignerDeployer = class ScomDesignerDeployer extends components_38.Module {
         constructor(parent, options) {
             super(parent, options);
             this._data = {
@@ -8089,7 +8158,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {
-                const content = await components_37.application.getContent(`${components_37.application.rootDir}libs/${fileName}/index.d.ts`);
+                const content = await components_38.application.getContent(`${components_38.application.rootDir}libs/${fileName}/index.d.ts`);
                 return {
                     fileName: 'index.d.ts',
                     content: content
@@ -8309,16 +8378,16 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         }
     };
     ScomDesignerDeployer = __decorate([
-        (0, components_37.customElements)('i-scom-designer--deployer')
+        (0, components_38.customElements)('i-scom-designer--deployer')
     ], ScomDesignerDeployer);
     exports.ScomDesignerDeployer = ScomDesignerDeployer;
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.ts"], function (require, exports, components_38, index_css_24, compiler_2, scom_code_editor_1, utils_16, config_9, index_27, index_28) {
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.ts"], function (require, exports, components_39, index_css_25, compiler_2, scom_code_editor_1, utils_16, config_9, index_27, index_28) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
-    const Theme = components_38.Styles.Theme.ThemeVars;
-    let ScomDesigner = class ScomDesigner extends components_38.Module {
+    const Theme = components_39.Styles.Theme.ThemeVars;
+    let ScomDesigner = class ScomDesigner extends components_39.Module {
         set previewUrl(url) {
             this._previewUrl = url;
             if (this.formDesigner)
@@ -8398,10 +8467,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     content: ''
                 },
                 baseUrl: '',
-                dataUrl: ''
+                dataUrl: '',
+                selectedType: 'click'
             };
             this.updateDesigner = true;
-            this._components = (0, components_38.getCustomElements)();
+            this._components = (0, components_39.getCustomElements)();
             this.imported = {};
             this.activeTab = 'codeTab';
             this.mode = '';
@@ -8462,6 +8532,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._deployConfig = value;
             if (this.deployDeployer) {
                 this.deployDeployer.setConfig(value);
+            }
+        }
+        get selectedType() {
+            return this._data.selectedType;
+        }
+        set selectedType(value) {
+            this._data.selectedType = value;
+            if (this.formDesigner) {
+                this.formDesigner.selectedType = this.selectedType;
             }
         }
         get isValid() {
@@ -8544,6 +8623,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             if (this.formDesigner) {
                 this.formDesigner.visible = this.activeTab === 'designTab';
                 this.formDesigner.baseUrl = this.baseUrl;
+                this.formDesigner.selectedType = this.selectedType;
             }
             if (this.codeEditor) {
                 this.codeEditor.visible = this.activeTab === 'codeTab';
@@ -8573,6 +8653,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         createFormDesigner() {
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
+            this.formDesigner.selectedType = this.selectedType;
             this.formDesigner.width = '100%';
             this.formDesigner.height = '100%';
             this.formDesigner.stack = { grow: '1' };
@@ -8612,7 +8693,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 return;
             const promises = [];
             for (let packageName of config_9.pageWidgets) {
-                promises.push(components_38.application.loadPackage(packageName));
+                promises.push(components_39.application.loadPackage(packageName));
             }
             await Promise.all(promises);
         }
@@ -8633,17 +8714,17 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             };
             Object.entries(tabs).forEach(([tabName, tabElement]) => {
                 if (tabName === this.activeTab) {
-                    tabElement.classList.add(index_css_24.customActivedStyled);
+                    tabElement.classList.add(index_css_25.customActivedStyled);
                 }
                 else {
-                    tabElement.classList.remove(index_css_24.customActivedStyled);
+                    tabElement.classList.remove(index_css_25.customActivedStyled);
                 }
             });
         }
         async addLib() {
             if (!this.compiler)
                 this.compiler = new compiler_2.Compiler();
-            const content = await components_38.application.getContent(`${components_38.application.rootDir}libs/@ijstech/components/index.d.ts`);
+            const content = await components_39.application.getContent(`${components_39.application.rootDir}libs/@ijstech/components/index.d.ts`);
             await this.compiler.addPackage('@ijstech/components', { dts: { 'index.d.ts': content } });
             scom_code_editor_1.ScomCodeEditor.addLib('@ijstech/components', content);
         }
@@ -8699,9 +8780,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             else if (target.id === 'codeTab') {
                 this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
                 if (!this.isTsx) {
-                    const root = this.formDesigner.rootComponent;
-                    const md = (0, index_28.renderMd)(root, '');
-                    this.codeEditor.value = md;
+                    const md = this.getUpdatedMd();
+                    this.codeEditor.value = md.replace(/\n{SELECT_START}/g, '').replace(/\n{SELECT_END}/g, '');
                 }
             }
             else {
@@ -8713,6 +8793,22 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             target.rightIcon.visible = false;
             target.enabled = true;
         }
+        getUpdatedMd() {
+            const root = this.formDesigner.rootComponent;
+            const selectedPos = this.formDesigner.getSelectedPosition();
+            const md = (0, index_28.renderMd)(root, '', selectedPos);
+            if (selectedPos !== undefined) {
+                if (typeof this.onSelectedWidget === 'function')
+                    this.onSelectedWidget(md);
+            }
+            return md;
+        }
+        updateMd() {
+            if (this.activeTab === 'codeTab')
+                return;
+            const md = this.getUpdatedMd();
+            return md;
+        }
         async parseMd(content) {
             const ui = (0, index_28.parseMD)(content, this.dataUrl);
             const updated = {
@@ -8722,7 +8818,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     minHeight: '{100%}'
                 },
                 items: [...ui],
-                path: components_38.IdUtils.generateUUID()
+                path: components_39.IdUtils.generateUUID()
             };
             await this.loadPageWidgets();
             await this.formDesigner.renderUI(updated);
@@ -8748,7 +8844,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     items: []
                 };
             }
-            root.path = components_38.IdUtils.generateUUID();
+            root.path = components_39.IdUtils.generateUUID();
             root.icon = (this._components['i-panel']?.icon || '');
             if (!root.items)
                 root.items = [];
@@ -8760,7 +8856,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         updatePath(items, parent) {
             return [...items].map((item) => {
                 const component = item;
-                component.path = components_38.IdUtils.generateUUID();
+                component.path = components_39.IdUtils.generateUUID();
                 component.parent = parent.path;
                 component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
                 component.icon = (this._components[component.name]?.icon || '');
@@ -8794,7 +8890,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {
-                const content = await components_38.application.getContent(`${components_38.application.rootDir}libs/${fileName}/index.d.ts`) || this.imported[fileName];
+                const content = await components_39.application.getContent(`${components_39.application.rootDir}libs/${fileName}/index.d.ts`) || this.imported[fileName];
                 return {
                     fileName: 'index.d.ts',
                     content
@@ -8843,7 +8939,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const promises = [];
             const mapper = {};
             for (let packageName of config_9.pageWidgets) {
-                promises.push(components_38.application.getContent(`${components_38.application.rootDir}libs/${packageName}/index.js`)
+                promises.push(components_39.application.getContent(`${components_39.application.rootDir}libs/${packageName}/index.js`)
                     .then(content => {
                     mapper[packageName] = content;
                 }));
@@ -8898,15 +8994,17 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.onTogglePreview = this.getAttribute('onTogglePreview', true) || this.onTogglePreview;
             this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview;
             this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError;
+            this.onSelectedWidget = this.getAttribute('onSelectedWidget', true) || this.onSelectedWidget;
             const deployConfig = this.getAttribute('deployConfig', true);
             if (deployConfig)
                 this.deployConfig = deployConfig;
             const url = this.getAttribute('url', true);
             const file = this.getAttribute('file', true);
             const dataUrl = this.getAttribute('dataUrl', true);
+            const selectedType = this.getAttribute('selectedType', true);
             this.addLib();
-            this.setData({ url, file, dataUrl });
-            this.classList.add(index_css_24.blockStyle);
+            this.setData({ url, file, dataUrl, selectedType });
+            this.classList.add(index_css_25.blockStyle);
             this.setTag(config_9.themesConfig);
         }
         // Configuration
@@ -9101,7 +9199,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
     };
     ScomDesigner = __decorate([
-        (0, components_38.customElements)('i-scom-designer')
+        (0, components_39.customElements)('i-scom-designer')
     ], ScomDesigner);
     exports.ScomDesigner = ScomDesigner;
 });
