@@ -252,7 +252,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         let props = {};
         if (!match)
             return null;
-        const splittedName = (match?.[1] || '').split('/');
+        const splittedName = (match?.[1] || '').trim().split('/');
         name = splittedName[splittedName.length - 1];
         textContent = match[3] || '';
         data = `${match[2] || ''}`
@@ -303,19 +303,6 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             }
             content = content.trim();
             if (content) {
-                // if (name === 'page-button') {
-                //   const contentRegex = /\[(.*?)\]\((.*?)\)/g;
-                //   const match = contentRegex.exec(content);
-                //   if (match) {
-                //     if (!props.data) props.data = {};
-                //     props.data.linkButtons = [
-                //       {
-                //         caption: match[1] || '',
-                //         url: match[2] || ''
-                //       }
-                //     ]
-                //   }
-                // }
                 if (name === 'page-text') {
                     const imageRegex = /<img src="([^"]+)"/g;
                     if (imageRegex.test(content)) {
