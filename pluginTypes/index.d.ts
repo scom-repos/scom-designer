@@ -23,7 +23,7 @@ declare module "@scom/scom-designer/index.css.ts" {
 declare module "@scom/scom-designer/designer/utils.ts" {
     import { IComponent } from "@scom/scom-designer/interface.ts";
     export const parseMD: (html: string, baseUrl: string) => any[];
-    export const renderMd: (root: IComponent, result: string, selectedPos: number) => string;
+    export const renderMd: (root: IComponent, result: string, selectedPos: number, hasParentPageBlock?: boolean) => string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
@@ -2544,7 +2544,7 @@ declare module "@scom/scom-designer" {
     } | null>;
     type onClosePreviewCallback = () => void;
     type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
-    type onSelectedWidgetCallback = (md: string) => void;
+    type onSelectedWidgetCallback = (path: string, md: string) => void;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
