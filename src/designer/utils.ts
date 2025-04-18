@@ -162,9 +162,12 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
 
 let pos = 0;
 
-export const renderMd = (root: IComponent, result: string, selectedPos: number) => {
+export const renderMd = (root: IComponent, result: string, selectedPos: number, hasParentPageBlock?: boolean) => {
   if (!root) return '';
-  const rootName = root?.name || '';
+  let rootName = root?.name || '';
+  if (hasParentPageBlock && rootName === 'i-page-block') {
+    rootName = 'i-page-group';
+  }
 
   if (rootName.startsWith('i-page') || rootName.startsWith('i-scom')) {
     ++pos;
@@ -221,7 +224,7 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number) 
 
   if (root.items) {
     root.items.forEach((item, index) => {
-      result = renderMd(item, result, selectedPos);
+      result = renderMd(item, result, selectedPos, rootName === 'i-page-block');
     });
   }
 
