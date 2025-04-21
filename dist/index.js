@@ -341,10 +341,13 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         return { props, tag };
     };
     let pos = 0;
-    const renderMd = (root, result, selectedPos) => {
+    const renderMd = (root, result, selectedPos, hasParentPageBlock) => {
         if (!root)
             return '';
-        const rootName = root?.name || '';
+        let rootName = root?.name || '';
+        if (hasParentPageBlock && rootName === 'i-page-block') {
+            rootName = 'i-page-group';
+        }
         if (rootName.startsWith('i-page') || rootName.startsWith('i-scom')) {
             ++pos;
             const module = rootName.replace('i-', '@scom/');
@@ -388,7 +391,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         }
         if (root.items) {
             root.items.forEach((item, index) => {
-                result = (0, exports.renderMd)(item, result, selectedPos);
+                result = (0, exports.renderMd)(item, result, selectedPos, rootName === 'i-page-block');
             });
         }
         return result.trim();
@@ -8786,7 +8789,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const md = (0, index_28.renderMd)(root, '', selectedPos);
             if (selectedPos !== undefined) {
                 if (typeof this.onSelectedWidget === 'function')
-                    this.onSelectedWidget(md);
+                    this.onSelectedWidget(this.file.path, md);
             }
             return md;
         }

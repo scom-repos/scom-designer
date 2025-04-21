@@ -33,7 +33,7 @@ type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 type onClosePreviewCallback = () => void;
 type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
-type onSelectedWidgetCallback = (md: string) => void;
+type onSelectedWidgetCallback = (path: string, md: string) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -570,7 +570,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const md = renderMd(root as IComponent, '', selectedPos);
     if (selectedPos !== undefined) {
       if (typeof this.onSelectedWidget === 'function')
-        this.onSelectedWidget(md);
+        this.onSelectedWidget(this.file.path, md);
     }
     return md;
   }
