@@ -341,6 +341,8 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         return { props, tag };
     };
     let pos = 0;
+    let startLine = -1;
+    let endLine = -1;
     const renderMd = (root, result, selectedPos, hasParentPageBlock) => {
         if (!root)
             return '';
@@ -354,7 +356,8 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             let { tag, data, value } = root?.props || {};
             const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
             if (isSelected) {
-                result += `\n{SELECT_START}\n`;
+                startLine = result.split('\n').length;
+                result += `\n{SELECT_START}{Line-${startLine}}\n`;
             }
             result += `\n\`\`\`${module}{`;
             let content = '';
@@ -383,7 +386,8 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             }
             result += `}\n${content || ''}\n\`\`\`\n`;
             if (isSelected) {
-                result += `\n{SELECT_END}\n`;
+                endLine = result.split('\n').length;
+                result += `\n{SELECT_END}{Line-${endLine}}\n`;
             }
         }
         else if (root.name == 'i-panel') {
@@ -6998,6 +7002,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 }
             }
             this.showDesignProperties();
+            if (typeof this.onSelectControl === 'function')
+                this.onSelectControl();
         }
         showDesignProperties() {
             this.designerProperties.component = this.selectedControl;
@@ -7754,6 +7760,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             super.init();
             this.onClose = this.getAttribute('onClose', true) || this.onClose;
             this.onPreview = this.getAttribute('onPreview', true) || this.onPreview;
+            this.onSelectControl = this.getAttribute('onSelectControl', true) || this.onSelectControl;
             this.wrapperComponentPicker.style.borderBottom = 'none';
             this.initComponentPicker();
             this.initBlockPicker();
@@ -8472,6 +8479,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.importCallback = this.importCallback.bind(this);
             this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
             this.getImportFile = this.getImportFile.bind(this);
+            this.handleSelectionChangeBound = this.handleCodeEditorSelectionChange.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -8637,9 +8645,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.id = 'codeEditor';
             this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
             this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
+            this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
         }
         executeInsert(textBefore, textAfter) {
-            this.codeEditor.executeEditor('insert', { textBefore, textAfter });
+            return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
         }
         createFormDesigner() {
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
@@ -8652,6 +8661,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
             this.formDesigner.onClose = () => {
                 typeof this.onClosePreview === 'function' && this.onClosePreview();
+            };
+            this.formDesigner.onSelectControl = () => {
+                if (this.isTsx)
+                    return;
+                this.updateMd();
             };
             this.formDesigner.studio = this;
             this.formDesigner.visible = this.isValid;
@@ -8771,7 +8785,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
                 if (!this.isTsx) {
                     const md = this.getUpdatedMd();
-                    this.codeEditor.value = md.replace(/\n{SELECT_START}/g, '').replace(/\n{SELECT_END}/g, '');
+                    this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
                 }
             }
             else {
@@ -8786,10 +8800,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         getUpdatedMd() {
             const root = this.formDesigner.rootComponent;
             const selectedPos = this.formDesigner.getSelectedPosition();
-            const md = (0, index_28.renderMd)(root, '', selectedPos);
+            let md = (0, index_28.renderMd)(root, '', selectedPos);
+            const regex = /\{Line-[0-9]+\}/g;
+            const match = md.match(regex);
+            const startLine = match?.[0]?.replace('{Line-', '').replace('}', '');
+            const endLine = match?.[1]?.replace('{Line-', '').replace('}', '');
+            md = md.replace(regex, '');
             if (selectedPos !== undefined) {
                 if (typeof this.onSelectedWidget === 'function')
-                    this.onSelectedWidget(this.file.path, md);
+                    this.onSelectedWidget(this.file.path, md, { startLine, endLine });
             }
             return md;
         }
@@ -8876,6 +8895,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 event.preventDefault();
                 if (typeof this.onSave === 'function')
                     this.onSave(target, event);
+            }
+        }
+        handleCodeEditorSelectionChange(target, event) {
+            const isWidgetMD = !this.isTsx && target.value && target.value.includes('@scom/page-block');
+            if (!isWidgetMD)
+                return;
+            const { startLine, endLine, value } = this.codeEditor.executeEditor('insert', { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' });
+            if (typeof this.onSelectedWidget === 'function') {
+                this.onSelectedWidget(this.file.path, value, { startLine, endLine });
             }
         }
         async getImportFile(fileName, isPackage) {

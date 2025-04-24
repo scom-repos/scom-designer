@@ -33,7 +33,7 @@ type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 type onClosePreviewCallback = () => void;
 type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
-type onSelectedWidgetCallback = (path: string, md: string) => void;
+type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }?: { startLine: number|string, endLine: number|string }) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -103,6 +103,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private tempTsxPath: string = 'demo.tsx';
   private tempTsxContent: string = '';
   private isWidgetsLoaded: boolean = false;
+
+  private handleSelectionChangeBound: (target: ScomCodeEditor, event: any) => void;
 
   onSave: onSaveCallback;
   onChange?: onChangeCallback;
@@ -210,6 +212,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.importCallback = this.importCallback.bind(this);
     this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
     this.getImportFile = this.getImportFile.bind(this);
+    this.handleSelectionChangeBound = this.handleCodeEditorSelectionChange.bind(this);
   }
 
   static async create(options?: ScomDesignerElement, parent?: Container) {
@@ -408,10 +411,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.id = 'codeEditor';
     this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
     this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
+    this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
   }
 
   executeInsert(textBefore: string, textAfter: string) {
-    this.codeEditor.executeEditor('insert', { textBefore, textAfter });
+    return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
   }
 
   private createFormDesigner() {
@@ -425,6 +429,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.formDesigner.onTogglePreview = this.handleTogglePanels.bind(this);
     this.formDesigner.onClose = () => {
       typeof this.onClosePreview === 'function' && this.onClosePreview();
+    };
+    this.formDesigner.onSelectControl = () => {
+      if (this.isTsx) return;
+      this.updateMd();
     };
     this.formDesigner.studio = this;
     this.formDesigner.visible = this.isValid;
@@ -551,7 +559,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
       if (!this.isTsx) {
         const md = this.getUpdatedMd();
-        this.codeEditor.value = md.replace(/\n{SELECT_START}/g, '').replace(/\n{SELECT_END}/g, '');
+        this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
       }
     } else {
       this.deployDeployer.setData({
@@ -567,10 +575,16 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private getUpdatedMd() {
     const root = this.formDesigner.rootComponent;
     const selectedPos = this.formDesigner.getSelectedPosition();
-    const md = renderMd(root as IComponent, '', selectedPos);
+    let md: string = renderMd(root as IComponent, '', selectedPos);
+    const regex = /\{Line-[0-9]+\}/g;
+    const match = md.match(regex);
+    const startLine = match?.[0]?.replace('{Line-', '').replace('}', '');
+    const endLine = match?.[1]?.replace('{Line-', '').replace('}', '');
+    md = md.replace(regex, '');
+
     if (selectedPos !== undefined) {
       if (typeof this.onSelectedWidget === 'function')
-        this.onSelectedWidget(this.file.path, md);
+        this.onSelectedWidget(this.file.path, md, { startLine, endLine });
     }
     return md;
   }
@@ -667,6 +681,18 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       event.stopPropagation();
       event.preventDefault();
       if (typeof this.onSave === 'function') this.onSave(target, event);
+    }
+  }
+
+  private handleCodeEditorSelectionChange(target: ScomCodeEditor, event: any) {
+    const isWidgetMD = !this.isTsx && target.value && target.value.includes('@scom/page-block');
+    if (!isWidgetMD) return;
+    const { startLine, endLine, value } = this.codeEditor.executeEditor(
+      'insert',
+      { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' }
+    )
+    if (typeof this.onSelectedWidget === 'function') {
+      this.onSelectedWidget(this.file.path, value, { startLine, endLine });
     }
   }
 

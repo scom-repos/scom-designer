@@ -161,6 +161,8 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
 }
 
 let pos = 0;
+let startLine = -1;
+let endLine = -1;
 
 export const renderMd = (root: IComponent, result: string, selectedPos: number, hasParentPageBlock?: boolean) => {
   if (!root) return '';
@@ -176,7 +178,9 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
     const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
 
     if (isSelected) {
-      result += `\n{SELECT_START}\n`;
+      startLine = result.split('\n').length;
+      result += `\n{SELECT_START}{Line-${startLine}}\n`;
+
     }
 
     result += `\n\`\`\`${module}{`;
@@ -216,7 +220,8 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
     result += `}\n${content || ''}\n\`\`\`\n`;
 
     if (isSelected) {
-      result += `\n{SELECT_END}\n`;
+      endLine = result.split('\n').length;
+      result += `\n{SELECT_END}{Line-${endLine}}\n`;
     }
   } else if (root.name == 'i-panel') {
     pos = 0;
