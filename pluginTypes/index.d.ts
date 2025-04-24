@@ -2231,6 +2231,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private pnlScreens;
         private pnlLoading;
         private pnlLeftIcon;
+        private pnlRightIcon;
         private btnClosePreview;
         private mdMobile;
         private pnlWrap;
@@ -2328,6 +2329,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         preview(): Promise<void>;
         design(): Promise<void>;
         private togglePanels;
+        expand(): void;
         closePreview(): void;
         private handleBreakpoint;
         private onToggleClick;
@@ -2647,6 +2649,7 @@ declare module "@scom/scom-designer" {
         set selectedType(value: ActionType);
         get isValid(): boolean;
         get isTsx(): boolean;
+        get isWidgetMD(): boolean;
         private get isContract();
         private setData;
         private getData;
@@ -2665,6 +2668,7 @@ declare module "@scom/scom-designer" {
             endLine: number;
             value: string;
         };
+        showDesigner(): Promise<void>;
         private createFormDesigner;
         private createDeployer;
         private handleTogglePanels;
@@ -2676,7 +2680,7 @@ declare module "@scom/scom-designer" {
         private importCallback;
         private handleTabChanged;
         private getUpdatedMd;
-        updateMd(): string;
+        private updateMd;
         private parseMd;
         private parseTsx;
         private updateRoot;

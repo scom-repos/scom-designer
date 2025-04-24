@@ -138,6 +138,7 @@ export class ScomDesignerForm extends Module {
   private pnlScreens: Panel
   private pnlLoading: VStack
   private pnlLeftIcon: Panel
+  private pnlRightIcon: Panel
   private btnClosePreview: Icon
   private mdMobile: Modal
   private pnlWrap: Panel
@@ -1431,6 +1432,11 @@ export class ScomDesignerForm extends Module {
     }
   }
 
+  expand() {
+    this.pnlLeftIcon.click();
+    this.pnlRightIcon.click();
+  }
+
   closePreview() {
     this.designerProperties.closePreview();
     if (this.isPreviewMode) this.handlePreviewChanged('preview', '0');
@@ -1602,7 +1608,7 @@ export class ScomDesignerForm extends Module {
               background={{ color: Theme.background.main }}
               cursor='pointer'
               class={toggleClass}
-              onClick={this.onToggleClick.bind(this)}
+              onClick={this.onToggleClick}
             >
               <i-icon
                 name="angle-right"
@@ -1843,7 +1849,7 @@ export class ScomDesignerForm extends Module {
               background={{ color: Theme.background.main }}
               cursor='pointer'
               class={toggleClass}
-              onClick={this.onToggleClick.bind(this)}
+              onClick={this.onToggleClick}
               mediaQueries={[
                 {
                   maxWidth: '767px',

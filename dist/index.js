@@ -7682,6 +7682,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.pnlDesignHeader.display = value ? 'none' : 'flex';
             }
         }
+        expand() {
+            this.pnlLeftIcon.click();
+            this.pnlRightIcon.click();
+        }
         closePreview() {
             this.designerProperties.closePreview();
             if (this.isPreviewMode)
@@ -7800,7 +7804,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                 }
                             }
                         ] },
-                        this.$render("i-panel", { id: "pnlLeftIcon", position: 'absolute', top: '2rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_23.toggleClass, onClick: this.onToggleClick.bind(this) },
+                        this.$render("i-panel", { id: "pnlLeftIcon", position: 'absolute', top: '2rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_23.toggleClass, onClick: this.onToggleClick },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', right: '0.15rem' })),
                         this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
                         this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onDuplicate: this.onDuplicateComponent, onUpdate: this.onUpdateDesigner, onAdd: this.onAddItem }),
@@ -7878,7 +7882,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                 }
                             }
                         ] },
-                        this.$render("i-panel", { id: "pnlRightIcon", position: 'absolute', top: '2rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_23.toggleClass, onClick: this.onToggleClick.bind(this), mediaQueries: [
+                        this.$render("i-panel", { id: "pnlRightIcon", position: 'absolute', top: '2rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_23.toggleClass, onClick: this.onToggleClick, mediaQueries: [
                                 {
                                     maxWidth: '767px',
                                     properties: {
@@ -8547,6 +8551,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         get isTsx() {
             return this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
         }
+        get isWidgetMD() {
+            return !this.isTsx && this.value.includes('@scom/page-block');
+        }
         get isContract() {
             return this.file?.path?.endsWith('.tact') || this.url?.endsWith('.tact');
         }
@@ -8650,6 +8657,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         executeInsert(textBefore, textAfter) {
             return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
         }
+        async showDesigner() {
+            await this.handleTabChanged(this.designTab);
+            this.formDesigner.expand();
+        }
         createFormDesigner() {
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
             this.formDesigner.selectedType = this.selectedType;
@@ -8663,7 +8674,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 typeof this.onClosePreview === 'function' && this.onClosePreview();
             };
             this.formDesigner.onSelectControl = () => {
-                if (this.isTsx)
+                if (!this.isWidgetMD)
                     return;
                 this.updateMd();
             };
@@ -8783,7 +8794,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
             else if (target.id === 'codeTab') {
                 this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
-                if (!this.isTsx) {
+                if (this.isWidgetMD) {
                     const md = this.getUpdatedMd();
                     this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
                 }
@@ -8898,8 +8909,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
         }
         handleCodeEditorSelectionChange(target, event) {
-            const isWidgetMD = !this.isTsx && target.value && target.value.includes('@scom/page-block');
-            if (!isWidgetMD)
+            if (!this.isWidgetMD)
                 return;
             const { startLine, endLine, value } = this.codeEditor.executeEditor('insert', { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' });
             if (typeof this.onSelectedWidget === 'function') {
