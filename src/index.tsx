@@ -298,6 +298,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx');
   }
 
+  get isWidgetMD() {
+    return !this.isTsx && this.value.includes('@scom/page-block')
+  }
+
   private get isContract() {
     return this.file?.path?.endsWith('.tact') || this.url?.endsWith('.tact');
   }
@@ -418,6 +422,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
   }
 
+  async showDesigner() {
+    await this.handleTabChanged(this.designTab);
+    this.formDesigner.expand();
+  }
+
   private createFormDesigner() {
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
     this.formDesigner.selectedType = this.selectedType;
@@ -431,7 +440,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       typeof this.onClosePreview === 'function' && this.onClosePreview();
     };
     this.formDesigner.onSelectControl = () => {
-      if (this.isTsx) return;
+      if (!this.isWidgetMD) return;
       this.updateMd();
     };
     this.formDesigner.studio = this;
@@ -557,7 +566,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       }
     } else if (target.id === 'codeTab') {
       this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
-      if (!this.isTsx) {
+      if (this.isWidgetMD) {
         const md = this.getUpdatedMd();
         this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
       }
@@ -589,7 +598,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     return md;
   }
 
-  updateMd() {
+  private updateMd() {
     if (this.activeTab === 'codeTab') return;
     const md = this.getUpdatedMd();
     return md;
@@ -685,8 +694,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private handleCodeEditorSelectionChange(target: ScomCodeEditor, event: any) {
-    const isWidgetMD = !this.isTsx && target.value && target.value.includes('@scom/page-block');
-    if (!isWidgetMD) return;
+    if (!this.isWidgetMD) return;
     const { startLine, endLine, value } = this.codeEditor.executeEditor(
       'insert',
       { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' }
