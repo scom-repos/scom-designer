@@ -2204,6 +2204,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         }>;
         onTogglePreview?: (value: boolean) => void;
         onClose?: () => void;
+        onSelectControl?: () => void;
     }
     global {
         namespace JSX {
@@ -2263,6 +2264,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         }>;
         onTogglePreview?: (value: boolean) => void;
         onClose?: () => void;
+        onSelectControl?: () => void;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
@@ -2544,7 +2546,10 @@ declare module "@scom/scom-designer" {
     } | null>;
     type onClosePreviewCallback = () => void;
     type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
-    type onSelectedWidgetCallback = (path: string, md: string) => void;
+    type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }?: {
+        startLine: number | string;
+        endLine: number | string;
+    }) => void;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
@@ -2602,6 +2607,7 @@ declare module "@scom/scom-designer" {
         private tempTsxPath;
         private tempTsxContent;
         private isWidgetsLoaded;
+        private handleSelectionChangeBound;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2654,7 +2660,11 @@ declare module "@scom/scom-designer" {
         private renderUI;
         private renderContent;
         private createCodeEditor;
-        executeInsert(textBefore: string, textAfter: string): void;
+        executeInsert(textBefore: string, textAfter: string): {
+            startLine: number;
+            endLine: number;
+            value: string;
+        };
         private createFormDesigner;
         private createDeployer;
         private handleTogglePanels;
@@ -2673,6 +2683,7 @@ declare module "@scom/scom-designer" {
         private updatePath;
         private handleCodeEditorChange;
         private handleCodeEditorSave;
+        private handleCodeEditorSelectionChange;
         getImportFile(fileName?: string, isPackage?: boolean): Promise<{
             fileName: string;
             content: string;

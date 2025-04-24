@@ -108,6 +108,7 @@ interface ScomDesignerFormElement extends ControlElement {
   onPreview?: ()=> Promise<{module: string, script: string}>;
   onTogglePreview?: (value: boolean) => void;
   onClose?: () => void;
+  onSelectControl?: () => void;
 }
 
 declare global {
@@ -170,6 +171,7 @@ export class ScomDesignerForm extends Module {
   onPreview?: ()=> Promise<{module: string, script: string}>;
   onTogglePreview?: (value: boolean) => void;
   onClose?: () => void;
+  onSelectControl?: () => void;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -752,6 +754,7 @@ export class ScomDesignerForm extends Module {
     }
 
     this.showDesignProperties();
+    if (typeof this.onSelectControl === 'function') this.onSelectControl();
   }
 
   private showDesignProperties() {
@@ -1510,6 +1513,7 @@ export class ScomDesignerForm extends Module {
     super.init()
     this.onClose = this.getAttribute('onClose', true) || this.onClose;
     this.onPreview = this.getAttribute('onPreview', true) || this.onPreview;
+    this.onSelectControl = this.getAttribute('onSelectControl', true) || this.onSelectControl;
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
     this.initBlockPicker()
