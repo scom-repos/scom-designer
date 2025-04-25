@@ -2333,6 +2333,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         closePreview(): void;
         private handleBreakpoint;
         private onToggleClick;
+        private toggleLeftRightPanel;
         private initEvents;
         private onToggleStructure;
         private handleClose;

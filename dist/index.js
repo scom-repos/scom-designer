@@ -7683,8 +7683,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
         }
         expand() {
-            this.pnlLeftIcon.click();
-            this.pnlRightIcon.click();
+            this.toggleLeftRightPanel(this.pnlLeftIcon, false);
+            this.toggleLeftRightPanel(this.pnlRightIcon, false);
         }
         closePreview() {
             this.designerProperties.closePreview();
@@ -7717,11 +7717,15 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             event.preventDefault();
             event.stopPropagation();
             const parentEl = target.parent || target.parentElement;
+            const parentWidth = parentEl && Number(parentEl.width || 0);
+            this.toggleLeftRightPanel(target, parentWidth === 0);
+        }
+        toggleLeftRightPanel(target, visible) {
+            const parentEl = target.parent || target.parentElement;
             const icon = target.children[0];
             if (parentEl) {
-                const parentWidth = Number(parentEl.width || 0);
                 const childPanel = parentEl?.id === 'pnlProperties' && parentEl.querySelector('i-panel');
-                if (parentWidth === 0) {
+                if (visible) {
                     parentEl.width = '100%';
                     childPanel && (childPanel.left = '-1rem');
                 }
@@ -7890,7 +7894,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                     }
                                 }
                             ] },
-                            this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
+                            this.$render("i-icon", { name: "angle-left", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
                         this.$render("i-icon", { id: "btnClosePreview", name: "times", width: 16, height: 16, visible: false, top: 5, right: 10, zIndex: 999, cursor: 'pointer', onClick: this.closePreview }),
                         this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint, onPreviewChanged: this.handlePreviewChanged }))),
                 this.$render("i-modal", { id: "mdMobile", width: '100dvw', height: '50dvh', popupPlacement: 'bottom', zIndex: 999, overflow: { y: 'auto' }, padding: { top: 0, right: 0, bottom: 0, left: 0 }, border: { top: { width: '1px', style: 'solid', color: Theme.divider } }, showBackdrop: true, visible: false, closeOnBackdropClick: false, class: index_css_23.customModalStyled, onOpen: this.onModalOpen, onClose: this.onModalClose },
