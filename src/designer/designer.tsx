@@ -1433,8 +1433,8 @@ export class ScomDesignerForm extends Module {
   }
 
   expand() {
-    this.pnlLeftIcon.click();
-    this.pnlRightIcon.click();
+    this.toggleLeftRightPanel(this.pnlLeftIcon, false);
+    this.toggleLeftRightPanel(this.pnlRightIcon, false);
   }
 
   closePreview() {
@@ -1467,11 +1467,16 @@ export class ScomDesignerForm extends Module {
     event.preventDefault();
     event.stopPropagation();
     const parentEl = target.parent || target.parentElement as Control;
+    const parentWidth = parentEl && Number(parentEl.width || 0);
+    this.toggleLeftRightPanel(target, parentWidth === 0);
+  }
+
+  private toggleLeftRightPanel(target: Panel, visible: boolean) {
+    const parentEl = target.parent || target.parentElement as Control;
     const icon = target.children[0] as Icon;
     if (parentEl) {
-      const parentWidth = Number(parentEl.width || 0);
       const childPanel = parentEl?.id === 'pnlProperties' && parentEl.querySelector('i-panel') as Control;
-      if (parentWidth === 0) {
+      if (visible) {
         parentEl.width = '100%';
         childPanel && (childPanel.left = '-1rem');
       } else {
@@ -1860,7 +1865,7 @@ export class ScomDesignerForm extends Module {
               ]}
             >
               <i-icon
-                name="angle-right"
+                name="angle-left"
                 width={'1rem'}
                 height={'1rem'}
                 fill={Theme.text.primary}
