@@ -2253,6 +2253,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         baseUrl: string;
         private _previewUrl;
         private _selectedType;
+        private _isPreviewDefault;
         private isPreviewMode;
         private handleMouseMoveBound;
         private handleMouseUpBound;
@@ -2271,6 +2272,8 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         setData(): void;
         get selectedType(): ActionType;
         set selectedType(value: ActionType);
+        get isPreviewDefault(): boolean;
+        set isPreviewDefault(value: boolean);
         set previewUrl(url: string);
         get previewUrl(): string;
         get pickerComponentsFiltered(): IComponentPicker[];
@@ -2329,7 +2332,6 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         preview(): Promise<void>;
         design(): Promise<void>;
         private togglePanels;
-        expand(): void;
         closePreview(): void;
         private handleBreakpoint;
         private onToggleClick;
@@ -2563,6 +2565,7 @@ declare module "@scom/scom-designer" {
         dataUrl?: string;
         deployConfig?: IDeployConfig;
         selectedType?: ActionType;
+        isPreviewDefault?: boolean;
         onSave?: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2587,7 +2590,6 @@ declare module "@scom/scom-designer" {
         file?: IFileData;
         baseUrl?: string;
         dataUrl?: string;
-        selectedType?: ActionType;
     }
     export class ScomDesigner extends Module implements IFileHandler, IStudio {
         private formDesigner;
@@ -2600,6 +2602,8 @@ declare module "@scom/scom-designer" {
         private deployTab;
         private pnlHeader;
         private _data;
+        private _isPreviewDefault;
+        private _selectedType;
         private updateDesigner;
         private _components;
         private _previewUrl;
@@ -2648,6 +2652,8 @@ declare module "@scom/scom-designer" {
         set deployConfig(value: IDeployConfig);
         get selectedType(): ActionType;
         set selectedType(value: ActionType);
+        get isPreviewDefault(): boolean;
+        set isPreviewDefault(value: boolean);
         get isValid(): boolean;
         get isTsx(): boolean;
         get isWidgetMD(): boolean;
