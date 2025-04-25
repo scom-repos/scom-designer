@@ -6438,6 +6438,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.baseUrl = '';
             this._previewUrl = '';
             this._selectedType = 'click';
+            this._isPreviewDefault = false;
             this.isPreviewMode = false;
             this.onPropertiesChanged = this.onPropertiesChanged.bind(this);
             this.onControlEventChanged = this.onControlEventChanged.bind(this);
@@ -6461,6 +6462,14 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
         }
         set selectedType(value) {
             this._selectedType = value ?? 'click';
+        }
+        get isPreviewDefault() {
+            return this._isPreviewDefault ?? false;
+        }
+        set isPreviewDefault(value) {
+            this._isPreviewDefault = value ?? false;
+            this.pnlLeftIcon && this.toggleLeftRightPanel(this.pnlLeftIcon, !this.isPreviewDefault);
+            this.pnlRightIcon && this.toggleLeftRightPanel(this.pnlRightIcon, !this.isPreviewDefault);
         }
         set previewUrl(url) {
             this._previewUrl = url || 'https://decom.dev/debug.html';
@@ -7682,10 +7691,6 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.pnlDesignHeader.display = value ? 'none' : 'flex';
             }
         }
-        expand() {
-            this.toggleLeftRightPanel(this.pnlLeftIcon, false);
-            this.toggleLeftRightPanel(this.pnlRightIcon, false);
-        }
         closePreview() {
             this.designerProperties.closePreview();
             if (this.isPreviewMode)
@@ -8472,9 +8477,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     content: ''
                 },
                 baseUrl: '',
-                dataUrl: '',
-                selectedType: 'click'
+                dataUrl: ''
             };
+            this._isPreviewDefault = false;
+            this._selectedType = 'click';
             this.updateDesigner = true;
             this._components = (0, components_39.getCustomElements)();
             this.imported = {};
@@ -8541,12 +8547,21 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
         }
         get selectedType() {
-            return this._data.selectedType;
+            return this._selectedType;
         }
         set selectedType(value) {
-            this._data.selectedType = value;
+            this._selectedType = value;
             if (this.formDesigner) {
                 this.formDesigner.selectedType = this.selectedType;
+            }
+        }
+        get isPreviewDefault() {
+            return this._isPreviewDefault ?? false;
+        }
+        set isPreviewDefault(value) {
+            this._isPreviewDefault = value ?? false;
+            if (this.formDesigner) {
+                this.formDesigner.isPreviewDefault = this.isPreviewDefault;
             }
         }
         get isValid() {
@@ -8633,6 +8648,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.formDesigner.visible = this.activeTab === 'designTab';
                 this.formDesigner.baseUrl = this.baseUrl;
                 this.formDesigner.selectedType = this.selectedType;
+                this.formDesigner.isPreviewDefault = this.isPreviewDefault;
             }
             if (this.codeEditor) {
                 this.codeEditor.visible = this.activeTab === 'codeTab';
@@ -8663,11 +8679,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async showDesigner() {
             await this.handleTabChanged(this.designTab);
-            this.formDesigner.expand();
         }
         createFormDesigner() {
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
             this.formDesigner.selectedType = this.selectedType;
+            this.formDesigner.isPreviewDefault = this.isPreviewDefault;
             this.formDesigner.width = '100%';
             this.formDesigner.height = '100%';
             this.formDesigner.stack = { grow: '1' };
@@ -9033,9 +9049,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const url = this.getAttribute('url', true);
             const file = this.getAttribute('file', true);
             const dataUrl = this.getAttribute('dataUrl', true);
-            const selectedType = this.getAttribute('selectedType', true);
+            this.selectedType = this.getAttribute('selectedType', true);
+            this.isPreviewDefault = this.getAttribute('isPreviewDefault', true);
             this.addLib();
-            this.setData({ url, file, dataUrl, selectedType });
+            this.setData({ url, file, dataUrl });
             this.classList.add(index_css_25.blockStyle);
             this.setTag(config_9.themesConfig);
         }

@@ -161,6 +161,7 @@ export class ScomDesignerForm extends Module {
   baseUrl: string = '';
   private _previewUrl: string = '';
   private _selectedType: ActionType = 'click';
+  private _isPreviewDefault: boolean = false;
   private isPreviewMode: boolean = false;
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
@@ -202,6 +203,16 @@ export class ScomDesignerForm extends Module {
 
   set selectedType(value: ActionType) {
     this._selectedType = value ?? 'click';
+  }
+
+  get isPreviewDefault() {
+    return this._isPreviewDefault ?? false;
+  }
+
+  set isPreviewDefault(value: boolean) {
+    this._isPreviewDefault = value ?? false;
+    this.pnlLeftIcon && this.toggleLeftRightPanel(this.pnlLeftIcon, !this.isPreviewDefault);
+    this.pnlRightIcon && this.toggleLeftRightPanel(this.pnlRightIcon, !this.isPreviewDefault);
   }
 
   set previewUrl(url: string){
@@ -1432,11 +1443,6 @@ export class ScomDesignerForm extends Module {
     }
   }
 
-  expand() {
-    this.toggleLeftRightPanel(this.pnlLeftIcon, false);
-    this.toggleLeftRightPanel(this.pnlRightIcon, false);
-  }
-
   closePreview() {
     this.designerProperties.closePreview();
     if (this.isPreviewMode) this.handlePreviewChanged('preview', '0');
@@ -1474,6 +1480,7 @@ export class ScomDesignerForm extends Module {
   private toggleLeftRightPanel(target: Panel, visible: boolean) {
     const parentEl = target.parent || target.parentElement as Control;
     const icon = target.children[0] as Icon;
+
     if (parentEl) {
       const childPanel = parentEl?.id === 'pnlProperties' && parentEl.querySelector('i-panel') as Control;
       if (visible) {

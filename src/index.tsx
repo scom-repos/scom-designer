@@ -45,6 +45,7 @@ interface ScomDesignerElement extends ControlElement {
   dataUrl?: string;
   deployConfig?: IDeployConfig;
   selectedType?: ActionType;
+  isPreviewDefault?: boolean;
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
@@ -68,7 +69,6 @@ interface IDesigner {
   file?: IFileData;
   baseUrl?: string;
   dataUrl?: string;
-  selectedType?: ActionType;
 }
 
 @customElements('i-scom-designer')
@@ -90,9 +90,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       content: ''
     },
     baseUrl: '',
-    dataUrl: '',
-    selectedType: 'click'
+    dataUrl: ''
   };
+
+  private _isPreviewDefault: boolean = false;
+  private _selectedType: ActionType = 'click';
+
   private updateDesigner: boolean = true;
   private _components = getCustomElements();
   private _previewUrl: string;
@@ -280,13 +283,24 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   get selectedType() {
-    return this._data.selectedType;
+    return this._selectedType;
   }
 
   set selectedType(value: ActionType) {
-    this._data.selectedType = value;
+    this._selectedType = value;
     if (this.formDesigner) {
       this.formDesigner.selectedType = this.selectedType;
+    }
+  }
+
+  get isPreviewDefault() {
+    return this._isPreviewDefault ?? false;
+  }
+
+  set isPreviewDefault(value: boolean) {
+    this._isPreviewDefault = value ?? false;
+    if (this.formDesigner) {
+      this.formDesigner.isPreviewDefault = this.isPreviewDefault;
     }
   }
 
@@ -387,6 +401,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.visible = this.activeTab === 'designTab';
       this.formDesigner.baseUrl = this.baseUrl;
       this.formDesigner.selectedType = this.selectedType;
+      this.formDesigner.isPreviewDefault = this.isPreviewDefault;
     }
 
     if (this.codeEditor) {
@@ -424,12 +439,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   async showDesigner() {
     await this.handleTabChanged(this.designTab);
-    this.formDesigner.expand();
   }
 
   private createFormDesigner() {
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
     this.formDesigner.selectedType = this.selectedType;
+    this.formDesigner.isPreviewDefault = this.isPreviewDefault;
     this.formDesigner.width = '100%';
     this.formDesigner.height = '100%';
     this.formDesigner.stack = {grow: '1'};
@@ -841,9 +856,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const url = this.getAttribute('url', true)
     const file = this.getAttribute('file', true)
     const dataUrl = this.getAttribute('dataUrl', true)
-    const selectedType = this.getAttribute('selectedType', true)
+    this.selectedType = this.getAttribute('selectedType', true)
+    this.isPreviewDefault = this.getAttribute('isPreviewDefault', true)
     this.addLib()
-    this.setData({ url, file, dataUrl, selectedType });
+    this.setData({ url, file, dataUrl });
     this.classList.add(blockStyle);
     this.setTag(themesConfig)
   }
