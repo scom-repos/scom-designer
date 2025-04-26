@@ -80,9 +80,11 @@ class ControlResizer {
       this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
       this.resizers = [];
     } else {
-      const parentEl = this._control.closest('#pnlFormDesigner') as Control;
+      const parentEl = this._control.closest('#designerWrapper') as Control;
       const selectedEl = parentEl?.querySelector(`.${selectedStyle}`) as Control;
       if (selectedEl) selectedEl.classList.remove(selectedStyle);
+      const addToChatPanel = parentEl.querySelector('#pnlAddToChat') as Panel;
+      if (addToChatPanel) addToChatPanel.visible = false;
     }
   }
 
@@ -100,6 +102,16 @@ class ControlResizer {
       }
     } else {
       this._control.classList.add(selectedStyle);
+      const parentEl = this._control.closest('#designerWrapper') as Control;
+      const addToChatPanel = parentEl.querySelector('#pnlAddToChat') as Panel;
+      if (addToChatPanel) {
+        const { top, left } = this._control.getBoundingClientRect();
+        addToChatPanel.visible = true;
+        addToChatPanel.position = 'fixed';
+        addToChatPanel.top = top + window.scrollY - 35 + 'px';
+        addToChatPanel.left = left + window.scrollX + 'px';
+        addToChatPanel.zIndex = 1000;
+      }
     } 
   }
 }
@@ -144,6 +156,7 @@ export class ScomDesignerForm extends Module {
   private pnlWrap: Panel
   private pnlDesignHeader: HStack
   private pnlProperties: Panel
+  private pnlAddToChat: Panel
 
   private pathMapping: Map<string, IControl> = new Map();
   private mouseDown: boolean = false;
@@ -646,6 +659,7 @@ export class ScomDesignerForm extends Module {
       this.updateRepeater(component.repeater);
     }
     control.onmouseenter = (event: MouseEvent) => {
+      if (this.selectedType === 'click') return;
       event.preventDefault();
       event.stopImmediatePropagation();
       const hoveredControl = this.pnlFormDesigner.querySelector(`.${hoverStyle}`) as Control;
@@ -653,6 +667,7 @@ export class ScomDesignerForm extends Module {
       control.classList.add(hoverStyle);
     }
     control.onmouseleave = (event: MouseEvent) => {
+      if (this.selectedType === 'click') return;
       event.preventDefault();
       event.stopPropagation();
       control.classList.remove(hoverStyle);
@@ -766,7 +781,6 @@ export class ScomDesignerForm extends Module {
     }
 
     this.showDesignProperties();
-    if (typeof this.onSelectControl === 'function') this.onSelectControl();
   }
 
   private showDesignProperties() {
@@ -1517,6 +1531,15 @@ export class ScomDesignerForm extends Module {
     this.pnlScreens.appendChild(this.designerComponents);
   }
 
+  private handleAddToChat() {
+    if (typeof this.onSelectControl === 'function') this.onSelectControl();
+    this.pnlAddToChat.visible = false;
+  }
+
+  hideAddToChatWidget() {
+    this.pnlAddToChat.visible = false;
+  }
+
   onHide(): void {
     super.onHide();
     this.designerComponents?.onHide();
@@ -1816,6 +1839,20 @@ export class ScomDesignerForm extends Module {
                 }
               ]}
             ></i-panel>
+            <i-hstack
+              id="pnlAddToChat"
+              verticalAlignment='center'
+              padding={{top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem'}}
+              width={'150px'}
+              border={{radius: '0.25rem', width: 1, style: 'solid', color: Theme.divider}}
+              cursor='pointer'
+              visible={false}
+              boxShadow={Theme.shadows[1]}
+              background={{color: Theme.background.modal}}
+              onClick={this.handleAddToChat}
+            >
+              <i-label caption='Add to Chat' font={{size: '0.875rem', weight: 500}}></i-label>
+            </i-hstack>
             <i-panel
               id="pnlPreview"
               width={'auto'} minHeight={'100%'}

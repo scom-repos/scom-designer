@@ -6398,10 +6398,13 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.resizers = [];
             }
             else {
-                const parentEl = this._control.closest('#pnlFormDesigner');
+                const parentEl = this._control.closest('#designerWrapper');
                 const selectedEl = parentEl?.querySelector(`.${index_css_24.selectedStyle}`);
                 if (selectedEl)
                     selectedEl.classList.remove(index_css_24.selectedStyle);
+                const addToChatPanel = parentEl.querySelector('#pnlAddToChat');
+                if (addToChatPanel)
+                    addToChatPanel.visible = false;
             }
         }
         showResizers() {
@@ -6419,6 +6422,16 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
             else {
                 this._control.classList.add(index_css_24.selectedStyle);
+                const parentEl = this._control.closest('#designerWrapper');
+                const addToChatPanel = parentEl.querySelector('#pnlAddToChat');
+                if (addToChatPanel) {
+                    const { top, left } = this._control.getBoundingClientRect();
+                    addToChatPanel.visible = true;
+                    addToChatPanel.position = 'fixed';
+                    addToChatPanel.top = top + window.scrollY - 35 + 'px';
+                    addToChatPanel.left = left + window.scrollX + 'px';
+                    addToChatPanel.zIndex = 1000;
+                }
             }
         }
     }
@@ -6890,6 +6903,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.updateRepeater(component.repeater);
             }
             control.onmouseenter = (event) => {
+                if (this.selectedType === 'click')
+                    return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
                 const hoveredControl = this.pnlFormDesigner.querySelector(`.${index_css_24.hoverStyle}`);
@@ -6898,6 +6913,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 control.classList.add(index_css_24.hoverStyle);
             };
             control.onmouseleave = (event) => {
+                if (this.selectedType === 'click')
+                    return;
                 event.preventDefault();
                 event.stopPropagation();
                 control.classList.remove(index_css_24.hoverStyle);
@@ -7011,8 +7028,6 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 }
             }
             this.showDesignProperties();
-            if (typeof this.onSelectControl === 'function')
-                this.onSelectControl();
         }
         showDesignProperties() {
             this.designerProperties.component = this.selectedControl;
@@ -7759,6 +7774,14 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
         onModalClose() {
             this.pnlScreens.appendChild(this.designerComponents);
         }
+        handleAddToChat() {
+            if (typeof this.onSelectControl === 'function')
+                this.onSelectControl();
+            this.pnlAddToChat.visible = false;
+        }
+        hideAddToChatWidget() {
+            this.pnlAddToChat.visible = false;
+        }
         onHide() {
             super.onHide();
             this.designerComponents?.onHide();
@@ -7872,6 +7895,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                     }
                                 }
                             ] }),
+                        this.$render("i-hstack", { id: "pnlAddToChat", verticalAlignment: 'center', padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, width: '150px', border: { radius: '0.25rem', width: 1, style: 'solid', color: Theme.divider }, cursor: 'pointer', visible: false, boxShadow: Theme.shadows[1], background: { color: Theme.background.modal }, onClick: this.handleAddToChat },
+                            this.$render("i-label", { caption: 'Add to Chat', font: { size: '0.875rem', weight: 500 } })),
                         this.$render("i-panel", { id: "pnlPreview", width: 'auto', minHeight: '100%', background: { color: Theme.background.main }, overflow: 'hidden', visible: false, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
@@ -8489,6 +8514,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.tempTsxPath = 'demo.tsx';
             this.tempTsxContent = '';
             this.isWidgetsLoaded = false;
+            this._selectedWidget = null;
+            this._chatWidget = null;
             this.tag = {};
             this.importCallback = this.importCallback.bind(this);
             this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
@@ -8633,6 +8660,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.designTab.visible = !this.isContract;
             this.updateDesigner = !!(this.url || this.file?.path);
             await this.renderContent(true);
+            if (this.isWidgetMD) {
+                this.updateAddToChatWidget();
+                this.codeEditor.addWidget(this._chatWidget);
+            }
         }
         async renderContent(init = false) {
             if (this.activeTab === 'codeTab' && !this.codeEditor) {
@@ -8799,6 +8830,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             target.enabled = false;
             target.rightIcon.visible = true;
             if (target.id === 'designTab') {
+                this.hideAddToChatWidget();
                 if (this.updateDesigner) {
                     this.updateDesigner = false;
                     try {
@@ -8813,10 +8845,16 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 }
             }
             else if (target.id === 'codeTab') {
+                this.formDesigner.hideAddToChatWidget();
                 this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
                 if (this.isWidgetMD) {
                     const md = this.getUpdatedMd();
+                    const viewState = this.codeEditor.editor.saveViewState();
                     this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+                    if (viewState) {
+                        this.codeEditor.editor.restoreViewState(viewState);
+                    }
+                    this.codeEditor.editor.focus();
                 }
             }
             else {
@@ -8837,17 +8875,21 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const startLine = match?.[0]?.replace('{Line-', '').replace('}', '');
             const endLine = match?.[1]?.replace('{Line-', '').replace('}', '');
             md = md.replace(regex, '');
-            if (selectedPos !== undefined) {
-                if (typeof this.onSelectedWidget === 'function')
-                    this.onSelectedWidget(this.file.path, md, { startLine, endLine });
-            }
+            if (selectedPos !== undefined)
+                this._selectedWidget = { startLine, endLine, md };
+            else
+                this._selectedWidget = null;
             return md;
         }
         updateMd() {
             if (this.activeTab === 'codeTab')
                 return;
-            const md = this.getUpdatedMd();
-            return md;
+            this.getUpdatedMd();
+            if (!this._selectedWidget)
+                return;
+            const { startLine, endLine, md } = this._selectedWidget;
+            if (typeof this.onSelectedWidget === 'function')
+                this.onSelectedWidget(this.file.path, md, { startLine, endLine });
         }
         async parseMd(content) {
             const ui = (0, index_28.parseMD)(content, this.dataUrl);
@@ -8928,13 +8970,70 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     this.onSave(target, event);
             }
         }
-        handleCodeEditorSelectionChange(target, event) {
+        handleCodeEditorSelectionChange(target, selection) {
             if (!this.isWidgetMD)
                 return;
+            const position = {
+                lineNumber: selection.startLineNumber,
+                column: selection.startColumn
+            };
+            this.updateAddToChatWidget(position);
+            this.codeEditor.updateWidget(this._chatWidget);
+        }
+        updateAddToChatWidget(position) {
+            if (this._chatWidget) {
+                this._chatWidget.getPosition = () => {
+                    if (!position)
+                        return null;
+                    const ref = this.codeEditor.getContentWidgetPosition();
+                    return {
+                        position: { ...position },
+                        preference: [ref.ABOVE, ref.BELOW]
+                    };
+                };
+                return;
+            }
+            this._chatWidget = {
+                getId: () => 'addToChatWidget',
+                getDomNode: () => {
+                    const node = document.createElement('div');
+                    node.innerText = 'Add to Chat';
+                    node.style.background = 'var(--background-modal)';
+                    node.style.color = 'var(--text-primary)';
+                    node.style.padding = '0.5rem';
+                    node.style.borderRadius = '0.25rem';
+                    node.style.width = '150px';
+                    node.style.cursor = 'pointer';
+                    node.style.boxShadow = 'var(--shadows-1)';
+                    node.style.border = '1px solid var(--divider)';
+                    node.style.fontSize = '0.875rem';
+                    node.style.fontWeight = '500';
+                    node.onclick = this.handleAddToChat.bind(this);
+                    return node;
+                },
+                getPosition: () => {
+                    if (!position)
+                        return null;
+                    const ref = this.codeEditor.getContentWidgetPosition();
+                    return {
+                        position: { ...position },
+                        preference: [ref.ABOVE, ref.BELOW]
+                    };
+                }
+            };
+        }
+        handleAddToChat() {
             const { startLine, endLine, value } = this.codeEditor.executeEditor('insert', { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' });
             if (typeof this.onSelectedWidget === 'function') {
                 this.onSelectedWidget(this.file.path, value, { startLine, endLine });
             }
+            this.hideAddToChatWidget();
+        }
+        hideAddToChatWidget() {
+            if (!this._chatWidget)
+                return;
+            this.updateAddToChatWidget();
+            this.codeEditor.updateWidget(this._chatWidget);
         }
         async getImportFile(fileName, isPackage) {
             if (isPackage) {

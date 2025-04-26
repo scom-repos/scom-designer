@@ -106,6 +106,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private tempTsxPath: string = 'demo.tsx';
   private tempTsxContent: string = '';
   private isWidgetsLoaded: boolean = false;
+  private _selectedWidget: { startLine: number|string, endLine: number|string, md: string } = null;
+  private _chatWidget: any = null;
 
   private handleSelectionChangeBound: (target: ScomCodeEditor, event: any) => void;
 
@@ -386,6 +388,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.designTab.visible = !this.isContract;
     this.updateDesigner = !!(this.url || this.file?.path);
     await this.renderContent(true);
+    if (this.isWidgetMD) {
+      this.updateAddToChatWidget();
+      this.codeEditor.addWidget(this._chatWidget);
+    }
   }
 
   private async renderContent(init = false) {
@@ -568,6 +574,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     target.rightIcon.visible = true;
 
     if (target.id === 'designTab') {
+      this.hideAddToChatWidget();
       if (this.updateDesigner) {
         this.updateDesigner = false
         try {
@@ -580,10 +587,16 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         }
       }
     } else if (target.id === 'codeTab') {
+      this.formDesigner.hideAddToChatWidget();
       this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
       if (this.isWidgetMD) {
         const md = this.getUpdatedMd();
+        const viewState = this.codeEditor.editor.saveViewState();
         this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+        if (viewState) {
+          this.codeEditor.editor.restoreViewState(viewState);
+        }
+        this.codeEditor.editor.focus();
       }
     } else {
       this.deployDeployer.setData({
@@ -606,17 +619,23 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const endLine = match?.[1]?.replace('{Line-', '').replace('}', '');
     md = md.replace(regex, '');
 
-    if (selectedPos !== undefined) {
-      if (typeof this.onSelectedWidget === 'function')
-        this.onSelectedWidget(this.file.path, md, { startLine, endLine });
-    }
+    if (selectedPos !== undefined)
+      this._selectedWidget = { startLine, endLine, md };
+    else
+      this._selectedWidget = null;
+    
     return md;
   }
 
   private updateMd() {
     if (this.activeTab === 'codeTab') return;
-    const md = this.getUpdatedMd();
-    return md;
+    this.getUpdatedMd();
+
+    if (!this._selectedWidget) return;
+
+    const { startLine, endLine, md } = this._selectedWidget;
+    if (typeof this.onSelectedWidget === 'function')
+      this.onSelectedWidget(this.file.path, md, { startLine, endLine });
   }
 
   private async parseMd(content: string) {
@@ -708,8 +727,59 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
-  private handleCodeEditorSelectionChange(target: ScomCodeEditor, event: any) {
+  private handleCodeEditorSelectionChange(target: ScomCodeEditor, selection: any) {
     if (!this.isWidgetMD) return;
+    const position = {
+      lineNumber: selection.startLineNumber,
+      column: selection.startColumn
+    };
+    this.updateAddToChatWidget(position);
+    this.codeEditor.updateWidget(this._chatWidget);
+  }
+
+  private updateAddToChatWidget(position?: any) {
+    if (this._chatWidget) {
+      this._chatWidget.getPosition = () => {
+        if (!position) return null;
+        const ref = this.codeEditor.getContentWidgetPosition();
+        return {
+          position: {...position},
+          preference: [ref.ABOVE, ref.BELOW]
+        };
+      }
+      return;
+    }
+
+    this._chatWidget = {
+      getId: () => 'addToChatWidget',
+      getDomNode: () => {
+        const node = document.createElement('div');
+        node.innerText = 'Add to Chat';
+        node.style.background = 'var(--background-modal)';
+        node.style.color = 'var(--text-primary)';
+        node.style.padding = '0.5rem';
+        node.style.borderRadius = '0.25rem';
+        node.style.width = '150px';
+        node.style.cursor = 'pointer';
+        node.style.boxShadow = 'var(--shadows-1)';
+        node.style.border = '1px solid var(--divider)';
+        node.style.fontSize = '0.875rem';
+        node.style.fontWeight = '500';
+        node.onclick = this.handleAddToChat.bind(this);
+        return node;
+      },
+      getPosition: () => {
+        if (!position) return null;
+        const ref = this.codeEditor.getContentWidgetPosition();
+        return {
+          position: {...position},
+          preference: [ref.ABOVE, ref.BELOW]
+        };
+      }
+    };
+  }
+
+  private handleAddToChat() {
     const { startLine, endLine, value } = this.codeEditor.executeEditor(
       'insert',
       { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' }
@@ -717,6 +787,14 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     if (typeof this.onSelectedWidget === 'function') {
       this.onSelectedWidget(this.file.path, value, { startLine, endLine });
     }
+
+    this.hideAddToChatWidget();
+  }
+
+  private hideAddToChatWidget() {
+    if (!this._chatWidget) return;
+    this.updateAddToChatWidget();
+    this.codeEditor.updateWidget(this._chatWidget);
   }
 
   async getImportFile(fileName?: string, isPackage?: boolean): Promise<{ fileName: string, content: string }> {
