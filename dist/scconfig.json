@@ -1,9 +1,11 @@
 {
     "name": "@scom/scom-designer",
     "type": "widget",
-    "version": "0.1.31",
+    "hash": "sha256-tUlDvzINQYPX3rEuUMJ/6165ix7ZlI8vDmEJ/TLOB2c=",
+    "version": "0.1.32",
     "dependencies": [
         "@ijstech/components",
+        "@ijstech/tact",
         "@ijstech/compiler",
         "@scom/scom-yaml",
         "@scom/scom-buffer",
