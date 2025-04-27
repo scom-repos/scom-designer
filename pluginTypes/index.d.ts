@@ -2237,6 +2237,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private pnlWrap;
         private pnlDesignHeader;
         private pnlProperties;
+        private pnlAddToChat;
         private pathMapping;
         private mouseDown;
         private resizing;
@@ -2341,6 +2342,8 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private handleClose;
         private onModalOpen;
         private onModalClose;
+        private handleAddToChat;
+        hideAddToChatWidget(): void;
         onHide(): void;
         init(): void;
         render(): any;
@@ -2614,6 +2617,8 @@ declare module "@scom/scom-designer" {
         private tempTsxPath;
         private tempTsxContent;
         private isWidgetsLoaded;
+        private _selectedWidget;
+        private _chatWidget;
         private handleSelectionChangeBound;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
@@ -2695,6 +2700,9 @@ declare module "@scom/scom-designer" {
         private handleCodeEditorChange;
         private handleCodeEditorSave;
         private handleCodeEditorSelectionChange;
+        private updateAddToChatWidget;
+        private handleAddToChat;
+        private hideAddToChatWidget;
         getImportFile(fileName?: string, isPackage?: boolean): Promise<{
             fileName: string;
             content: string;
