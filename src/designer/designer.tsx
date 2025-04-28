@@ -101,6 +101,10 @@ class ControlResizer {
         this.addResizer("br");
       }
     } else {
+      if (this._control.tagName === 'I-PANEL') return
+
+      if (this._control.tag?.isGenerated === false) return;
+
       this._control.classList.add(selectedStyle);
       const parentEl = this._control.closest('#designerWrapper') as Control;
       const addToChatPanel = parentEl.querySelector('#pnlAddToChat') as Panel;
