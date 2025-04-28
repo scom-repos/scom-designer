@@ -6421,9 +6421,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 }
             }
             else {
-                if (this._control.tagName === 'I-PANEL') {
+                if (this._control.tagName === 'I-PANEL')
                     return;
-                }
+                if (this._control.tag?.isGenerated === false)
+                    return;
                 this._control.classList.add(index_css_24.selectedStyle);
                 const parentEl = this._control.closest('#designerWrapper');
                 const addToChatPanel = parentEl.querySelector('#pnlAddToChat');
