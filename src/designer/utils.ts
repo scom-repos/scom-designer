@@ -174,7 +174,8 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
   if (rootName.startsWith('i-page') || rootName.startsWith('i-scom')) {
     ++pos;
     const module = rootName.replace('i-', '@scom/');
-    let { tag, data, value } = root?.props || {};
+    let { tag, value, data, ...customSettings } = root?.props || {};
+
     const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
 
     if (isSelected) {
@@ -186,6 +187,7 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
     result += `\n\`\`\`${module}{`;
 
     let content = '';
+
     if (data) {
       if (typeof data === 'string' && data.startsWith('{')) {
         data = data.replace(/^{|}$/g, '');
@@ -194,19 +196,28 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
       const json = typeof data === 'string' ? JSON.parse(data) : data;
       content = toYAML(json);
     }
+
     if (typeof tag === 'string' && tag.startsWith('{{')) {
       tag = tag.replace(/^{{/, '{').replace(/}}$/, '}');
     }
-    const parsedTag = typeof tag === 'string' ? JSON.parse(tag) : tag;
 
-    const {
-      light: lightTag,
-      dark: darkTag,
-      ...part
-    } = parsedTag || {};
-    const newTag: Record<string, any> = {
-      ...(part || {})
-    };
+    const parsedTag = typeof tag === 'string' ? JSON.parse(tag) : tag;
+    const newTag: Record<string, any> = {...parsedTag, ...customSettings};
+    for (let prop in newTag) {
+      if (newTag.hasOwnProperty(prop)) {
+        if (typeof newTag[prop] === 'string' && newTag[prop].startsWith('{{')) {
+          newTag[prop] = newTag[prop].trim();
+          const value = newTag[prop].replace(/^{{/, '{').replace(/}}$/, '}');
+          newTag[prop] = JSON.parse(value);
+        }
+      }
+    }
+
+    // const {
+    //   light: lightTag,
+    //   dark: darkTag,
+    //   ...part
+    // } = parsedTag || {};
 
     if (Object.keys(newTag).length > 0) {
       let partString = JSON.stringify(newTag, null, 2);

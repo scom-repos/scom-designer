@@ -284,6 +284,7 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     export const parseInputs: (inputFields: any, key?: string) => Promise<any>;
     export const basicTypes: string[];
     export const mergeObjects: (target: any, source: any) => void;
+    export const debounce: (func: any, wait: number) => (...args: any) => void;
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
@@ -2205,6 +2206,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         onTogglePreview?: (value: boolean) => void;
         onClose?: () => void;
         onSelectControl?: () => void;
+        onDesignerChange?: (target: ScomDesignerForm, event: Event) => void;
     }
     global {
         namespace JSX {
@@ -2268,6 +2270,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         onTogglePreview?: (value: boolean) => void;
         onClose?: () => void;
         onSelectControl?: () => void;
+        onDesignerChange?: (target: ScomDesignerForm) => void;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
@@ -2682,6 +2685,7 @@ declare module "@scom/scom-designer" {
         };
         showDesigner(): Promise<void>;
         private createFormDesigner;
+        private handleDesignerChange;
         private createDeployer;
         private handleTogglePanels;
         private loadContent;

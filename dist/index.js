@@ -353,7 +353,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         if (rootName.startsWith('i-page') || rootName.startsWith('i-scom')) {
             ++pos;
             const module = rootName.replace('i-', '@scom/');
-            let { tag, data, value } = root?.props || {};
+            let { tag, value, data, ...customSettings } = root?.props || {};
             const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
             if (isSelected) {
                 startLine = result.split('\n').length;
@@ -372,10 +372,21 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                 tag = tag.replace(/^{{/, '{').replace(/}}$/, '}');
             }
             const parsedTag = typeof tag === 'string' ? JSON.parse(tag) : tag;
-            const { light: lightTag, dark: darkTag, ...part } = parsedTag || {};
-            const newTag = {
-                ...(part || {})
-            };
+            const newTag = { ...parsedTag, ...customSettings };
+            for (let prop in newTag) {
+                if (newTag.hasOwnProperty(prop)) {
+                    if (typeof newTag[prop] === 'string' && newTag[prop].startsWith('{{')) {
+                        newTag[prop] = newTag[prop].trim();
+                        const value = newTag[prop].replace(/^{{/, '{').replace(/}}$/, '}');
+                        newTag[prop] = JSON.parse(value);
+                    }
+                }
+            }
+            // const {
+            //   light: lightTag,
+            //   dark: darkTag,
+            //   ...part
+            // } = parsedTag || {};
             if (Object.keys(newTag).length > 0) {
                 let partString = JSON.stringify(newTag, null, 2);
                 partString = partString.replace(/^{|}$/g, '');
@@ -744,7 +755,7 @@ define("@scom/scom-designer/assets.ts", ["require", "exports", "@ijstech/compone
 define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton-core", "@scom/scom-designer/assets.ts", "@scom/scom-designer/helpers/store.ts", "@ijstech/components"], function (require, exports, ton_core_1, assets_1, store_2, components_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.mergeObjects = exports.basicTypes = exports.parseInputs = exports.fromJSModule = exports.extractContractName = exports.sleep = exports.getTranslationKey = exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.handleParse = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
+    exports.debounce = exports.mergeObjects = exports.basicTypes = exports.parseInputs = exports.fromJSModule = exports.extractContractName = exports.sleep = exports.getTranslationKey = exports.isNumber = exports.isSameValue = exports.parseNumberValue = exports.handleParse = exports.parsePropValue = exports.parseProps = exports.extractFileName = exports.getFileContent = exports.fontDecorations = exports.fontTransforms = exports.fontStyles = exports.borderStyles = exports.alignContentProps = exports.justifyProps = exports.getAlignProps = exports.backgroundOptions = void 0;
     const Theme = components_6.Styles.Theme.ThemeVars;
     exports.backgroundOptions = [
         {
@@ -1393,6 +1404,17 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
         }
     };
     exports.mergeObjects = mergeObjects;
+    const debounce = (func, wait) => {
+        let timeout;
+        return function (...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                func.apply(context, args);
+            }, wait);
+        };
+    };
+    exports.debounce = debounce;
 });
 define("@scom/scom-designer/languages/main.json.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -6583,12 +6605,12 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 }
             }
             if (name.includes('i-page') && options.tag) {
-                const tag = options.tag;
-                options.tag = {
-                    light: tag,
-                    dark: tag,
-                    ...options.tag
-                };
+                // const tag = options.tag;
+                // options.tag = {
+                //   light: tag,
+                //   dark: tag,
+                //   ...options.tag
+                // }
             }
             const control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
             if (name.includes('scom')) {
@@ -6833,6 +6855,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     control.control.remove();
                     this.pathMapping.delete(path);
                     this.studio.removeComponent(this);
+                    if (typeof this.onDesignerChange === 'function')
+                        this.onDesignerChange(this);
                 }
             }
         }
@@ -6854,6 +6878,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.pathMapping.set(parentPath, parent);
             }
             this.updateStructure();
+            if (typeof this.onDesignerChange === 'function')
+                this.onDesignerChange(this);
         }
         duplicateItem(component) {
             const control = this.pathMapping.get(component.path);
@@ -7001,6 +7027,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     }
                     else if (name.startsWith("this."))
                         this.studio.addEventHandler(this, "onClick", name.substring(5));
+                    if (typeof this.onDesignerChange === 'function')
+                        this.onDesignerChange(this);
                 }
             };
         }
@@ -7072,6 +7100,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     this.updateStructure();
                 }
                 this.selectedComponent = null;
+                if (typeof this.onDesignerChange === 'function')
+                    this.onDesignerChange(this);
                 return com;
             }
         }
@@ -7399,6 +7429,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 this.updateRepeater(this.selectedControl.repeater);
             }
             this.pathMapping.set(this.selectedControl.path, this.selectedControl);
+            if (typeof this.onDesignerChange === 'function')
+                this.onDesignerChange(this);
         }
         updateIconProp(prop, value, control) {
             if (this.selectedControl?.name === 'i-tree-node') {
@@ -7462,6 +7494,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     this.studio.renameEventHandler(this, oldValue, newValue);
                 else
                     this.studio.addEventHandler(this, prop, `${newValue}`);
+                if (typeof this.onDesignerChange === 'function')
+                    this.onDesignerChange(this);
             }
         }
         onControlEventDblClick(funcName) {
@@ -7801,6 +7835,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.onClose = this.getAttribute('onClose', true) || this.onClose;
             this.onPreview = this.getAttribute('onPreview', true) || this.onPreview;
             this.onSelectControl = this.getAttribute('onSelectControl', true) || this.onSelectControl;
+            this.onDesignerChange = this.getAttribute('onDesignerChange', true) || this.onDesignerChange;
             this.wrapperComponentPicker.style.borderBottom = 'none';
             this.initComponentPicker();
             this.initBlockPicker();
@@ -8733,8 +8768,17 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     return;
                 this.updateMd();
             };
+            this.formDesigner.onDesignerChange = (0, utils_16.debounce)(this.handleDesignerChange.bind(this), 500);
             this.formDesigner.studio = this;
             this.formDesigner.visible = this.isValid;
+        }
+        handleDesignerChange(target, event) {
+            if (this.isWidgetMD) {
+                const md = this.getUpdatedMd();
+                this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+                if (typeof this.onChange === 'function')
+                    this.onChange(this, event);
+            }
         }
         createDeployer() {
             this.deployDeployer = this.createElement('i-scom-designer--deployer', this.pnlMain);
@@ -8840,8 +8884,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     try {
                         if (this.isTsx)
                             await this.parseTsx(fileName);
-                        else
+                        else {
                             await this.parseMd(this.codeEditor.value);
+                            if (typeof this.onChange === 'function')
+                                this.onChange(this, event);
+                        }
                     }
                     catch (error) {
                         this.updateDesigner = true;
@@ -8854,7 +8901,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 if (this.isWidgetMD) {
                     const md = this.getUpdatedMd();
                     const viewState = this.codeEditor.editor.saveViewState();
-                    this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+                    this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
                     if (viewState) {
                         this.codeEditor.editor.restoreViewState(viewState);
                     }

@@ -125,6 +125,7 @@ interface ScomDesignerFormElement extends ControlElement {
   onTogglePreview?: (value: boolean) => void;
   onClose?: () => void;
   onSelectControl?: () => void;
+  onDesignerChange?: (target: ScomDesignerForm, event: Event) => void;
 }
 
 declare global {
@@ -191,6 +192,7 @@ export class ScomDesignerForm extends Module {
   onTogglePreview?: (value: boolean) => void;
   onClose?: () => void;
   onSelectControl?: () => void;
+  onDesignerChange?: (target: ScomDesignerForm) => void;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -342,12 +344,12 @@ export class ScomDesignerForm extends Module {
     }
 
     if (name.includes('i-page') && options.tag) {
-      const tag = options.tag;
-      options.tag = {
-        light: tag,
-        dark: tag,
-        ...options.tag
-      }
+      // const tag = options.tag;
+      // options.tag = {
+      //   light: tag,
+      //   dark: tag,
+      //   ...options.tag
+      // }
     }
 
     const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
@@ -589,6 +591,8 @@ export class ScomDesignerForm extends Module {
         control.control.remove();
         this.pathMapping.delete(path);
         this.studio.removeComponent(this);
+
+        if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
       }
     }
   }
@@ -612,6 +616,8 @@ export class ScomDesignerForm extends Module {
       this.pathMapping.set(parentPath, parent);
     }
     this.updateStructure();
+
+    if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
   }
 
   private duplicateItem(component: IComponent) {
@@ -753,6 +759,8 @@ export class ScomDesignerForm extends Module {
           this.studio.addEventHandler(this, "onClick", `${fnName}Click`);
         } else if (name.startsWith("this."))
           this.studio.addEventHandler(this, "onClick", name.substring(5));
+
+        if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
       }
     };
   }
@@ -824,6 +832,8 @@ export class ScomDesignerForm extends Module {
         this.updateStructure();
       }
       this.selectedComponent = null;
+
+      if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
       return com;
     }
   }
@@ -1148,6 +1158,8 @@ export class ScomDesignerForm extends Module {
       this.updateRepeater(this.selectedControl.repeater);
     }
     this.pathMapping.set(this.selectedControl.path, this.selectedControl);
+
+    if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
   }
 
   private updateIconProp(prop: string, value: any, control: Control) {
@@ -1205,6 +1217,8 @@ export class ScomDesignerForm extends Module {
       this.selectedControl.control._setDesignPropValue(prop, `this.${newValue}`);
       if (oldValue) this.studio.renameEventHandler(this, oldValue, newValue);
       else this.studio.addEventHandler(this, prop, `${newValue}`);
+
+      if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
     }
   }
 
@@ -1559,6 +1573,7 @@ export class ScomDesignerForm extends Module {
     this.onClose = this.getAttribute('onClose', true) || this.onClose;
     this.onPreview = this.getAttribute('onPreview', true) || this.onPreview;
     this.onSelectControl = this.getAttribute('onSelectControl', true) || this.onSelectControl;
+    this.onDesignerChange = this.getAttribute('onDesignerChange', true) || this.onDesignerChange;
     this.wrapperComponentPicker.style.borderBottom = 'none'
     this.initComponentPicker()
     this.initBlockPicker()
