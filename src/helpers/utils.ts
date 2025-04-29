@@ -655,3 +655,14 @@ export const mergeObjects = (target: any, source: any) => {
     }
   }
 };
+
+export const debounce = (func: any, wait: number) => {
+  let timeout: any;
+  return function (...args: any) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(context, args);
+    }, wait);
+  };
+};

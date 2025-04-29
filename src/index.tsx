@@ -21,7 +21,7 @@ import { ActionType, IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSDa
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
-import { extractFileName, getFileContent } from './helpers/utils'
+import { debounce, extractFileName, getFileContent } from './helpers/utils'
 import { pageWidgets, themesConfig } from './helpers/config';
 import { mainJson } from './languages/index';
 import { parseMD, renderMd, ScomDesignerForm, template } from './designer/index';
@@ -464,8 +464,18 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (!this.isWidgetMD) return;
       this.updateMd();
     };
+    this.formDesigner.onDesignerChange = debounce(this.handleDesignerChange.bind(this), 500);
     this.formDesigner.studio = this;
     this.formDesigner.visible = this.isValid;
+  }
+
+  private handleDesignerChange(target: ScomDesignerForm, event: Event) {
+    if (this.isWidgetMD) {
+      const md = this.getUpdatedMd();
+      this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+
+      if (typeof this.onChange === 'function') this.onChange(this, event);
+    }
   }
 
   private createDeployer() {
@@ -580,8 +590,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         try {
           if (this.isTsx)
             await this.parseTsx(fileName);
-          else
+          else {
             await this.parseMd(this.codeEditor.value);
+            if (typeof this.onChange === 'function') this.onChange(this, event)
+          }
         } catch (error) {
           this.updateDesigner = true
         }
@@ -592,7 +604,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (this.isWidgetMD) {
         const md = this.getUpdatedMd();
         const viewState = this.codeEditor.editor.saveViewState();
-        this.codeEditor.value = md.replace(/\n\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+        this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
         if (viewState) {
           this.codeEditor.editor.restoreViewState(viewState);
         }
