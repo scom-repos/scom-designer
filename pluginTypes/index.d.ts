@@ -23,7 +23,7 @@ declare module "@scom/scom-designer/index.css.ts" {
 declare module "@scom/scom-designer/designer/utils.ts" {
     import { IComponent } from "@scom/scom-designer/interface.ts";
     export const parseMD: (html: string, baseUrl: string) => any[];
-    export const renderMd: (root: IComponent, result: string, selectedPos: number, hasParentPageBlock?: boolean) => string;
+    export const renderMd: (root: IComponent, result: string, positions: number[], hasParentPageBlock?: boolean) => string;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
@@ -2557,10 +2557,10 @@ declare module "@scom/scom-designer" {
     } | null>;
     type onClosePreviewCallback = () => void;
     type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
-    type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }?: {
+    type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }: {
         startLine: number | string;
         endLine: number | string;
-    }) => void;
+    }, fromDesigner: boolean) => void;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
@@ -2621,6 +2621,8 @@ declare module "@scom/scom-designer" {
         private tempTsxContent;
         private isWidgetsLoaded;
         private _selectedWidget;
+        private _positions;
+        private _oldLines;
         private _chatWidget;
         private handleSelectionChangeBound;
         onSave: onSaveCallback;
@@ -2675,6 +2677,7 @@ declare module "@scom/scom-designer" {
         disposeEditor(): void;
         saveViewState(): any;
         restoreViewState(state: any): void;
+        clearPositions(): void;
         private renderUI;
         private renderContent;
         private createCodeEditor;
