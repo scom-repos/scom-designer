@@ -1,9 +1,10 @@
 {
     "name": "@scom/scom-designer",
     "type": "widget",
-    "version": "0.1.34",
+    "version": "0.1.35",
     "dependencies": [
         "@ijstech/components",
+        "@ijstech/tact",
         "@ijstech/compiler",
         "@scom/scom-yaml",
         "@scom/scom-buffer",
