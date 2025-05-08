@@ -21,6 +21,12 @@ export const parseMD = (html: string, baseUrl: string) => {
     if (match.name === 'i-page-block') {
       if (result.name) list.push({ ...result });
       result = { ...match, items: [] };
+    } else if (match.name === 'i-page-meta') {
+      list.push({
+        name: 'i-page-meta',
+        props: match.props,
+        items: []
+      });
     } else {
       const isGroup = name === 'i-page-group';
       const moduleName = isGroup ? 'i-page-block' : name;
@@ -164,7 +170,7 @@ let pos = 0;
 let startLine = -1;
 let endLine = -1;
 
-export const renderMd = (root: IComponent, result: string, selectedPos: number, hasParentPageBlock?: boolean) => {
+export const renderMd = (root: IComponent, result: string, positions: number[], hasParentPageBlock?: boolean) => {
   if (!root) return '';
   let rootName = root?.name || '';
   if (hasParentPageBlock && rootName === 'i-page-block') {
@@ -176,12 +182,11 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
     const module = rootName.replace('i-', '@scom/');
     let { tag, value, data, ...customSettings } = root?.props || {};
 
-    const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
+    const isSelected = pos !== undefined && positions.includes(pos);
 
     if (isSelected) {
       startLine = result.split('\n').length;
-      result += `\n{SELECT_START}{Line-${startLine}}\n`;
-
+      result += `{SELECT_START}{Line-${startLine}-${pos}}`;
     }
 
     result += `\n\`\`\`${module}{`;
@@ -213,12 +218,6 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
       }
     }
 
-    // const {
-    //   light: lightTag,
-    //   dark: darkTag,
-    //   ...part
-    // } = parsedTag || {};
-
     if (Object.keys(newTag).length > 0) {
       let partString = JSON.stringify(newTag, null, 2);
       partString = partString.replace(/^{|}$/g, '');
@@ -231,8 +230,8 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
     result += `}\n${content || ''}\n\`\`\`\n`;
 
     if (isSelected) {
-      endLine = result.split('\n').length;
-      result += `\n{SELECT_END}{Line-${endLine}}\n`;
+      endLine = result.split('\n').length - 1;
+      result += `{SELECT_END}{Line-${endLine}-${pos}}`;
     }
   } else if (root.name == 'i-panel') {
     pos = 0;
@@ -240,7 +239,7 @@ export const renderMd = (root: IComponent, result: string, selectedPos: number, 
 
   if (root.items) {
     root.items.forEach((item, index) => {
-      result = renderMd(item, result, selectedPos, rootName === 'i-page-block');
+      result = renderMd(item, result, positions, rootName === 'i-page-block');
     });
   }
 

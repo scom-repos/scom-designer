@@ -33,7 +33,7 @@ type onChangeCallback = (target: ScomDesigner, event: Event) => void;
 type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fileName: string, content: string } | null>;
 type onClosePreviewCallback = () => void;
 type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
-type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }?: { startLine: number|string, endLine: number|string }) => void;
+type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }: { startLine: number|string, endLine: number|string }, fromDesigner: boolean) => void;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -107,6 +107,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private tempTsxContent: string = '';
   private isWidgetsLoaded: boolean = false;
   private _selectedWidget: { startLine: number|string, endLine: number|string, md: string } = null;
+  private _positions: Set<number> = new Set();
+  private _oldLines: {startLine: number|string, endLine: number|string }[] = [];
   private _chatWidget: any = null;
 
   private handleSelectionChangeBound: (target: ScomCodeEditor, event: any) => void;
@@ -382,6 +384,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
+  clearPositions() {
+    this._positions.clear();
+    this._oldLines = [];
+  }
+
   private async renderUI() {
     this.activeTab = 'codeTab';
     this.deployTab.visible = this.isContract;
@@ -472,7 +479,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private handleDesignerChange(target: ScomDesignerForm, event: Event) {
     if (this.isWidgetMD) {
       const md = this.getUpdatedMd();
-      this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+      this.codeEditor.value = md;
 
       if (typeof this.onChange === 'function') this.onChange(this, event);
     }
@@ -592,7 +599,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             await this.parseTsx(fileName);
           else {
             await this.parseMd(this.codeEditor.value);
-            if (typeof this.onChange === 'function') this.onChange(this, event)
           }
         } catch (error) {
           this.updateDesigner = true
@@ -604,7 +610,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (this.isWidgetMD) {
         const md = this.getUpdatedMd();
         const viewState = this.codeEditor.editor.saveViewState();
-        this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+        this.codeEditor.value = md;
         if (viewState) {
           this.codeEditor.editor.restoreViewState(viewState);
         }
@@ -621,15 +627,28 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     target.enabled = true;
   }
 
-  private getUpdatedMd() {
+  private getUpdatedMd(inSelected: boolean = false) {
     const root = this.formDesigner.rootComponent;
+
+    if (!inSelected) {
+      const positions = Array.from(this._positions);
+      const md = renderMd(root as IComponent, '', positions);
+      return md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[^}]+\}/g, '');
+    }
+
     const selectedPos = this.formDesigner.getSelectedPosition();
-    let md: string = renderMd(root as IComponent, '', selectedPos);
-    const regex = /\{Line-[0-9]+\}/g;
+    if (selectedPos !== undefined) this._positions.add(selectedPos);
+    const positions = Array.from(this._positions);
+    let md: string = renderMd(root as IComponent, '', positions);
+
+    const regex = new RegExp(`\\{Line-[0-9]+-${selectedPos}\\}`, 'g');  
     const match = md.match(regex);
-    const startLine = match?.[0]?.replace('{Line-', '').replace('}', '');
-    const endLine = match?.[1]?.replace('{Line-', '').replace('}', '');
-    md = md.replace(regex, '');
+    const startLine = match?.[0]?.split('-')?.[1];
+    const endLine = match?.[1]?.split('-')?.[1];
+
+    md = md.replace(/(Line-[0-9]+)-[0-9]+/g, '$1');
+
+    startLine && this._oldLines.push({ startLine, endLine });
 
     if (selectedPos !== undefined)
       this._selectedWidget = { startLine, endLine, md };
@@ -641,13 +660,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private updateMd() {
     if (this.activeTab === 'codeTab') return;
-    this.getUpdatedMd();
+    this.getUpdatedMd(true);
 
     if (!this._selectedWidget) return;
 
     const { startLine, endLine, md } = this._selectedWidget;
     if (typeof this.onSelectedWidget === 'function')
-      this.onSelectedWidget(this.file.path, md, { startLine, endLine });
+      this.onSelectedWidget(this.file.path, md, { startLine, endLine }, true);
   }
 
   private async parseMd(content: string) {
@@ -794,10 +813,22 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private handleAddToChat() {
     const { startLine, endLine, value } = this.codeEditor.executeEditor(
       'insert',
-      { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' }
+      { textBefore: '{SELECT_START}', textAfter: '{SELECT_END}', oldLines: [...this._oldLines] }
     )
+
+    const regex = /({SELECT_START}([^`]+))?\`\`\`(.*?)\`\`\`(\s+{SELECT_END}([^`]+))?/gms;
+    const matches = value.match(regex);
+    this._oldLines.push({ startLine, endLine });
+
+    for (let i = 0; i < matches?.length; i++) {
+      const match = matches[i];
+      if (match.includes('{SELECT_START}') || match.includes('{SELECT_END}')) {
+        this._positions.add(i + 1);
+      }
+    }
+
     if (typeof this.onSelectedWidget === 'function') {
-      this.onSelectedWidget(this.file.path, value, { startLine, endLine });
+      this.onSelectedWidget(this.file.path, value, { startLine, endLine }, false);
     }
 
     this.hideAddToChatWidget();

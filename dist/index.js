@@ -203,6 +203,13 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                     list.push({ ...result });
                 result = { ...match, items: [] };
             }
+            else if (match.name === 'i-page-meta') {
+                list.push({
+                    name: 'i-page-meta',
+                    props: match.props,
+                    items: []
+                });
+            }
             else {
                 const isGroup = name === 'i-page-group';
                 const moduleName = isGroup ? 'i-page-block' : name;
@@ -343,7 +350,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
     let pos = 0;
     let startLine = -1;
     let endLine = -1;
-    const renderMd = (root, result, selectedPos, hasParentPageBlock) => {
+    const renderMd = (root, result, positions, hasParentPageBlock) => {
         if (!root)
             return '';
         let rootName = root?.name || '';
@@ -354,10 +361,10 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             ++pos;
             const module = rootName.replace('i-', '@scom/');
             let { tag, value, data, ...customSettings } = root?.props || {};
-            const isSelected = selectedPos !== undefined && pos !== undefined && selectedPos === pos;
+            const isSelected = pos !== undefined && positions.includes(pos);
             if (isSelected) {
                 startLine = result.split('\n').length;
-                result += `\n{SELECT_START}{Line-${startLine}}\n`;
+                result += `{SELECT_START}{Line-${startLine}-${pos}}`;
             }
             result += `\n\`\`\`${module}{`;
             let content = '';
@@ -382,11 +389,6 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                     }
                 }
             }
-            // const {
-            //   light: lightTag,
-            //   dark: darkTag,
-            //   ...part
-            // } = parsedTag || {};
             if (Object.keys(newTag).length > 0) {
                 let partString = JSON.stringify(newTag, null, 2);
                 partString = partString.replace(/^{|}$/g, '');
@@ -397,8 +399,8 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             }
             result += `}\n${content || ''}\n\`\`\`\n`;
             if (isSelected) {
-                endLine = result.split('\n').length;
-                result += `\n{SELECT_END}{Line-${endLine}}\n`;
+                endLine = result.split('\n').length - 1;
+                result += `{SELECT_END}{Line-${endLine}-${pos}}`;
             }
         }
         else if (root.name == 'i-panel') {
@@ -406,7 +408,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         }
         if (root.items) {
             root.items.forEach((item, index) => {
-                result = (0, exports.renderMd)(item, result, selectedPos, rootName === 'i-page-block');
+                result = (0, exports.renderMd)(item, result, positions, rootName === 'i-page-block');
             });
         }
         return result.trim();
@@ -8554,6 +8556,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.tempTsxContent = '';
             this.isWidgetsLoaded = false;
             this._selectedWidget = null;
+            this._positions = new Set();
+            this._oldLines = [];
             this._chatWidget = null;
             this.tag = {};
             this.importCallback = this.importCallback.bind(this);
@@ -8693,6 +8697,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.codeEditor.restoreViewState(state);
             }
         }
+        clearPositions() {
+            this._positions.clear();
+            this._oldLines = [];
+        }
         async renderUI() {
             this.activeTab = 'codeTab';
             this.deployTab.visible = this.isContract;
@@ -8775,7 +8783,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         handleDesignerChange(target, event) {
             if (this.isWidgetMD) {
                 const md = this.getUpdatedMd();
-                this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+                this.codeEditor.value = md;
                 if (typeof this.onChange === 'function')
                     this.onChange(this, event);
             }
@@ -8886,8 +8894,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                             await this.parseTsx(fileName);
                         else {
                             await this.parseMd(this.codeEditor.value);
-                            if (typeof this.onChange === 'function')
-                                this.onChange(this, event);
                         }
                     }
                     catch (error) {
@@ -8901,7 +8907,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 if (this.isWidgetMD) {
                     const md = this.getUpdatedMd();
                     const viewState = this.codeEditor.editor.saveViewState();
-                    this.codeEditor.value = md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[0-9]+\}/g, '');
+                    this.codeEditor.value = md;
                     if (viewState) {
                         this.codeEditor.editor.restoreViewState(viewState);
                     }
@@ -8917,15 +8923,24 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             target.rightIcon.visible = false;
             target.enabled = true;
         }
-        getUpdatedMd() {
+        getUpdatedMd(inSelected = false) {
             const root = this.formDesigner.rootComponent;
+            if (!inSelected) {
+                const positions = Array.from(this._positions);
+                const md = (0, index_28.renderMd)(root, '', positions);
+                return md.replace(/\{SELECT_(\w+)\}/g, '').replace(/\{Line-[^}]+\}/g, '');
+            }
             const selectedPos = this.formDesigner.getSelectedPosition();
-            let md = (0, index_28.renderMd)(root, '', selectedPos);
-            const regex = /\{Line-[0-9]+\}/g;
+            if (selectedPos !== undefined)
+                this._positions.add(selectedPos);
+            const positions = Array.from(this._positions);
+            let md = (0, index_28.renderMd)(root, '', positions);
+            const regex = new RegExp(`\\{Line-[0-9]+-${selectedPos}\\}`, 'g');
             const match = md.match(regex);
-            const startLine = match?.[0]?.replace('{Line-', '').replace('}', '');
-            const endLine = match?.[1]?.replace('{Line-', '').replace('}', '');
-            md = md.replace(regex, '');
+            const startLine = match?.[0]?.split('-')?.[1];
+            const endLine = match?.[1]?.split('-')?.[1];
+            md = md.replace(/(Line-[0-9]+)-[0-9]+/g, '$1');
+            startLine && this._oldLines.push({ startLine, endLine });
             if (selectedPos !== undefined)
                 this._selectedWidget = { startLine, endLine, md };
             else
@@ -8935,12 +8950,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         updateMd() {
             if (this.activeTab === 'codeTab')
                 return;
-            this.getUpdatedMd();
+            this.getUpdatedMd(true);
             if (!this._selectedWidget)
                 return;
             const { startLine, endLine, md } = this._selectedWidget;
             if (typeof this.onSelectedWidget === 'function')
-                this.onSelectedWidget(this.file.path, md, { startLine, endLine });
+                this.onSelectedWidget(this.file.path, md, { startLine, endLine }, true);
         }
         async parseMd(content) {
             const ui = (0, index_28.parseMD)(content, this.dataUrl);
@@ -9074,9 +9089,18 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             };
         }
         handleAddToChat() {
-            const { startLine, endLine, value } = this.codeEditor.executeEditor('insert', { textBefore: '{SELECT_START}\n', textAfter: '\n{SELECT_END}\n' });
+            const { startLine, endLine, value } = this.codeEditor.executeEditor('insert', { textBefore: '{SELECT_START}', textAfter: '{SELECT_END}', oldLines: [...this._oldLines] });
+            const regex = /({SELECT_START}([^`]+))?\`\`\`(.*?)\`\`\`(\s+{SELECT_END}([^`]+))?/gms;
+            const matches = value.match(regex);
+            this._oldLines.push({ startLine, endLine });
+            for (let i = 0; i < matches?.length; i++) {
+                const match = matches[i];
+                if (match.includes('{SELECT_START}') || match.includes('{SELECT_END}')) {
+                    this._positions.add(i + 1);
+                }
+            }
             if (typeof this.onSelectedWidget === 'function') {
-                this.onSelectedWidget(this.file.path, value, { startLine, endLine });
+                this.onSelectedWidget(this.file.path, value, { startLine, endLine }, false);
             }
             this.hideAddToChatWidget();
         }
