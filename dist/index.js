@@ -213,14 +213,18 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
             else {
                 const isGroup = name === 'i-page-group';
                 const moduleName = isGroup ? 'i-page-block' : name;
-                const lasElement = result.items?.[result.items.length - 1];
-                if (lasElement?.hasItems) {
-                    lasElement.items = lasElement.items || [];
-                    lasElement.items.push({
+                result.hasItems = result.name === 'i-page-block' || result.name === 'i-page-group';
+                let { item: lastElement, parent } = getLastItemBlock(result);
+                if (lastElement) {
+                    if (parent?.tag?.direction && isGroup) {
+                        lastElement = parent;
+                    }
+                    lastElement.items = lastElement.items || [];
+                    lastElement.items.push({
                         ...match,
                         name: moduleName,
                         hasItems: isGroup,
-                        parent: lasElement.path
+                        parent: lastElement.path
                     });
                 }
                 else if (result.name) {
@@ -248,6 +252,22 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         return list;
     };
     exports.parseMD = parseMD;
+    const getLastItemBlock = (item, parent) => {
+        if (!item.hasItems)
+            return null;
+        if (item.hasItems && !item?.items?.length)
+            return { item, parent };
+        const items = item.items || [];
+        if (items.length > 0) {
+            const lastItem = items[items.length - 1];
+            if (lastItem.hasItems) {
+                return getLastItemBlock(lastItem, item);
+            }
+            else {
+                return { item, parent };
+            }
+        }
+    };
     const checkMatches = (content, baseUrl) => {
         const codeRegex = /([^{}]+)\{((?:[^{}]+|{(?:[^{}]+|{[^{}]*})*})*)\}(?:([\s\S]*))?/gm;
         const nameRegex = /[^{}]+/;
@@ -408,7 +428,7 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         }
         if (root.items) {
             root.items.forEach((item, index) => {
-                result = (0, exports.renderMd)(item, result, positions, rootName === 'i-page-block');
+                result = (0, exports.renderMd)(item, result, positions, rootName === 'i-page-block' || rootName === 'i-page-group');
             });
         }
         return result.trim();
