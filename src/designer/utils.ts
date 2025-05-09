@@ -1,4 +1,4 @@
-import { IconName, IdUtils, application } from "@ijstech/components";
+import { IconName, IdUtils } from "@ijstech/components";
 import { IComponent } from "../interface";
 import { toJSON, toYAML } from "@scom/scom-yaml";
 
@@ -30,15 +30,19 @@ export const parseMD = (html: string, baseUrl: string) => {
     } else {
       const isGroup = name === 'i-page-group';
       const moduleName = isGroup ? 'i-page-block' : name;
+      result.hasItems = result.name === 'i-page-block' || result.name === 'i-page-group';
+      let { item: lastElement, parent } = getLastItemBlock(result);
 
-      const lasElement = result.items?.[result.items.length - 1];
-      if (lasElement?.hasItems) {
-        lasElement.items = lasElement.items || [];
-        lasElement.items.push({
+      if (lastElement) {
+        if (parent?.tag?.direction && isGroup) {
+          lastElement = parent;
+        }
+        lastElement.items = lastElement.items || [];
+        lastElement.items.push({
           ...match,
           name: moduleName,
           hasItems: isGroup,
-          parent: lasElement.path
+          parent: lastElement.path
         });
       } else if (result.name) {
         result.items = result.items || [];
@@ -64,6 +68,21 @@ export const parseMD = (html: string, baseUrl: string) => {
   }
 
   return list;
+}
+
+const getLastItemBlock = (item: IComponent, parent?: IComponent) => {
+  if (!item.hasItems) return null;
+  if (item.hasItems && !item?.items?.length) return { item, parent };
+
+  const items = item.items || [];
+  if (items.length > 0) {
+    const lastItem = items[items.length - 1];
+    if (lastItem.hasItems) {
+      return getLastItemBlock(lastItem, item);
+    } else {
+      return { item, parent };
+    }
+  }
 }
 
 const checkMatches = (content: string, baseUrl: string) => {
@@ -239,7 +258,7 @@ export const renderMd = (root: IComponent, result: string, positions: number[], 
 
   if (root.items) {
     root.items.forEach((item, index) => {
-      result = renderMd(item, result, positions, rootName === 'i-page-block');
+      result = renderMd(item, result, positions, rootName === 'i-page-block' || rootName === 'i-page-group');
     });
   }
 
