@@ -342,6 +342,9 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
                     props.value = content;
                 }
                 else {
+                    content = content.replace(/(\w+)\:\s*\"([^\"]*?)\"/gs, (match, p1, p2) => {
+                        return `${p1}: "${p2.replace(/\n/g, '\\n')}"`;
+                    });
                     const yamlProps = (0, scom_yaml_1.toJSON)(content);
                     if (name === 'scom-image-gallery' || name === 'page-form') {
                         props = { ...(props || {}), ...yamlProps };
