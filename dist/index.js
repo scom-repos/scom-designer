@@ -761,7 +761,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         '@scom/page-form',
         '@scom/page-breadcrumb',
         '@scom/page-blog',
-        '@scom/page-blog-list'
+        '@scom/page-blog-list',
+        '@scom/scom-carousel'
     ];
     exports.pageWidgets = pageWidgets;
 });
@@ -6629,20 +6630,28 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     delete controlProps[key];
                 }
             }
-            if (name.includes('i-page') && options.tag) {
-                // const tag = options.tag;
-                // options.tag = {
-                //   light: tag,
-                //   dark: tag,
-                //   ...options.tag
-                // }
-            }
-            const control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
-            if (name.includes('scom')) {
-                parent?.appendChild(control);
+            let control;
+            if (name === 'i-scom-carousel' || name === 'i-page-form') {
+                control = this.createElement(name, parent);
+                control.designMode = true;
+                control.cursor = 'pointer';
+                const { tag, ...props } = controlProps;
+                if (name === 'i-scom-carousel') {
+                    props.data && await control.setData(props.data);
+                }
+                else {
+                    props && control.setData(props);
+                }
+                tag && control.setTag(tag);
             }
             else {
-                control.parent = parent;
+                control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
+                if (name.includes('scom')) {
+                    parent?.appendChild(control);
+                }
+                else {
+                    control.parent = parent;
+                }
             }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
             control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
@@ -7002,7 +7011,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 control._setDesignProps({ ...config.options, mediaQueries: config.mediaQueries }, breakpointProps);
             }
             else if (isAddControl) {
-                const childControl = await this.createControl(undefined, component.name, config);
+                const isNeedParent = component.name === 'i-scom-carousel' || component.name === 'i-page-form';
+                const childControl = await this.createControl(isNeedParent ? parent : undefined, component.name, config);
                 control = childControl && parent.add(childControl);
             }
             else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
@@ -8020,6 +8030,7 @@ import ScomPageBlogList from '@scom/page-blog-list';
 import ScomPageBreadcrumb from '@scom/page-breadcrumb';
 import ScomImage from '@scom/scom-image';
 import ScomImageGallery from '@scom/scom-image-gallery';
+import ScomCarousel from '@scom/scom-carousel';
 
 @customModule
 export default class Main extends Module {

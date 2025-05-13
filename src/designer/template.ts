@@ -10,6 +10,7 @@ import ScomPageBlogList from '@scom/page-blog-list';
 import ScomPageBreadcrumb from '@scom/page-breadcrumb';
 import ScomImage from '@scom/scom-image';
 import ScomImageGallery from '@scom/scom-image-gallery';
+import ScomCarousel from '@scom/scom-carousel';
 
 @customModule
 export default class Main extends Module {

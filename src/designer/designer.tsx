@@ -20,7 +20,8 @@ import {
   TreeView,
   VStack,
   TreeNode,
-  HStack
+  HStack,
+  application
 } from '@ijstech/components';
 import {
   DesignerScreens,
@@ -343,20 +344,26 @@ export class ScomDesignerForm extends Module {
       }
     }
 
-    if (name.includes('i-page') && options.tag) {
-      // const tag = options.tag;
-      // options.tag = {
-      //   light: tag,
-      //   dark: tag,
-      //   ...options.tag
-      // }
-    }
-
-    const control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
-    if (name.includes('scom')) {
-      parent?.appendChild(control);
+    let control
+    if (name === 'i-scom-carousel' || name === 'i-page-form') {
+      control = this.createElement(name, parent);
+      control.designMode = true;
+      control.cursor = 'pointer';
+      const {tag, ...props} = controlProps
+      if (name === 'i-scom-carousel') {
+        props.data && await control.setData(props.data);
+      } else {
+        props && control.setData(props);
+      }
+      tag && control.setTag(tag);
     } else {
-      control.parent = parent;
+      control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
+
+      if (name.includes('scom')) {
+        parent?.appendChild(control);
+      } else {
+        control.parent = parent;
+      }
     }
 
     const breakpointProps = getMediaQueryProps(mediaQueries);
@@ -712,7 +719,8 @@ export class ScomDesignerForm extends Module {
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
     } else if (isAddControl) {
-      const childControl = await this.createControl(undefined, component.name, config);
+      const isNeedParent = component.name === 'i-scom-carousel' || component.name === 'i-page-form';
+      const childControl = await this.createControl(isNeedParent ? parent : undefined, component.name, config);
       control = childControl && (parent as any).add(childControl);
     } else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
       control = (parent as TreeView).add(null, config.options?.caption || '');
