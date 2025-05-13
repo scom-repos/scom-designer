@@ -241,7 +241,8 @@ const pageWidgets = [
   '@scom/page-form',
   '@scom/page-breadcrumb',
   '@scom/page-blog',
-  '@scom/page-blog-list'
+  '@scom/page-blog-list',
+  '@scom/scom-carousel'
 ];
 
 export {

@@ -32,7 +32,8 @@
     "@scom/page-breadcrumb",
     "@scom/scom-markdown-editor",
     "@scom/page-blog",
-    "@scom/page-blog-list"
+    "@scom/page-blog-list",
+    "@scom/scom-carousel"
   ],
   "menus": [
   ],
