@@ -350,11 +350,7 @@ export class ScomDesignerForm extends Module {
       control.designMode = true;
       control.cursor = 'pointer';
       const {tag, ...props} = controlProps
-      if (name === 'i-scom-carousel') {
-        props.data && await control.setData(props.data);
-      } else {
-        props && control.setData(props);
-      }
+      props.data && await control.setData(props.data);
       tag && control.setTag(tag);
     } else {
       control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
@@ -431,7 +427,7 @@ export class ScomDesignerForm extends Module {
         continue;
       }
 
-      if (typeof props[prop] === 'object' && Object.keys(props[prop]).length === 0) {
+      if (typeof props[prop] === 'object' && (!props[prop] || Object.keys(props[prop]).length === 0)) {
         continue;
       }
 
@@ -444,13 +440,13 @@ export class ScomDesignerForm extends Module {
   }
 
   private removeEmptyValue(value: any) {
-    if (typeof value === 'object') {
+    if (typeof value === 'object' && value) {
       for (let subProp in value) {
         if (value[subProp] === '' || value[subProp] === undefined) {
           delete value[subProp];
         } else if (typeof value[subProp] === 'object') {
           this.removeEmptyValue(value[subProp]);
-          if (Object.keys(value[subProp]).length === 0) {
+          if (!value[subProp] || Object.keys(value[subProp]).length === 0) {
             delete value[subProp];
           }
         }
@@ -774,10 +770,14 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleSelectControl(target: IControl) {
-    if (this.selectedControl) this.selectedControl.control.tag.resizer.hideResizers();
+    if (this.selectedControl) this.selectedControl.control?.tag?.resizer?.hideResizers();
     this.selectedControl = target;
-    this.selectedControl.control.tag.resizer.type = this.selectedType;
-    this.selectedControl.control.tag.resizer.showResizers();
+
+    if (this.selectedControl?.control?.tag?.resizer) {
+      this.selectedControl.control.tag.resizer.type = this.selectedType;
+      this.selectedControl.control.tag.resizer.showResizers();
+    }
+
     const name = this.selectedControl.name;
     const control = this.selectedControl?.control as any;
 
@@ -791,14 +791,15 @@ export class ScomDesignerForm extends Module {
         control.setData(defaultData, defaultData);
       }
       this.studio.registerWidget(this, packageName, types);
-    } else if (this.isPageWidget) {
-      const tag = control._getDesignPropValue('tag');
-      if (tag) {
-        for (const key in tag) {
-          control._setDesignPropValue(key, tag[key]);
-        }
-      }
     }
+    // else if (this.isPageWidget) {
+    //   const tag = control._getDesignPropValue('tag');
+    //   if (tag) {
+    //     for (const key in tag) {
+    //       control._setDesignPropValue(key, tag[key]);
+    //     }
+    //   }
+    // }
 
     this.showDesignProperties();
   }
@@ -1122,7 +1123,14 @@ export class ScomDesignerForm extends Module {
       }
       control._setDesignPropValue('mediaQueries', mediaQueries);
     } else {
+      const controlName = this.selectedControl?.name || '';
+      if (prop === 'data' && value && typeof value === 'object' && ['i-scom-image-gallery', 'i-scom-image'].includes(controlName)) {
+        for (const key in value) {
+          control._setDesignPropValue(key, value[key]);
+        }
+      }
       control._setDesignPropValue(prop, value);
+
       if (this.isCustomWidget && (prop === 'background' || prop === 'font')) {
         let customTag = {...(control.tag || {})};
         if (prop === 'background') {

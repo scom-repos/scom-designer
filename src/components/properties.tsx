@@ -182,9 +182,23 @@ export default class DesignerProperties extends Module {
     }
 
     if (this.designerData.visible) {
+      const {data, ...rest} = designProps;
+      let props = data;
+      if (!data) {
+        const name = this.component?.name;
+        if (name === 'i-scom-image-gallery') {
+          const { images, columnsPerRow, hash = '' } = rest;
+          props = { images, columnsPerRow, hash };
+        }
+        else if (name === 'i-scom-image') {
+          const { url, cid = '', altText = '', link = '', cropData } = rest;
+          props = { url, cid, altText, link, cropData };
+        }
+      }
+
       this.designerData.setData({
         title: this.i18n.get('$data'),
-        props: {...designProps},
+        props: {data: props},
         dataSchema: dataSchema
       })
     }
