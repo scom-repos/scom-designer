@@ -1,6 +1,7 @@
 import { IconName, IdUtils } from "@ijstech/components";
 import { IComponent } from "../interface";
 import { toJSON, toYAML } from "@scom/scom-yaml";
+import { parseProps } from "../helpers/utils";
 
 export const parseMD = (html: string, baseUrl: string) => {
   const blocks = html.split(/```/).filter(b => b.trim() !== "");
@@ -150,6 +151,7 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
     }
 
     content = content.trim();
+
     if (content) {
       if (name === 'page-text') {
         const imageRegex = /<img src="([^"]+)"/g;
@@ -165,7 +167,8 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
           return `${p1}: "${p2.replace(/\n/g, '\\n')}"`;
         });
         const yamlProps = toJSON(content);
-        if (name === 'scom-image-gallery' || name === 'page-form') {
+
+        if (name === 'scom-image-gallery') {
           props = { ...(props || {}), ...yamlProps };
         }
         else if (name === 'scom-image') {
@@ -224,24 +227,42 @@ export const renderMd = (root: IComponent, result: string, positions: number[], 
       content = toYAML(json);
     }
 
+    if (customSettings) {
+      let props = null;
+      let rest = null;
+
+      if (rootName === 'i-scom-image-gallery') {
+        let { images, columnsPerRow, ...tag } = customSettings;
+        if (images) {
+          props = parseProps({ images, columnsPerRow });
+          rest = tag || {};
+        }
+      }
+      else if (rootName === 'i-scom-image') {
+        const { url, ...tag } = customSettings;
+        if (url) {
+          props = parseProps({ url });
+          rest = tag || {};
+        }
+      }
+
+      if (props) {
+        if ('mediaQueries' in props) delete props.mediaQueries;
+        content = toYAML(props);
+      }
+      if (rest) customSettings = rest;
+    }
+
     if (typeof tag === 'string' && tag.startsWith('{{')) {
       tag = tag.replace(/^{{/, '{').replace(/}}$/, '}');
     }
 
     const parsedTag = typeof tag === 'string' ? JSON.parse(tag) : tag;
-    const newTag: Record<string, any> = {...parsedTag, ...customSettings};
-    for (let prop in newTag) {
-      if (newTag.hasOwnProperty(prop)) {
-        if (typeof newTag[prop] === 'string' && newTag[prop].startsWith('{{')) {
-          newTag[prop] = newTag[prop].trim();
-          const value = newTag[prop].replace(/^{{/, '{').replace(/}}$/, '}');
-          newTag[prop] = JSON.parse(value);
-        }
-      }
-    }
+    const newTag: Record<string, any> = parseProps({...parsedTag, ...customSettings});
+    const {mediaQueries, ...newTagRest} = newTag;
 
-    if (Object.keys(newTag).length > 0) {
-      let partString = JSON.stringify(newTag, null, 2);
+    if (typeof newTagRest === 'object' && newTagRest && Object.keys(newTagRest).length > 0) {
+      let partString = JSON.stringify(newTagRest, null, 2);
       partString = partString.replace(/^{|}$/g, '');
       result += `${partString}`;
     }
@@ -249,6 +270,7 @@ export const renderMd = (root: IComponent, result: string, positions: number[], 
     if (value) {
       content = value.replace(/^'|'$/g, "").replace(/^"|"$/g, "");
     }
+
     result += `}\n${content || ''}\n\`\`\`\n`;
 
     if (isSelected) {

@@ -64,6 +64,7 @@ export default class DesignerToolData extends Module {
 
   setData(value: IDesignerData) {
     this._data = value;
+    this.btnSubmit.enabled = true;
     this.renderUI();
   }
 

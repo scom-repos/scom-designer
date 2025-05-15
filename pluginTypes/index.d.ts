@@ -19,138 +19,6 @@ declare module "@scom/scom-designer/index.css.ts" {
     export const customActivedStyled: string;
     export const customModalStyled: string;
 }
-/// <amd-module name="@scom/scom-designer/designer/utils.ts" />
-declare module "@scom/scom-designer/designer/utils.ts" {
-    import { IComponent } from "@scom/scom-designer/interface.ts";
-    export const parseMD: (html: string, baseUrl: string) => any[];
-    export const renderMd: (root: IComponent, result: string, positions: number[], hasParentPageBlock?: boolean) => string;
-}
-/// <amd-module name="@scom/scom-designer/components/index.css.ts" />
-declare module "@scom/scom-designer/components/index.css.ts" { }
-/// <amd-module name="@scom/scom-designer/helpers/store.ts" />
-declare module "@scom/scom-designer/helpers/store.ts" {
-    const setBreakpoint: (breakpoint: number) => void;
-    const getBreakpoint: () => number;
-    export { setBreakpoint, getBreakpoint };
-}
-/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
-declare module "@scom/scom-designer/helpers/config.ts" {
-    import { IconName } from "@ijstech/components";
-    import { IMediaQuery } from "@scom/scom-designer/interface.ts";
-    const enum BREAKPOINTS {
-        MOBILE = 0,
-        TABLET = 1,
-        LAPTOP = 2,
-        DESKTOP = 3,
-        BIG_SCREEN = 4
-    }
-    const breakpoints: {
-        tooltip: string;
-        type: string;
-        icon: {
-            width: string;
-            height: string;
-            padding: {
-                top: number;
-                left: number;
-                right: number;
-                bottom: number;
-            };
-            name: string;
-        };
-        value: BREAKPOINTS;
-    }[];
-    const getBreakpointInfo: (index: number) => {
-        icon?: undefined;
-        name?: undefined;
-    } | {
-        icon: IconName;
-        name: string;
-    };
-    const breakpointsMap: {
-        [key: number]: IMediaQuery;
-    };
-    const enum PREVIEWS {
-        DRAFT = 0,
-        WEB = 1,
-        IOS = 2,
-        ANDROID = 3
-    }
-    const previews: {
-        tooltip: string;
-        icon: {
-            width: string;
-            height: string;
-            padding: {
-                top: number;
-                left: number;
-                right: number;
-                bottom: number;
-            };
-            name: string;
-        };
-        type: string;
-        value: PREVIEWS;
-    }[];
-    const getMediaQueries: () => IMediaQuery[];
-    const getDefaultMediaQuery: (breakpoint: number) => any;
-    const findMediaQueryCallback: (v: any, mediaQuery: any) => boolean;
-    const getMediaQuery: (mediaQueries: any) => any;
-    const getMediaQueryProps: (mediaQueries: any) => any;
-    const getFont: (value: boolean) => {
-        size: string;
-        color: string;
-    };
-    const GroupMetadata: {
-        Layout: {
-            name: string;
-            tooltipText: string;
-        };
-        Basic: {
-            name: string;
-            tooltipText: string;
-        };
-        Fields: {
-            name: string;
-            tooltipText: string;
-        };
-    };
-    const ITEMS: string[];
-    const ITEM_PARENTS: string[];
-    const CONTAINERS: string[];
-    const ControlItemMapper: {
-        [key: string]: string;
-    };
-    const themesConfig: {
-        dark: {
-            backgroundColor: string;
-            fontColor: string;
-            wrapperBgColor: string;
-            actionBgColor: string;
-            actionFontColor: string;
-            secondaryColor: string;
-            inputBgColor: string;
-            inputFontColor: string;
-            paperBgColor: string;
-            divider: string;
-            selected: string;
-            selectedBackground: string;
-        };
-        light: {
-            backgroundColor: string;
-            fontColor: string;
-            wrapperBgColor: string;
-            actionBgColor: string;
-            actionFontColor: string;
-            secondaryColor: string;
-            divider: string;
-            selected: string;
-            selectedBackground: string;
-        };
-    };
-    const pageWidgets: string[];
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback, pageWidgets };
-}
 /// <amd-module name="@scom/scom-designer/assets.ts" />
 declare module "@scom/scom-designer/assets.ts" {
     function fullPath(path: string): string;
@@ -158,6 +26,12 @@ declare module "@scom/scom-designer/assets.ts" {
         fullPath: typeof fullPath;
     };
     export default _default;
+}
+/// <amd-module name="@scom/scom-designer/helpers/store.ts" />
+declare module "@scom/scom-designer/helpers/store.ts" {
+    const setBreakpoint: (breakpoint: number) => void;
+    const getBreakpoint: () => number;
+    export { setBreakpoint, getBreakpoint };
 }
 /// <amd-module name="@scom/scom-designer/helpers/utils.ts" />
 declare module "@scom/scom-designer/helpers/utils.ts" {
@@ -285,6 +159,132 @@ declare module "@scom/scom-designer/helpers/utils.ts" {
     export const basicTypes: string[];
     export const mergeObjects: (target: any, source: any) => void;
     export const debounce: (func: any, wait: number) => (...args: any) => void;
+}
+/// <amd-module name="@scom/scom-designer/designer/utils.ts" />
+declare module "@scom/scom-designer/designer/utils.ts" {
+    import { IComponent } from "@scom/scom-designer/interface.ts";
+    export const parseMD: (html: string, baseUrl: string) => any[];
+    export const renderMd: (root: IComponent, result: string, positions: number[], hasParentPageBlock?: boolean) => string;
+}
+/// <amd-module name="@scom/scom-designer/components/index.css.ts" />
+declare module "@scom/scom-designer/components/index.css.ts" { }
+/// <amd-module name="@scom/scom-designer/helpers/config.ts" />
+declare module "@scom/scom-designer/helpers/config.ts" {
+    import { IconName } from "@ijstech/components";
+    import { IMediaQuery } from "@scom/scom-designer/interface.ts";
+    const enum BREAKPOINTS {
+        MOBILE = 0,
+        TABLET = 1,
+        LAPTOP = 2,
+        DESKTOP = 3,
+        BIG_SCREEN = 4
+    }
+    const breakpoints: {
+        tooltip: string;
+        type: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+        };
+        value: BREAKPOINTS;
+    }[];
+    const getBreakpointInfo: (index: number) => {
+        icon?: undefined;
+        name?: undefined;
+    } | {
+        icon: IconName;
+        name: string;
+    };
+    const breakpointsMap: {
+        [key: number]: IMediaQuery;
+    };
+    const enum PREVIEWS {
+        DRAFT = 0,
+        WEB = 1,
+        IOS = 2,
+        ANDROID = 3
+    }
+    const previews: {
+        tooltip: string;
+        icon: {
+            width: string;
+            height: string;
+            padding: {
+                top: number;
+                left: number;
+                right: number;
+                bottom: number;
+            };
+            name: string;
+        };
+        type: string;
+        value: PREVIEWS;
+    }[];
+    const getMediaQueries: () => IMediaQuery[];
+    const getDefaultMediaQuery: (breakpoint: number) => any;
+    const findMediaQueryCallback: (v: any, mediaQuery: any) => boolean;
+    const getMediaQuery: (mediaQueries: any) => any;
+    const getMediaQueryProps: (mediaQueries: any) => any;
+    const getFont: (value: boolean) => {
+        size: string;
+        color: string;
+    };
+    const GroupMetadata: {
+        Layout: {
+            name: string;
+            tooltipText: string;
+        };
+        Basic: {
+            name: string;
+            tooltipText: string;
+        };
+        Fields: {
+            name: string;
+            tooltipText: string;
+        };
+    };
+    const ITEMS: string[];
+    const ITEM_PARENTS: string[];
+    const CONTAINERS: string[];
+    const ControlItemMapper: {
+        [key: string]: string;
+    };
+    const themesConfig: {
+        dark: {
+            backgroundColor: string;
+            fontColor: string;
+            wrapperBgColor: string;
+            actionBgColor: string;
+            actionFontColor: string;
+            secondaryColor: string;
+            inputBgColor: string;
+            inputFontColor: string;
+            paperBgColor: string;
+            divider: string;
+            selected: string;
+            selectedBackground: string;
+        };
+        light: {
+            backgroundColor: string;
+            fontColor: string;
+            wrapperBgColor: string;
+            actionBgColor: string;
+            actionFontColor: string;
+            secondaryColor: string;
+            divider: string;
+            selected: string;
+            selectedBackground: string;
+        };
+    };
+    const pageWidgets: string[];
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback, pageWidgets };
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
