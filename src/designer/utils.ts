@@ -1,6 +1,7 @@
 import { IconName, IdUtils } from "@ijstech/components";
 import { IComponent } from "../interface";
 import { toJSON, toYAML } from "@scom/scom-yaml";
+import { parseProps } from "../helpers/utils";
 
 export const parseMD = (html: string, baseUrl: string) => {
   const blocks = html.split(/```/).filter(b => b.trim() !== "");
@@ -150,6 +151,7 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
     }
 
     content = content.trim();
+
     if (content) {
       if (name === 'page-text') {
         const imageRegex = /<img src="([^"]+)"/g;
@@ -165,6 +167,7 @@ const getProps = (name: string, data: Record<string, any>, content: string, base
           return `${p1}: "${p2.replace(/\n/g, '\\n')}"`;
         });
         const yamlProps = toJSON(content);
+
         if (name === 'scom-image-gallery' || name === 'page-form') {
           props = { ...(props || {}), ...yamlProps };
         }
@@ -224,6 +227,39 @@ export const renderMd = (root: IComponent, result: string, positions: number[], 
       content = toYAML(json);
     }
 
+    if (customSettings) {
+      let props = null;
+      let rest = null;
+
+      if (rootName === 'i-scom-image-gallery') {
+        let { images, columnsPerRow, ...tag } = customSettings;
+        if (images) {
+          props = parseProps({ images, columnsPerRow });
+          rest = tag || {};
+        }
+      }
+      else if (rootName === 'i-scom-image') {
+        const { url, ...tag } = customSettings;
+        if (url) {
+          props = parseProps({ url });
+          rest = tag || {};
+        }
+      }
+      else if (rootName === 'i-page-form') {
+        const { dataSchema, title, buttonCaption, uiSchema, recaptchaKey, ...tag } = customSettings;
+        if (dataSchema) {
+          props = parseProps({ dataSchema, title, buttonCaption, uiSchema, recaptchaKey });
+          rest = tag || {};
+        }
+      }
+
+      if (props) {
+        if ('mediaQueries' in props) delete props.mediaQueries;
+        content = toYAML(props);
+      }
+      if (rest) customSettings = rest;
+    }
+
     if (typeof tag === 'string' && tag.startsWith('{{')) {
       tag = tag.replace(/^{{/, '{').replace(/}}$/, '}');
     }
@@ -249,6 +285,7 @@ export const renderMd = (root: IComponent, result: string, positions: number[], 
     if (value) {
       content = value.replace(/^'|'$/g, "").replace(/^"|"$/g, "");
     }
+
     result += `}\n${content || ''}\n\`\`\`\n`;
 
     if (isSelected) {
