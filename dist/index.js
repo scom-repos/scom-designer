@@ -1243,7 +1243,7 @@ define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@i
 define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech/components", "@scom/scom-designer/helpers/store.ts"], function (require, exports, components_6, store_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.pageWidgets = exports.findMediaQueryCallback = exports.themesConfig = exports.ControlItemMapper = exports.ITEMS = exports.ITEM_PARENTS = exports.CONTAINERS = exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
+    exports.pageWidgetNames = exports.pageWidgets = exports.findMediaQueryCallback = exports.themesConfig = exports.ControlItemMapper = exports.ITEMS = exports.ITEM_PARENTS = exports.CONTAINERS = exports.getFont = exports.getMediaQuery = exports.getMediaQueryProps = exports.getBreakpointInfo = exports.GroupMetadata = exports.getDefaultMediaQuery = exports.getMediaQueries = exports.breakpointsMap = exports.previews = exports.breakpoints = void 0;
     const Theme = components_6.Styles.Theme.ThemeVars;
     const iconProps = { width: '1.5rem', height: '1.5rem', padding: { top: 6, left: 6, right: 6, bottom: 6 } };
     const breakpoints = [
@@ -1475,6 +1475,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         '@scom/scom-carousel'
     ];
     exports.pageWidgets = pageWidgets;
+    const pageWidgetNames = ['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'];
+    exports.pageWidgetNames = pageWidgetNames;
 });
 define("@scom/scom-designer/languages/main.json.ts", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -6701,7 +6703,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 }
             }
             let control;
-            if (['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(name)) {
+            if (config_8.pageWidgetNames.includes(name)) {
                 control = this.createElement(name, parent);
                 control.designMode = true;
                 control.cursor = 'pointer';
@@ -7082,7 +7084,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 control._setDesignProps({ ...config.options, mediaQueries: config.mediaQueries }, breakpointProps);
             }
             else if (isAddControl) {
-                const isNeedParent = ['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(controlName);
+                const isNeedParent = config_8.pageWidgetNames.includes(controlName);
                 const childControl = await this.createControl(isNeedParent ? parent : undefined, controlName, config);
                 control = childControl && parent.add(childControl);
                 if (controlName === 'i-page-block' && config?.options?.tag) {
@@ -8767,6 +8769,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
             this.getImportFile = this.getImportFile.bind(this);
             this.handleSelectionChangeBound = this.handleCodeEditorSelectionChange.bind(this);
+            this.handleClick = this.handleClick.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -8900,6 +8903,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.formDesigner.onHide();
                 this.formDesigner.remove();
             }
+            document.removeEventListener('click', this.handleClick);
         }
         saveViewState() {
             return this.codeEditor ? this.codeEditor.saveViewState() : null;
@@ -9103,6 +9107,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             try {
                 if (target.id === 'designTab') {
                     this.hideAddToChatWidget();
+                    this.codeEditor.editor?.setSelection({
+                        startLineNumber: 0,
+                        startColumn: 0,
+                        endLineNumber: 0,
+                        endColumn: 0
+                    });
                     if (this.updateDesigner) {
                         this.updateDesigner = false;
                         try {
@@ -9259,6 +9269,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         handleCodeEditorSelectionChange(target, selection) {
             if (!this.isWidgetMD)
                 return;
+            const isEmpty = selection.isEmpty();
+            if (isEmpty) {
+                this.hideAddToChatWidget();
+                return;
+            }
             const position = {
                 lineNumber: selection.startLineNumber,
                 column: selection.startColumn
@@ -9450,6 +9465,16 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.setData({ url, file, dataUrl });
             this.classList.add(index_css_25.blockStyle);
             this.setTag(config_9.themesConfig);
+            document.addEventListener('click', this.handleClick);
+        }
+        handleClick(event) {
+            if (this.activeTab === 'codeTab') {
+                const target = event.target;
+                const isFocused = target.closest('#codeEditor');
+                if (!isFocused) {
+                    this.hideAddToChatWidget();
+                }
+            }
         }
         // Configuration
         updateTag(type, value) {

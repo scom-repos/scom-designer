@@ -221,6 +221,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
     this.getImportFile = this.getImportFile.bind(this);
     this.handleSelectionChangeBound = this.handleCodeEditorSelectionChange.bind(this);
+    this.handleClick = this.handleClick.bind(this);
   }
 
   static async create(options?: ScomDesignerElement, parent?: Container) {
@@ -384,6 +385,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       this.formDesigner.onHide();
       this.formDesigner.remove();
     }
+    document.removeEventListener('click', this.handleClick);
   }
 
   saveViewState(): any {
@@ -607,6 +609,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     try {
       if (target.id === 'designTab') {
         this.hideAddToChatWidget();
+        this.codeEditor.editor?.setSelection({
+          startLineNumber: 0,
+          startColumn: 0,
+          endLineNumber: 0,
+          endColumn: 0
+        });
         if (this.updateDesigner) {
           this.updateDesigner = false
           try {
@@ -778,6 +786,12 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
   private handleCodeEditorSelectionChange(target: ScomCodeEditor, selection: any) {
     if (!this.isWidgetMD) return;
+    const isEmpty = selection.isEmpty();
+    if (isEmpty) {
+      this.hideAddToChatWidget();
+      return;
+    }
+
     const position = {
       lineNumber: selection.startLineNumber,
       column: selection.startColumn
@@ -1001,7 +1015,19 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.addLib()
     this.setData({ url, file, dataUrl });
     this.classList.add(blockStyle);
-    this.setTag(themesConfig)
+    this.setTag(themesConfig);
+
+    document.addEventListener('click', this.handleClick);
+  }
+
+  private handleClick(event: MouseEvent) {
+    if (this.activeTab === 'codeTab') {
+      const target = event.target as HTMLElement;
+      const isFocused = target.closest('#codeEditor');
+      if (!isFocused) {
+        this.hideAddToChatWidget();
+      }
+    }
   }
 
   // Configuration

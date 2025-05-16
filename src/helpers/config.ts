@@ -245,6 +245,8 @@ const pageWidgets = [
   '@scom/scom-carousel'
 ];
 
+const pageWidgetNames = ['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'];
+
 export {
   BREAKPOINTS,
   breakpoints,
@@ -263,5 +265,6 @@ export {
   ControlItemMapper,
   themesConfig,
   findMediaQueryCallback,
-  pageWidgets
+  pageWidgets,
+  pageWidgetNames
 }
