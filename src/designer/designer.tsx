@@ -37,7 +37,7 @@ import {
 import { borderRadiusLeft, borderRadiusRight } from '../tools/index'
 import { Parser } from "@ijstech/compiler";
 import { isSameValue, mergeObjects, parseProps } from '../helpers/utils'
-import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback, pageWidgets } from '../helpers/config'
+import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback, pageWidgets, pageWidgetNames } from '../helpers/config'
 import { getBreakpoint } from '../helpers/store'
 import { mainJson } from '../languages/index';
 import { selectedStyle, hoverStyle } from './index.css'
@@ -373,7 +373,7 @@ export class ScomDesignerForm extends Module {
 
     let control
 
-    if (['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(name)) {
+    if (pageWidgetNames.includes(name)) {
       control = this.createElement(name, parent);
       control.designMode = true;
       control.cursor = 'pointer';
@@ -749,7 +749,7 @@ export class ScomDesignerForm extends Module {
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
     } else if (isAddControl) {
-      const isNeedParent = ['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(controlName);
+      const isNeedParent = pageWidgetNames.includes(controlName);
       const childControl = await this.createControl(isNeedParent ? parent : undefined, controlName, config);
       control = childControl && (parent as any).add(childControl);
       if (controlName === 'i-page-block' && config?.options?.tag) {

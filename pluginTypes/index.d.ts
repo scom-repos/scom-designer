@@ -285,7 +285,8 @@ declare module "@scom/scom-designer/helpers/config.ts" {
         };
     };
     const pageWidgets: string[];
-    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback, pageWidgets };
+    const pageWidgetNames: string[];
+    export { BREAKPOINTS, breakpoints, previews, breakpointsMap, getMediaQueries, getDefaultMediaQuery, GroupMetadata, getBreakpointInfo, getMediaQueryProps, getMediaQuery, getFont, CONTAINERS, ITEM_PARENTS, ITEMS, ControlItemMapper, themesConfig, findMediaQueryCallback, pageWidgets, pageWidgetNames };
 }
 /// <amd-module name="@scom/scom-designer/languages/main.json.ts" />
 declare module "@scom/scom-designer/languages/main.json.ts" {
@@ -2741,6 +2742,7 @@ declare module "@scom/scom-designer" {
         openFile(file: IIPFSData, parentCid: string, parent: Control, config: any): Promise<void>;
         clear(): void;
         init(): void;
+        private handleClick;
         private updateTag;
         private setTag;
         private updateStyle;
