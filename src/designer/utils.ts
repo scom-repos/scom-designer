@@ -289,3 +289,19 @@ export const renderMd = (root: IComponent, result: string, positions: number[], 
 
   return result.trim();
 }
+
+export function createThemeCss(theme: any, vars?: any, prefix?: string) {
+  vars = vars || {}
+  for (let v in theme) {
+    if (typeof (<any>theme)[v] == 'object') {
+      createThemeCss((<any>theme)[v], vars, prefix ? prefix + v + '-' : v + '-')
+    } else {
+      let name = ((prefix || '') + v)
+        .split(/(?=[A-Z])/)
+        .join('_')
+        .toLowerCase()
+      vars[name] = theme[v]
+    }
+  }
+  return vars
+}

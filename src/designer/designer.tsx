@@ -20,8 +20,7 @@ import {
   TreeView,
   VStack,
   TreeNode,
-  HStack,
-  application
+  HStack
 } from '@ijstech/components';
 import {
   DesignerScreens,
@@ -30,7 +29,7 @@ import {
   DesignerPickerComponents,
   DesignerPickerBlocks
 } from '../components/index';
-import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock, ActionType } from '../interface'
+import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock, ActionType, ITheme } from '../interface'
 import { customLabelTabStyled, customModalStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from '../index.css'
 import {
   blockComponents
@@ -42,6 +41,7 @@ import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps
 import { getBreakpoint } from '../helpers/store'
 import { mainJson } from '../languages/index';
 import { selectedStyle, hoverStyle } from './index.css'
+import { createThemeCss } from './utils';
 
 const Theme = Styles.Theme.ThemeVars
 
@@ -181,6 +181,7 @@ export class ScomDesignerForm extends Module {
   private _previewUrl: string = '';
   private _selectedType: ActionType = 'click';
   private _isPreviewDefault: boolean = false;
+  private _themes: ITheme;
   private isPreviewMode: boolean = false;
 
   private handleMouseMoveBound: (event: MouseEvent) => void;
@@ -241,6 +242,15 @@ export class ScomDesignerForm extends Module {
   }
   get previewUrl() {
     return this._previewUrl || 'https://decom.dev/debug.html';
+  }
+
+  get themes() {
+    return this._themes;
+  }
+
+  set themes(value: ITheme) {
+    this._themes = value;
+    this.updateTheme();
   }
 
   get pickerComponentsFiltered() {
@@ -329,6 +339,23 @@ export class ScomDesignerForm extends Module {
     return name && pageWidgets.includes(name);
   }
 
+  private updateTheme() {
+    if (this.themes) {
+      const defaultTheme = this.themes.default || 'light';
+      const theme = this.themes[defaultTheme];
+      if (theme) {
+        const cssVars = createThemeCss(theme)
+        for (let p in cssVars) {
+          this.updateStyle(`--${p}`, cssVars[p]);
+        }
+      }
+    }
+  }
+
+  private updateStyle(name: string, value: any) {
+    value ? this.pnlFormDesigner.style.setProperty(name, value) : this.pnlFormDesigner.style.removeProperty(name);
+  }
+
   private async createControl(parent: Control|undefined, name: string, config: {mediaQueries: any, options: any}) {
     const { mediaQueries, options } = config;
     const controlConstructor: any = window.customElements.get(name);
@@ -345,12 +372,18 @@ export class ScomDesignerForm extends Module {
     }
 
     let control
-    if (name === 'i-scom-carousel' || name === 'i-page-form') {
+
+    if (['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(name)) {
       control = this.createElement(name, parent);
       control.designMode = true;
       control.cursor = 'pointer';
       const {tag, ...props} = controlProps
-      props.data && await control.setData(props.data);
+      if (name === 'i-scom-image-gallery') {
+        props && await control.setData(props);
+      }
+      else {
+        props?.data && await control.setData(props.data);
+      }
       tag && control.setTag(tag);
     } else {
       control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
@@ -700,11 +733,12 @@ export class ScomDesignerForm extends Module {
     }
 
     const parenNodeName = parent.nodeName;
-    const isAddOption = (component.name === 'i-tab' && parenNodeName === 'I-TABS') ||
-      (component.name === 'i-menu-item' && parenNodeName === 'I-MENU') ||
-      (component.name === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
-      (component.name === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
-      (component.name === 'i-radio-group' && parenNodeName === 'I-RADIO');
+    const controlName = component.name;
+    const isAddOption = (controlName === 'i-tab' && parenNodeName === 'I-TABS') ||
+      (controlName === 'i-menu-item' && parenNodeName === 'I-MENU') ||
+      (controlName === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
+      (controlName === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
+      (controlName === 'i-radio-group' && parenNodeName === 'I-RADIO');
     const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') ||
       (parenNodeName === 'I-REPEATER') ||
       (parenNodeName === 'I-ACCORDION-ITEM') ||
@@ -715,20 +749,23 @@ export class ScomDesignerForm extends Module {
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
     } else if (isAddControl) {
-      const isNeedParent = component.name === 'i-scom-carousel' || component.name === 'i-page-form';
-      const childControl = await this.createControl(isNeedParent ? parent : undefined, component.name, config);
+      const isNeedParent = ['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(controlName);
+      const childControl = await this.createControl(isNeedParent ? parent : undefined, controlName, config);
       control = childControl && (parent as any).add(childControl);
-    } else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
+      if (controlName === 'i-page-block' && config?.options?.tag) {
+        control.setTag(config?.options?.tag);
+      }
+    } else if (controlName === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
       control = (parent as TreeView).add(null, config.options?.caption || '');
       control.designMode = true;
       control.cursor = 'pointer';
       const breakpointProps = getMediaQueryProps(config.mediaQueries);
       control._setDesignProps({...config.options, mediaQueries: config.mediaQueries}, breakpointProps);
-    } else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-NODE') {
-      const childControl = await this.createControl(undefined, component.name, config);
+    } else if (controlName === 'i-tree-node' && parenNodeName === 'I-TREE-NODE') {
+      const childControl = await this.createControl(undefined, controlName, config);
       control = (parent as TreeNode).appendNode(childControl);
     } else {
-      control = await this.createControl(parent, component.name, config);
+      control = await this.createControl(parent, controlName, config);
     }
     return control;
   }

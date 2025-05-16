@@ -98,3 +98,9 @@ export interface ICustomField extends ABIField {
 }
 
 export type ActionType = 'hover' | 'click';
+
+export interface ITheme {
+  light?: any;
+  dark?: any;
+  default?: 'light' | 'dark';
+}

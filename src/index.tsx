@@ -8,16 +8,14 @@ import {
   getCustomElements,
   HStack,
   IconName,
-  IDataSchema,
   IdUtils,
-  IUISchema,
   Module,
   VStack,
   Styles,
   Markdown
 } from '@ijstech/components';
 import { blockStyle, customActivedStyled } from './index.css'
-import { ActionType, IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from './interface'
+import { ActionType, IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio, ITheme } from './interface'
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
@@ -25,6 +23,7 @@ import { debounce, extractFileName, getFileContent } from './helpers/utils'
 import { pageWidgets, themesConfig } from './helpers/config';
 import { mainJson } from './languages/index';
 import { parseMD, renderMd, ScomDesignerForm, template } from './designer/index';
+import { getWidgetSchemas } from './schema';
 
 const Theme = Styles.Theme.ThemeVars;
 
@@ -46,6 +45,7 @@ interface ScomDesignerElement extends ControlElement {
   deployConfig?: IDeployConfig;
   selectedType?: ActionType;
   isPreviewDefault?: boolean;
+  themes?: ITheme;
   onSave?: onSaveCallback;
   onChange?: onChangeCallback;
   onPreview?: () => Promise<{ module: string, script: string }>;
@@ -110,6 +110,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private _positions: Set<number> = new Set();
   private _oldLines: {startLine: number|string, endLine: number|string }[] = [];
   private _chatWidget: any = null;
+  private _themes: ITheme;
 
   private handleSelectionChangeBound: (target: ScomCodeEditor, event: any) => void;
 
@@ -308,6 +309,17 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
+  get themes() {
+    return this._themes;
+  }
+
+  set themes(value: ITheme) {
+    this._themes = value;
+    if (this.formDesigner) {
+      this.formDesigner.themes = this.themes;
+    }
+  }
+
   get isValid() {
     return this.file?.path?.endsWith('.tsx') || this.url?.endsWith('.tsx') || this.file?.path?.endsWith('.md') || this.url?.endsWith('.md');
   }
@@ -458,6 +470,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain) as ScomDesignerForm;
     this.formDesigner.selectedType = this.selectedType;
     this.formDesigner.isPreviewDefault = this.isPreviewDefault;
+    this.formDesigner.themes = this.themes;
     this.formDesigner.width = '100%';
     this.formDesigner.height = '100%';
     this.formDesigner.stack = {grow: '1'};
@@ -582,6 +595,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private async handleTabChanged(target: Button) {
+    if (target.id === this.activeTab) return;
     this.activeTab = target.id;
     const fileName = this.fileName;
 
@@ -590,37 +604,41 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     target.enabled = false;
     target.rightIcon.visible = true;
 
-    if (target.id === 'designTab') {
-      this.hideAddToChatWidget();
-      if (this.updateDesigner) {
-        this.updateDesigner = false
-        try {
-          if (this.isTsx)
-            await this.parseTsx(fileName);
-          else {
-            await this.parseMd(this.codeEditor.value);
+    try {
+      if (target.id === 'designTab') {
+        this.hideAddToChatWidget();
+        if (this.updateDesigner) {
+          this.updateDesigner = false
+          try {
+            if (this.isTsx)
+              await this.parseTsx(fileName);
+            else {
+              await this.parseMd(this.codeEditor.value);
+            }
+          } catch (error) {
+            this.updateDesigner = true
           }
-        } catch (error) {
-          this.updateDesigner = true
         }
-      }
-    } else if (target.id === 'codeTab') {
-      this.formDesigner.hideAddToChatWidget();
-      this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
-      if (this.isWidgetMD) {
-        const md = this.getUpdatedMd();
-        const viewState = this.codeEditor.editor.saveViewState();
-        this.codeEditor.value = md;
-        if (viewState) {
-          this.codeEditor.editor.restoreViewState(viewState);
+      } else if (target.id === 'codeTab') {
+        this.formDesigner.hideAddToChatWidget();
+        this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
+        if (this.isWidgetMD) {
+          const md = this.getUpdatedMd();
+          const viewState = this.codeEditor.editor.saveViewState();
+          this.codeEditor.value = md;
+          if (viewState) {
+            this.codeEditor.editor.restoreViewState(viewState);
+          }
+          this.codeEditor.editor.focus();
         }
-        this.codeEditor.editor.focus();
+      } else {
+        this.deployDeployer.setData({
+          path: this.fileName,
+          content: this.value
+        })
       }
-    } else {
-      this.deployDeployer.setData({
-        path: this.fileName,
-        content: this.value
-      })
+    } catch (e) {
+      console.error(e);
     }
 
     target.rightIcon.visible = false;
@@ -979,6 +997,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const dataUrl = this.getAttribute('dataUrl', true)
     this.selectedType = this.getAttribute('selectedType', true)
     this.isPreviewDefault = this.getAttribute('isPreviewDefault', true)
+    this.themes = this.getAttribute('themes', true)
     this.addLib()
     this.setData({ url, file, dataUrl });
     this.classList.add(blockStyle);
@@ -1076,92 +1095,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       {
         name: 'Widget Settings',
         icon: 'edit',
-        ...this.getWidgetSchemas(),
+        ...getWidgetSchemas(),
       },
     ];
     return actions;
-  }
-
-  private getWidgetSchemas(): any {
-    const propertiesSchema: IDataSchema = {
-      type: 'object',
-      properties: {
-        pt: {
-          title: 'Top',
-          type: 'number',
-        },
-        pb: {
-          title: 'Bottom',
-          type: 'number',
-        },
-        pl: {
-          title: 'Left',
-          type: 'number',
-        },
-        pr: {
-          title: 'Right',
-          type: 'number',
-        },
-        align: {
-          type: 'string',
-          title: 'Alignment',
-          enum: ['left', 'center', 'right'],
-        },
-        maxWidth: {
-          type: 'number',
-        },
-        link: {
-          title: 'URL',
-          type: 'string',
-        },
-      },
-    };
-    const themesSchema: IUISchema = {
-      type: 'VerticalLayout',
-      elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            {
-              type: 'Group',
-              label: 'Padding (px)',
-              elements: [
-                {
-                  type: 'VerticalLayout',
-                  elements: [
-                    {
-                      type: 'HorizontalLayout',
-                      elements: [
-                        {
-                          type: 'Control',
-                          scope: '#/properties/pt',
-                        },
-                        {
-                          type: 'Control',
-                          scope: '#/properties/pb',
-                        },
-                        {
-                          type: 'Control',
-                          scope: '#/properties/pl',
-                        },
-                        {
-                          type: 'Control',
-                          scope: '#/properties/pr',
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    return {
-      userInputDataSchema: propertiesSchema,
-      userInputUISchema: themesSchema,
-    };
   }
 
   render() {
