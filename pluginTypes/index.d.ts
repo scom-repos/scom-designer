@@ -165,6 +165,7 @@ declare module "@scom/scom-designer/designer/utils.ts" {
     import { IComponent } from "@scom/scom-designer/interface.ts";
     export const parseMD: (html: string, baseUrl: string) => any[];
     export const renderMd: (root: IComponent, result: string, positions: number[], hasParentPageBlock?: boolean) => string;
+    export function createThemeCss(theme: any, vars?: any, prefix?: string): any;
 }
 /// <amd-module name="@scom/scom-designer/components/index.css.ts" />
 declare module "@scom/scom-designer/components/index.css.ts" { }
@@ -2196,7 +2197,7 @@ declare module "@scom/scom-designer/designer/index.css.ts" {
 /// <amd-module name="@scom/scom-designer/designer/designer.tsx" />
 declare module "@scom/scom-designer/designer/designer.tsx" {
     import { Container, ControlElement, Module } from '@ijstech/components';
-    import { IComponent, IComponentPicker, IControl, IStudio, IBlock, ActionType } from "@scom/scom-designer/interface.ts";
+    import { IComponent, IComponentPicker, IControl, IStudio, IBlock, ActionType, ITheme } from "@scom/scom-designer/interface.ts";
     import { Parser } from "@ijstech/compiler";
     interface ScomDesignerFormElement extends ControlElement {
         onPreview?: () => Promise<{
@@ -2257,6 +2258,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private _previewUrl;
         private _selectedType;
         private _isPreviewDefault;
+        private _themes;
         private isPreviewMode;
         private handleMouseMoveBound;
         private handleMouseUpBound;
@@ -2280,12 +2282,16 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         set isPreviewDefault(value: boolean);
         set previewUrl(url: string);
         get previewUrl(): string;
+        get themes(): ITheme;
+        set themes(value: ITheme);
         get pickerComponentsFiltered(): IComponentPicker[];
         getSelectedPosition(): number;
         private getComponents;
         get pickerBlocksFiltered(): IBlock[];
         private get isCustomWidget();
         private get isPageWidget();
+        private updateTheme;
+        private updateStyle;
         private createControl;
         private revertImageUrl;
         private getOptions;
@@ -2446,6 +2452,11 @@ declare module "@scom/scom-designer/interface.ts" {
         value?: any;
     }
     export type ActionType = 'hover' | 'click';
+    export interface ITheme {
+        light?: any;
+        dark?: any;
+        default?: 'light' | 'dark';
+    }
 }
 /// <amd-module name="@scom/scom-designer/build/storage.ts" />
 declare module "@scom/scom-designer/build/storage.ts" {
@@ -2542,10 +2553,15 @@ declare module "@scom/scom-designer/deployer.tsx" {
         render(): any;
     }
 }
+/// <amd-module name="@scom/scom-designer/schema.ts" />
+declare module "@scom/scom-designer/schema.ts" {
+    function getWidgetSchemas(): any;
+    export { getWidgetSchemas };
+}
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
-    import { ActionType, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio } from "@scom/scom-designer/interface.ts";
+    import { ActionType, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio, ITheme } from "@scom/scom-designer/interface.ts";
     import { Types } from '@ijstech/compiler';
     import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
     import { ScomDesignerForm } from "@scom/scom-designer/designer/index.ts";
@@ -2572,6 +2588,7 @@ declare module "@scom/scom-designer" {
         deployConfig?: IDeployConfig;
         selectedType?: ActionType;
         isPreviewDefault?: boolean;
+        themes?: ITheme;
         onSave?: onSaveCallback;
         onChange?: onChangeCallback;
         onPreview?: () => Promise<{
@@ -2624,6 +2641,7 @@ declare module "@scom/scom-designer" {
         private _positions;
         private _oldLines;
         private _chatWidget;
+        private _themes;
         private handleSelectionChangeBound;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
@@ -2664,6 +2682,8 @@ declare module "@scom/scom-designer" {
         set selectedType(value: ActionType);
         get isPreviewDefault(): boolean;
         set isPreviewDefault(value: boolean);
+        get themes(): ITheme;
+        set themes(value: ITheme);
         get isValid(): boolean;
         get isTsx(): boolean;
         get isWidgetMD(): boolean;
@@ -2745,7 +2765,6 @@ declare module "@scom/scom-designer" {
             getActions?: undefined;
         })[];
         private _getActions;
-        private getWidgetSchemas;
         render(): any;
     }
 }

@@ -874,7 +874,7 @@ define("@scom/scom-designer/helpers/utils.ts", ["require", "exports", "@scom/ton
 define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech/components", "@scom/scom-yaml", "@scom/scom-designer/helpers/utils.ts"], function (require, exports, components_4, scom_yaml_1, utils_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.renderMd = exports.parseMD = void 0;
+    exports.createThemeCss = exports.renderMd = exports.parseMD = void 0;
     const parseMD = (html, baseUrl) => {
         const blocks = html.split(/```/).filter(b => b.trim() !== "");
         let result = {
@@ -1146,6 +1146,23 @@ define("@scom/scom-designer/designer/utils.ts", ["require", "exports", "@ijstech
         return result.trim();
     };
     exports.renderMd = renderMd;
+    function createThemeCss(theme, vars, prefix) {
+        vars = vars || {};
+        for (let v in theme) {
+            if (typeof theme[v] == 'object') {
+                createThemeCss(theme[v], vars, prefix ? prefix + v + '-' : v + '-');
+            }
+            else {
+                let name = ((prefix || '') + v)
+                    .split(/(?=[A-Z])/)
+                    .join('_')
+                    .toLowerCase();
+                vars[name] = theme[v];
+            }
+        }
+        return vars;
+    }
+    exports.createThemeCss = createThemeCss;
 });
 define("@scom/scom-designer/components/index.css.ts", ["require", "exports", "@ijstech/components"], function (require, exports, components_5) {
     "use strict";
@@ -6441,7 +6458,7 @@ define("@scom/scom-designer/designer/index.css.ts", ["require", "exports", "@ijs
         border: `1px dashed ${Theme.colors.info.dark}`
     });
 });
-define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.css.ts"], function (require, exports, components_37, index_22, index_css_23, data_2, index_23, utils_14, config_8, store_7, index_24, index_css_24) {
+define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.css.ts", "@scom/scom-designer/designer/utils.ts"], function (require, exports, components_37, index_22, index_css_23, data_2, index_23, utils_14, config_8, store_7, index_24, index_css_24, utils_15) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerForm = void 0;
@@ -6574,6 +6591,13 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
         get previewUrl() {
             return this._previewUrl || 'https://decom.dev/debug.html';
         }
+        get themes() {
+            return this._themes;
+        }
+        set themes(value) {
+            this._themes = value;
+            this.updateTheme();
+        }
         get pickerComponentsFiltered() {
             let components;
             if (this.currentTab === TABS.RECENT) {
@@ -6646,6 +6670,21 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             const name = controlName.replace(/^i-/, '@scom/');
             return name && config_8.pageWidgets.includes(name);
         }
+        updateTheme() {
+            if (this.themes) {
+                const defaultTheme = this.themes.default || 'light';
+                const theme = this.themes[defaultTheme];
+                if (theme) {
+                    const cssVars = (0, utils_15.createThemeCss)(theme);
+                    for (let p in cssVars) {
+                        this.updateStyle(`--${p}`, cssVars[p]);
+                    }
+                }
+            }
+        }
+        updateStyle(name, value) {
+            value ? this.pnlFormDesigner.style.setProperty(name, value) : this.pnlFormDesigner.style.removeProperty(name);
+        }
         async createControl(parent, name, config) {
             const { mediaQueries, options } = config;
             const controlConstructor = window.customElements.get(name);
@@ -6662,12 +6701,17 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 }
             }
             let control;
-            if (name === 'i-scom-carousel' || name === 'i-page-form') {
+            if (['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(name)) {
                 control = this.createElement(name, parent);
                 control.designMode = true;
                 control.cursor = 'pointer';
                 const { tag, ...props } = controlProps;
-                props.data && await control.setData(props.data);
+                if (name === 'i-scom-image-gallery') {
+                    props && await control.setData(props);
+                }
+                else {
+                    props?.data && await control.setData(props.data);
+                }
                 tag && control.setTag(tag);
             }
             else {
@@ -7022,11 +7066,12 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 return control;
             }
             const parenNodeName = parent.nodeName;
-            const isAddOption = (component.name === 'i-tab' && parenNodeName === 'I-TABS') ||
-                (component.name === 'i-menu-item' && parenNodeName === 'I-MENU') ||
-                (component.name === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
-                (component.name === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
-            (component.name === 'i-radio-group' && parenNodeName === 'I-RADIO');
+            const controlName = component.name;
+            const isAddOption = (controlName === 'i-tab' && parenNodeName === 'I-TABS') ||
+                (controlName === 'i-menu-item' && parenNodeName === 'I-MENU') ||
+                (controlName === 'i-menu-item' && parenNodeName === 'I-MENU-ITEM') ||
+                (controlName === 'i-accordion-item' && parenNodeName === 'I-ACCORDION');
+            (controlName === 'i-radio-group' && parenNodeName === 'I-RADIO');
             const isAddControl = (parenNodeName === 'I-CAROUSEL-SLIDER') ||
                 (parenNodeName === 'I-REPEATER') ||
                 (parenNodeName === 'I-ACCORDION-ITEM') ||
@@ -7037,23 +7082,26 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 control._setDesignProps({ ...config.options, mediaQueries: config.mediaQueries }, breakpointProps);
             }
             else if (isAddControl) {
-                const isNeedParent = component.name === 'i-scom-carousel' || component.name === 'i-page-form';
-                const childControl = await this.createControl(isNeedParent ? parent : undefined, component.name, config);
+                const isNeedParent = ['i-scom-carousel', 'i-page-form', 'i-scom-image-gallery'].includes(controlName);
+                const childControl = await this.createControl(isNeedParent ? parent : undefined, controlName, config);
                 control = childControl && parent.add(childControl);
+                if (controlName === 'i-page-block' && config?.options?.tag) {
+                    control.setTag(config?.options?.tag);
+                }
             }
-            else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
+            else if (controlName === 'i-tree-node' && parenNodeName === 'I-TREE-VIEW') {
                 control = parent.add(null, config.options?.caption || '');
                 control.designMode = true;
                 control.cursor = 'pointer';
                 const breakpointProps = (0, config_8.getMediaQueryProps)(config.mediaQueries);
                 control._setDesignProps({ ...config.options, mediaQueries: config.mediaQueries }, breakpointProps);
             }
-            else if (component.name === 'i-tree-node' && parenNodeName === 'I-TREE-NODE') {
-                const childControl = await this.createControl(undefined, component.name, config);
+            else if (controlName === 'i-tree-node' && parenNodeName === 'I-TREE-NODE') {
+                const childControl = await this.createControl(undefined, controlName, config);
                 control = parent.appendNode(childControl);
             }
             else {
-                control = await this.createControl(parent, component.name, config);
+                control = await this.createControl(parent, controlName, config);
             }
             return control;
         }
@@ -8078,12 +8126,12 @@ export default class Main extends Module {
   }
 }`;
 });
-define("@scom/scom-designer/designer/index.ts", ["require", "exports", "@scom/scom-designer/designer/utils.ts", "@scom/scom-designer/designer/designer.tsx", "@scom/scom-designer/designer/template.ts"], function (require, exports, utils_15, designer_1, template_1) {
+define("@scom/scom-designer/designer/index.ts", ["require", "exports", "@scom/scom-designer/designer/utils.ts", "@scom/scom-designer/designer/designer.tsx", "@scom/scom-designer/designer/template.ts"], function (require, exports, utils_16, designer_1, template_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.template = exports.ScomDesignerForm = void 0;
     ///<amd-module name='@scom/scom-designer/designer/index.ts'/> 
-    __exportStar(utils_15, exports);
+    __exportStar(utils_16, exports);
     Object.defineProperty(exports, "ScomDesignerForm", { enumerable: true, get: function () { return designer_1.ScomDesignerForm; } });
     Object.defineProperty(exports, "template", { enumerable: true, get: function () { return template_1.template; } });
 });
@@ -8213,7 +8261,7 @@ define("@scom/scom-designer/build/index.ts", ["require", "exports", "@scom/scom-
     Object.defineProperty(exports, "Storage", { enumerable: true, get: function () { return storage_1.Storage; } });
     Object.defineProperty(exports, "TonConnectSender", { enumerable: true, get: function () { return tonConnectorSender_1.TonConnectSender; } });
 });
-define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/ton-client", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_38, compiler_1, index_25, ton_core_3, ton_client_1, utils_16, index_26) {
+define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/components", "@ijstech/compiler", "@scom/scom-designer/build/index.ts", "@scom/ton-core", "@scom/ton-client", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/languages/index.ts"], function (require, exports, components_38, compiler_1, index_25, ton_core_3, ton_client_1, utils_17, index_26) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesignerDeployer = void 0;
@@ -8273,7 +8321,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
         }
         async initDeploy(params) {
             const tsFileName = this.builtResult.ts?.path;
-            const contractName = (0, utils_16.extractContractName)(tsFileName);
+            const contractName = (0, utils_17.extractContractName)(tsFileName);
             const contractScript = this.builtResult.ts?.content || '';
             const compiler = new compiler_1.Compiler();
             await compiler.addFile('tact.ts', contractScript, this.getImportFile.bind(this));
@@ -8282,7 +8330,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                 return null;
             }
             const jsOutout = compiledResult.script['index.js'];
-            const jsModule = (0, utils_16.fromJSModule)(jsOutout);
+            const jsModule = (0, utils_17.fromJSModule)(jsOutout);
             const _code = `async function main(initParams) {
       ${jsModule}
       const contractInit = await ${contractName}.fromInit(...Object.values(initParams));
@@ -8416,8 +8464,8 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                 const field = initField;
                 field.value = value[field.name];
                 const fieldType = field.type?.kind === 'simple' ? field.type?.type : '';
-                if (utils_16.basicTypes.includes(fieldType)) {
-                    const parsedValue = await (0, utils_16.parseInputs)(field);
+                if (utils_17.basicTypes.includes(fieldType)) {
+                    const parsedValue = await (0, utils_17.parseInputs)(field);
                     field.value = parsedValue;
                 }
                 else if (fieldType) {
@@ -8428,7 +8476,7 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
                     if (childFields.length) {
                         for (const childField of childFields) {
                             childField.value = value[field.name]?.[childField.name];
-                            const val = await (0, utils_16.parseInputs)(childField);
+                            const val = await (0, utils_17.parseInputs)(childField);
                             field.value[childField.name] = val;
                         }
                     }
@@ -8526,7 +8574,94 @@ define("@scom/scom-designer/deployer.tsx", ["require", "exports", "@ijstech/comp
     ], ScomDesignerDeployer);
     exports.ScomDesignerDeployer = ScomDesignerDeployer;
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.ts"], function (require, exports, components_39, index_css_25, compiler_2, scom_code_editor_1, utils_17, config_9, index_27, index_28) {
+define("@scom/scom-designer/schema.ts", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getWidgetSchemas = void 0;
+    function getWidgetSchemas() {
+        const propertiesSchema = {
+            type: 'object',
+            properties: {
+                pt: {
+                    title: 'Top',
+                    type: 'number',
+                },
+                pb: {
+                    title: 'Bottom',
+                    type: 'number',
+                },
+                pl: {
+                    title: 'Left',
+                    type: 'number',
+                },
+                pr: {
+                    title: 'Right',
+                    type: 'number',
+                },
+                align: {
+                    type: 'string',
+                    title: 'Alignment',
+                    enum: ['left', 'center', 'right'],
+                },
+                maxWidth: {
+                    type: 'number',
+                },
+                link: {
+                    title: 'URL',
+                    type: 'string',
+                },
+            },
+        };
+        const themesSchema = {
+            type: 'VerticalLayout',
+            elements: [
+                {
+                    type: 'HorizontalLayout',
+                    elements: [
+                        {
+                            type: 'Group',
+                            label: 'Padding (px)',
+                            elements: [
+                                {
+                                    type: 'VerticalLayout',
+                                    elements: [
+                                        {
+                                            type: 'HorizontalLayout',
+                                            elements: [
+                                                {
+                                                    type: 'Control',
+                                                    scope: '#/properties/pt',
+                                                },
+                                                {
+                                                    type: 'Control',
+                                                    scope: '#/properties/pb',
+                                                },
+                                                {
+                                                    type: 'Control',
+                                                    scope: '#/properties/pl',
+                                                },
+                                                {
+                                                    type: 'Control',
+                                                    scope: '#/properties/pr',
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        };
+        return {
+            userInputDataSchema: propertiesSchema,
+            userInputUISchema: themesSchema,
+        };
+    }
+    exports.getWidgetSchemas = getWidgetSchemas;
+});
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.ts", "@scom/scom-designer/schema.ts"], function (require, exports, components_39, index_css_25, compiler_2, scom_code_editor_1, utils_18, config_9, index_27, index_28, schema_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
@@ -8651,7 +8786,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._data.file = value;
         }
         get fileName() {
-            const name = this._data.file?.path || (this.url ? (0, utils_17.extractFileName)(this.url) : '');
+            const name = this._data.file?.path || (this.url ? (0, utils_18.extractFileName)(this.url) : '');
             return name || 'file_name';
         }
         get value() {
@@ -8700,6 +8835,15 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._isPreviewDefault = value ?? false;
             if (this.formDesigner) {
                 this.formDesigner.isPreviewDefault = this.isPreviewDefault;
+            }
+        }
+        get themes() {
+            return this._themes;
+        }
+        set themes(value) {
+            this._themes = value;
+            if (this.formDesigner) {
+                this.formDesigner.themes = this.themes;
             }
         }
         get isValid() {
@@ -8830,6 +8974,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
             this.formDesigner.selectedType = this.selectedType;
             this.formDesigner.isPreviewDefault = this.isPreviewDefault;
+            this.formDesigner.themes = this.themes;
             this.formDesigner.width = '100%';
             this.formDesigner.height = '100%';
             this.formDesigner.stack = { grow: '1' };
@@ -8844,7 +8989,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     return;
                 this.updateMd();
             };
-            this.formDesigner.onDesignerChange = (0, utils_17.debounce)(this.handleDesignerChange.bind(this), 500);
+            this.formDesigner.onDesignerChange = (0, utils_18.debounce)(this.handleDesignerChange.bind(this), 500);
             this.formDesigner.studio = this;
             this.formDesigner.visible = this.isValid;
         }
@@ -8871,7 +9016,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async loadContent() {
             const { url = '', file } = this._data;
-            const content = url ? await (0, utils_17.getFileContent)(url) : file?.content || '';
+            const content = url ? await (0, utils_18.getFileContent)(url) : file?.content || '';
             const fileName = this.fileName;
             await this.codeEditor.loadContent(content, (0, scom_code_editor_1.getLanguageType)(fileName), fileName);
             if (this.isTsx) {
@@ -8948,45 +9093,52 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return result;
         }
         async handleTabChanged(target) {
+            if (target.id === this.activeTab)
+                return;
             this.activeTab = target.id;
             const fileName = this.fileName;
             await this.renderContent();
             target.enabled = false;
             target.rightIcon.visible = true;
-            if (target.id === 'designTab') {
-                this.hideAddToChatWidget();
-                if (this.updateDesigner) {
-                    this.updateDesigner = false;
-                    try {
-                        if (this.isTsx)
-                            await this.parseTsx(fileName);
-                        else {
-                            await this.parseMd(this.codeEditor.value);
+            try {
+                if (target.id === 'designTab') {
+                    this.hideAddToChatWidget();
+                    if (this.updateDesigner) {
+                        this.updateDesigner = false;
+                        try {
+                            if (this.isTsx)
+                                await this.parseTsx(fileName);
+                            else {
+                                await this.parseMd(this.codeEditor.value);
+                            }
+                        }
+                        catch (error) {
+                            this.updateDesigner = true;
                         }
                     }
-                    catch (error) {
-                        this.updateDesigner = true;
+                }
+                else if (target.id === 'codeTab') {
+                    this.formDesigner.hideAddToChatWidget();
+                    this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
+                    if (this.isWidgetMD) {
+                        const md = this.getUpdatedMd();
+                        const viewState = this.codeEditor.editor.saveViewState();
+                        this.codeEditor.value = md;
+                        if (viewState) {
+                            this.codeEditor.editor.restoreViewState(viewState);
+                        }
+                        this.codeEditor.editor.focus();
                     }
                 }
-            }
-            else if (target.id === 'codeTab') {
-                this.formDesigner.hideAddToChatWidget();
-                this.updateDesignerCode(this.isTsx ? fileName : this.tempTsxPath);
-                if (this.isWidgetMD) {
-                    const md = this.getUpdatedMd();
-                    const viewState = this.codeEditor.editor.saveViewState();
-                    this.codeEditor.value = md;
-                    if (viewState) {
-                        this.codeEditor.editor.restoreViewState(viewState);
-                    }
-                    this.codeEditor.editor.focus();
+                else {
+                    this.deployDeployer.setData({
+                        path: this.fileName,
+                        content: this.value
+                    });
                 }
             }
-            else {
-                this.deployDeployer.setData({
-                    path: this.fileName,
-                    content: this.value
-                });
+            catch (e) {
+                console.error(e);
             }
             target.rightIcon.visible = false;
             target.enabled = true;
@@ -9293,6 +9445,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             const dataUrl = this.getAttribute('dataUrl', true);
             this.selectedType = this.getAttribute('selectedType', true);
             this.isPreviewDefault = this.getAttribute('isPreviewDefault', true);
+            this.themes = this.getAttribute('themes', true);
             this.addLib();
             this.setData({ url, file, dataUrl });
             this.classList.add(index_css_25.blockStyle);
@@ -9387,91 +9540,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 {
                     name: 'Widget Settings',
                     icon: 'edit',
-                    ...this.getWidgetSchemas(),
+                    ...(0, schema_1.getWidgetSchemas)(),
                 },
             ];
             return actions;
-        }
-        getWidgetSchemas() {
-            const propertiesSchema = {
-                type: 'object',
-                properties: {
-                    pt: {
-                        title: 'Top',
-                        type: 'number',
-                    },
-                    pb: {
-                        title: 'Bottom',
-                        type: 'number',
-                    },
-                    pl: {
-                        title: 'Left',
-                        type: 'number',
-                    },
-                    pr: {
-                        title: 'Right',
-                        type: 'number',
-                    },
-                    align: {
-                        type: 'string',
-                        title: 'Alignment',
-                        enum: ['left', 'center', 'right'],
-                    },
-                    maxWidth: {
-                        type: 'number',
-                    },
-                    link: {
-                        title: 'URL',
-                        type: 'string',
-                    },
-                },
-            };
-            const themesSchema = {
-                type: 'VerticalLayout',
-                elements: [
-                    {
-                        type: 'HorizontalLayout',
-                        elements: [
-                            {
-                                type: 'Group',
-                                label: 'Padding (px)',
-                                elements: [
-                                    {
-                                        type: 'VerticalLayout',
-                                        elements: [
-                                            {
-                                                type: 'HorizontalLayout',
-                                                elements: [
-                                                    {
-                                                        type: 'Control',
-                                                        scope: '#/properties/pt',
-                                                    },
-                                                    {
-                                                        type: 'Control',
-                                                        scope: '#/properties/pb',
-                                                    },
-                                                    {
-                                                        type: 'Control',
-                                                        scope: '#/properties/pl',
-                                                    },
-                                                    {
-                                                        type: 'Control',
-                                                        scope: '#/properties/pr',
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            };
-            return {
-                userInputDataSchema: propertiesSchema,
-                userInputUISchema: themesSchema,
-            };
         }
         render() {
             return (this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden', position: 'relative', background: { color: Theme.background.default } },
