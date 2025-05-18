@@ -1,6 +1,6 @@
 {
     "name": "@scom/scom-designer",
-    "version": "0.1.39",
+    "version": "0.1.40",
     "main": "dist/index.js",
     "plugin": "dist",
     "pluginTypes": "pluginTypes/index.d.ts",
