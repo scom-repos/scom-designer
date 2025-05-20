@@ -777,7 +777,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private handleCodeEditorSave(target: ScomCodeEditor, event: KeyboardEvent) {
-    if (event.code === 'KeyS' && event.ctrlKey) {
+    if (event.code === 'KeyS' && (event.metaKey || event.ctrlKey)) {
       event.stopPropagation();
       event.preventDefault();
       if (typeof this.onSave === 'function') this.onSave(target, event);
