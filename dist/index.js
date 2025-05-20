@@ -9259,7 +9259,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 this.onChange(this, event);
         }
         handleCodeEditorSave(target, event) {
-            if (event.code === 'KeyS' && event.ctrlKey) {
+            if (event.code === 'KeyS' && (event.metaKey || event.ctrlKey)) {
                 event.stopPropagation();
                 event.preventDefault();
                 if (typeof this.onSave === 'function')
