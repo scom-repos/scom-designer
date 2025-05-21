@@ -7731,6 +7731,8 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
         }
         handleControlMouseDown(event) {
+            if (this.selectedType === 'hover')
+                return;
             event.preventDefault();
             event.stopPropagation();
             this.mouseDown = true;

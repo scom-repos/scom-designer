@@ -1392,6 +1392,7 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleControlMouseDown(event: MouseEvent) {
+    if (this.selectedType === 'hover') return;
     event.preventDefault();
     event.stopPropagation();
     this.mouseDown = true;
