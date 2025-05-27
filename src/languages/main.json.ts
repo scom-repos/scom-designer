@@ -16,7 +16,10 @@ export default {
     "the_layout_of_your_screen": "The layout of your screen",
     "the_most_simple__and_essential_components_to_build_a_screen": "The most simple & essential components to build a screen",
     "with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes": "With flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes.",
-    "deploy": "Deploy"
+    "deploy": "Deploy",
+    "add_widget": "Add Widget",
+    "delete_widget": "Delete Widget",
+    "add_to_context": "Add to context",
   },
   "zh-hant": {
     "add_components": "添加组件",

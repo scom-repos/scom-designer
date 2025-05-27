@@ -589,6 +589,11 @@ export default class DesignerComponents extends Module {
     }
   }
 
+  removeComponent(component: IComponent) {
+    this.currentComponent = component;
+    this.handleDelete();
+  }
+
   private removeElements(elements: IComponent[]) {
     for (let elm of elements) {
       if (elm.path === this.currentComponent.path) {
@@ -684,8 +689,8 @@ export default class DesignerComponents extends Module {
           title='$confirm'
           status='confirm'
           content='$are_you_sure_to_delete_this_component'
-          onConfirm={this.onConfirm.bind(this)}
-          onClose={this.onClose.bind(this)}
+          onConfirm={this.onConfirm}
+          onClose={this.onClose}
         />
       </i-vstack>
     )
