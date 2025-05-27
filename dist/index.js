@@ -1419,7 +1419,8 @@ define("@scom/scom-designer/helpers/config.ts", ["require", "exports", "@ijstech
         'i-hstack',
         'i-vstack',
         'i-modal',
-        'i-radio'
+        'i-radio',
+        'i-page-block'
     ];
     exports.CONTAINERS = CONTAINERS;
     const ControlItemMapper = {
@@ -1500,7 +1501,10 @@ define("@scom/scom-designer/languages/main.json.ts", ["require", "exports"], fun
             "the_layout_of_your_screen": "The layout of your screen",
             "the_most_simple__and_essential_components_to_build_a_screen": "The most simple & essential components to build a screen",
             "with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes": "With flexbox, you can specify the layout of an element and its children to provide a consistent layout on different screen sizes.",
-            "deploy": "Deploy"
+            "deploy": "Deploy",
+            "add_widget": "Add Widget",
+            "delete_widget": "Delete Widget",
+            "add_to_context": "Add to context",
         },
         "zh-hant": {
             "add_components": "添加组件",
@@ -2486,6 +2490,10 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                 this.renderUI();
             }
         }
+        removeComponent(component) {
+            this.currentComponent = component;
+            this.handleDelete();
+        }
         removeElements(elements) {
             for (let elm of elements) {
                 if (elm.path === this.currentComponent.path) {
@@ -2539,7 +2547,7 @@ define("@scom/scom-designer/components/components.tsx", ["require", "exports", "
                                 content: '$view_deleted_components'
                             } }))),
                 this.$render("i-vstack", { id: "vStackComponents", gap: 4, overflow: "auto", position: 'relative', height: "100%", maxHeight: "calc(100% - 32px)" }),
-                this.$render("i-alert", { id: "mdAlert", title: '$confirm', status: 'confirm', content: '$are_you_sure_to_delete_this_component', onConfirm: this.onConfirm.bind(this), onClose: this.onClose.bind(this) })));
+                this.$render("i-alert", { id: "mdAlert", title: '$confirm', status: 'confirm', content: '$are_you_sure_to_delete_this_component', onConfirm: this.onConfirm, onClose: this.onClose })));
         }
     };
     DesignerComponents = __decorate([
@@ -6119,6 +6127,23 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
     Object.defineProperty(exports, "__esModule", { value: true });
     const Theme = components_33.Styles.Theme.ThemeVars;
     let DesignerPickerComponents = class DesignerPickerComponents extends components_33.Module {
+        get parentName() {
+            return this._parentName;
+        }
+        set parentName(value) {
+            const oldValue = this._parentName;
+            this._parentName = value;
+            if (oldValue !== value)
+                this.renderUI();
+        }
+        get filteredItems() {
+            let items = [...this.items];
+            const parentName = this.parentName;
+            if (parentName === 'i-page-block') {
+                items = items.filter(item => item.name.startsWith('i-page-') || item.name.startsWith('i-scom-'));
+            }
+            return [...items];
+        }
         constructor(parent, options) {
             super(parent, options);
             this.isShown = false;
@@ -6129,8 +6154,9 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             this.iconTooltip.visible = !!this.tooltipText;
             this.iconTooltip.tooltip.content = this.tooltipText || '';
             this.hStackItems.visible = this.isShown;
+            const items = this.filteredItems;
             const nodeItems = [];
-            for (const item of this.items) {
+            for (const item of items) {
                 const { name, image, icon } = item;
                 const block = new components_33.Panel(undefined, { width: 'calc(50% - 0.5px)', height: '5rem', background: { color: Theme.background.main } });
                 block.appendChild(this.$render("i-vstack", { gap: '0.5rem', width: "100%", height: "100%", verticalAlignment: "center", horizontalAlignment: "center", cursor: 'pointer', onClick: (target, event) => this.onItemSelected(target, event, item) },
@@ -6139,7 +6165,7 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
                 block.classList.add(index_css_22.blockItemHoverStyled);
                 nodeItems.push(block);
             }
-            if (this.items.length % 2 === 1) {
+            if (items.length % 2 === 1) {
                 nodeItems.push(this.$render("i-panel", { width: "calc(50% - 0.5px)", height: 80, background: { color: Theme.background.main } }));
             }
             this.hStackItems.clearInnerHTML();
@@ -6161,6 +6187,9 @@ define("@scom/scom-designer/components/pickerComponents.tsx", ["require", "expor
             this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
             this.name = this.getAttribute('name', true) || '';
             this.tooltipText = this.getAttribute('tooltipText', true);
+            const parentName = this.getAttribute('parentName', true);
+            if (parentName)
+                this._parentName = parentName;
             this.isShown = this.getAttribute('isShown', true) || false;
             this.items = this.getAttribute('items', true) || [];
             this.renderUI();
@@ -6460,17 +6489,10 @@ define("@scom/scom-designer/designer/index.css.ts", ["require", "exports", "@ijs
         border: `1px dashed ${Theme.colors.info.dark}`
     });
 });
-define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.css.ts", "@scom/scom-designer/designer/utils.ts"], function (require, exports, components_37, index_22, index_css_23, data_2, index_23, utils_14, config_8, store_7, index_24, index_css_24, utils_15) {
+define("@scom/scom-designer/designer/resizer.ts", ["require", "exports", "@scom/scom-designer/designer/index.css.ts"], function (require, exports, index_css_23) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ScomDesignerForm = void 0;
-    const Theme = components_37.Styles.Theme.ThemeVars;
-    var TABS;
-    (function (TABS) {
-        TABS[TABS["RECENT"] = 0] = "RECENT";
-        TABS[TABS["BITS"] = 1] = "BITS";
-        TABS[TABS["BLOCKS"] = 2] = "BLOCKS";
-    })(TABS || (TABS = {}));
+    exports.ControlResizer = void 0;
     class ControlResizer {
         constructor(control, type) {
             this._type = 'click';
@@ -6497,10 +6519,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
             else {
                 const parentEl = this._control.closest('#designerWrapper');
-                const selectedEl = parentEl?.querySelector(`.${index_css_24.selectedStyle}`);
+                const selectedEl = parentEl?.querySelector(`.${index_css_23.selectedStyle}`);
                 if (selectedEl)
-                    selectedEl.classList.remove(index_css_24.selectedStyle);
-                const addToChatPanel = parentEl.querySelector('#pnlAddToChat');
+                    selectedEl.classList.remove(index_css_23.selectedStyle);
+                const addToChatPanel = parentEl?.querySelector('#pnlAddToChat');
                 if (addToChatPanel)
                     addToChatPanel.visible = false;
             }
@@ -6523,7 +6545,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     return;
                 if (this._control.tag?.isGenerated === false)
                     return;
-                this._control.classList.add(index_css_24.selectedStyle);
+                this._control.classList.add(index_css_23.selectedStyle);
                 const parentEl = this._control.closest('#designerWrapper');
                 const addToChatPanel = parentEl.querySelector('#pnlAddToChat');
                 if (addToChatPanel) {
@@ -6537,7 +6559,21 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
         }
     }
+    exports.ControlResizer = ControlResizer;
+});
+define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijstech/components", "@scom/scom-designer/components/index.ts", "@scom/scom-designer/index.css.ts", "@scom/scom-designer/data.ts", "@scom/scom-designer/tools/index.ts", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/helpers/store.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.css.ts", "@scom/scom-designer/designer/resizer.ts", "@scom/scom-designer/designer/utils.ts"], function (require, exports, components_37, index_22, index_css_24, data_2, index_23, utils_14, config_8, store_7, index_24, index_css_25, resizer_1, utils_15) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ScomDesignerForm = void 0;
+    const Theme = components_37.Styles.Theme.ThemeVars;
+    var TABS;
+    (function (TABS) {
+        TABS[TABS["RECENT"] = 0] = "RECENT";
+        TABS[TABS["BITS"] = 1] = "BITS";
+        TABS[TABS["BLOCKS"] = 2] = "BLOCKS";
+    })(TABS || (TABS = {}));
     let ScomDesignerForm = class ScomDesignerForm extends components_37.Module {
+        ;
         constructor(parent, options) {
             super(parent, options);
             this.currentTab = TABS.BITS;
@@ -6562,9 +6598,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.onDuplicateComponent = this.onDuplicateComponent.bind(this);
             this.onVisibleComponent = this.onVisibleComponent.bind(this);
             this.handleBreakpoint = this.handleBreakpoint.bind(this);
-            this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
+            this.onComponentsChanged = this.onComponentsChanged.bind(this);
             this.onAddItem = this.onAddItem.bind(this);
             this.handlePreviewChanged = this.handlePreviewChanged.bind(this);
+            this.onPickerOpened = this.onPickerOpened.bind(this);
         }
         static async create(options, parent) {
             let self = new this(parent, options);
@@ -6890,10 +6927,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 return;
             for (let i = 0; i < this.wrapperTab.children.length; i++) {
                 if (value === i) {
-                    this.wrapperTab.children[i].classList.add(index_css_23.labelActiveStyled);
+                    this.wrapperTab.children[i].classList.add(index_css_24.labelActiveStyled);
                 }
                 else {
-                    this.wrapperTab.children[i].classList.remove(index_css_23.labelActiveStyled);
+                    this.wrapperTab.children[i].classList.remove(index_css_24.labelActiveStyled);
                 }
             }
             this.currentTab = value;
@@ -6920,6 +6957,15 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.mdPicker.height = this.designerComponents.height;
             this.currentParent = component;
             this.mdPicker.visible = true;
+        }
+        onPickerOpened() {
+            const parentName = this.currentParent?.name;
+            const pickers = this.pnlComponentPicker.children;
+            if (!parentName || !pickers?.length)
+                return;
+            for (const picker of pickers) {
+                picker.parentName = parentName;
+            }
         }
         onSelectComponent(component) {
             const path = component.path;
@@ -7023,7 +7069,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             component.repeater = parent?.name === 'i-repeater' ? parent.path : (parent?.repeater || '');
             if (!control.tag)
                 control.tag = {};
-            control.tag.resizer = new ControlResizer(control, this.selectedType);
+            control.tag.resizer = new resizer_1.ControlResizer(control, this.selectedType);
             this.bindControlEvents(component);
             this.pathMapping.set(component.path, component);
             if (component?.items?.length) {
@@ -7043,17 +7089,17 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
-                const hoveredControl = this.pnlFormDesigner.querySelector(`.${index_css_24.hoverStyle}`);
+                const hoveredControl = this.pnlFormDesigner.querySelector(`.${index_css_25.hoverStyle}`);
                 if (hoveredControl)
-                    hoveredControl.classList.remove(index_css_24.hoverStyle);
-                control.classList.add(index_css_24.hoverStyle);
+                    hoveredControl.classList.remove(index_css_25.hoverStyle);
+                control.classList.add(index_css_25.hoverStyle);
             };
             control.onmouseleave = (event) => {
                 if (this.selectedType === 'click')
                     return;
                 event.preventDefault();
                 event.stopPropagation();
-                control.classList.remove(index_css_24.hoverStyle);
+                control.classList.remove(index_css_25.hoverStyle);
             };
             return component;
         }
@@ -7186,11 +7232,11 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             if (event)
                 event.stopPropagation();
             this.modified = true;
-            if (this.selectedComponent) {
-                const props = this.getDefaultProps(this.selectedComponent.name);
+            if (this.addedComponent) {
+                const props = this.getDefaultProps(this.addedComponent.name);
                 let com = {
-                    name: this.selectedComponent.name,
-                    icon: this.selectedComponent.icon,
+                    name: this.addedComponent.name,
+                    icon: this.addedComponent.icon,
                     path: components_37.IdUtils.generateUUID(),
                     items: [],
                     props,
@@ -7212,7 +7258,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     this._rootComponent.items.push(com);
                     this.updateStructure();
                 }
-                this.selectedComponent = null;
+                this.addedComponent = null;
                 if (typeof this.onDesignerChange === 'function')
                     this.onDesignerChange(this);
                 return com;
@@ -7421,6 +7467,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             for (let i = 0; i < components.length; i++) {
                 const pickerElm = new index_22.DesignerPickerComponents(undefined, {
                     ...components[i],
+                    parentName: this.currentParent?.name,
                     display: 'block',
                     isShown: i === 0,
                     margin: { bottom: 1 },
@@ -7435,11 +7482,11 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.pnlComponentPicker.append(...nodeItems);
         }
         async onAddComponent(target, component) {
-            this.selectedComponent = { ...component, control: target };
-            if (this.selectedComponent) {
+            this.addedComponent = { ...component, control: target };
+            if (this.addedComponent) {
                 const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
                 if (!finded)
-                    this.recentComponents.push(this.selectedComponent);
+                    this.recentComponents.push(this.addedComponent);
             }
             if (this.isParentGroup(this.currentParent?.name)) {
                 const parentControl = this.pathMapping.get(this.currentParent.path);
@@ -7623,6 +7670,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             }
         }
         async renderUI(root) {
+            this.pnlFormDesigner.clearInnerHTML();
             this.selectedControl = null;
             this._rootComponent = root;
             this.designerComponents.screen = {
@@ -7643,6 +7691,11 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 ...this._rootComponent,
                 control: null
             });
+        }
+        onComponentsChanged() {
+            this.onUpdateDesigner();
+            if (typeof this.onDesignerChange === 'function')
+                this.onDesignerChange(this);
         }
         handleControlMouseMove(event) {
             const currentControl = this.selectedControl?.control;
@@ -7934,9 +7987,19 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.pnlScreens.appendChild(this.designerComponents);
         }
         handleAddToChat() {
+            this.pnlAddToChat.visible = false;
             if (typeof this.onSelectControl === 'function')
                 this.onSelectControl();
+        }
+        handleDeleteBlock() {
             this.pnlAddToChat.visible = false;
+            if (this.selectedControl)
+                this.designerComponents.removeComponent(this.selectedControl);
+        }
+        async handleAddBlock() {
+            this.pnlAddToChat.visible = false;
+            if (typeof this.onAddControl === 'function')
+                await this.onAddControl(this.selectedControl);
         }
         hideAddToChatWidget() {
             this.pnlAddToChat.visible = false;
@@ -7958,8 +8021,6 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             this.onSelectControl = this.getAttribute('onSelectControl', true) || this.onSelectControl;
             this.onDesignerChange = this.getAttribute('onDesignerChange', true) || this.onDesignerChange;
             this.wrapperComponentPicker.style.borderBottom = 'none';
-            this.initComponentPicker();
-            this.initBlockPicker();
             this.initEvents();
         }
         render() {
@@ -7988,7 +8049,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     ] },
                     this.$render("i-vstack", { id: "pnlScreens", width: '100%', height: '100%', border: {
                             top: { width: 1, style: 'solid', color: Theme.divider },
-                        }, maxWidth: 300, position: 'relative', overflow: 'visible', zIndex: 10, class: index_css_23.customTransition, mediaQueries: [
+                        }, maxWidth: 300, position: 'relative', overflow: 'visible', zIndex: 10, class: index_css_24.customTransition, mediaQueries: [
                             {
                                 maxWidth: '767px',
                                 properties: {
@@ -7996,11 +8057,11 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                 }
                             }
                         ] },
-                        this.$render("i-panel", { id: "pnlLeftIcon", position: 'absolute', top: '2rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_23.toggleClass, onClick: this.onToggleClick },
+                        this.$render("i-panel", { id: "pnlLeftIcon", position: 'absolute', top: '2rem', right: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_24.toggleClass, onClick: this.onToggleClick },
                             this.$render("i-icon", { name: "angle-right", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', right: '0.15rem' })),
                         this.$render("designer-screens", { id: 'designerScreens', minHeight: 160, onScreenChanged: this.onScreenChanged, onScreenHistoryShown: this.onScreenHistoryShown, visible: false }),
-                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onDuplicate: this.onDuplicateComponent, onUpdate: this.onUpdateDesigner, onAdd: this.onAddItem }),
-                        this.$render("i-modal", { id: "mdPicker", width: '16rem', maxWidth: '100%', height: '100dvh', overflow: 'hidden', showBackdrop: false, popupPlacement: 'rightTop', zIndex: 2000, padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+                        this.$render("designer-components", { id: 'designerComponents', height: '100%', minHeight: 200, overflow: 'hidden', onShowComponentPicker: this.onShowComponentPicker, onSelect: this.onSelectComponent, onVisible: this.onVisibleComponent, onDelete: this.onDeleteComponent, onDuplicate: this.onDuplicateComponent, onUpdate: this.onComponentsChanged, onAdd: this.onAddItem }),
+                        this.$render("i-modal", { id: "mdPicker", width: '16rem', maxWidth: '100%', height: '100dvh', overflow: 'hidden', showBackdrop: false, popupPlacement: 'rightTop', zIndex: 2000, padding: { top: 0, bottom: 0, left: 0, right: 0 }, onOpen: this.onPickerOpened },
                             this.$render("i-panel", { width: '100%', height: '100%', overflow: 'hidden' },
                                 this.$render("i-vstack", { id: 'wrapperComponentPicker', width: '100%', height: '100%', border: {
                                         width: 1,
@@ -8015,13 +8076,13 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                             this.$render("i-label", { caption: '$add_components', font: { size: '0.75rem', bold: true } }),
                                             this.$render("i-icon", { name: 'times', width: 14, height: 14, cursor: 'pointer', onClick: this.onCloseComponentPicker })),
                                         this.$render("i-grid-layout", { id: 'wrapperTab', width: '100%', background: { color: Theme.action.hoverBackground }, templateColumns: ['1fr', '1fr', '1fr'], class: `${index_23.borderRadiusLeft} ${index_23.borderRadiusRight}` },
-                                            this.$render("i-label", { caption: '$recent', class: `${index_css_23.customLabelTabStyled} ${index_23.borderRadiusLeft}`, onClick: () => this.onTabChanged(TABS.RECENT) }),
-                                            this.$render("i-label", { caption: '$bits', class: `${index_css_23.customLabelTabStyled} ${index_css_23.labelActiveStyled}`, border: {
+                                            this.$render("i-label", { caption: '$recent', class: `${index_css_24.customLabelTabStyled} ${index_23.borderRadiusLeft}`, onClick: () => this.onTabChanged(TABS.RECENT) }),
+                                            this.$render("i-label", { caption: '$bits', class: `${index_css_24.customLabelTabStyled} ${index_css_24.labelActiveStyled}`, border: {
                                                     radius: 0,
                                                     left: { width: 1, style: 'solid', color: Theme.divider },
                                                     right: { width: 1, style: 'solid', color: Theme.divider },
                                                 }, onClick: () => this.onTabChanged(TABS.BITS) }),
-                                            this.$render("i-label", { caption: '$blocks', class: `${index_css_23.customLabelTabStyled} ${index_23.borderRadiusRight}`, onClick: () => this.onTabChanged(TABS.BLOCKS) })),
+                                            this.$render("i-label", { caption: '$blocks', class: `${index_css_24.customLabelTabStyled} ${index_23.borderRadiusRight}`, onClick: () => this.onTabChanged(TABS.BLOCKS) })),
                                         this.$render("i-input", { id: 'inputSearch', placeholder: '$search', width: '100%', height: 24, border: {
                                                 radius: 8,
                                                 width: 0,
@@ -8047,7 +8108,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                             ] },
                             this.$render("i-vstack", { horizontalAlignment: "center", verticalAlignment: "center", position: "absolute", top: "calc(50% - 0.75rem)", left: "calc(50% - 0.75rem)" },
                                 this.$render("i-icon", { class: "i-loading-spinner_icon", name: "spinner", width: 24, height: 24, fill: Theme.colors.primary.main }))),
-                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: Theme.background.main }, overflow: { x: 'visible', y: 'auto' }, class: index_css_23.customScrollbar, mediaQueries: [
+                        this.$render("i-panel", { id: "pnlFormDesigner", width: 'auto', minHeight: '100%', background: { color: Theme.background.main }, overflow: { x: 'visible', y: 'auto' }, class: index_css_24.customScrollbar, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
                                     properties: {
@@ -8055,8 +8116,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                     }
                                 }
                             ] }),
-                        this.$render("i-hstack", { id: "pnlAddToChat", verticalAlignment: 'center', padding: { top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem' }, width: '150px', border: { radius: '0.25rem', width: 1, style: 'solid', color: Theme.divider }, cursor: 'pointer', visible: false, boxShadow: Theme.shadows[1], background: { color: Theme.background.modal }, onClick: this.handleAddToChat },
-                            this.$render("i-label", { caption: 'Add to Chat', font: { size: '0.875rem', weight: 500 } })),
+                        this.$render("i-hstack", { id: "pnlAddToChat", verticalAlignment: 'center', padding: { top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem' }, border: { radius: '0.25rem', width: 1, style: 'solid', color: Theme.divider }, width: "min-content", visible: false, boxShadow: Theme.shadows[1], gap: "0.5rem", background: { color: Theme.background.modal } },
+                            this.$render("i-button", { icon: { name: 'trash', width: '0.875rem', height: '0.875rem', fill: Theme.colors.primary.contrastText }, padding: { top: '0.35rem', bottom: '0.35rem', left: '0.35rem', right: '0.35rem' }, tooltip: { content: '$delete_widget', placement: 'top' }, stack: { shrink: '0' }, onClick: this.handleDeleteBlock }),
+                            this.$render("i-button", { icon: { name: 'plus', width: '0.875rem', height: '0.875rem', fill: Theme.colors.primary.contrastText }, padding: { top: '0.35rem', bottom: '0.35rem', left: '0.35rem', right: '0.35rem' }, tooltip: { content: '$add_widget', placement: 'top' }, stack: { shrink: '0' }, onClick: this.handleAddBlock }),
+                            this.$render("i-button", { icon: { name: 'file-alt', width: '0.875rem', height: '0.875rem', fill: Theme.colors.primary.contrastText }, padding: { top: '0.35rem', bottom: '0.35rem', left: '0.35rem', right: '0.35rem' }, tooltip: { content: '$add_to_context', placement: 'top' }, stack: { shrink: '0' }, onClick: this.handleAddToChat })),
                         this.$render("i-panel", { id: "pnlPreview", width: 'auto', minHeight: '100%', background: { color: Theme.background.main }, overflow: 'hidden', visible: false, mediaQueries: [
                                 {
                                     maxWidth: '1024px',
@@ -8066,7 +8129,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                 }
                             ] },
                             this.$render("i-iframe", { id: "ifrPreview", width: '100%', height: '100%', allowFullscreen: true }))),
-                    this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_23.customTransition, mediaQueries: [
+                    this.$render("i-panel", { id: "pnlProperties", overflow: 'visible', maxWidth: 360, width: '100%', height: '100%', class: index_css_24.customTransition, mediaQueries: [
                             {
                                 maxWidth: '767px',
                                 properties: {
@@ -8076,7 +8139,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                 }
                             }
                         ] },
-                        this.$render("i-panel", { id: "pnlRightIcon", position: 'absolute', top: '2rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_23.toggleClass, onClick: this.onToggleClick, mediaQueries: [
+                        this.$render("i-panel", { id: "pnlRightIcon", position: 'absolute', top: '2rem', left: '-1rem', width: '2rem', height: '2rem', border: { radius: '50%' }, background: { color: Theme.background.main }, cursor: 'pointer', class: index_css_24.toggleClass, onClick: this.onToggleClick, mediaQueries: [
                                 {
                                     maxWidth: '767px',
                                     properties: {
@@ -8087,7 +8150,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                             this.$render("i-icon", { name: "angle-left", width: '1rem', height: '1rem', fill: Theme.text.primary, position: 'absolute', top: '0.5rem', left: '0.15rem' })),
                         this.$render("i-icon", { id: "btnClosePreview", name: "times", width: 16, height: 16, visible: false, top: 5, right: 10, zIndex: 999, cursor: 'pointer', onClick: this.closePreview }),
                         this.$render("designer-properties", { id: 'designerProperties', display: 'flex', width: '100%', height: '100%', onChanged: this.onPropertiesChanged, onEventChanged: this.onControlEventChanged, onEventDblClick: this.onControlEventDblClick, onBreakpointChanged: this.handleBreakpoint, onPreviewChanged: this.handlePreviewChanged }))),
-                this.$render("i-modal", { id: "mdMobile", width: '100dvw', height: '50dvh', popupPlacement: 'bottom', zIndex: 999, overflow: { y: 'auto' }, padding: { top: 0, right: 0, bottom: 0, left: 0 }, border: { top: { width: '1px', style: 'solid', color: Theme.divider } }, showBackdrop: true, visible: false, closeOnBackdropClick: false, class: index_css_23.customModalStyled, onOpen: this.onModalOpen, onClose: this.onModalClose },
+                this.$render("i-modal", { id: "mdMobile", width: '100dvw', height: '50dvh', popupPlacement: 'bottom', zIndex: 999, overflow: { y: 'auto' }, padding: { top: 0, right: 0, bottom: 0, left: 0 }, border: { top: { width: '1px', style: 'solid', color: Theme.divider } }, showBackdrop: true, visible: false, closeOnBackdropClick: false, class: index_css_24.customModalStyled, onOpen: this.onModalOpen, onClose: this.onModalClose },
                     this.$render("i-vstack", { width: '100%', height: '100%', overflow: 'hidden' },
                         this.$render("i-panel", { id: "pnlWrap", stack: { grow: '1' }, maxHeight: 'calc(100% - 60px)' }),
                         this.$render("i-hstack", { verticalAlignment: 'center', width: '100%', gap: 8, cursor: 'pointer', padding: { left: 16, right: 16 }, margin: { top: 10, bottom: 10 }, height: 40, border: { radius: '1rem', width: 1, style: 'solid', color: Theme.divider }, hover: { opacity: 0.7 }, stack: { shrink: '0' }, horizontalAlignment: 'center', onClick: this.handleClose },
@@ -8665,7 +8728,7 @@ define("@scom/scom-designer/schema.ts", ["require", "exports"], function (requir
     }
     exports.getWidgetSchemas = getWidgetSchemas;
 });
-define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.ts", "@scom/scom-designer/schema.ts"], function (require, exports, components_39, index_css_25, compiler_2, scom_code_editor_1, utils_18, config_9, index_27, index_28, schema_1) {
+define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@scom/scom-designer/index.css.ts", "@ijstech/compiler", "@scom/scom-code-editor", "@scom/scom-designer/helpers/utils.ts", "@scom/scom-designer/helpers/config.ts", "@scom/scom-designer/languages/index.ts", "@scom/scom-designer/designer/index.ts", "@scom/scom-designer/schema.ts"], function (require, exports, components_39, index_css_26, compiler_2, scom_code_editor_1, utils_18, config_9, index_27, index_28, schema_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ScomDesigner = void 0;
@@ -8766,6 +8829,8 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this._positions = new Set();
             this._oldLines = [];
             this._chatWidget = null;
+            this._isPickerInit = false;
+            this._isChatWidgetInit = false;
             this.tag = {};
             this.importCallback = this.importCallback.bind(this);
             this.handleDesignerPreview = this.handleDesignerPreview.bind(this);
@@ -8925,10 +8990,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.designTab.visible = !this.isContract;
             this.updateDesigner = !!(this.url || this.file?.path);
             await this.renderContent(true);
-            if (this.isWidgetMD) {
-                this.updateAddToChatWidget();
-                this.codeEditor.addWidget(this._chatWidget);
-            }
         }
         async renderContent(init = false) {
             if (this.activeTab === 'codeTab' && !this.codeEditor) {
@@ -8969,6 +9030,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
             this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
             this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
+            if (this.isWidgetMD && !this._isChatWidgetInit) {
+                this._isChatWidgetInit = true;
+                this.updateAddToChatWidget();
+                this.codeEditor.addWidget(this._chatWidget);
+            }
         }
         executeInsert(textBefore, textAfter) {
             return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
@@ -8995,9 +9061,28 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     return;
                 this.updateMd();
             };
+            this.formDesigner.onAddControl = async (control) => {
+                const selectedWidget = this.updateSelection();
+                const { startLine, endLine, md } = selectedWidget || {};
+                const data = selectedWidget ? { path: this.file.path, md, lines: { startLine, endLine } } : null;
+                typeof this.onAddControl === 'function' && this.onAddControl(control, data);
+            };
             this.formDesigner.onDesignerChange = (0, utils_18.debounce)(this.handleDesignerChange.bind(this), 500);
             this.formDesigner.studio = this;
             this.formDesigner.visible = this.isValid;
+        }
+        updateSelection() {
+            const root = this.formDesigner.rootComponent;
+            const selectedPos = this.formDesigner.getSelectedPosition();
+            let md = (0, index_28.renderMd)(root, '', [selectedPos]);
+            const regex = new RegExp(`\\{Line-[0-9]+-${selectedPos}\\}`, 'g');
+            const match = md.match(regex);
+            const startLine = match?.[0]?.split('-')?.[1];
+            const endLine = match?.[1]?.split('-')?.[1];
+            md = md.replace(/(Line-[0-9]+)-[0-9]+/g, '$1');
+            startLine && this._oldLines.push({ startLine, endLine });
+            const _selectedWidget = selectedPos !== undefined ? { startLine, endLine, md } : null;
+            return _selectedWidget ? { ..._selectedWidget } : null;
         }
         handleDesignerChange(target, event) {
             if (this.isWidgetMD) {
@@ -9055,10 +9140,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             };
             Object.entries(tabs).forEach(([tabName, tabElement]) => {
                 if (tabName === this.activeTab) {
-                    tabElement.classList.add(index_css_25.customActivedStyled);
+                    tabElement.classList.add(index_css_26.customActivedStyled);
                 }
                 else {
-                    tabElement.classList.remove(index_css_25.customActivedStyled);
+                    tabElement.classList.remove(index_css_26.customActivedStyled);
                 }
             });
         }
@@ -9126,6 +9211,10 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                         }
                         catch (error) {
                             this.updateDesigner = true;
+                        }
+                        if (!this._isPickerInit) {
+                            this._isPickerInit = true;
+                            this.formDesigner.initComponentPicker();
                         }
                     }
                 }
@@ -9454,6 +9543,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview;
             this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError;
             this.onSelectedWidget = this.getAttribute('onSelectedWidget', true) || this.onSelectedWidget;
+            this.onAddControl = this.getAttribute('onAddControl', true) || this.onAddControl;
             const deployConfig = this.getAttribute('deployConfig', true);
             if (deployConfig)
                 this.deployConfig = deployConfig;
@@ -9465,7 +9555,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.themes = this.getAttribute('themes', true);
             this.addLib();
             this.setData({ url, file, dataUrl });
-            this.classList.add(index_css_25.blockStyle);
+            this.classList.add(index_css_26.blockStyle);
             this.setTag(config_9.themesConfig);
             document.addEventListener('click', this.handleClick);
         }

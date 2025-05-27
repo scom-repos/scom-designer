@@ -31,16 +31,15 @@ import {
 } from '../components/index';
 import { IComponent, IComponentItem, IComponentPicker, IControl, IScreen, IStudio, IBlock, ActionType, ITheme } from '../interface'
 import { customLabelTabStyled, customModalStyled, customScrollbar, customTransition, labelActiveStyled, toggleClass } from '../index.css'
-import {
-  blockComponents
-} from '../data'
+import { blockComponents} from '../data'
 import { borderRadiusLeft, borderRadiusRight } from '../tools/index'
 import { Parser } from "@ijstech/compiler";
 import { isSameValue, mergeObjects, parseProps } from '../helpers/utils'
 import { GroupMetadata, breakpointsMap, getDefaultMediaQuery, getMediaQueryProps, CONTAINERS, ControlItemMapper, ITEMS, findMediaQueryCallback, pageWidgets, pageWidgetNames } from '../helpers/config'
 import { getBreakpoint } from '../helpers/store'
 import { mainJson } from '../languages/index';
-import { selectedStyle, hoverStyle } from './index.css'
+import { hoverStyle } from './index.css'
+import { ControlResizer } from './resizer';
 import { createThemeCss } from './utils';
 
 const Theme = Styles.Theme.ThemeVars
@@ -51,81 +50,13 @@ enum TABS {
   BLOCKS,
 }
 
-class ControlResizer {
-  private _control: Control;
-  private _type: ActionType = 'click';
-  private resizers: HTMLElement[] = [];
-
-  constructor(control: Control, type: ActionType) {
-    this._control = control;
-    this._type = type ?? 'click';
-  }
-
-  get type() {
-    return this._type ?? 'click';
-  }
-
-  set type(value: ActionType) {
-    this._type = value ?? 'click';
-  }
-
-  addResizer(className: string) {
-    let resizer = document.createElement("div");
-    this._control.appendChild(resizer);
-    this.resizers.push(resizer);
-    resizer.className = "i-resizer " + className;
-  }
-
-  hideResizers() {
-    if (this.type === 'click') {
-      this.resizers.forEach(resizer => this._control?.contains(resizer) && this._control.removeChild(resizer));
-      this.resizers = [];
-    } else {
-      const parentEl = this._control.closest('#designerWrapper') as Control;
-      const selectedEl = parentEl?.querySelector(`.${selectedStyle}`) as Control;
-      if (selectedEl) selectedEl.classList.remove(selectedStyle);
-      const addToChatPanel = parentEl.querySelector('#pnlAddToChat') as Panel;
-      if (addToChatPanel) addToChatPanel.visible = false;
-    }
-  }
-
-  showResizers() {
-    if (this.type === 'click') {
-      if (this.resizers.length == 0) {
-        this.addResizer("tl");
-        this.addResizer("tm");
-        this.addResizer("tr");
-        this.addResizer("ml");
-        this.addResizer("mr");
-        this.addResizer("bl");
-        this.addResizer("bm");
-        this.addResizer("br");
-      }
-    } else {
-      if (this._control.tagName === 'I-PANEL') return
-
-      if (this._control.tag?.isGenerated === false) return;
-
-      this._control.classList.add(selectedStyle);
-      const parentEl = this._control.closest('#designerWrapper') as Control;
-      const addToChatPanel = parentEl.querySelector('#pnlAddToChat') as Panel;
-      if (addToChatPanel) {
-        const { top, left } = this._control.getBoundingClientRect();
-        addToChatPanel.visible = true;
-        addToChatPanel.position = 'fixed';
-        addToChatPanel.top = top + window.scrollY - 35 + 'px';
-        addToChatPanel.left = left + window.scrollX + 'px';
-        addToChatPanel.zIndex = 1000;
-      }
-    } 
-  }
-}
 
 interface ScomDesignerFormElement extends ControlElement {
   onPreview?: ()=> Promise<{module: string, script: string}>;
   onTogglePreview?: (value: boolean) => void;
   onClose?: () => void;
   onSelectControl?: () => void;
+  onAddControl?: (control: IControl) => Promise<void>;
   onDesignerChange?: (target: ScomDesignerForm, event: Event) => void;
 }
 
@@ -171,7 +102,7 @@ export class ScomDesignerForm extends Module {
   private mouseDownPos: { x: number; y: number };
   private recentComponents: IComponent[] = [];
   private _rootComponent: IComponent
-  private selectedComponent: IControl
+  private addedComponent: IControl
   private currentParent: IComponent;
   private designPos: any = {};
   private libsMap: Record<string, boolean> = {}
@@ -195,6 +126,7 @@ export class ScomDesignerForm extends Module {
   onClose?: () => void;
   onSelectControl?: () => void;
   onDesignerChange?: (target: ScomDesignerForm) => void;
+  onAddControl?: (control: IControl) => Promise<void>;;
 
   constructor(parent?: Container, options?: any) {
     super(parent, options)
@@ -205,9 +137,10 @@ export class ScomDesignerForm extends Module {
     this.onDuplicateComponent = this.onDuplicateComponent.bind(this);
     this.onVisibleComponent = this.onVisibleComponent.bind(this);
     this.handleBreakpoint = this.handleBreakpoint.bind(this);
-    this.onUpdateDesigner = this.onUpdateDesigner.bind(this);
+    this.onComponentsChanged = this.onComponentsChanged.bind(this);
     this.onAddItem = this.onAddItem.bind(this);
     this.handlePreviewChanged = this.handlePreviewChanged.bind(this);
+    this.onPickerOpened = this.onPickerOpened.bind(this);
   }
 
   static async create(options?: ScomDesignerFormElement, parent?: Container) {
@@ -587,6 +520,15 @@ export class ScomDesignerForm extends Module {
     this.mdPicker.visible = true;
   }
 
+  private onPickerOpened() {
+    const parentName = this.currentParent?.name;
+    const pickers = this.pnlComponentPicker.children;
+    if (!parentName || !pickers?.length) return;
+    for (const picker of pickers) {
+      (picker as DesignerPickerComponents).parentName = parentName;
+    }
+  }
+
   private onSelectComponent(component: IComponent) {
     const path = component.path;
     if (path) {
@@ -853,11 +795,11 @@ export class ScomDesignerForm extends Module {
     if (!parent) return;
     if (event) event.stopPropagation();
     this.modified = true;
-    if (this.selectedComponent) {
-      const props = this.getDefaultProps(this.selectedComponent.name);
+    if (this.addedComponent) {
+      const props = this.getDefaultProps(this.addedComponent.name);
       let com: IControl = {
-        name: this.selectedComponent.name,
-        icon: this.selectedComponent.icon,
+        name: this.addedComponent.name,
+        icon: this.addedComponent.icon,
         path: IdUtils.generateUUID(),
         items: [],
         props,
@@ -877,7 +819,7 @@ export class ScomDesignerForm extends Module {
         this._rootComponent.items.push(com);
         this.updateStructure();
       }
-      this.selectedComponent = null;
+      this.addedComponent = null;
 
       if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
       return com;
@@ -1083,12 +1025,13 @@ export class ScomDesignerForm extends Module {
     this.designerComponents.activeComponent = this.selectedControl;
   }
 
-  private initComponentPicker() {
+  public initComponentPicker() {
     const nodeItems: HTMLElement[] = []
     const components = this.pickerComponentsFiltered;
     for (let i = 0; i < components.length; i++) {
       const pickerElm = new DesignerPickerComponents(undefined, {
         ... components[i],
+        parentName: this.currentParent?.name,
         display: 'block',
         isShown: i === 0,
         margin: { bottom: 1 },
@@ -1104,10 +1047,10 @@ export class ScomDesignerForm extends Module {
   }
 
   private async onAddComponent(target: Control, component: IComponentItem) {
-    this.selectedComponent = { ...component, control: target } as any;
-    if (this.selectedComponent) {
+    this.addedComponent = { ...component, control: target } as any;
+    if (this.addedComponent) {
       const finded = this.recentComponents.find(x => component?.name && x?.name && x.name === component.name);
-      if (!finded) this.recentComponents.push(this.selectedComponent);
+      if (!finded) this.recentComponents.push(this.addedComponent);
     }
     if (this.isParentGroup(this.currentParent?.name)) {
       const parentControl = this.pathMapping.get(this.currentParent.path);
@@ -1282,6 +1225,7 @@ export class ScomDesignerForm extends Module {
   }
 
   async renderUI(root: IComponent) {
+    this.pnlFormDesigner.clearInnerHTML();
     this.selectedControl = null;
     this._rootComponent = root;
     this.designerComponents.screen = {
@@ -1303,6 +1247,11 @@ export class ScomDesignerForm extends Module {
       ...this._rootComponent,
       control: null
     });
+  }
+
+  private onComponentsChanged() {
+    this.onUpdateDesigner();
+    if (typeof this.onDesignerChange === 'function') this.onDesignerChange(this);
   }
 
   private handleControlMouseMove(event: MouseEvent) {
@@ -1604,8 +1553,19 @@ export class ScomDesignerForm extends Module {
   }
 
   private handleAddToChat() {
-    if (typeof this.onSelectControl === 'function') this.onSelectControl();
     this.pnlAddToChat.visible = false;
+    if (typeof this.onSelectControl === 'function') this.onSelectControl();
+  }
+
+  private handleDeleteBlock() {
+    this.pnlAddToChat.visible = false;
+    if (this.selectedControl)
+      this.designerComponents.removeComponent(this.selectedControl);
+  }
+
+  private async handleAddBlock() {
+    this.pnlAddToChat.visible = false;
+    if (typeof this.onAddControl === 'function') await this.onAddControl(this.selectedControl);
   }
 
   hideAddToChatWidget() {
@@ -1629,8 +1589,6 @@ export class ScomDesignerForm extends Module {
     this.onSelectControl = this.getAttribute('onSelectControl', true) || this.onSelectControl;
     this.onDesignerChange = this.getAttribute('onDesignerChange', true) || this.onDesignerChange;
     this.wrapperComponentPicker.style.borderBottom = 'none'
-    this.initComponentPicker()
-    this.initBlockPicker()
     this.initEvents()
   }
 
@@ -1743,7 +1701,7 @@ export class ScomDesignerForm extends Module {
               onVisible={this.onVisibleComponent}
               onDelete={this.onDeleteComponent}
               onDuplicate={this.onDuplicateComponent}
-              onUpdate={this.onUpdateDesigner}
+              onUpdate={this.onComponentsChanged}
               onAdd={this.onAddItem}
             />
              <i-modal
@@ -1756,6 +1714,7 @@ export class ScomDesignerForm extends Module {
               popupPlacement='rightTop'
               zIndex={2000}
               padding={{top: 0, bottom: 0, left: 0, right: 0}}
+              onOpen={this.onPickerOpened}
             >
               <i-panel
                 width={'100%'}
@@ -1915,16 +1874,35 @@ export class ScomDesignerForm extends Module {
             <i-hstack
               id="pnlAddToChat"
               verticalAlignment='center'
-              padding={{top: '0.5rem', bottom: '0.5rem', left: '0.5rem', right: '0.5rem'}}
-              width={'150px'}
+              padding={{top: '0.5rem', bottom: '0.5rem', left: '1rem', right: '1rem'}}
               border={{radius: '0.25rem', width: 1, style: 'solid', color: Theme.divider}}
-              cursor='pointer'
+              width={"min-content"}
               visible={false}
               boxShadow={Theme.shadows[1]}
+              gap="0.5rem"
               background={{color: Theme.background.modal}}
-              onClick={this.handleAddToChat}
             >
-              <i-label caption='Add to Chat' font={{size: '0.875rem', weight: 500}}></i-label>
+              <i-button
+                icon={{name: 'trash', width: '0.875rem', height: '0.875rem', fill: Theme.colors.primary.contrastText}}
+                padding={{top: '0.35rem', bottom: '0.35rem', left: '0.35rem', right: '0.35rem'}}
+                tooltip={{content: '$delete_widget', placement: 'top'}}
+                stack={{shrink: '0'}}
+                onClick={this.handleDeleteBlock}
+              ></i-button>
+              <i-button
+                icon={{name: 'plus', width: '0.875rem', height: '0.875rem', fill: Theme.colors.primary.contrastText}}
+                padding={{top: '0.35rem', bottom: '0.35rem', left: '0.35rem', right: '0.35rem'}}
+                tooltip={{content: '$add_widget', placement: 'top'}}
+                stack={{shrink: '0'}}
+                onClick={this.handleAddBlock}
+              ></i-button>
+              <i-button
+                icon={{name: 'file-alt', width: '0.875rem', height: '0.875rem', fill: Theme.colors.primary.contrastText}}
+                padding={{top: '0.35rem', bottom: '0.35rem', left: '0.35rem', right: '0.35rem'}}
+                tooltip={{content: '$add_to_context', placement: 'top'}}
+                stack={{shrink: '0'}}
+                onClick={this.handleAddToChat}
+              ></i-button>
             </i-hstack>
             <i-panel
               id="pnlPreview"

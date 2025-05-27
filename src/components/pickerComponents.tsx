@@ -22,6 +22,7 @@ interface DesignerPickerComponentsElement extends ControlElement {
   tooltipText?: string;
   items: IComponentItem[];
   isShown?: boolean;
+  parentName?: string;
   onSelect?: onSelectCallback;
 }
 
@@ -40,12 +41,33 @@ export default class DesignerPickerComponents extends Module {
   private items: IComponentItem[];
   private isShown: boolean = false;
 
+  private _parentName: string;
+
   private lbName: Label;
   private iconArrow: Icon;
   private iconTooltip: Icon;
   private hStackItems: HStack;
 
   onSelect: onSelectCallback;
+
+  get parentName() {
+    return this._parentName;
+  }
+
+  set parentName(value: string) {
+    const oldValue = this._parentName;
+    this._parentName = value;
+    if (oldValue !== value) this.renderUI();
+  }
+
+  get filteredItems() {
+    let items = [...this.items];
+    const parentName = this.parentName;
+    if (parentName === 'i-page-block') {
+      items = items.filter(item => item.name.startsWith('i-page-') || item.name.startsWith('i-scom-'));
+    }
+    return [...items];
+  }
 
   constructor(parent?: Container, options?: DesignerPickerComponentsElement) {
     super(parent, options);
@@ -57,9 +79,10 @@ export default class DesignerPickerComponents extends Module {
     this.iconTooltip.visible = !!this.tooltipText;
     this.iconTooltip.tooltip.content = this.tooltipText || '';
     this.hStackItems.visible = this.isShown;
+    const items = this.filteredItems;
 
     const nodeItems: HTMLElement[] = [];
-    for (const item of this.items) {
+    for (const item of items) {
       const { name, image, icon } = item;
       const block = new Panel(undefined, { width: 'calc(50% - 0.5px)', height: '5rem', background: { color: Theme.background.main } });
       block.appendChild(
@@ -76,7 +99,7 @@ export default class DesignerPickerComponents extends Module {
       block.classList.add(blockItemHoverStyled);
       nodeItems.push(block);
     }
-    if (this.items.length % 2 === 1) {
+    if (items.length % 2 === 1) {
       nodeItems.push(<i-panel width="calc(50% - 0.5px)" height={80} background={{ color: Theme.background.main }} />);
     }
     this.hStackItems.clearInnerHTML();
@@ -100,6 +123,8 @@ export default class DesignerPickerComponents extends Module {
     this.onSelect = this.getAttribute('onSelect', true) || this.onSelect;
     this.name = this.getAttribute('name', true) || '';
     this.tooltipText = this.getAttribute('tooltipText', true);
+    const parentName = this.getAttribute('parentName', true);
+    if (parentName) this._parentName = parentName;
     this.isShown = this.getAttribute('isShown', true) || false;
     this.items = this.getAttribute('items', true) || [];
     this.renderUI();

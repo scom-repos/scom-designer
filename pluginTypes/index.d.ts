@@ -309,6 +309,9 @@ declare module "@scom/scom-designer/languages/main.json.ts" {
             the_most_simple__and_essential_components_to_build_a_screen: string;
             with_flexbox_you_can_specify_the_layout_of_an_element_and_its_children_to_provide_a_consistent_layout_on_different_screen_sizes: string;
             deploy: string;
+            add_widget: string;
+            delete_widget: string;
+            add_to_context: string;
         };
         "zh-hant": {
             add_components: string;
@@ -884,6 +887,7 @@ declare module "@scom/scom-designer/components/components.tsx" {
         private onShowActions;
         private initModalActions;
         private onConfirm;
+        removeComponent(component: IComponent): void;
         private removeElements;
         private onClose;
         private handleDelete;
@@ -2108,6 +2112,7 @@ declare module "@scom/scom-designer/components/pickerComponents.tsx" {
         tooltipText?: string;
         items: IComponentItem[];
         isShown?: boolean;
+        parentName?: string;
         onSelect?: onSelectCallback;
     }
     global {
@@ -2122,11 +2127,15 @@ declare module "@scom/scom-designer/components/pickerComponents.tsx" {
         private tooltipText;
         private items;
         private isShown;
+        private _parentName;
         private lbName;
         private iconArrow;
         private iconTooltip;
         private hStackItems;
         onSelect: onSelectCallback;
+        get parentName(): string;
+        set parentName(value: string);
+        get filteredItems(): IComponentItem[];
         constructor(parent?: Container, options?: DesignerPickerComponentsElement);
         private renderUI;
         private onItemSelected;
@@ -2195,6 +2204,23 @@ declare module "@scom/scom-designer/designer/index.css.ts" {
     export const hoverStyle: string;
     export const selectedStyle: string;
 }
+/// <amd-module name="@scom/scom-designer/designer/resizer.ts" />
+declare module "@scom/scom-designer/designer/resizer.ts" {
+    import { Control } from "@ijstech/components";
+    import { ActionType } from "@scom/scom-designer/interface.ts";
+    class ControlResizer {
+        private _control;
+        private _type;
+        private resizers;
+        constructor(control: Control, type: ActionType);
+        get type(): ActionType;
+        set type(value: ActionType);
+        addResizer(className: string): void;
+        hideResizers(): void;
+        showResizers(): void;
+    }
+    export { ControlResizer };
+}
 /// <amd-module name="@scom/scom-designer/designer/designer.tsx" />
 declare module "@scom/scom-designer/designer/designer.tsx" {
     import { Container, ControlElement, Module } from '@ijstech/components';
@@ -2208,6 +2234,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         onTogglePreview?: (value: boolean) => void;
         onClose?: () => void;
         onSelectControl?: () => void;
+        onAddControl?: (control: IControl) => Promise<void>;
         onDesignerChange?: (target: ScomDesignerForm, event: Event) => void;
     }
     global {
@@ -2249,7 +2276,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private mouseDownPos;
         private recentComponents;
         private _rootComponent;
-        private selectedComponent;
+        private addedComponent;
         private currentParent;
         private designPos;
         private libsMap;
@@ -2274,6 +2301,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         onClose?: () => void;
         onSelectControl?: () => void;
         onDesignerChange?: (target: ScomDesignerForm) => void;
+        onAddControl?: (control: IControl) => Promise<void>;
         constructor(parent?: Container, options?: any);
         static create(options?: ScomDesignerFormElement, parent?: Container): Promise<ScomDesignerForm>;
         setData(): void;
@@ -2306,6 +2334,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private onTabChanged;
         private onFilterComponent;
         private onShowComponentPicker;
+        private onPickerOpened;
         private onSelectComponent;
         private onVisibleComponent;
         private onDeleteComponent;
@@ -2322,7 +2351,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private handleAddControl;
         private getDefaultProps;
         private updateStructure;
-        private initComponentPicker;
+        initComponentPicker(): void;
         private onAddComponent;
         private onAddItem;
         private initBlockPicker;
@@ -2334,6 +2363,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private onControlEventDblClick;
         renderUI(root: IComponent): Promise<void>;
         private onUpdateDesigner;
+        private onComponentsChanged;
         private handleControlMouseMove;
         private updatePosition;
         private handleControlMouseDown;
@@ -2353,6 +2383,8 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private onModalOpen;
         private onModalClose;
         private handleAddToChat;
+        private handleDeleteBlock;
+        private handleAddBlock;
         hideAddToChatWidget(): void;
         onHide(): void;
         init(): void;
@@ -2562,7 +2594,7 @@ declare module "@scom/scom-designer/schema.ts" {
 /// <amd-module name="@scom/scom-designer" />
 declare module "@scom/scom-designer" {
     import { Container, Control, ControlElement, Module } from '@ijstech/components';
-    import { ActionType, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio, ITheme } from "@scom/scom-designer/interface.ts";
+    import { ActionType, IControl, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio, ITheme } from "@scom/scom-designer/interface.ts";
     import { Types } from '@ijstech/compiler';
     import { ScomCodeEditor, Monaco } from '@scom/scom-code-editor';
     import { ScomDesignerForm } from "@scom/scom-designer/designer/index.ts";
@@ -2578,6 +2610,14 @@ declare module "@scom/scom-designer" {
         startLine: number | string;
         endLine: number | string;
     }, fromDesigner: boolean) => void;
+    type onAddControlCallback = (control: IControl, selectedData: {
+        path: string;
+        md: string;
+        lines: {
+            startLine: number | string;
+            endLine: number | string;
+        };
+    }) => Promise<void>;
     interface ScomDesignerElement extends ControlElement {
         url?: string;
         file?: {
@@ -2601,6 +2641,7 @@ declare module "@scom/scom-designer" {
         onClosePreview?: onClosePreviewCallback;
         onRenderError?: onRenderErrorCallback;
         onSelectedWidget?: onSelectedWidgetCallback;
+        onAddControl?: onAddControlCallback;
     }
     global {
         namespace JSX {
@@ -2643,6 +2684,8 @@ declare module "@scom/scom-designer" {
         private _oldLines;
         private _chatWidget;
         private _themes;
+        private _isPickerInit;
+        private _isChatWidgetInit;
         private handleSelectionChangeBound;
         onSave: onSaveCallback;
         onChange?: onChangeCallback;
@@ -2655,6 +2698,7 @@ declare module "@scom/scom-designer" {
         onClosePreview?: onClosePreviewCallback;
         onRenderError?: onRenderErrorCallback;
         onSelectedWidget?: onSelectedWidgetCallback;
+        onAddControl?: onAddControlCallback;
         tag: any;
         set previewUrl(url: string);
         addEventHandler(designer: ScomDesignerForm, eventName: string, funcName: string): void;
@@ -2709,6 +2753,7 @@ declare module "@scom/scom-designer" {
         };
         showDesigner(): Promise<void>;
         private createFormDesigner;
+        private updateSelection;
         private handleDesignerChange;
         private createDeployer;
         private handleTogglePanels;

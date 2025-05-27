@@ -189,7 +189,8 @@ const CONTAINERS = [
   'i-hstack',
   'i-vstack',
   'i-modal',
-  'i-radio'
+  'i-radio',
+  'i-page-block'
 ];
 
 const ControlItemMapper: {[key: string]: string} = {

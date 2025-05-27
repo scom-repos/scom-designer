@@ -15,7 +15,7 @@ import {
   Markdown
 } from '@ijstech/components';
 import { blockStyle, customActivedStyled } from './index.css'
-import { ActionType, IComponent, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio, ITheme } from './interface'
+import { ActionType, IComponent, IControl, IDeployConfig, IFileData, IFileHandler, IIPFSData, IStudio, ITheme } from './interface'
 import { ScomDesignerDeployer } from './deployer'
 import { Compiler, Parser, Types } from '@ijstech/compiler'
 import { ScomCodeEditor, Monaco, getLanguageType } from '@scom/scom-code-editor';
@@ -33,6 +33,7 @@ type onImportCallback = (fileName: string, isPackage?: boolean) => Promise<{ fil
 type onClosePreviewCallback = () => void;
 type onRenderErrorCallback = (errors: Types.ICompilerError[]) => void;
 type onSelectedWidgetCallback = (path: string, md: string, { startLine, endLine }: { startLine: number|string, endLine: number|string }, fromDesigner: boolean) => void;
+type onAddControlCallback = (control: IControl, selectedData: { path: string, md: string, lines: { startLine: number|string, endLine: number|string } }) => Promise<void>;
 
 interface ScomDesignerElement extends ControlElement {
   url?: string;
@@ -54,6 +55,7 @@ interface ScomDesignerElement extends ControlElement {
   onClosePreview?: onClosePreviewCallback;
   onRenderError?: onRenderErrorCallback;
   onSelectedWidget?: onSelectedWidgetCallback;
+  onAddControl?: onAddControlCallback;
 }
 
 declare global {
@@ -111,6 +113,8 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private _oldLines: {startLine: number|string, endLine: number|string }[] = [];
   private _chatWidget: any = null;
   private _themes: ITheme;
+  private _isPickerInit: boolean = false;
+  private _isChatWidgetInit: boolean = false;
 
   private handleSelectionChangeBound: (target: ScomCodeEditor, event: any) => void;
 
@@ -122,6 +126,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   onClosePreview?: onClosePreviewCallback;
   onRenderError?: onRenderErrorCallback;
   onSelectedWidget?: onSelectedWidgetCallback;
+  onAddControl?: onAddControlCallback;
   tag: any = {}
 
   set previewUrl(url: string) {
@@ -409,10 +414,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.designTab.visible = !this.isContract;
     this.updateDesigner = !!(this.url || this.file?.path);
     await this.renderContent(true);
-    if (this.isWidgetMD) {
-      this.updateAddToChatWidget();
-      this.codeEditor.addWidget(this._chatWidget);
-    }
   }
 
   private async renderContent(init = false) {
@@ -458,6 +459,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
     this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
     this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
+    if (this.isWidgetMD && !this._isChatWidgetInit) {
+      this._isChatWidgetInit = true;
+      this.updateAddToChatWidget();
+      this.codeEditor.addWidget(this._chatWidget);
+    }
   }
 
   executeInsert(textBefore: string, textAfter: string) {
@@ -486,9 +492,35 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
       if (!this.isWidgetMD) return;
       this.updateMd();
     };
+    this.formDesigner.onAddControl = async (control: IControl) => {
+      const selectedWidget = this.updateSelection();
+      const { startLine, endLine, md } = selectedWidget || {};
+      const data = selectedWidget ? {path: this.file.path, md, lines: { startLine, endLine }} : null;
+      typeof this.onAddControl === 'function' && this.onAddControl(control, data);
+    }
     this.formDesigner.onDesignerChange = debounce(this.handleDesignerChange.bind(this), 500);
     this.formDesigner.studio = this;
     this.formDesigner.visible = this.isValid;
+  }
+
+  private updateSelection() {
+    const root = this.formDesigner.rootComponent;
+
+    const selectedPos = this.formDesigner.getSelectedPosition();
+    let md: string = renderMd(root as IComponent, '', [selectedPos]);
+
+    const regex = new RegExp(`\\{Line-[0-9]+-${selectedPos}\\}`, 'g');  
+    const match = md.match(regex);
+    const startLine = match?.[0]?.split('-')?.[1];
+    const endLine = match?.[1]?.split('-')?.[1];
+
+    md = md.replace(/(Line-[0-9]+)-[0-9]+/g, '$1');
+
+    startLine && this._oldLines.push({ startLine, endLine });
+
+    const _selectedWidget = selectedPos !== undefined ? { startLine, endLine, md } : null;
+    
+    return _selectedWidget ? {..._selectedWidget} : null;
   }
 
   private handleDesignerChange(target: ScomDesignerForm, event: Event) {
@@ -518,6 +550,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     const { url = '', file } = this._data
     const content = url ? await getFileContent(url) : file?.content || '';
     const fileName = this.fileName;
+
     await this.codeEditor.loadContent(content, getLanguageType(fileName), fileName);
     if (this.isTsx) {
       this.compiler.addFile(fileName, content, this.importCallback);
@@ -625,6 +658,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
             }
           } catch (error) {
             this.updateDesigner = true
+          }
+
+          if (!this._isPickerInit) {
+            this._isPickerInit = true;
+            this.formDesigner.initComponentPicker();
           }
         }
       } else if (target.id === 'codeTab') {
@@ -1004,6 +1042,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.onClosePreview = this.getAttribute('onClosePreview', true) || this.onClosePreview
     this.onRenderError = this.getAttribute('onRenderError', true) || this.onRenderError
     this.onSelectedWidget = this.getAttribute('onSelectedWidget', true) || this.onSelectedWidget
+    this.onAddControl = this.getAttribute('onAddControl', true) || this.onAddControl
     const deployConfig = this.getAttribute('deployConfig', true)
     if (deployConfig) this.deployConfig = deployConfig;
     const url = this.getAttribute('url', true)
