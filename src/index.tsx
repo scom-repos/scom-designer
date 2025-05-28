@@ -345,6 +345,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async setData(value: IDesigner) {
     this._data = value;
     await this.renderUI();
+    if (this.isWidgetMD && !this._isChatWidgetInit) {
+      this._isChatWidgetInit = true;
+      this.updateAddToChatWidget();
+      this.codeEditor.addWidget(this._chatWidget);
+    }
   }
 
   private getData() {
@@ -475,11 +480,6 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
     this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
     this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
-    if (this.isWidgetMD && !this._isChatWidgetInit) {
-      this._isChatWidgetInit = true;
-      this.updateAddToChatWidget();
-      this.codeEditor.addWidget(this._chatWidget);
-    }
   }
 
   public executeInsert(textBefore: string, textAfter: string) {

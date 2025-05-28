@@ -8934,6 +8934,11 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         async setData(value) {
             this._data = value;
             await this.renderUI();
+            if (this.isWidgetMD && !this._isChatWidgetInit) {
+                this._isChatWidgetInit = true;
+                this.updateAddToChatWidget();
+                this.codeEditor.addWidget(this._chatWidget);
+            }
         }
         getData() {
             return this._data;
@@ -9048,11 +9053,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
             this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
             this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
-            if (this.isWidgetMD && !this._isChatWidgetInit) {
-                this._isChatWidgetInit = true;
-                this.updateAddToChatWidget();
-                this.codeEditor.addWidget(this._chatWidget);
-            }
         }
         executeInsert(textBefore, textAfter) {
             return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
