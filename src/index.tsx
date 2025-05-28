@@ -345,26 +345,47 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   private async setData(value: IDesigner) {
     this._data = value;
     await this.renderUI();
+    if (this.isWidgetMD && !this._isChatWidgetInit) {
+      this._isChatWidgetInit = true;
+      this.updateAddToChatWidget();
+      this.codeEditor.addWidget(this._chatWidget);
+    }
   }
 
   private getData() {
     return this._data
   }
 
-  async setValue(value: IDesigner) {
+  public async setValue(value: IDesigner) {
     await this.setData(value);
   }
 
-  getErrors(): Monaco.editor.IMarker[] {
+  public async reloadDesigner(value?: IDesigner) {
+    this.formDesigner?.toggleLoading(true);
+    try {
+      if (value) {
+        this._data = {...this._data, ...value};
+        await this.loadContent();
+      }
+
+      if (this.activeTab === 'designTab')
+        await this.renderDesigner();
+      else
+        await this.handleTabChanged(this.designTab);
+    } catch {}
+    this.formDesigner?.toggleLoading(false);
+  }
+
+  public getErrors(): Monaco.editor.IMarker[] {
     return this.codeEditor?.getErrors();
   }
 
-  updateFileName(oldValue: string, newValue: string) {
+  public updateFileName(oldValue: string, newValue: string) {
     if (typeof this.codeEditor?.updateFileName === 'function')
       this.codeEditor.updateFileName(oldValue, newValue);
   }
 
-  dispose() {
+  public dispose() {
     if (this.codeEditor) {
       if (typeof this.codeEditor?.dispose === 'function') {
         this.codeEditor.dispose();
@@ -375,7 +396,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     }
   }
 
-  disposeEditor() {
+  public disposeEditor() {
     if (this.codeEditor) {
       this.codeEditor.onChange = null;
       this.codeEditor.onKeyDown = null;
@@ -393,17 +414,17 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     document.removeEventListener('click', this.handleClick);
   }
 
-  saveViewState(): any {
+  public saveViewState(): any {
     return this.codeEditor ? this.codeEditor.saveViewState() : null;
   }
  
-  restoreViewState(state: any) {
+  public restoreViewState(state: any) {
     if (this.codeEditor) {
       this.codeEditor.restoreViewState(state);
     }
   }
 
-  clearPositions() {
+  public clearPositions() {
     this._positions.clear();
     this._oldLines = [];
   }
@@ -459,19 +480,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.codeEditor.onChange = this.handleCodeEditorChange.bind(this);
     this.codeEditor.onKeyDown = this.handleCodeEditorSave.bind(this);
     this.codeEditor.onSelectionChange = this.handleSelectionChangeBound;
-    if (this.isWidgetMD && !this._isChatWidgetInit) {
-      this._isChatWidgetInit = true;
-      this.updateAddToChatWidget();
-      this.codeEditor.addWidget(this._chatWidget);
-    }
   }
 
-  executeInsert(textBefore: string, textAfter: string) {
+  public executeInsert(textBefore: string, textAfter: string) {
     return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
-  }
-
-  async showDesigner() {
-    await this.handleTabChanged(this.designTab);
   }
 
   private createFormDesigner() {
@@ -650,16 +662,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
         });
         if (this.updateDesigner) {
           this.updateDesigner = false
-          try {
-            if (this.isTsx)
-              await this.parseTsx(fileName);
-            else {
-              await this.parseMd(this.codeEditor.value);
-            }
-          } catch (error) {
-            this.updateDesigner = true
-          }
-
+          await this.renderDesigner();
           if (!this._isPickerInit) {
             this._isPickerInit = true;
             this.formDesigner.initComponentPicker();
@@ -689,6 +692,18 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
     target.rightIcon.visible = false;
     target.enabled = true;
+  }
+
+  private async renderDesigner() {
+    try {
+      if (this.isTsx)
+        await this.parseTsx(this.fileName);
+      else {
+        await this.parseMd(this.codeEditor.value);
+      }
+    } catch (error) {
+      this.updateDesigner = true
+    }
   }
 
   private getUpdatedMd(inSelected: boolean = false) {
