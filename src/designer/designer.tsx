@@ -1581,6 +1581,10 @@ export class ScomDesignerForm extends Module {
     if (this.ifrPreview?.clear)this.ifrPreview.clear();
   }
 
+  toggleLoading(show: boolean) {
+    this.pnlLoading.visible = show;
+  }
+
   init() {
     this.i18n.init({...mainJson});
     super.init()
@@ -1826,6 +1830,7 @@ export class ScomDesignerForm extends Module {
             <i-vstack
               id="pnlLoading"
               width="100%" minHeight={200}
+              height="100%"
               position="absolute"
               bottom={0}
               zIndex={1000}

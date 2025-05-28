@@ -8013,6 +8013,9 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
             if (this.ifrPreview?.clear)
                 this.ifrPreview.clear();
         }
+        toggleLoading(show) {
+            this.pnlLoading.visible = show;
+        }
         init() {
             this.i18n.init({ ...index_24.mainJson });
             super.init();
@@ -8097,7 +8100,7 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                                 }
                             }
                         ] },
-                        this.$render("i-vstack", { id: "pnlLoading", width: "100%", minHeight: 200, position: "absolute", bottom: 0, zIndex: 1000, visible: false, background: { color: Theme.background.main }, class: "i-loading-overlay", opacity: 0.7, mediaQueries: [
+                        this.$render("i-vstack", { id: "pnlLoading", width: "100%", minHeight: 200, height: "100%", position: "absolute", bottom: 0, zIndex: 1000, visible: false, background: { color: Theme.background.main }, class: "i-loading-overlay", opacity: 0.7, mediaQueries: [
                                 {
                                     maxWidth: '767px',
                                     properties: {
@@ -8938,6 +8941,21 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         async setValue(value) {
             await this.setData(value);
         }
+        async reloadDesigner(value) {
+            this.formDesigner?.toggleLoading(true);
+            try {
+                if (value) {
+                    this._data = { ...this._data, ...value };
+                    await this.loadContent();
+                }
+                if (this.activeTab === 'designTab')
+                    await this.renderDesigner();
+                else
+                    await this.handleTabChanged(this.designTab);
+            }
+            catch { }
+            this.formDesigner?.toggleLoading(false);
+        }
         getErrors() {
             return this.codeEditor?.getErrors();
         }
@@ -9038,9 +9056,6 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         executeInsert(textBefore, textAfter) {
             return this.codeEditor.executeEditor('insert', { textBefore, textAfter });
-        }
-        async showDesigner() {
-            await this.handleTabChanged(this.designTab);
         }
         createFormDesigner() {
             this.formDesigner = this.createElement('i-scom-designer--form', this.pnlMain);
@@ -9202,16 +9217,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                     });
                     if (this.updateDesigner) {
                         this.updateDesigner = false;
-                        try {
-                            if (this.isTsx)
-                                await this.parseTsx(fileName);
-                            else {
-                                await this.parseMd(this.codeEditor.value);
-                            }
-                        }
-                        catch (error) {
-                            this.updateDesigner = true;
-                        }
+                        await this.renderDesigner();
                         if (!this._isPickerInit) {
                             this._isPickerInit = true;
                             this.formDesigner.initComponentPicker();
@@ -9243,6 +9249,18 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             }
             target.rightIcon.visible = false;
             target.enabled = true;
+        }
+        async renderDesigner() {
+            try {
+                if (this.isTsx)
+                    await this.parseTsx(this.fileName);
+                else {
+                    await this.parseMd(this.codeEditor.value);
+                }
+            }
+            catch (error) {
+                this.updateDesigner = true;
+            }
         }
         getUpdatedMd(inSelected = false) {
             const root = this.formDesigner.rootComponent;

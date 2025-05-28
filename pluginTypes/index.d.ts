@@ -2387,6 +2387,7 @@ declare module "@scom/scom-designer/designer/designer.tsx" {
         private handleAddBlock;
         hideAddToChatWidget(): void;
         onHide(): void;
+        toggleLoading(show: boolean): void;
         init(): void;
         render(): any;
     }
@@ -2736,6 +2737,7 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
+        reloadDesigner(value?: IDesigner): Promise<void>;
         getErrors(): Monaco.editor.IMarker[];
         updateFileName(oldValue: string, newValue: string): void;
         dispose(): void;
@@ -2751,7 +2753,6 @@ declare module "@scom/scom-designer" {
             endLine: number;
             value: string;
         };
-        showDesigner(): Promise<void>;
         private createFormDesigner;
         private updateSelection;
         private handleDesignerChange;
@@ -2764,6 +2765,7 @@ declare module "@scom/scom-designer" {
         private addLib;
         private importCallback;
         private handleTabChanged;
+        private renderDesigner;
         private getUpdatedMd;
         private updateMd;
         private parseMd;
