@@ -6754,6 +6754,10 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                 tag && control.setTag(tag);
             }
             else {
+                if (name === 'i-page-text') {
+                    controlProps.tag = controlProps.tag || {};
+                    controlProps.tag.viewer = false;
+                }
                 control = await controlConstructor.create({ ...controlProps, designMode: true, cursor: 'pointer' });
                 if (name.includes('scom')) {
                     parent?.appendChild(control);
@@ -8961,6 +8965,14 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             catch { }
             this.formDesigner?.toggleLoading(false);
         }
+        renderMD(event) {
+            if (!this.isWidgetMD)
+                return;
+            const md = this.getUpdatedMd();
+            this.codeEditor.value = md;
+            if (typeof this.onChange === 'function')
+                this.onChange(this, event);
+        }
         getErrors() {
             return this.codeEditor?.getErrors();
         }
@@ -9100,12 +9112,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
             return _selectedWidget ? { ..._selectedWidget } : null;
         }
         handleDesignerChange(target, event) {
-            if (this.isWidgetMD) {
-                const md = this.getUpdatedMd();
-                this.codeEditor.value = md;
-                if (typeof this.onChange === 'function')
-                    this.onChange(this, event);
-            }
+            this.renderMD(event);
         }
         createDeployer() {
             this.deployDeployer = this.createElement('i-scom-designer--deployer', this.pnlMain);

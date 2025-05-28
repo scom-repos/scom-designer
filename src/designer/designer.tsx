@@ -319,6 +319,10 @@ export class ScomDesignerForm extends Module {
       }
       tag && control.setTag(tag);
     } else {
+       if (name === 'i-page-text') {
+        controlProps.tag = controlProps.tag || {};
+        controlProps.tag.viewer = false;
+      }
       control = await controlConstructor.create({...controlProps, designMode: true, cursor: 'pointer'});
 
       if (name.includes('scom')) {

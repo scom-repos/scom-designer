@@ -376,6 +376,13 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.formDesigner?.toggleLoading(false);
   }
 
+  public renderMD(event?: Event) {
+    if (!this.isWidgetMD) return;
+    const md = this.getUpdatedMd();
+    this.codeEditor.value = md;
+    if (typeof this.onChange === 'function') this.onChange(this, event);
+  }
+
   public getErrors(): Monaco.editor.IMarker[] {
     return this.codeEditor?.getErrors();
   }
@@ -536,12 +543,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
   }
 
   private handleDesignerChange(target: ScomDesignerForm, event: Event) {
-    if (this.isWidgetMD) {
-      const md = this.getUpdatedMd();
-      this.codeEditor.value = md;
-
-      if (typeof this.onChange === 'function') this.onChange(this, event);
-    }
+    this.renderMD(event);
   }
 
   private createDeployer() {
