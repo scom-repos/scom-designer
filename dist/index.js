@@ -6766,6 +6766,11 @@ define("@scom/scom-designer/designer/designer.tsx", ["require", "exports", "@ijs
                     control.parent = parent;
                 }
             }
+            if (name === 'i-page-text' && options.tag) {
+                if ('viewer' in options.tag) {
+                    options.tag.viewer = true;
+                }
+            }
             const breakpointProps = (0, config_8.getMediaQueryProps)(mediaQueries);
             control._setDesignProps({ ...options, mediaQueries }, breakpointProps);
             const hasBackground = 'background' in options;
@@ -8949,6 +8954,9 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         }
         async setValue(value) {
             await this.setData(value);
+        }
+        toggleLoading(value) {
+            this.formDesigner?.toggleLoading(value);
         }
         async reloadDesigner(value) {
             this.formDesigner?.toggleLoading(true);
