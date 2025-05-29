@@ -360,6 +360,10 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     await this.setData(value);
   }
 
+  public toggleLoading(value: boolean) {
+    this.formDesigner?.toggleLoading(value);
+  }
+
   public async reloadDesigner(value?: IDesigner) {
     this.formDesigner?.toggleLoading(true);
     try {

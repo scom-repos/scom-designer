@@ -319,7 +319,7 @@ export class ScomDesignerForm extends Module {
       }
       tag && control.setTag(tag);
     } else {
-       if (name === 'i-page-text') {
+      if (name === 'i-page-text') {
         controlProps.tag = controlProps.tag || {};
         controlProps.tag.viewer = false;
       }
@@ -332,6 +332,11 @@ export class ScomDesignerForm extends Module {
       }
     }
 
+    if (name === 'i-page-text' && options.tag) {
+      if ('viewer' in options.tag) {
+        options.tag.viewer = true;
+      }
+    }
     const breakpointProps = getMediaQueryProps(mediaQueries);
     control._setDesignProps({...options, mediaQueries}, breakpointProps);
 

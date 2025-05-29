@@ -2737,6 +2737,7 @@ declare module "@scom/scom-designer" {
         private setData;
         private getData;
         setValue(value: IDesigner): Promise<void>;
+        toggleLoading(value: boolean): void;
         reloadDesigner(value?: IDesigner): Promise<void>;
         renderMD(event?: Event): void;
         getErrors(): Monaco.editor.IMarker[];
