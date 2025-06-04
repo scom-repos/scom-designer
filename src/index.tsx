@@ -364,7 +364,7 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
     this.formDesigner?.toggleLoading(value);
   }
 
-  public async reloadDesigner(value?: IDesigner) {
+  public async reloadDesigner(value?: IDesigner, needDesignerShown = false) {
     this.formDesigner?.toggleLoading(true);
     try {
       if (value) {
@@ -374,9 +374,11 @@ export class ScomDesigner extends Module implements IFileHandler, IStudio {
 
       if (this.activeTab === 'designTab')
         await this.renderDesigner();
-      else
+      else if (needDesignerShown)
         await this.handleTabChanged(this.designTab);
-    } catch {}
+    } catch(error) {
+      console.error('Error reloading designer:', error);
+    }
     this.formDesigner?.toggleLoading(false);
   }
 

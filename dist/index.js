@@ -8958,7 +8958,7 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
         toggleLoading(value) {
             this.formDesigner?.toggleLoading(value);
         }
-        async reloadDesigner(value) {
+        async reloadDesigner(value, needDesignerShown = false) {
             this.formDesigner?.toggleLoading(true);
             try {
                 if (value) {
@@ -8967,10 +8967,12 @@ define("@scom/scom-designer", ["require", "exports", "@ijstech/components", "@sc
                 }
                 if (this.activeTab === 'designTab')
                     await this.renderDesigner();
-                else
+                else if (needDesignerShown)
                     await this.handleTabChanged(this.designTab);
             }
-            catch { }
+            catch (error) {
+                console.error('Error reloading designer:', error);
+            }
             this.formDesigner?.toggleLoading(false);
         }
         renderMD(event) {
